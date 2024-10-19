@@ -17,9 +17,15 @@ cd hue-fit
 
 ### 2. Summary of Commands:
 Once the repository is cloned, use the appropriate commands to run the application(s):
-
+- To run both the web (Next.js) and mobile (React Native/Expo) applications:
 ```bash
-"npm run dev" : Runs both the web (Next.js) and mobile (React Native/Expo) applications.
-"npm run dev:web" : Runs only the web (Next.js) application.
-"npm run dev:mobile" : Runs only the mobile (React Native/Expo) application.
+npm run dev
+```
+- To run only the web (Next.js) application:
+```bash
+npm run dev:web
+```
+- To run only the mobile (React Native/Expo) application:
+```bash
+npm run dev:mobile
 ```
