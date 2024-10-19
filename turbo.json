@@ -1,0 +1,14 @@
+{
+  "$schema": "https://turbo.build/schema.json",
+  "tasks": {
+    "build": {
+      "outputs": ["dist/**", ".next/**", "android/**", "ios/**"]
+    },
+    "dev": {
+      "cache": false
+    },
+    "lint": {
+      "outputs": []
+    }
+  }
+}
