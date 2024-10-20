@@ -19,13 +19,13 @@ cd hue-fit
 Once the repository is cloned, use the appropriate commands to run the application(s):
 - To run both the web (Next.js) and mobile (React Native/Expo) applications:
 ```bash
-npm run dev
+yarn dev
 ```
 - To run only the web (Next.js) application:
 ```bash
-npm run dev:web
+yarn dev:web
 ```
 - To run only the mobile (React Native/Expo) application:
 ```bash
-npm run dev:mobile
+yarn dev:mobile
 ```
