@@ -2,26 +2,61 @@
 @tailwind components;
 @tailwind utilities;
 
-:root {
-  --background: #ffffff;
-  --foreground: #171717;
+::-webkit-scrollbar {
+  width: 10px;
+  opacity: 0.5;
+}
+::-webkit-scrollbar-track {
+  background: var(--dark);
+  border-radius: 10px;
+}
+::-webkit-scrollbar-thumb {
+  background: var(--dark-grey);
+  border-radius: 10px;
+}
+::-webkit-scrollbar-thumb:hover {
+  background: var(--grey);
+}
+input::placeholder {
+  color: var(--grey);
 }
 
-@media (prefers-color-scheme: dark) {
-  :root {
-    --background: #0a0a0a;
-    --foreground: #ededed;
-  }
+:root {
+  --rainbow1: #ff75c3;
+  --rainbow2: #ffa647;
+  --rainbow3: #ffe83f;
+  --rainbow4: #9fff5b;
+  --rainbow5: #70e2ff;
+  --rainbow6: #cd93ff;
+  --light-background: url('../public/images/tile-pattern-2.png'), #d4d5d8 ;
+  --dark-background: url('../public/images/tile-pattern.png'), var(--dark);
+  --foreground: #C0C0C0;
+  --transparent: #00000000;
+  --white: #FFFFFF;
+  --one-opacity-white: rgba(255, 255, 255, 0.01);
+  --ten-opacity-white: rgba(255, 255, 255, 0.1);
+  --twentyfive-opacity-white: rgba(255, 255, 255, 0.25);
+  --low-white: #EFEFEF;
+  --low-grey-white: #F1F1F1;
+  --grey-white: #C0C0C0;
+  --low-grey: #9D9D9D;
+  --grey: #4E4E4E;
+  --dark-grey: #2E2E2E;
+  --dark: #191919;
+  --fifty-opacity-dark: rgba(25, 25, 25, 0.50);
+  --seventyfive-opacity-dark: rgba(25, 25, 25, 0.75);
+  --black: #000000;
+  --fifteen-opacity-black: rgba(0, 0, 0, 0.15);
+  --gradient-opacity-black: linear-gradient(0deg, #000000 15%, #66666600 100%) no-repeat;
+  --warning: #E24A4A;
+  --starred: #E2B84A;
+  --success: #7BE24A;
+  --admin: #7013C1;
+  --shop: #F2C530;
+  --user: #4EA8F2;
 }
 
 body {
   color: var(--foreground);
-  background: var(--background);
-  font-family: Arial, Helvetica, sans-serif;
-}
-
-@layer utilities {
-  .text-balance {
-    text-wrap: balance;
-  }
+  background: var(--dark-background);
 }

@@ -15,7 +15,7 @@ git clone https://github.com/Quinchy/Hue-Fit.git
 cd hue-fit
 ```
 
-### 2. Summary of Commands:
+### 2. Running the Project Commands:
 Once the repository is cloned, use the appropriate commands to run the application(s):
 - To run both the web (Next.js) and mobile (React Native/Expo) applications:
 ```bash
@@ -28,4 +28,19 @@ yarn dev:web
 - To run only the mobile (React Native/Expo) application:
 ```bash
 yarn dev:mobile
+```
+
+### 3. Adding Packages:
+In adding packages for specific projects, use this commands to add packages on designated workspace:
+- To add packages on the root:
+```bash
+yarn add packageName -W
+```
+- To add packages on the web (Next.js):
+```bash
+yarn workspace web add packageName
+```
+- To add packages on the mobile (React Native/Expo):
+```bash
+yarn workspace mobile add packageName
 ```
