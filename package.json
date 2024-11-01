@@ -12,10 +12,25 @@
   },
   "scripts": {
     "dev": "turbo run dev",
+    "build": "turbo run build",
+    "test": "turbo run test",
+    "lint": "turbo run lint",
     "dev:web": "turbo run dev --filter=web",
-    "dev:mobile": "turbo run dev --filter=mobile"
+    "dev:mobile": "turbo run dev --filter=mobile",
+    "build:web": "turbo run build --filter=web",
+    "build:mobile": "turbo run build --filter=mobile",
+    "test:web": "turbo run test --filter=web",
+    "test:mobile": "turbo run test --filter=mobile",
+    "lint:web": "turbo run lint --filter=web",
+    "lint:mobile": "turbo run lint --filter=mobile",
+    "check:versions": "turbo run version-check"
   },
   "devDependencies": {
     "turbo": "^2.2.1"
+  },
+  "dependencies": {
+    "formik": "^2.4.6",
+    "lucide-react": "^0.454.0",
+    "yup": "^1.4.0"
   }
 }

@@ -9,6 +9,9 @@
     },
     "lint": {
       "outputs": []
+    },
+    "version-check": {
+      "cache": false
     }
   }
 }
