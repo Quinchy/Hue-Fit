@@ -1,0 +1,73 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+model Users {
+  id         Int      @id @default(autoincrement())
+  userNo     String   @unique  // Make userNo unique
+  username   String   @unique
+  password   String
+  status     String
+  roleId     Int
+  created_at DateTime @default(now())
+  updated_at DateTime @updatedAt
+
+  Role          Roles         @relation(fields: [roleId], references: [id])
+  AdminProfile  AdminProfiles?
+}
+
+model Roles {
+  id          Int      @id @default(autoincrement())
+  name        String
+  description String
+  created_at  DateTime @default(now())
+  updated_at  DateTime @updatedAt
+
+  Users       Users[]
+  Permissions Permissions[]
+}
+
+model Pages {
+  id          Int      @id @default(autoincrement())
+  name        String   @unique
+  description String
+  created_at  DateTime @default(now())
+  updated_at  DateTime @updatedAt
+
+  Permissions Permissions[]
+}
+
+model Permissions {
+  id          Int      @id @default(autoincrement())
+  can_view    Boolean  @default(false)
+  can_edit    Boolean  @default(false)
+  can_delete  Boolean  @default(false)
+  can_add     Boolean  @default(false)
+  roleId      Int
+  pageId      Int
+
+  created_at  DateTime @default(now())
+  updated_at  DateTime @updatedAt
+
+  Role        Roles    @relation(fields: [roleId], references: [id])
+  Page        Pages    @relation(fields: [pageId], references: [id])
+  
+  @@unique([roleId, pageId])
+}
+
+model AdminProfiles {
+  id             Int      @id @default(autoincrement())
+  userId         Int      @unique // Ensures one-to-one relation with Users
+  profilePicture String
+  firstName      String
+  lastName       String
+  created_at     DateTime @default(now())
+  updated_at     DateTime @updatedAt
+
+  User           Users    @relation(fields: [userId], references: [id]) // Relation to Users
+}
