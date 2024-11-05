@@ -1,17 +1,16 @@
-import { PrismaClient } from '@prisma/client';
-const prisma = new PrismaClient();
+// set-user-permissions.js
+import prisma, { disconnectPrisma } from '@/utils/helpers';
 
 export default async function handler(req, res) {
   if (req.method === 'POST') {
     const { roleId, permissions } = req.body;
 
     try {
-      // Loop through permissions to upsert each permission based on roleId and pageId
       await Promise.all(
         permissions.map(async (perm) => {
           await prisma.permissions.upsert({
             where: {
-              roleId_pageId: { roleId, pageId: perm.pageId }, // Unique composite index for roleId and pageId
+              roleId_pageId: { roleId, pageId: perm.pageId },
             },
             update: {
               can_view: perm.can_view,
@@ -32,9 +31,9 @@ export default async function handler(req, res) {
       );
 
       res.status(200).json({ message: 'Permissions updated successfully' });
-    } catch (error) {
-      console.error('Error updating permissions:', error);
-      res.status(500).json({ error: 'Error updating permissions' });
+    } 
+    finally {
+      await disconnectPrisma();
     }
   } else {
     res.status(405).json({ error: 'Method not allowed' });

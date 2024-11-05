@@ -9,9 +9,11 @@ import { ModeToggle } from "@/components/ui/mode-toggle";
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuLabel, DropdownMenuSeparator, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
 import Image from "next/image";
 import { Skeleton } from "@/components/ui/skeleton";
+import { usePermissions } from "@/providers/permission-provider";
 
 const NavbarDashboard = () => {
   const { data: session } = useSession();
+  const { permissions, loading: permissionsLoading } = usePermissions();
   const [userInfo, setUserInfo] = useState({
     firstName: "",
     lastName: "",
@@ -20,19 +22,18 @@ const NavbarDashboard = () => {
   });
   const [loading, setLoading] = useState(true);
 
-  // Define a mapping from page labels to pageId (excluding dashboard)
+  // Mapping from page label to pageId
   const pageIdMapping = {
     shop: 1,
     inquiry: 2,
     user: 3,
     settings: 4,
-    product: 6,
+    product: 5,
     order: 6,
   };
 
-  // Links for dashboard navigation with respective page IDs for permission checking
   const links = [
-    { route: routes.dashboard, icon: <House />, label: "Dashboard" }, // Always available
+    { route: routes.dashboard, icon: <House />, label: "Dashboard", pageId: "dashboard" },
     { route: routes.shop, icon: <Store />, label: "Shops", pageId: "shop" },
     { route: routes.product, icon: <Shirt />, label: "Products", pageId: "product" },
     { route: routes.order, icon: <Tag />, label: "Orders", pageId: "order" },
@@ -70,9 +71,7 @@ const NavbarDashboard = () => {
   // Check if the user has the required permission for a specific page
   const hasPermission = (pageId) => {
     const pageIntegerId = pageIdMapping[pageId]; // Convert to integer pageId
-    return session?.user?.permissions?.some(
-      (perm) => perm.pageId === pageIntegerId && perm.can_view
-    );
+    return permissions?.some(perm => perm.pageId === pageIntegerId && perm.can_view);
   };
 
   return (
@@ -87,16 +86,26 @@ const NavbarDashboard = () => {
         </div>
 
         <div className="flex flex-col w-full items-center">
-          {links.map(({ route, icon, label, pageId }) => (
-            (!pageId || hasPermission(pageId)) && ( // Show if no permission check needed or has permission
-              <Link key={route} href={route} className="flex flex-row justify-start items-center gap-3 py-3 w-full hover:bg-accent duration-300 ease-in-out">
-                <div className="pl-10 flex flex-row items-center gap-3 text-primary uppercase">
-                  {icon}
-                  {label}
-                </div>
-              </Link>
-            )
-          ))}
+          {(loading || permissionsLoading) ? (
+            // Display skeleton placeholders for links if loading
+            Array.from({ length: links.length }).map((_, index) => (
+              <div key={index} className="flex flex-row justify-start items-center gap-3 py-3 w-full">
+                <Skeleton className="ml-10 w-[180px] h-6" />
+              </div>
+            ))
+          ) : (
+            // Render actual links when loading is complete
+            links.map(({ route, icon, label, pageId }) => (
+              (pageId === "dashboard" || hasPermission(pageId)) && (
+                <Link key={route} href={route} className="flex flex-row justify-start items-center gap-3 py-3 w-full hover:bg-accent duration-300 ease-in-out">
+                  <div className="pl-10 flex flex-row items-center gap-3 text-primary uppercase">
+                    {icon}
+                    {label}
+                  </div>
+                </Link>
+              )
+            ))
+          )}
         </div>
       </div>
 
@@ -104,7 +113,7 @@ const NavbarDashboard = () => {
       <DropdownMenu className="mt-auto">
         <DropdownMenuTrigger className="w-full focus-visible:outline-none">
           <div className="flex flex-row justify-start items-center gap-3 py-7 w-full hover:bg-accent duration-300 ease-in-out">
-            {loading ? (
+            {loading || permissionsLoading ? (
               // Show skeleton if loading
               <div className="flex flex-row pl-10 items-center gap-3">
                 <Skeleton className="rounded-full w-12 h-12" />

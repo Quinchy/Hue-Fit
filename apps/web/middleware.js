@@ -23,7 +23,7 @@ export async function middleware(req) {
       [routes.inquiry]: { pageId: 2, permission: "can_view" },
       [routes.user]: { pageId: 3, permission: "can_view" },
       [routes.settings]: { pageId: 4, permission: "can_view" },
-      [routes.product]: { pageId: 6, permission: "can_view" },
+      [routes.product]: { pageId: 5, permission: "can_view" },
       [routes.order]: { pageId: 6, permission: "can_view" },
     };
 
