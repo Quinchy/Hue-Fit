@@ -1,7 +1,7 @@
-export default function Requests() {
+export default function ShopRequests() {
   return (
     <div>
-      Requests
+      Shop Requests
     </div>
   );
 }
