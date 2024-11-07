@@ -12,23 +12,16 @@
       "backgroundColor": "#191919"
     },
     "ios": {
-      "supportsTablet": true,
-      "bundleIdentifier": "com.huefit.mobile"
+      "supportsTablet": true
     },
     "android": {
       "adaptiveIcon": {
         "foregroundImage": "./assets/adaptive-icon.png",
         "backgroundColor": "#191919"
-      },
-      "package": "com.huefit.mobile"
+      }
     },
     "web": {
       "favicon": "./assets/favicon.png"
-    },
-    "plugins": [
-      "expo-router",
-      "expo-secure-store"
-    ],
-    "scheme": "huefit"
+    }
   }
 }

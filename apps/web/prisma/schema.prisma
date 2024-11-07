@@ -19,6 +19,7 @@ model Users {
 
   Role          Roles         @relation(fields: [roleId], references: [id])
   AdminProfile  AdminProfiles?
+  CustomerProfile CustomerProfiles?
 }
 
 model Roles {
@@ -70,4 +71,18 @@ model AdminProfiles {
   updated_at     DateTime @updatedAt
 
   User           Users    @relation(fields: [userId], references: [id]) // Relation to Users
+}
+
+model CustomerProfiles {
+  id                 Int      @id @default(autoincrement())
+  userId             Int   @unique
+  customerFeaturesId Int
+  email              String?  // Nullable field for email
+  firstName          String
+  lastName           String
+  created_at         DateTime @default(now())
+  updated_at         DateTime @updatedAt
+
+  // Assuming relation to Users
+  User               Users    @relation(fields: [userId], references: [id])
 }

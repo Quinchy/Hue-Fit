@@ -1,35 +1,43 @@
 {
   "name": "mobile",
   "version": "1.0.0",
-  "main": "expo-router/entry",
-  "packageManager": "yarn@1.22.22",
+  "main": "expo/AppEntry.js",
   "scripts": {
-    "start": "expo start --clear",
+    "start": "expo start",
     "android": "expo start --android",
     "ios": "expo start --ios",
-    "web": "expo start --web",
-    "dev": "expo start --clear",
-    "version-check": "yarn react-native -v && yarn expo --version"
+    "web": "expo start --web"
+  },
+  "dependencies": {
+    "@react-native-async-storage/async-storage": "1.23.1",
+    "@react-native-community/masked-view": "^0.1.11",
+    "@react-navigation/bottom-tabs": "^7.0.0",
+    "@react-navigation/native": "^7.0.0",
+    "@react-navigation/native-stack": "^7.0.0",
+    "@react-navigation/stack": "^7.0.0",
+    "@rn-primitives/slot": "^1.1.0",
+    "@rn-primitives/types": "^1.1.0",
+    "class-variance-authority": "^0.7.0",
+    "clsx": "^2.1.1",
+    "expo": "~51.0.28",
+    "expo-constants": "~16.0.2",
+    "expo-linear-gradient": "^13.0.2",
+    "expo-status-bar": "~1.12.1",
+    "native-base": "^3.4.28",
+    "react": "18.2.0",
+    "react-native": "0.74.5",
+    "react-native-dotenv": "^3.4.11",
+    "react-native-gesture-handler": "~2.16.1",
+    "react-native-reanimated": "~3.10.1",
+    "react-native-safe-area-context": "4.10.5",
+    "react-native-screens": "3.31.1",
+    "react-native-svg": "^15.8.0"
   },
   "devDependencies": {
     "@babel/core": "^7.20.0",
-    "react-native-svg-transformer": "^1.5.0",
-    "tailwindcss": "3.3.2"
-  },
-  "dependencies": {
-    "@react-navigation/native": "^6.1.18",
-    "@react-navigation/native-stack": "^6.11.0",
-    "expo": "~51.0.28",
-    "expo-linking": "^6.3.1",
-    "expo-router": "^3.5.23",
-    "expo-secure-store": "~13.0.2",
-    "expo-status-bar": "~1.12.1",
-    "nativewind": "^2.0.11",
-    "react": "18.2.0",
-    "react-native": "0.74.5",
-    "react-native-safe-area-context": "4.10.5",
-    "react-native-screens": "3.31.1",
-    "react-native-svg": "15.2.0"
+    "@types/react": "~18.2.45",
+    "babel-plugin-module-resolver": "^5.0.2",
+    "typescript": "~5.3.3"
   },
   "private": true
 }

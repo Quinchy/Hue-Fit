@@ -1,0 +1,18 @@
+{
+    "builds": [
+      {
+        "src": "apps/web/package.json",
+        "use": "@vercel/next",
+        "config": {
+          "distDir": "build"
+        }
+      }
+    ],
+    "rewrites": [
+      {
+        "source": "/(.*)",
+        "destination": "/apps/web/$1"
+      }
+    ]
+  }
+  
