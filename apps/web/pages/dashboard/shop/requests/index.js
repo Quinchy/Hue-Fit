@@ -1,7 +1,10 @@
+import DashboardLayoutWrapper from "@/components/ui/dashboard-layout";
+import { CardTitle } from "@/components/ui/card";
+
 export default function ShopRequests() {
   return (
-    <div>
-      Shop Requests
-    </div>
+    <DashboardLayoutWrapper>
+      <CardTitle className="text-4xl">Shop Requests</CardTitle>
+    </DashboardLayoutWrapper>
   );
 }
