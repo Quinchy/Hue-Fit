@@ -16,7 +16,7 @@ export default function Custom404() {
         </div>
         <div className='flex flex-col items-center'>
           <p className="text-xl uppercase">Oops! Looks like someone got lost trying to find the right style. </p>
-          <p className="text-xl uppercase">Let's get back on track and find your perfect fit!</p>
+          <p className="text-xl uppercase">{"Let's get back on track and find your perfect fit!"}</p>
         </div>
       </div>
       <Link 
