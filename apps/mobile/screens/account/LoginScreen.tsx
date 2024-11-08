@@ -7,7 +7,7 @@ import DefaultButton from '../../components/Button';
 import OutlineButton from '../../components/OutlineButton';
 import GradientCard from '../../components/GradientCard';
 import Link from '../../components/Link';
-import AsyncStorage from '@react-native-async-storage/async-storage'; // For storing session token
+import AsyncStorage from '@react-native-async-storage/async-storage'; // For storing user data
 import { API_BASE_URL } from '@env';
 
 export default function LoginScreen({ navigation }) {
@@ -17,12 +17,11 @@ export default function LoginScreen({ navigation }) {
   // Handle login
   const handleLogin = async () => {
     try {
-      const apiUrl = `${API_BASE_URL}/api/auth/callback/credentials`;
+      const apiUrl = `${API_BASE_URL}/api/auth/login`; // Update to new login API
       const response = await fetch(apiUrl, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
-          'X-Source': 'mobile', // Identify mobile requests
         },
         body: JSON.stringify({ username, password }),
       });
@@ -34,9 +33,9 @@ export default function LoginScreen({ navigation }) {
   
         console.log('Response JSON:', data); // Log the JSON response
         
-        if (response.ok && data.mobileToken) {
-          // Store the mobileToken for later use
-          await AsyncStorage.setItem('mobileToken', data.mobileToken);
+        if (response.ok) {
+          // Store the user data for session persistence
+          await AsyncStorage.setItem('user', JSON.stringify(data));
           navigation.navigate('Home'); // Redirect to home screen
         } else {
           Alert.alert('Login failed', data.message || 'Invalid credentials');
@@ -52,7 +51,6 @@ export default function LoginScreen({ navigation }) {
       Alert.alert('Login error', 'An error occurred. Please try again.');
     }
   };
-  
   
   return (
     <BackgroundProvider>
