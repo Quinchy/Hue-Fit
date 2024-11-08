@@ -76,6 +76,10 @@ export const authOptions = {
   ],
   session: { strategy: "jwt" },
   jwt: { secret: process.env.NEXTAUTH_SECRET },
+  pages: {
+    signIn: '/auth/signin',  // Set a custom sign-in page if needed for web
+    error: '/auth/error',    // Custom error page if needed
+  },
   callbacks: {
     async session({ session, token }) {
       // Check if it's a mobile session for CUSTOMER
@@ -109,6 +113,7 @@ export const authOptions = {
       return token;
     },
   },
+  csrf: false // Disable CSRF protection
 };
 
 export default NextAuth(authOptions);

@@ -27,21 +27,35 @@ export default function LoginScreen({ navigation }) {
         body: JSON.stringify({ username, password }),
       });
   
-      const data = await response.json();
-      if (response.ok) {
-        // Store the sessionToken if it's a CUSTOMER
-        if (data.sessionToken) {
-          await AsyncStorage.setItem('sessionToken', data.sessionToken);
+      // Check if the response content type is JSON before parsing
+      const contentType = response.headers.get('content-type');
+      if (contentType && contentType.includes('application/json')) {
+        const data = await response.json();
+  
+        if (response.ok) {
+          // Log the received session token
+          console.log('Session Token:', data.sessionToken);
+  
+          // Store the sessionToken if it's a CUSTOMER
+          if (data.sessionToken) {
+            await AsyncStorage.setItem('sessionToken', data.sessionToken);
+          }
+          navigation.navigate('Home'); // Redirect to home screen
+        } else {
+          Alert.alert('Login failed', data.message || 'Invalid credentials');
         }
-        navigation.navigate('Home'); // Redirect to home screen
       } else {
-        Alert.alert('Login failed', data.message || 'Invalid credentials');
+        // Log the entire response if it's not JSON for debugging purposes
+        const text = await response.text();
+        console.error('Non-JSON response:', text);
+        Alert.alert('Login failed', 'Unexpected response format');
       }
     } catch (error) {
       console.error('Login error:', error);
       Alert.alert('Login error', 'An error occurred. Please try again.');
     }
   };
+  
   
   return (
     <BackgroundProvider>
