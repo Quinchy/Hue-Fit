@@ -7,6 +7,7 @@ import { createStackNavigator,  CardStyleInterpolators } from '@react-navigation
 import GetStartedScreen from './screens/GetStartedScreen';
 import LoginScreen from './screens/account/LoginScreen';
 import RegisterScreen from './screens/account/RegisterScreen';
+import HomeScreen from './screens/app/HomeScreen';
 import { LinearGradient } from 'expo-linear-gradient';
 import { Easing } from 'react-native';
 
@@ -50,6 +51,7 @@ export default function App() {
           <Stack.Screen name="GetStarted" component={GetStartedScreen}  options={{ unmountOnBlur: true }} />
           <Stack.Screen name="Login" component={LoginScreen}  options={{ unmountOnBlur: true }}/>
           <Stack.Screen name="Register" component={RegisterScreen}  options={{ unmountOnBlur: true }} />
+          <Stack.Screen name="Home" component={HomeScreen}  options={{ unmountOnBlur: true }} />
         </Stack.Navigator>
       </NavigationContainer>
     </NativeBaseProvider>

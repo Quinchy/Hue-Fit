@@ -1,6 +1,5 @@
-// src/screens/account/LoginScreen.tsx
-import React from 'react';
-import { Image, ScrollView } from 'react-native';
+import React, { useState } from 'react';
+import { Image, ScrollView, Alert } from 'react-native';
 import { VStack, HStack, Text, Center } from 'native-base';
 import BackgroundProvider from '../../providers/BackgroundProvider';
 import CustomInput from '../../components/Input';
@@ -8,8 +7,42 @@ import DefaultButton from '../../components/Button';
 import OutlineButton from '../../components/OutlineButton';
 import GradientCard from '../../components/GradientCard';
 import Link from '../../components/Link';
+import AsyncStorage from '@react-native-async-storage/async-storage'; // For storing session token
+import { API_BASE_URL } from '@env';
 
 export default function LoginScreen({ navigation }) {
+  const [username, setUsername] = useState('');
+  const [password, setPassword] = useState('');
+
+  // Handle login
+  const handleLogin = async () => {
+    try {
+      const apiUrl = `${API_BASE_URL}/api/auth/callback/credentials`;
+      const response = await fetch(apiUrl, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'X-Source': 'mobile', // Add this header to identify mobile requests
+        },
+        body: JSON.stringify({ username, password }),
+      });
+  
+      const data = await response.json();
+      if (response.ok) {
+        // Store the sessionToken if it's a CUSTOMER
+        if (data.sessionToken) {
+          await AsyncStorage.setItem('sessionToken', data.sessionToken);
+        }
+        navigation.navigate('Home'); // Redirect to home screen
+      } else {
+        Alert.alert('Login failed', data.message || 'Invalid credentials');
+      }
+    } catch (error) {
+      console.error('Login error:', error);
+      Alert.alert('Login error', 'An error occurred. Please try again.');
+    }
+  };
+  
   return (
     <BackgroundProvider>
       <ScrollView contentContainerStyle={{ flexGrow: 1 }}>
@@ -36,14 +69,14 @@ export default function LoginScreen({ navigation }) {
                 <Link title="REGISTER" onPress={() => navigation.navigate('Register')} />
               </HStack>
             </Center>
-            
+
             <VStack space={4} alignItems="center">
-              <CustomInput placeholder="Username" />
-              <CustomInput placeholder="Password" isPassword />
+              <CustomInput placeholder="Username" value={username} onChangeText={setUsername} />
+              <CustomInput placeholder="Password" value={password} onChangeText={setPassword} isPassword />
               <Text alignSelf="flex-end" color="gray.400" fontSize="sm" mt={-2} mb={2}>
                 Forgot Password?
               </Text>
-              <DefaultButton title="LOGIN" onPress={() => {}} />
+              <DefaultButton title="LOGIN" onPress={handleLogin} />
 
               <Text color="gray.400" fontSize="sm" my={4}>
                 ─────────── OR CONTINUE WITH ───────────
