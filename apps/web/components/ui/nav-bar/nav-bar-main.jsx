@@ -7,7 +7,7 @@ import { buttonVariants } from "@/components/ui/button"
 
 const NavbarMain = () => {
   return (
-    <div className='w-full flex flex-row items-center text-sm justify-between px-24 bg-oneOpacityWhite h-[100px] border-b-2 border-border backdrop-blur-[1px] fixed'>
+    <div className='w-full flex flex-row items-center text-sm justify-between px-24 bg-oneOpacityWhite h-[100px] border-b-2 border-border backdrop-blur-[1px] fixed z-50'>
       <Link href={routes.home}>
         <HueFitLogo 
           height={50}
@@ -16,15 +16,15 @@ const NavbarMain = () => {
       </Link>
       <nav className="flex flex-row items-center gap-10 uppercase">
         <div className="group">
-          <Link className="tracking-widest font-medium pr-3 text-left block duration-500 ease-in-out" href={routes.home}>Home</Link>
+          <Link className="text-primary tracking-widest font-medium pr-3 text-left block duration-500 ease-in-out" href={routes.home}>Home</Link>
           <div className="h-[2px] bg-[linear-gradient(90deg,_var(--rainbow1)_0%,_var(--rainbow2)_20%,_var(--rainbow3)_40%,_var(--rainbow4)_60%,_var(--rainbow5)_80%,_var(--rainbow6)_100%)] w-0 transition-all duration-700 ease-&lsqb;cubic-bezier(.99,0,.11,1)&rsqb; group-hover:w-full"></div>
         </div>
         <div className="group">
-          <Link className="tracking-widest font-medium pr-3 text-left block duration-500 ease-in-out" href={routes.about}>About</Link>
+          <Link className="text-primary tracking-widest font-medium pr-3 text-left block duration-500 ease-in-out" href={routes.about}>About</Link>
           <div className="h-[2px] bg-[linear-gradient(90deg,_var(--rainbow1)_0%,_var(--rainbow2)_20%,_var(--rainbow3)_40%,_var(--rainbow4)_60%,_var(--rainbow5)_80%,_var(--rainbow6)_100%)] w-0 transition-all duration-700 ease-&lsqb;cubic-bezier(.99,0,.11,1)&rsqb; group-hover:w-full"></div>
         </div>
         <div className="group">
-          <Link className="tracking-widest font-medium pr-3 text-left block duration-500 ease-in-out" href={routes.contact}>Contact</Link>
+          <Link className="text-primary tracking-widest font-medium pr-3 text-left block duration-500 ease-in-out" href={routes.contact}>Contact</Link>
           <div className="h-[2px] bg-[linear-gradient(90deg,_var(--rainbow1)_0%,_var(--rainbow2)_20%,_var(--rainbow3)_40%,_var(--rainbow4)_60%,_var(--rainbow5)_80%,_var(--rainbow6)_100%)] w-0 transition-all duration-700 ease-&lsqb;cubic-bezier(.99,0,.11,1)&rsqb; group-hover:w-full"></div>
         </div>
         <div className='flex flex-row items-center gap-5'>

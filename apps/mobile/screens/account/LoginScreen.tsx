@@ -1,3 +1,4 @@
+// LoginScreen.tsx
 import React, { useState } from 'react';
 import { Image, ScrollView, Alert } from 'react-native';
 import { VStack, HStack, Text, Center } from 'native-base';
@@ -17,7 +18,7 @@ export default function LoginScreen({ navigation }) {
   // Handle login
   const handleLogin = async () => {
     try {
-      const apiUrl = `${API_BASE_URL}/api/auth/login`; // Update to new login API
+      const apiUrl = `${API_BASE_URL}/api/mobile/auth/login`; // Update to new login API
       const response = await fetch(apiUrl, {
         method: 'POST',
         headers: {

@@ -2,7 +2,7 @@ import React from 'react';
 
 const DashboardLayoutWrapper = ({ children }) => {
   return (
-    <div className='mt-5 flex flex-col gap-5'>
+    <div className='mt-5 pr-10 flex flex-col w-full gap-5'>
       {children}
     </div>
   );

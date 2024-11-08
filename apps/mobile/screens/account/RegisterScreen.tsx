@@ -34,7 +34,7 @@ export default function RegisterScreen({ navigation }) {
 
     try {
       // Use the imported API_BASE_URL instead of Constants.manifest.extra
-      const apiUrl = `${API_BASE_URL}/api/auth/register`;
+      const apiUrl = `${API_BASE_URL}/api/mobile/auth/register`;
       console.log("apiUrl:", apiUrl); // Log the constructed URL
 
       // Make API request

@@ -5,20 +5,14 @@ import { View, Text, Button, StyleSheet } from 'react-native';
 
 export default function HomeScreen({ navigation }) {
   return (
-    <View style={styles.container}>
-      <Text style={styles.text}>Home Screen</Text>
-    </View>
+    <BackgroundProvider>
+      <ScrollView contentContainerStyle={{ flexGrow: 1 }}>
+        <Center>
+          <Text fontSize="3xl" color="white" fontWeight="bold">
+            HomeScreen
+          </Text>
+        </Center>
+      </ScrollView>
+    </BackgroundProvider>
   );
 }
-
-const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-    justifyContent: 'center',
-    alignItems: 'center',
-  },
-  text: {
-    fontSize: 20,
-    color: '#000',
-  },
-});

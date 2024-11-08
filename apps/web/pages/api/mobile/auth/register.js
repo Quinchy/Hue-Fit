@@ -27,7 +27,7 @@ export default async function handler(req, res) {
     });
 
     if (existingUser) {
-      return res.status(409).json({ message: "Username already exists." });
+      return res.status(409).json({ message: "Username is already taken." });
     }
 
     // Hash the password

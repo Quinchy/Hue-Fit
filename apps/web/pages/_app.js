@@ -17,7 +17,7 @@ export default function App({ Component, pageProps: { session, ...pageProps } })
   let title = 'Hue-Fit';
   let NavBarComponent = NavbarMain;
   let customStyle = '';
-  let divClassName = 'mx-24 flex flex-col justify-center items-center';
+  let divClassName = 'flex flex-col justify-center items-center';
 
   if (router.pathname.startsWith(routes.account)) {
     NavBarComponent = NavbarAccount;
