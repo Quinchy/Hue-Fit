@@ -2,7 +2,6 @@ import NextAuth from "next-auth";
 import CredentialsProvider from 'next-auth/providers/credentials';
 import prisma from '@/utils/helpers';
 import bcrypt from 'bcrypt';
-import { v4 as uuidv4 } from 'uuid';
 
 export const authOptions = {
   providers: [
@@ -12,15 +11,10 @@ export const authOptions = {
         username: { label: "Username", type: "text", placeholder: "Enter your username" },
         password: { label: "Password", type: "password" },
       },
-      authorize: async (credentials, req) => {
+      authorize: async (credentials) => {
         try {
-          // Log the headers and the credentials for debugging
-          console.log("Headers received:", req.headers);
+          // Log the credentials for debugging
           console.log("Credentials received:", credentials);
-
-          // Check if the request is from mobile
-          const isMobile = req.headers['x-source'] === 'mobile';
-          console.log("Is mobile request:", isMobile); // Log whether it's a mobile request
 
           // Find the user in the database
           const user = await prisma.users.findFirst({
@@ -33,48 +27,32 @@ export const authOptions = {
 
           if (!user) throw new Error("Invalid credentials.");
 
-          // Check if the user is a CUSTOMER (mobile-only)
+          // Validate the password
+          const isPasswordValid = await bcrypt.compare(credentials.password, user.password);
+          if (!isPasswordValid) throw new Error("Invalid credentials.");
+
+          // If the user is a CUSTOMER, authenticate them directly
           if (user.Role.name === "CUSTOMER") {
-            if (!isMobile) throw new Error("Unauthorized access for CUSTOMER on web.");
-
-            // Validate the password
-            const isPasswordValid = await bcrypt.compare(credentials.password, user.password);
-            if (!isPasswordValid) throw new Error("Invalid credentials.");
-
-            // Generate a token for the mobile user to handle authentication
-            const mobileToken = uuidv4();
-
-            // Log the mobile token being generated
-            console.log("Generated mobile token:", mobileToken);
-
-            // Store the token in a dedicated table or return it directly without session management
-            await prisma.mobileTokens.create({
-              data: {
-                userId: user.id,
-                token: mobileToken,
-                expires: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000), // 30-day expiration
-              },
-            });
-
-            // Return the token directly without session handling
-            return { mobileToken, isMobile: true };
-          }
-
-          // Handle ADMIN and VENDOR (web-only) users with standard NextAuth logic
-          if (["ADMIN", "VENDOR"].includes(user.Role.name)) {
-            if (isMobile) throw new Error("Unauthorized access for ADMIN or VENDOR on mobile.");
-
-            // Validate the password
-            const isPasswordValid = await bcrypt.compare(credentials.password, user.password);
-            if (!isPasswordValid) throw new Error("Invalid credentials.");
-
+            console.log("Authenticated CUSTOMER user:", user.username);
+            // Return only the user object for CUSTOMER role without session handling
             return {
               id: user.id,
               name: user.username,
               role: user.Role.name,
               roleId: user.roleId,
               userNo: user.userNo,
-              isMobile: false
+            };
+          }
+
+          // Handle ADMIN and VENDOR (web-only) users with standard NextAuth logic
+          if (["ADMIN", "VENDOR"].includes(user.Role.name)) {
+            console.log("Authenticated ADMIN or VENDOR user:", user.username);
+            return {
+              id: user.id,
+              name: user.username,
+              role: user.Role.name,
+              roleId: user.roleId,
+              userNo: user.userNo,
             };
           }
 
@@ -90,25 +68,21 @@ export const authOptions = {
   callbacks: {
     async session({ session, token }) {
       // Pass only the standard session for web users
-      if (!token.isMobile) {
-        session.user = {
-          id: token.id,
-          role: token.role,
-          roleId: token.roleId,
-          userNo: token.userNo,
-          permissions: token.permissions,
-        };
-      }
+      session.user = {
+        id: token.id,
+        role: token.role,
+        roleId: token.roleId,
+        userNo: token.userNo,
+      };
       return session;
     },
     async jwt({ token, user }) {
       // Only process the standard token for web users
-      if (user && !user.isMobile) {
+      if (user) {
         token.id = user.id;
         token.role = user.role;
         token.roleId = user.roleId;
         token.userNo = user.userNo;
-        token.permissions = await fetchPermissions(user.roleId);
       }
       return token;
     },
