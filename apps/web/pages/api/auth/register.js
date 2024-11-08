@@ -1,6 +1,6 @@
-// pages/api/auth/register.js
 import prisma from '@/utils/helpers';
 import bcrypt from 'bcrypt';
+import { v4 as uuidv4 } from 'uuid';
 
 export default async function handler(req, res) {
   if (req.method !== 'POST') {
@@ -33,6 +33,9 @@ export default async function handler(req, res) {
     // Hash the password
     const hashedPassword = await bcrypt.hash(password, 10);
 
+    // Generate a unique userNo
+    const userNo = uuidv4();
+
     // Fetch role ID based on the role name (assumes Roles table is pre-populated)
     const userRole = await prisma.roles.findFirst({
       where: { name: role.toUpperCase() },
@@ -45,10 +48,11 @@ export default async function handler(req, res) {
     // Create the user
     const newUser = await prisma.users.create({
       data: {
+        userNo,               // Set generated userNo
         username,
         password: hashedPassword,
         roleId: userRole.id,
-        status: 'ACTIVE',
+        status: 'ACTIVE',     // Set status to ACTIVE
       },
     });
 
@@ -56,7 +60,7 @@ export default async function handler(req, res) {
     if (role.toUpperCase() === "CUSTOMER") {
       await prisma.customerProfiles.create({
         data: {
-          userId: newUser.userNo, // Assuming userNo uniquely identifies users in CustomerProfiles
+          userId: newUser.id, // Use id (PK) of the created user
           firstName,
           lastName,
         },
