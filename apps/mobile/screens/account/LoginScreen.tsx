@@ -22,7 +22,7 @@ export default function LoginScreen({ navigation }) {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
-          'X-Source': 'mobile', // Add this header to identify mobile requests
+          'X-Source': 'mobile', // Identify mobile requests
         },
         body: JSON.stringify({ username, password }),
       });
@@ -32,20 +32,17 @@ export default function LoginScreen({ navigation }) {
       if (contentType && contentType.includes('application/json')) {
         const data = await response.json();
   
-        if (response.ok) {
-          // Log the received session token
-          console.log('Session Token:', data.sessionToken);
-  
-          // Store the sessionToken if it's a CUSTOMER
-          if (data.sessionToken) {
-            await AsyncStorage.setItem('sessionToken', data.sessionToken);
-          }
+        console.log('Response JSON:', data); // Log the JSON response
+        
+        if (response.ok && data.mobileToken) {
+          // Store the mobileToken for later use
+          await AsyncStorage.setItem('mobileToken', data.mobileToken);
           navigation.navigate('Home'); // Redirect to home screen
         } else {
           Alert.alert('Login failed', data.message || 'Invalid credentials');
         }
       } else {
-        // Log the entire response if it's not JSON for debugging purposes
+        // Log the response text if it's not JSON
         const text = await response.text();
         console.error('Non-JSON response:', text);
         Alert.alert('Login failed', 'Unexpected response format');

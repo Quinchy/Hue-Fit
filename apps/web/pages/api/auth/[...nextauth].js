@@ -14,13 +14,22 @@ export const authOptions = {
       },
       authorize: async (credentials, req) => {
         try {
-          const isMobile = req.headers['x-source'] === 'mobile'; // Check if request is from mobile
+          // Log the headers and the credentials for debugging
+          console.log("Headers received:", req.headers);
+          console.log("Credentials received:", credentials);
+
+          // Check if the request is from mobile
+          const isMobile = req.headers['x-source'] === 'mobile';
+          console.log("Is mobile request:", isMobile); // Log whether it's a mobile request
 
           // Find the user in the database
           const user = await prisma.users.findFirst({
             where: { username: credentials.username },
             include: { Role: true },
           });
+
+          // Log the user object if found
+          console.log("User found:", user);
 
           if (!user) throw new Error("Invalid credentials.");
 
@@ -34,6 +43,9 @@ export const authOptions = {
 
             // Generate a token for the mobile user to handle authentication
             const mobileToken = uuidv4();
+
+            // Log the mobile token being generated
+            console.log("Generated mobile token:", mobileToken);
 
             // Store the token in a dedicated table or return it directly without session management
             await prisma.mobileTokens.create({

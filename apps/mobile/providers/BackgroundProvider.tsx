@@ -9,7 +9,7 @@ interface BackgroundProviderProps {
 const BackgroundProvider: React.FC<BackgroundProviderProps> = ({ children }) => {
   return (
     <ImageBackground
-      source={require('../assets/tile-pattern.png')}
+      source={require('../assets/tile-pattern-2.png')}
       style={styles.background}
       resizeMode="repeat" // This will repeat the image as a tile pattern
     >
