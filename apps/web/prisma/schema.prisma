@@ -76,7 +76,7 @@ model AdminProfiles {
 model CustomerProfiles {
   id                 Int      @id @default(autoincrement())
   userId             Int   @unique
-  customerFeaturesId Int
+  customerFeaturesId Int?
   email              String?  // Nullable field for email
   firstName          String
   lastName           String

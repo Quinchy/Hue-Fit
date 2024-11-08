@@ -7,7 +7,7 @@ export default async function handler(req, res) {
     return res.status(405).json({ message: "Method not allowed" });
   }
 
-  const { username, password, firstName, lastName, role } = req.body;
+  const { username, password, firstName, lastName, role, customerFeaturesId = 0 } = req.body;
 
   // Basic validation
   if (!username || !password || !firstName || !lastName || !role) {
@@ -60,9 +60,10 @@ export default async function handler(req, res) {
     if (role.toUpperCase() === "CUSTOMER") {
       await prisma.customerProfiles.create({
         data: {
-          userId: newUser.id, // Use id (PK) of the created user
+          userId: newUser.id,          // Use id (PK) of the created user
           firstName,
           lastName,
+          customerFeaturesId,         // Add customerFeaturesId, with a default if not provided
         },
       });
     }
