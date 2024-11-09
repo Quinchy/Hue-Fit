@@ -86,3 +86,27 @@ model CustomerProfiles {
   // Assuming relation to Users
   User               Users    @relation(fields: [userId], references: [id])
 }
+
+model PartnershipRequests {
+  id                Int       @id @default(autoincrement())
+  requestNo         String    @unique
+  firstName         String
+  lastName          String
+  contactNo         String
+  email             String
+  position          String
+  businessLicense   String   
+  shopName          String
+  shopContactNo     String
+  buildingNo        String?
+  street            String?
+  barangay          String
+  municipality      String
+  province          String
+  postalNumber      String
+  googleMapPlaceName String?   
+  longitude          Float?
+  latitude           Float?
+  created_at        DateTime  @default(now())
+  updated_at        DateTime  @updatedAt
+}

@@ -1,33 +1,56 @@
 // components/MapPicker.js
-import React, { useState, useCallback } from 'react';
-import { GoogleMap, LoadScript, Marker } from '@react-google-maps/api';
+import React, { useState, useCallback, useRef } from 'react';
+import { GoogleMap, LoadScript, Marker, Autocomplete } from '@react-google-maps/api';
+import { Input } from '@/components/ui/input';
 
 const MapPicker = ({ onLocationSelect, center }) => {
   const [selectedPosition, setSelectedPosition] = useState(null);
+  const autocompleteRef = useRef(null);
 
-  const handleMapClick = useCallback((event) => {
-    const lat = event.latLng.lat();
-    const lng = event.latLng.lng();
-    const newPosition = { lat, lng };
-    setSelectedPosition(newPosition); // Update marker position
-    if (onLocationSelect) onLocationSelect(newPosition); // Notify parent component
-  }, [onLocationSelect]);
+  const handleMapClick = useCallback(
+    (event) => {
+      const lat = event.latLng.lat();
+      const lng = event.latLng.lng();
+      const newPosition = { lat, lng };
+      setSelectedPosition(newPosition);
+      if (onLocationSelect) onLocationSelect(newPosition, "None"); // Send "None" as the place name
+    },
+    [onLocationSelect]
+  );
+
+  const handlePlaceSelected = () => {
+    const place = autocompleteRef.current.getPlace();
+    if (place && place.geometry) {
+      const lat = place.geometry.location.lat();
+      const lng = place.geometry.location.lng();
+      const newPosition = { lat, lng };
+
+      setSelectedPosition(newPosition);
+      if (onLocationSelect) onLocationSelect(newPosition, place.name); // Send place name
+    }
+  };
 
   return (
-    <LoadScript googleMapsApiKey={process.env.NEXT_PUBLIC_GOOGLE_MAPS_API_KEY}>
+    <LoadScript googleMapsApiKey={process.env.NEXT_PUBLIC_GOOGLE_MAPS_API_KEY} libraries={['places']}>
       <GoogleMap
-        mapContainerStyle={{ width: '100%', height: '700px' }}
-        center={selectedPosition || center} // Only reset center if no position selected
-        zoom={selectedPosition ? 15 : 6} // Zoom in when a marker is set
+        mapContainerStyle={{ width: '100%', height: '700px', borderRadius: '10px' }}
+        center={selectedPosition || center}
+        zoom={selectedPosition ? 15 : 6}
         onClick={handleMapClick}
         options={{
           disableDefaultUI: false,
           mapTypeControl: true,
         }}
       >
-        {selectedPosition && (
-          <Marker position={selectedPosition} /> // Render marker at selected position
-        )}
+        <Autocomplete onLoad={(ref) => (autocompleteRef.current = ref)} onPlaceChanged={handlePlaceSelected}>
+          <Input
+            type="text"
+            placeholder="Search for a place"
+            className="absolute top-2 left-2 z-10 w-80 p-2 border rounded-md shadow-sm"
+          />
+        </Autocomplete>
+
+        {selectedPosition && <Marker position={selectedPosition} />}
       </GoogleMap>
     </LoadScript>
   );

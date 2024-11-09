@@ -9,16 +9,16 @@ const FileUpload = ({ onFileSelect, maxSizeMB = 20 }) => {
   const allowedTypes = ["image/jpeg", "image/png", "image/webp", "application/pdf"];
 
   const handleFileChange = (event) => {
-    const file = event.target.files[0];
+    const file = event.target.files[0]; // Only allow one file
 
     // Reset error state
-    setError("");
-    setFileName("");
+    setError('');
+    setFileName('');
 
     if (file) {
       // Check file type
       if (!allowedTypes.includes(file.type)) {
-        setError("Unsupported file type. Only JPEG, PNG, WEBP, and PDF are allowed.");
+        setError('Unsupported file type. Only JPEG, PNG, WEBP, and PDF are allowed.');
         return;
       }
 

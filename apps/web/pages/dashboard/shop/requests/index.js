@@ -43,7 +43,7 @@ export default function ShopRequests() {
       <div className="flex flex-row justify-between">
         <CardTitle className="text-4xl">Shop Requests</CardTitle>
         <div className="flex flex-row gap-5">
-          <Input type="text" className="min-w-[30rem]" placeholder="Search shop" variant="icon" icon={Search}/>
+          <Input type="text" className="min-w-[30rem]" placeholder="Search shop request" variant="icon" icon={Search}/>
           <DropdownMenu>
             <DropdownMenuTrigger asChild>
               <Button variant="outline" className="font-normal">
@@ -80,7 +80,7 @@ export default function ShopRequests() {
         <Table>
           <TableHeader>
             <TableRow>
-              <TableHead className="max-w-[1rem]">Shop Number</TableHead>
+              <TableHead className="max-w-[1rem]">Request Number</TableHead>
               <TableHead className="max-w-[3rem]">Shop Name</TableHead>
               <TableHead className="max-w-[4rem]">Address</TableHead>
               <TableHead className="max-w-[1rem] text-center">Status</TableHead>
@@ -91,7 +91,7 @@ export default function ShopRequests() {
           </TableHeader>
           <TableBody>
             <TableRow>
-              <TableCell className="max-w-[1rem] font-medium">Shop Number</TableCell>
+              <TableCell className="max-w-[1rem] font-medium">Request Number</TableCell>
               <TableCell className="max-w-[3rem] overflow-hidden whitespace-nowrap text-ellipsis">Shop Name</TableCell>
               <TableCell className="max-w-[4rem] overflow-hidden whitespace-nowrap text-ellipsis">Address</TableCell>
               <TableCell className="max-w-[1rem] text-center">Status</TableCell>
