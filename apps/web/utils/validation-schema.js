@@ -49,3 +49,17 @@ export const partnershipRequestSchema = Yup.object({
   longitude: Yup.number().nullable(),
   latitude: Yup.number().nullable(),
 });
+
+export const manageShopRequestSchema = Yup.object().shape({
+  status: Yup.string().required("Status is required"),
+  username: Yup.string().when('status', {
+    is: 'ACTIVE',
+    then: Yup.string().required("Username is required"),
+    otherwise: Yup.string().notRequired(),
+  }),
+  password: Yup.string().when('status', {
+    is: 'ACTIVE',
+    then: Yup.string().required("Password is required"),
+    otherwise: Yup.string().notRequired(),
+  }),
+});
