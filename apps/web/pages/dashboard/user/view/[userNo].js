@@ -3,6 +3,7 @@ import DashboardLayoutWrapper from "@/components/ui/dashboard-layout";
 import { Card, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import routes from '@/routes';
+import Image from 'next/image';
 
 export default function UserProfilePage() {
   const router = useRouter();
@@ -29,11 +30,7 @@ export default function UserProfilePage() {
       <div className="flex gap-8">
         {/* Profile Picture Section */}
         <div className="w-1/4 flex flex-col items-center">
-          <img 
-            src="/images/profile-picture.png" 
-            alt="Profile" 
-            className="h-32 w-32 rounded-full mb-4 shadow-lg" 
-          />
+          <Image src="/images/profile-picture.png" alt="Profile" width={60} height={60} className="rounded-full" />
         </div>
 
         {/* User Information Section */}

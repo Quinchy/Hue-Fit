@@ -2,6 +2,7 @@
 import { useState } from 'react';
 import Dialog from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
+import Image from 'next/image';
 
 const BusinessLicense = ({ imageUrl }) => {
   const [isModalOpen, setIsModalOpen] = useState(false);
@@ -21,13 +22,14 @@ const BusinessLicense = ({ imageUrl }) => {
   return (
     <div className="flex flex-col items-center">
       {/* Thumbnail */}
-      <img 
+      <Image
         src={isPdf ? placeholderImage : imageUrl} // Use placeholder for PDFs
-        alt="Business License" 
+        alt="Business License"
+        width={128} // 32rem converted to pixels (assuming 1rem = 16px)
+        height={128} // 32rem converted to pixels (assuming 1rem = 16px)
         onClick={!isPdf ? handleOpenModal : undefined} // Only open modal for images
-        className="cursor-pointer w-32 h-32 object-cover rounded shadow-md"
+        className="cursor-pointer object-cover rounded shadow-md"
       />
-
       {/* Open button for PDFs to open in a new tab */}
       {isPdf && (
         <a href={imageUrl} target="_blank" rel="noopener noreferrer" className="mt-2">
@@ -39,10 +41,12 @@ const BusinessLicense = ({ imageUrl }) => {
       {!isPdf && isModalOpen && (
         <Dialog onClose={handleCloseModal} isOpen={isModalOpen}>
           <div className="relative flex items-center justify-center">
-            <img 
-              src={imageUrl} 
-              alt="Business License Full View" 
-              className="max-w-[45rem] min-h-[45rem] max-h-[45rem] object-scale-down rounded shadow-lg"
+            <Image
+              src={imageUrl}
+              alt="Business License Full View"
+              width={720}   // 45rem converted to pixels (assuming 1rem = 16px)
+              height={720}  // 45rem converted to pixels (assuming 1rem = 16px)
+              className="object-scale-down rounded shadow-lg"
             />
           </div>
         </Dialog>

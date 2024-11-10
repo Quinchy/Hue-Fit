@@ -59,7 +59,7 @@ export default function ViewInquiry() {
           <strong>Subject:</strong> Unlock New Potential
         </div>
         <div className="mb-2">
-          <strong>Message:</strong> ChaCharmie Men's Apparel offers a stylish selection of men's clothing, combining modern designs with quality craftsmanship. Whether you're looking for casual wear, business attire, or trendy accessories, ChaCharmie provides versatile options that cater to every occasion. Stay sharp, comfortable, and on-trend with our curated collections.
+          <strong>Message:</strong> ChaCharmie Men&apos;s Apparel offers a stylish selection of men&apos;s clothing, combining modern designs with quality craftsmanship. Whether you&apos;re looking for casual wear, business attire, or trendy accessories, ChaCharmie provides versatile options that cater to every occasion. Stay sharp, comfortable, and on-trend with our curated collections.
         </div>
         <div className="mt-2">
           <strong>Date:</strong> October 14, 2024

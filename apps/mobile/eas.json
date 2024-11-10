@@ -1,29 +1,11 @@
 {
   "cli": {
-    "version": ">= 12.6.2",
-    "appVersionSource": "remote"
+    "version": ">= 0.38.0"
   },
   "build": {
-    "development": {
-      "extends": "monorepo",
-      "developmentClient": true,
-      "distribution": "internal",
+    "production": {
       "android": {
         "buildType": "apk"
-      },
-      "ios": {
-        "resourceClass": "m1-medium"
-      }
-    },
-    "production": {
-      "extends": "monorepo",
-      "distribution": "store",
-      "autoIncrement": true,
-      "android": {
-        "buildType": "app-bundle"
-      },
-      "ios": {
-        "resourceClass": "m1-medium"
       }
     }
   }

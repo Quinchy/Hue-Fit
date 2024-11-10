@@ -5,6 +5,7 @@ import { Card, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import routes from '@/routes';
 import { EyeOff } from 'lucide-react';
+import Image from 'next/image';
 
 export default function EditUserPage() {
   const router = useRouter();
@@ -42,7 +43,7 @@ export default function EditUserPage() {
         {/* Profile Picture Section */}
         <div className="w-1/4 flex flex-col items-center">
           {/* Display Profile Picture */}
-          <img src="/images/profile-picture.png" alt="Profile" className="h-24 w-24 rounded-full mb-4" />
+          <Image src="/images/profile-picture.png" alt="Profile" width={60} height={60} className="rounded-full" />
           <Button variant="outline">+ Edit Picture</Button>
         </div>
 

@@ -5,6 +5,7 @@ import { Card, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Plus } from 'lucide-react';
 import routes from '@/routes';
+import Image from 'next/image';
 
 export default function AddUserPage() {
   const router = useRouter();
@@ -41,7 +42,7 @@ export default function AddUserPage() {
       <div className="flex gap-6">
         {/* Profile Picture Section */}
         <div className="w-1/4 flex flex-col items-center">
-          <img src="/images/profile-picture.png" alt="Profile" className="h-24 w-24 rounded-full mb-4" />
+        <Image src="/images/profile-picture.png" alt="Profile" width={60} height={60} className="rounded-full" />
           <Button variant="outline">+ Add Picture</Button>
         </div>
 

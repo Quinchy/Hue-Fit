@@ -52,14 +52,14 @@ export const partnershipRequestSchema = Yup.object({
 
 export const manageShopRequestSchema = Yup.object().shape({
   status: Yup.string().required("Status is required"),
-  username: Yup.string().when('status', {
-    is: 'ACTIVE',
-    then: Yup.string().required("Username is required"),
-    otherwise: Yup.string().notRequired(),
-  }),
-  password: Yup.string().when('status', {
-    is: 'ACTIVE',
-    then: Yup.string().required("Password is required"),
-    otherwise: Yup.string().notRequired(),
-  }),
+  username: Yup.lazy((value) =>
+    value === "ACTIVE"
+      ? Yup.string().required("Username is required")
+      : Yup.string().notRequired()
+  ),
+  password: Yup.lazy((value) =>
+    value === "ACTIVE"
+      ? Yup.string().required("Password is required")
+      : Yup.string().notRequired()
+  ),
 });

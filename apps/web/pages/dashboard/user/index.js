@@ -32,6 +32,7 @@ import {
 } from "@/components/ui/dropdown-menu";
 import { Input } from "@/components/ui/input";
 import { Search } from 'lucide-react';
+import Image from 'next/image';
 
 export default function UsersPage() {
   const [currentPage, setCurrentPage] = useState(1);
@@ -74,7 +75,7 @@ export default function UsersPage() {
           <TableBody>
             <TableRow>
               <TableCell className="max-w-[1rem]">
-                <img src="/images/profile-picture.png" alt="Profile" className="h-15 w-15 rounded-full" />
+                 <Image src="/images/profile-picture.png" alt="Profile" width={60} height={60} className="rounded-full" />
               </TableCell>
               <TableCell className="max-w-[3rem] font-medium">Full Name</TableCell>
               <TableCell className="max-w-[3rem]">
@@ -119,7 +120,7 @@ export default function UsersPage() {
             </TableRow>
             <TableRow>
               <TableCell className="max-w-[1rem]">
-                <img src="/images/profile-picture.png" alt="Profile" className="h-15 w-15 rounded-full" />
+                 <Image src="/images/profile-picture.png" alt="Profile" width={60} height={60} className="rounded-full" />
               </TableCell>
               <TableCell className="max-w-[3rem] font-medium">Full Name</TableCell>
               <TableCell className="max-w-[3rem]">
@@ -164,7 +165,7 @@ export default function UsersPage() {
             </TableRow>
             <TableRow>
               <TableCell className="max-w-[1rem]">
-                <img src="/images/profile-picture.png" alt="Profile" className="h-15 w-15 rounded-full" />
+                 <Image src="/images/profile-picture.png" alt="Profile" width={60} height={60} className="rounded-full" />
               </TableCell>
               <TableCell className="max-w-[3rem] font-medium">Full Name</TableCell>
               <TableCell className="max-w-[3rem]">

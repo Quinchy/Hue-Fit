@@ -21,7 +21,7 @@ import formatDate from '@/utils/date-helpers';
 import routes from '@/routes';
 import BusinessLicense from '@/components/ui/business-license';
 import { useFormik } from 'formik';
-import manageShopRequestSchema from '@/utils/validation-schema';
+import { manageShopRequestSchema } from '@/utils/validation-schema';
 import { LoadingMessage } from "@/components/ui/loading-message";
 import { Skeleton } from "@/components/ui/skeleton";
 import { ErrorMessage, InputErrorMessage, InputErrorStyle } from "@/components/ui/error-message";
