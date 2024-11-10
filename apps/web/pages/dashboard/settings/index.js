@@ -211,7 +211,7 @@ export default function Settings() {
                             </TableCell>
                             {["canView", "canEdit", "canAdd", "canDelete"].map(
                               (permType) => (
-                                <TableCell className="text-center" key={permType}>
+                                <TableCell className="text-left" key={permType}>
                                   <Checkbox
                                     checked={perm[permType]}
                                     onCheckedChange={(checked) =>

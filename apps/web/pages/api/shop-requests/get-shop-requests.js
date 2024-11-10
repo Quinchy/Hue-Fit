@@ -13,10 +13,13 @@ export default async function handler(req, res) {
     const offset = (page - 1) * pageSize;
 
     const [totalRequests, requests] = await Promise.all([
-      prisma.partnershipRequests.count(),
+      // Count only the PENDING requests
+      prisma.partnershipRequests.count({
+        where: { status: 'PENDING' },
+      }),
       prisma.partnershipRequests.findMany({
+        where: { status: 'PENDING' }, // Filter by PENDING status
         orderBy: [
-          { status: 'asc' },
           { created_at: 'asc' },
         ],
         skip: offset,

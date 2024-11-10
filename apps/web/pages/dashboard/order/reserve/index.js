@@ -32,7 +32,6 @@ import { Button } from "@/components/ui/button";
 import { Eye } from 'lucide-react';
 import { Pencil } from 'lucide-react';
 import { Trash2 } from 'lucide-react';
-import { Plus } from 'lucide-react';
 import { Search } from 'lucide-react';
 import { ChevronDown } from 'lucide-react';
 import { NotepadText } from 'lucide-react';
@@ -43,9 +42,31 @@ export default function Reserves() {
     <DashboardLayoutWrapper>
       {/* Page Header */}
       <div className="flex flex-row justify-between">
-        <CardTitle className="text-4xl">Reserves</CardTitle>
+        <CardTitle className="text-4xl">Reserved Orders</CardTitle>
         <div className="flex flex-row gap-5">
-          <Input type="text" className="min-w-[30rem]" placeholder="Search reserve" variant="icon" icon={Search} />
+          <Input type="text" className="min-w-[30rem]" placeholder="Search reserved order" variant="icon" icon={Search} />
+          <DropdownMenu>
+            <DropdownMenuTrigger asChild>
+              <Button variant="outline" className="font-normal">
+                <NotepadText className="scale-125" />
+                Filter by Status 
+              </Button>
+            </DropdownMenuTrigger>
+            <DropdownMenuContent className="w-48">
+              <DropdownMenuGroup>
+                <DropdownMenuItem className="justify-center uppercase text-base tracking-wide font-semibold">
+                  <Button variant="none" className="text-base">
+                    Reserved
+                  </Button>
+                </DropdownMenuItem>
+                <DropdownMenuItem className="justify-center">
+                  <Button variant="none" className="text-base">
+                    Terminated
+                  </Button>
+                </DropdownMenuItem>
+              </DropdownMenuGroup>
+            </DropdownMenuContent>
+          </DropdownMenu> 
         </div>
       </div>
 
@@ -75,11 +96,13 @@ export default function Reserves() {
           <TableBody>
             {/* Sample Static Data Row */}
             <TableRow>
-              <TableCell className="max-w-[1rem]">Image Placeholder</TableCell>
-              <TableCell className="max-w-[3rem] overflow-hidden whitespace-nowrap text-ellipsis">VistaPeak Hoodie</TableCell>
-              <TableCell className="max-w-[1rem] text-center">2</TableCell>
-              <TableCell className="max-w-[1rem] text-center">₱2000</TableCell>
-              <TableCell className="max-w-[1rem] text-center text-blue-500 font-semibold">Reserved</TableCell>
+              <TableCell className="max-w-[1rem]">Order-Number</TableCell>
+              <TableCell className="max-w-[3rem] overflow-hidden whitespace-nowrap text-ellipsis">Product Name</TableCell>
+              <TableCell className="max-w-[1rem] text-center">Quantity</TableCell>
+              <TableCell className="max-w-[1rem] text-center">Price</TableCell>
+              <TableCell className="max-w-[1rem] text-center">
+                <p className="py-1 w-full rounded font-bold text-card bg-blue-500 uppercase">Reserved</p>
+              </TableCell>
               <TableCell className="max-w-[1rem] text-center">
                 <DropdownMenu>
                   <DropdownMenuTrigger asChild>

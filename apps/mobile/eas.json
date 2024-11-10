@@ -5,17 +5,26 @@
   },
   "build": {
     "development": {
+      "extends": "monorepo",
       "developmentClient": true,
-      "distribution": "internal"
-    },
-    "preview": {
-      "distribution": "internal"
+      "distribution": "internal",
+      "android": {
+        "buildType": "apk"
+      },
+      "ios": {
+        "resourceClass": "m1-medium"
+      }
     },
     "production": {
-      "autoIncrement": true
+      "extends": "monorepo",
+      "distribution": "store",
+      "autoIncrement": true,
+      "android": {
+        "buildType": "app-bundle"
+      },
+      "ios": {
+        "resourceClass": "m1-medium"
+      }
     }
-  },
-  "submit": {
-    "production": {}
   }
 }

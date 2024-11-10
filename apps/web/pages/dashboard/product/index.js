@@ -32,6 +32,9 @@ import {
   DropdownMenuItem,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
+import { Input } from "@/components/ui/input";
+import { Search } from 'lucide-react';
+import { NotepadText } from 'lucide-react';
 
 export default function ProductsPage() {
   const [currentPage, setCurrentPage] = useState(1);
@@ -45,7 +48,9 @@ export default function ProductsPage() {
   };
 
   const products = [
-    { id: 1, productNumber: "001", productName: "VistaPeak Hoodie", quantity: 2, type: "Upper Wear" },
+    { id: 1, productNumber: "Product-Number", productName: "Product Name", quantity: "Quantity", type: "Upper Wear" },
+    { id: 1, productNumber: "Product-Number", productName: "Product Name", quantity: "Quantity", type: "Lower Wear" },
+    { id: 1, productNumber: "Product-Number", productName: "Product Name", quantity: "Quantity", type: "Foot Wear" },
   ];
 
   const handleViewClick = () => {
@@ -60,19 +65,49 @@ export default function ProductsPage() {
     <DashboardLayoutWrapper>
       <div className="flex flex-row justify-between">
         <CardTitle className="text-4xl">Products</CardTitle>
-        <Button>
-            <Plus className="scale-110 stroke-[3px]" />
-            Add Product
-        </Button>
+        <div className="flex flex-row gap-5">
+          <Input type="text" className="min-w-[30rem]" placeholder="Search inquiries" variant="icon" icon={Search} />
+          <Button>
+              <Plus className="scale-110 stroke-[3px]" />
+              Add Product
+          </Button>
+          <DropdownMenu>
+            <DropdownMenuTrigger asChild>
+              <Button variant="outline" className="font-normal">
+                <NotepadText className="scale-125" />
+                Filter by Type
+              </Button>
+            </DropdownMenuTrigger>
+            <DropdownMenuContent className="w-48">
+              <DropdownMenuGroup>
+                <DropdownMenuItem className="justify-center uppercase text-base tracking-wide font-semibold">
+                  <Button variant="none" className="text-base">
+                    Upper Wear
+                  </Button>
+                </DropdownMenuItem>
+                <DropdownMenuItem className="justify-center">
+                  <Button variant="none" className="text-base">
+                    Lower Wear
+                  </Button>
+                </DropdownMenuItem>
+                <DropdownMenuItem className="justify-center">
+                  <Button variant="none" className="text-base">
+                    Foot Wear
+                  </Button>
+                </DropdownMenuItem>
+              </DropdownMenuGroup>
+            </DropdownMenuContent>
+          </DropdownMenu> 
+        </div>
       </div>
-      <Card className="flex flex-col gap-5 justify-between min-h-[43.75rem]">
+      <Card className="flex flex-col gap-5 justify-between min-h-[49.1rem]">
         <Table>
           <TableHeader>
             <TableRow>
               <TableHead className="max-w-[1rem]">Product Number</TableHead>
-              <TableHead className="max-w-[3rem]">Product Name</TableHead>
+              <TableHead className="max-w-[4rem]">Product Name</TableHead>
               <TableHead className="max-w-[1rem] text-center">Quantity</TableHead>
-              <TableHead className="max-w-[2rem] text-center">Type</TableHead>
+              <TableHead className="max-w-[1rem] text-center">Type</TableHead>
               <TableHead className="max-w-[1rem] text-center">Action</TableHead>
             </TableRow>
           </TableHeader>
@@ -81,9 +116,9 @@ export default function ProductsPage() {
               products.map((product) => (
                 <TableRow key={product.id}>
                   <TableCell className="max-w-[1rem] font-medium">{product.productNumber}</TableCell>
-                  <TableCell className="max-w-[3rem] overflow-hidden whitespace-nowrap text-ellipsis">{product.productName}</TableCell>
+                  <TableCell className="max-w-[4rem] overflow-hidden whitespace-nowrap text-ellipsis">{product.productName}</TableCell>
                   <TableCell className="max-w-[1rem] text-center">{product.quantity}</TableCell>
-                  <TableCell className="max-w-[2rem] text-center">{product.type}</TableCell>
+                  <TableCell className="max-w-[1rem] text-center">{product.type}</TableCell>
                   <TableCell className="max-w-[1rem] text-center">
                     <DropdownMenu>
                       <DropdownMenuTrigger asChild>

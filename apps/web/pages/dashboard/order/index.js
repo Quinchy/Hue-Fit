@@ -32,7 +32,6 @@ import { Button } from "@/components/ui/button";
 import { Eye } from 'lucide-react';
 import { Pencil } from 'lucide-react';
 import { Trash2 } from 'lucide-react';
-import { Plus } from 'lucide-react';
 import { Search } from 'lucide-react';
 import { ChevronDown } from 'lucide-react';
 import { NotepadText } from 'lucide-react';
@@ -46,6 +45,33 @@ export default function Orders() {
         <CardTitle className="text-4xl">Orders</CardTitle>
         <div className="flex flex-row gap-5">
           <Input type="text" className="min-w-[30rem]" placeholder="Search order" variant="icon" icon={Search} />
+          <DropdownMenu>
+            <DropdownMenuTrigger asChild>
+              <Button variant="outline" className="font-normal">
+                <NotepadText className="scale-125" />
+                Filter by Status 
+              </Button>
+            </DropdownMenuTrigger>
+            <DropdownMenuContent className="w-48">
+              <DropdownMenuGroup>
+                <DropdownMenuItem className="justify-center uppercase text-base tracking-wide font-semibold">
+                  <Button variant="none" className="text-base">
+                    Processing
+                  </Button>
+                </DropdownMenuItem>
+                <DropdownMenuItem className="justify-center">
+                  <Button variant="none" className="text-base">
+                    Shipping
+                  </Button>
+                </DropdownMenuItem>
+                <DropdownMenuItem className="justify-center">
+                  <Button variant="none" className="text-base">
+                    Delivered
+                  </Button>
+                </DropdownMenuItem>
+              </DropdownMenuGroup>
+            </DropdownMenuContent>
+          </DropdownMenu> 
         </div>
       </div>
 
@@ -75,11 +101,95 @@ export default function Orders() {
           <TableBody>
             {/* Sample Static Data Row */}
             <TableRow>
-              <TableCell className="max-w-[1rem]">Image Placeholder</TableCell>
-              <TableCell className="max-w-[3rem] overflow-hidden whitespace-nowrap text-ellipsis">Red VistaPeak Hoodie</TableCell>
-              <TableCell className="max-w-[1rem] text-center">2</TableCell>
-              <TableCell className="max-w-[1rem] text-center">₱2000</TableCell>
-              <TableCell className="max-w-[1rem] text-center">Processing</TableCell>
+              <TableCell className="max-w-[1rem]">Order-Number</TableCell>
+              <TableCell className="max-w-[3rem] overflow-hidden whitespace-nowrap text-ellipsis">Product Name</TableCell>
+              <TableCell className="max-w-[1rem] text-center">Quantity</TableCell>
+              <TableCell className="max-w-[1rem] text-center">Price</TableCell>
+              <TableCell className="max-w-[1rem] text-center">
+                <p className="py-1 w-full rounded font-bold text-card bg-yellow-500 uppercase">Processing</p>
+              </TableCell>
+              <TableCell className="max-w-[1rem] text-center">
+                <DropdownMenu>
+                  <DropdownMenuTrigger asChild>
+                    <Button variant="outline" className="font-normal">
+                      Action
+                      <ChevronDown className="scale-125" />
+                    </Button>
+                  </DropdownMenuTrigger>
+                  <DropdownMenuContent className="w-50">
+                    <DropdownMenuGroup>
+                      <DropdownMenuItem className="justify-center uppercase text-base tracking-wide font-semibold">
+                        <Button variant="none" className="text-base">
+                          <Eye className="scale-125" />
+                          View
+                        </Button>
+                      </DropdownMenuItem>
+                      <DropdownMenuItem className="justify-center">
+                        <Button variant="none" className="text-base">
+                          <Pencil className="scale-125" />
+                          Edit
+                        </Button>
+                      </DropdownMenuItem>
+                      <DropdownMenuItem className="justify-center">
+                        <Button variant="none" className="font-bold text-base text-red-500">
+                          <Trash2 className="scale-125 stroke-red-500" />
+                          Delete
+                        </Button>
+                      </DropdownMenuItem>
+                    </DropdownMenuGroup>
+                  </DropdownMenuContent>
+                </DropdownMenu>
+              </TableCell>
+            </TableRow>
+            <TableRow>
+              <TableCell className="max-w-[1rem]">Order-Number</TableCell>
+              <TableCell className="max-w-[3rem] overflow-hidden whitespace-nowrap text-ellipsis">Product Name</TableCell>
+              <TableCell className="max-w-[1rem] text-center">Quantity</TableCell>
+              <TableCell className="max-w-[1rem] text-center">Price</TableCell>
+              <TableCell className="max-w-[1rem] text-center">
+                <p className="py-1 w-full rounded font-bold text-card bg-orange-500 uppercase">Shipping</p>
+              </TableCell>
+              <TableCell className="max-w-[1rem] text-center">
+                <DropdownMenu>
+                  <DropdownMenuTrigger asChild>
+                    <Button variant="outline" className="font-normal">
+                      Action
+                      <ChevronDown className="scale-125" />
+                    </Button>
+                  </DropdownMenuTrigger>
+                  <DropdownMenuContent className="w-50">
+                    <DropdownMenuGroup>
+                      <DropdownMenuItem className="justify-center uppercase text-base tracking-wide font-semibold">
+                        <Button variant="none" className="text-base">
+                          <Eye className="scale-125" />
+                          View
+                        </Button>
+                      </DropdownMenuItem>
+                      <DropdownMenuItem className="justify-center">
+                        <Button variant="none" className="text-base">
+                          <Pencil className="scale-125" />
+                          Edit
+                        </Button>
+                      </DropdownMenuItem>
+                      <DropdownMenuItem className="justify-center">
+                        <Button variant="none" className="font-bold text-base text-red-500">
+                          <Trash2 className="scale-125 stroke-red-500" />
+                          Delete
+                        </Button>
+                      </DropdownMenuItem>
+                    </DropdownMenuGroup>
+                  </DropdownMenuContent>
+                </DropdownMenu>
+              </TableCell>
+            </TableRow>
+            <TableRow>
+              <TableCell className="max-w-[1rem]">Order-Number</TableCell>
+              <TableCell className="max-w-[3rem] overflow-hidden whitespace-nowrap text-ellipsis">Product Name</TableCell>
+              <TableCell className="max-w-[1rem] text-center">Quantity</TableCell>
+              <TableCell className="max-w-[1rem] text-center">Price</TableCell>
+              <TableCell className="max-w-[1rem] text-center">
+                <p className="py-1 w-full rounded font-bold text-card bg-green-500 uppercase">Delivered</p>
+              </TableCell>
               <TableCell className="max-w-[1rem] text-center">
                 <DropdownMenu>
                   <DropdownMenuTrigger asChild>

@@ -108,7 +108,7 @@ export default function ShopRequests() {
         <Table>
           <TableHeader>
             <TableRow>
-              <TableHead className="max-w-[1rem]">Request Number</TableHead>
+              <TableHead className="max-w-[1.2rem]">Request Number</TableHead>
               <TableHead className="max-w-[3rem]">Shop Name</TableHead>
               <TableHead className="max-w-[4rem]">Address</TableHead>
               <TableHead className="max-w-[1rem] text-center">Status</TableHead>
@@ -129,7 +129,7 @@ export default function ShopRequests() {
             ) : requests && requests.length > 0 ? (
               requests.map((request) => (
                 <TableRow key={request.id}>
-                  <TableCell className="max-w-[1rem] font-medium">{request.requestNo}</TableCell>
+                  <TableCell className="max-w-[1.2rem] font-medium">{request.requestNo}</TableCell>
                   <TableCell className="max-w-[3rem] overflow-hidden whitespace-nowrap text-ellipsis">{request.shopName}</TableCell>
                   <TableCell className="max-w-[4rem] overflow-hidden whitespace-nowrap text-ellipsis">
                     {`${request.buildingNo || ''} ${request.street || ''} ${request.barangay}, ${request.municipality}, ${request.province}`}

@@ -21,6 +21,7 @@ model Users {
   AdminProfile  AdminProfiles?
   CustomerProfile CustomerProfiles?
   VendorProfiles   VendorProfile?
+  OwnedShop     Shops?         @relation("ShopOwner") // Reference to Shops as owner
 }
 
 model Roles {
@@ -114,8 +115,8 @@ model PartnershipRequests {
 }
 
 model VendorProfile {
-  id             Int       @id @default(autoincrement())
-  userId         Int       @unique
+  id             Int             @id @default(autoincrement())
+  userId         Int             @unique
   shopId         Int
   profilePicture String?
   firstName      String
@@ -123,14 +124,11 @@ model VendorProfile {
   contactNo      String
   email          String
   position       String
-  created_at     DateTime  @default(now())
-  updated_at     DateTime  @updatedAt
+  created_at     DateTime        @default(now())
+  updated_at     DateTime        @updatedAt
 
-  User           Users     @relation(fields: [userId], references: [id])
-  Shop           Shops     @relation("ShopEmployees", fields: [shopId], references: [id])
-
-  // Relation for being the owner of a shop (optional)
-  OwnedShop      Shops?    @relation("ShopOwner")
+  User           Users           @relation(fields: [userId], references: [id])
+  Shop           Shops           @relation("ShopEmployees", fields: [shopId], references: [id])
 }
 
 model Shops {
@@ -141,16 +139,15 @@ model Shops {
   description     String?
   status          String
   contactNo       String
-  ownerId         Int             @unique // Ensures one-to-one relationship with VendorProfile
-  addressId       Int             @unique // Ensures one-to-one relationship with Addresses
+  ownerUserNo     String          @unique // Now using userNo from Users
+  addressId       Int             @unique
   businessLicense String
   created_at      DateTime        @default(now())
   updated_at      DateTime        @updatedAt
 
-  // Relations
+  Owner           Users           @relation("ShopOwner", fields: [ownerUserNo], references: [userNo]) // Reference to Users by userNo
+  Address         Addresses       @relation("ShopAddress", fields: [addressId], references: [id])
   Employees       VendorProfile[] @relation("ShopEmployees")
-  Owner           VendorProfile   @relation("ShopOwner", fields: [ownerId], references: [id])
-  Address         Addresses      @relation("ShopAddress", fields: [addressId], references: [id])
 }
 
 model Addresses {
@@ -172,8 +169,8 @@ model Addresses {
 model GoogleMapLocations {
   id             Int          @id @default(autoincrement())
   placeName      String?
-  latitude       String?
-  longitude      String?
+  latitude       Float?
+  longitude      Float?
   created_at     DateTime     @default(now())
   updated_at     DateTime     @updatedAt
 

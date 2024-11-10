@@ -99,7 +99,49 @@ export default function Shop() {
               <TableCell className="max-w-[1rem] font-medium">Shop Number</TableCell>
               <TableCell className="max-w-[3rem] overflow-hidden whitespace-nowrap text-ellipsis">Shop Name</TableCell>
               <TableCell className="max-w-[4rem] overflow-hidden whitespace-nowrap text-ellipsis">Address</TableCell>
-              <TableCell className="max-w-[1rem] text-center">Status</TableCell>
+              <TableCell className="max-w-[1rem] text-center">
+                <p className="py-1 w-full rounded font-bold text-card bg-green-500 uppercase">Active</p>
+              </TableCell>
+              <TableCell className="max-w-[1rem] text-center">
+              <DropdownMenu>
+                <DropdownMenuTrigger asChild>
+                  <Button variant="outline" className="font-normal">
+                    Action  
+                    <ChevronDown className="scale-125" />
+                  </Button>
+                </DropdownMenuTrigger>
+                <DropdownMenuContent className="w-50">
+                  <DropdownMenuGroup>
+                    <DropdownMenuItem className="justify-center uppercase text-base tracking-wide font-semibold">
+                      <Button variant="none" className="text-base">
+                        <Eye className="scale-125"/>
+                        View
+                      </Button>
+                    </DropdownMenuItem>
+                    <DropdownMenuItem className="justify-center">
+                      <Button variant="none" className="text-base">
+                        <Pencil className="scale-125"/>
+                        Edit
+                      </Button>
+                    </DropdownMenuItem>
+                    <DropdownMenuItem className="justify-center">
+                      <Button variant="none" className="font-bold text-base text-red-500">
+                        <Trash2 className="scale-125 stroke-red-500" />
+                        Delete
+                      </Button>
+                    </DropdownMenuItem>
+                  </DropdownMenuGroup>
+                </DropdownMenuContent>
+              </DropdownMenu> 
+              </TableCell>
+            </TableRow>
+            <TableRow>
+              <TableCell className="max-w-[1rem] font-medium">Shop Number</TableCell>
+              <TableCell className="max-w-[3rem] overflow-hidden whitespace-nowrap text-ellipsis">Shop Name</TableCell>
+              <TableCell className="max-w-[4rem] overflow-hidden whitespace-nowrap text-ellipsis">Address</TableCell>
+              <TableCell className="max-w-[1rem] text-center">
+                <p className="py-1 w-full rounded font-bold text-card bg-red-500 uppercase">Terminated</p>
+              </TableCell>
               <TableCell className="max-w-[1rem] text-center">
               <DropdownMenu>
                 <DropdownMenuTrigger asChild>
