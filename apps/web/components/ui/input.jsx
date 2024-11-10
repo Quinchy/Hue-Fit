@@ -5,7 +5,7 @@ import { cva } from "class-variance-authority";
 
 // Define the input variants including an icon variant
 const inputVariants = cva(
-  "flex h-[3rem] w-full rounded-md bg-accent px-5 py-1 text-sm shadow-sm transition-colors placeholder:text-muted-foreground focus-visible:border-none focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring disabled:cursor-not-allowed disabled:opacity-50",
+  "flex h-[3rem] w-full border-2 h-[3.2rem] border-border rounded-md bg-accent px-5 py-1 text-sm shadow-sm transition-colors placeholder:text-muted-foreground focus-visible:border-none focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring disabled:cursor-not-allowed disabled:opacity-50",
   {
     variants: {
       variant: {

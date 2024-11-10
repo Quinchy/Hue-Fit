@@ -119,6 +119,7 @@ export default async function handler(req, res) {
           googleMapPlaceName: shop.googleMapPlaceName || null,
           longitude: shop.longitude || null,
           latitude: shop.latitude || null,
+          status: "PENDING",
           created_at: new Date(),
           updated_at: new Date(),
         },

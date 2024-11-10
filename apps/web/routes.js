@@ -15,7 +15,7 @@ const routes = {
   shopEdit: '/dashboard/shop/edit/[shopNo]',
   shopView: '/dashboard/shop/view/[shopNo]',
   shopRequest: '/dashboard/shop/requests',
-  shopRequestEdit: '/dashboard/shop/requests/edit/[requestNo]',
+  shopRequestManage: '/dashboard/shop/requests/manage/[requestNo]',
   inquiry: '/dashboard/inquiry',
   inquiryAdd: '/dashboard/inquiry/add/[inquiryNo]',
   inquiryEdit: '/dashboard/inquiry/edit/[inquiryNo]',

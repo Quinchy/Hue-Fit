@@ -109,4 +109,5 @@ model PartnershipRequests {
   latitude           Float?
   created_at        DateTime  @default(now())
   updated_at        DateTime  @updatedAt
+  status            String    @default("PENDING") // New status field
 }
