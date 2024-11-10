@@ -20,6 +20,7 @@ model Users {
   Role          Roles         @relation(fields: [roleId], references: [id])
   AdminProfile  AdminProfiles?
   CustomerProfile CustomerProfiles?
+  VendorProfiles   VendorProfile?
 }
 
 model Roles {
@@ -110,4 +111,71 @@ model PartnershipRequests {
   created_at        DateTime  @default(now())
   updated_at        DateTime  @updatedAt
   status            String    @default("PENDING") // New status field
+}
+
+model VendorProfile {
+  id             Int       @id @default(autoincrement())
+  userId         Int       @unique
+  shopId         Int
+  profilePicture String?
+  firstName      String
+  lastName       String
+  contactNo      String
+  email          String
+  position       String
+  created_at     DateTime  @default(now())
+  updated_at     DateTime  @updatedAt
+
+  User           Users     @relation(fields: [userId], references: [id])
+  Shop           Shops     @relation("ShopEmployees", fields: [shopId], references: [id])
+
+  // Relation for being the owner of a shop (optional)
+  OwnedShop      Shops?    @relation("ShopOwner")
+}
+
+model Shops {
+  id              Int             @id @default(autoincrement())
+  shopNo          String          @unique
+  logo            String?
+  name            String
+  description     String?
+  status          String
+  contactNo       String
+  ownerId         Int             @unique // Ensures one-to-one relationship with VendorProfile
+  addressId       Int             @unique // Ensures one-to-one relationship with Addresses
+  businessLicense String
+  created_at      DateTime        @default(now())
+  updated_at      DateTime        @updatedAt
+
+  // Relations
+  Employees       VendorProfile[] @relation("ShopEmployees")
+  Owner           VendorProfile   @relation("ShopOwner", fields: [ownerId], references: [id])
+  Address         Addresses      @relation("ShopAddress", fields: [addressId], references: [id])
+}
+
+model Addresses {
+  id                Int                @id @default(autoincrement())
+  buildingNo        String
+  street            String
+  barangay          String
+  municipality      String
+  province          String
+  postalCode        String
+  googleMapId       Int                @unique // Ensures one-to-one relationship with GoogleMapLocations
+  created_at        DateTime           @default(now())
+  updated_at        DateTime           @updatedAt
+
+  GoogleMapLocation GoogleMapLocations @relation(fields: [googleMapId], references: [id])
+  Shop              Shops?              @relation("ShopAddress")
+}
+
+model GoogleMapLocations {
+  id             Int          @id @default(autoincrement())
+  placeName      String?
+  latitude       String?
+  longitude      String?
+  created_at     DateTime     @default(now())
+  updated_at     DateTime     @updatedAt
+
+  Address        Addresses?   // Back relation, no need to specify @relation attributes here
 }
