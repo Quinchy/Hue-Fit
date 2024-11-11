@@ -9,7 +9,7 @@ const BusinessLicense = ({ imageUrl }) => {
 
   // Determine if the file is a PDF
   const isPdf = imageUrl.toLowerCase().endsWith('.pdf');
-  const placeholderImage = '/images/placeholder-pdf.jpg'; // Path to the PDF placeholder image
+  const placeholderImage = '/images/placeholder-pdf.png'; // Path to the PDF placeholder image
 
   const handleOpenModal = () => {
     setIsModalOpen(true);

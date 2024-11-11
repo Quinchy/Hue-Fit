@@ -1,13 +1,14 @@
 // src/components/StylizedButton.tsx
 import React from 'react';
-import { Pressable, Text, IButtonProps, Box } from 'native-base';
+import { Pressable, Text, IButtonProps, Box, HStack } from 'native-base';
 
 interface RainbowButtonProps extends IButtonProps {
   title: string;
   onPress: () => void;
+  icon?: React.ReactNode; // Add an optional icon prop
 }
 
-const StylizedButton: React.FC<RainbowButtonProps> = ({ title, onPress, ...props }) => {
+const StylizedButton: React.FC<RainbowButtonProps> = ({ title, onPress, icon, ...props }) => {
   return (
     <Pressable onPress={onPress} width="100%">
       {({ isPressed }) => (
@@ -29,9 +30,12 @@ const StylizedButton: React.FC<RainbowButtonProps> = ({ title, onPress, ...props
           }}
           {...props}
         >
-          <Text color="black" fontWeight="bold" fontSize="md" textTransform="uppercase">
-            {title}
-          </Text>
+          <HStack alignItems="center" space={2}>
+            {icon && icon}
+            <Text color="black" fontWeight="bold" fontSize="md" textTransform="uppercase">
+              {title}
+            </Text>
+          </HStack>
         </Box>
       )}
     </Pressable>

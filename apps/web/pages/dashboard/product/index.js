@@ -47,12 +47,6 @@ export default function ProductsPage() {
     }
   };
 
-  const products = [
-    { id: 1, productNumber: "Product-Number", productName: "Product Name", quantity: "Quantity", type: "Upper Wear" },
-    { id: 1, productNumber: "Product-Number", productName: "Product Name", quantity: "Quantity", type: "Lower Wear" },
-    { id: 1, productNumber: "Product-Number", productName: "Product Name", quantity: "Quantity", type: "Foot Wear" },
-  ];
-
   const handleViewClick = () => {
     router.push(routes.productView.replace("[productNo]", "001"));
   };
@@ -112,54 +106,126 @@ export default function ProductsPage() {
             </TableRow>
           </TableHeader>
           <TableBody>
-            {products && products.length > 0 ? (
-              products.map((product) => (
-                <TableRow key={product.id}>
-                  <TableCell className="max-w-[1rem] font-medium">{product.productNumber}</TableCell>
-                  <TableCell className="max-w-[4rem] overflow-hidden whitespace-nowrap text-ellipsis">{product.productName}</TableCell>
-                  <TableCell className="max-w-[1rem] text-center">{product.quantity}</TableCell>
-                  <TableCell className="max-w-[1rem] text-center">{product.type}</TableCell>
-                  <TableCell className="max-w-[1rem] text-center">
-                    <DropdownMenu>
-                      <DropdownMenuTrigger asChild>
-                        <Button variant="outline" className="font-normal">
-                          Action  
-                          <ChevronDown className="scale-125" />
+            <TableRow>
+              <TableCell className="max-w-[1rem]">Product-Number</TableCell>
+              <TableCell className="max-w-[4rem] overflow-hidden whitespace-nowrap text-ellipsis">Product Name</TableCell>
+              <TableCell className="max-w-[1rem] text-center">Quantity</TableCell>
+              <TableCell className="max-w-[1rem] text-center">
+                <p className="py-1 w-full rounded font-bold text-card bg-blue-500 uppercase">Upper Wear</p>
+              </TableCell>
+              <TableCell className="max-w-[1rem] text-center">
+                <DropdownMenu>
+                  <DropdownMenuTrigger asChild>
+                    <Button variant="outline" className="font-normal">
+                      Action
+                      <ChevronDown className="scale-125" />
+                    </Button>
+                  </DropdownMenuTrigger>
+                  <DropdownMenuContent className="w-50">
+                    <DropdownMenuGroup>
+                      <DropdownMenuItem className="justify-center uppercase text-base tracking-wide font-semibold">
+                        <Button variant="none" className="text-base" onClick={handleViewClick}>
+                          <Eye className="scale-125" />
+                          View
                         </Button>
-                      </DropdownMenuTrigger>
-                      <DropdownMenuContent className="w-50">
-                        <DropdownMenuGroup>
-                          <DropdownMenuItem className="justify-center uppercase text-base tracking-wide font-semibold">
-                            <Button variant="none" className="text-base" onClick={handleViewClick}>
-                              <Eye className="scale-125"/>
-                              View
-                            </Button>
-                          </DropdownMenuItem>
-                          <DropdownMenuItem className="justify-center">
-                            <Button variant="none" className="text-base" onClick={handleEditClick}>
-                              <Pencil className="scale-125"/>
-                              Edit
-                            </Button>
-                          </DropdownMenuItem>
-                          <DropdownMenuItem className="justify-center">
-                            <Button variant="none" className="font-bold text-base text-red-500">
-                              <Trash2 className="scale-125 stroke-red-500" />
-                              Delete
-                            </Button>
-                          </DropdownMenuItem>
-                        </DropdownMenuGroup>
-                      </DropdownMenuContent>
-                    </DropdownMenu> 
-                  </TableCell>
-                </TableRow>
-              ))
-            ) : (
-              <TableRow>
-                <TableCell colSpan={5} className="text-center py-5">
-                  There are no products yet.
-                </TableCell>
-              </TableRow>
-            )}           
+                      </DropdownMenuItem>
+                      <DropdownMenuItem className="justify-center">
+                        <Button variant="none" className="text-base" onClick={handleEditClick}>
+                          <Pencil className="scale-125" />
+                          Edit
+                        </Button>
+                      </DropdownMenuItem>
+                      <DropdownMenuItem className="justify-center">
+                        <Button variant="none" className="font-bold text-base text-red-500">
+                          <Trash2 className="scale-125 stroke-red-500" />
+                          Delete
+                        </Button>
+                      </DropdownMenuItem>
+                    </DropdownMenuGroup>
+                  </DropdownMenuContent>
+                </DropdownMenu>
+              </TableCell>
+            </TableRow>
+            <TableRow>
+              <TableCell className="max-w-[1rem]">Product-Number</TableCell>
+              <TableCell className="max-w-[4rem] overflow-hidden whitespace-nowrap text-ellipsis">Product Name</TableCell>
+              <TableCell className="max-w-[1rem] text-center">Quantity</TableCell>
+              <TableCell className="max-w-[1rem] text-center">
+                <p className="py-1 w-full rounded font-bold text-card bg-teal-500 uppercase">Lower Wear</p>
+              </TableCell>
+              <TableCell className="max-w-[1rem] text-center">
+                <DropdownMenu>
+                  <DropdownMenuTrigger asChild>
+                    <Button variant="outline" className="font-normal">
+                      Action
+                      <ChevronDown className="scale-125" />
+                    </Button>
+                  </DropdownMenuTrigger>
+                  <DropdownMenuContent className="w-50">
+                    <DropdownMenuGroup>
+                      <DropdownMenuItem className="justify-center uppercase text-base tracking-wide font-semibold">
+                        <Button variant="none" className="text-base" onClick={handleViewClick}>
+                          <Eye className="scale-125" />
+                          View
+                        </Button>
+                      </DropdownMenuItem>
+                      <DropdownMenuItem className="justify-center">
+                        <Button variant="none" className="text-base" onClick={handleEditClick}>
+                          <Pencil className="scale-125" />
+                          Edit
+                        </Button>
+                      </DropdownMenuItem>
+                      <DropdownMenuItem className="justify-center">
+                        <Button variant="none" className="font-bold text-base text-red-500">
+                          <Trash2 className="scale-125 stroke-red-500" />
+                          Delete
+                        </Button>
+                      </DropdownMenuItem>
+                    </DropdownMenuGroup>
+                  </DropdownMenuContent>
+                </DropdownMenu>
+              </TableCell>
+            </TableRow>
+            <TableRow>
+              <TableCell className="max-w-[1rem]">Product-Number</TableCell>
+              <TableCell className="max-w-[4rem] overflow-hidden whitespace-nowrap text-ellipsis">Product Name</TableCell>
+              <TableCell className="max-w-[1rem] text-center">Quantity</TableCell>
+              <TableCell className="max-w-[1rem] text-center">
+                <p className="py-1 w-full rounded font-bold text-card bg-purple-500 uppercase">Foot Wear</p>
+              </TableCell>
+              <TableCell className="max-w-[1rem] text-center">
+                <DropdownMenu>
+                  <DropdownMenuTrigger asChild>
+                    <Button variant="outline" className="font-normal">
+                      Action
+                      <ChevronDown className="scale-125" />
+                    </Button>
+                  </DropdownMenuTrigger>
+                  <DropdownMenuContent className="w-50">
+                    <DropdownMenuGroup>
+                      <DropdownMenuItem className="justify-center uppercase text-base tracking-wide font-semibold">
+                        <Button variant="none" className="text-base" onClick={handleViewClick}>
+                          <Eye className="scale-125" />
+                          View
+                        </Button>
+                      </DropdownMenuItem>
+                      <DropdownMenuItem className="justify-center">
+                        <Button variant="none" className="text-base" onClick={handleEditClick}>
+                          <Pencil className="scale-125" />
+                          Edit
+                        </Button>
+                      </DropdownMenuItem>
+                      <DropdownMenuItem className="justify-center">
+                        <Button variant="none" className="font-bold text-base text-red-500">
+                          <Trash2 className="scale-125 stroke-red-500" />
+                          Delete
+                        </Button>
+                      </DropdownMenuItem>
+                    </DropdownMenuGroup>
+                  </DropdownMenuContent>
+                </DropdownMenu>
+              </TableCell>
+            </TableRow>
           </TableBody>
         </Table>
         <Pagination className="flex flex-col items-end">

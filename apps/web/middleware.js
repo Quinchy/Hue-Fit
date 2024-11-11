@@ -8,7 +8,7 @@ export async function middleware(req) {
 
   // Redirect unauthenticated users trying to access /dashboard paths
   if (!token && url.pathname.startsWith('/dashboard')) {
-    return NextResponse.redirect(new URL(routes.login, url));
+    return NextResponse.redirect(new URL("/account/login", url));
   }
 
   // If user is authenticated, check for role-based and permission-based access restrictions

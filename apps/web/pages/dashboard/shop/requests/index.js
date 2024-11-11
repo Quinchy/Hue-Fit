@@ -70,6 +70,19 @@ export default function ShopRequests() {
     router.push(routes.shopRequestManage.replace("[requestNo]", requestNo));
   };
 
+  const getStatusBgColor = (status) => {
+    switch (status) {
+      case "PENDING":
+        return "bg-yellow-500";
+      case "REJECTED":
+        return "bg-red-500";
+      case "DONE":
+        return "bg-green-500";
+      default:
+        return "bg-gray-200";
+    }
+  };
+
   return (
     <DashboardLayoutWrapper>
       <div className="flex flex-row justify-between">
@@ -134,7 +147,7 @@ export default function ShopRequests() {
                   <TableCell className="max-w-[4rem] overflow-hidden whitespace-nowrap text-ellipsis">
                     {`${request.buildingNo || ''} ${request.street || ''} ${request.barangay}, ${request.municipality}, ${request.province}`}
                   </TableCell>
-                  <TableCell className="max-w-[1rem] text-center">{request.status}</TableCell>
+                  <TableCell className="max-w-[1rem] text-center"><p className={`py-1 w-full rounded font-bold text-card ${getStatusBgColor(request.status)}`}>{request.status}</p></TableCell>
                   <TableCell className="max-w-[1rem] text-center">
                     <DropdownMenu>
                       <DropdownMenuTrigger asChild>

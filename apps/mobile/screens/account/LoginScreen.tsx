@@ -9,7 +9,7 @@ import OutlineButton from '../../components/OutlineButton';
 import GradientCard from '../../components/GradientCard';
 import Link from '../../components/Link';
 import AsyncStorage from '@react-native-async-storage/async-storage'; // For storing user data
-import { API_BASE_URL } from '@env';
+import { EXPO_PUBLIC_API_URL } from '@env';
 
 export default function LoginScreen({ navigation }) {
   const [username, setUsername] = useState('');
@@ -18,7 +18,7 @@ export default function LoginScreen({ navigation }) {
   // Handle login
   const handleLogin = async () => {
     try {
-      const apiUrl = `${API_BASE_URL}/api/mobile/auth/login`; // Update to new login API
+      const apiUrl = `${EXPO_PUBLIC_API_URL}/api/mobile/auth/login`; // Update to new login API
       const response = await fetch(apiUrl, {
         method: 'POST',
         headers: {

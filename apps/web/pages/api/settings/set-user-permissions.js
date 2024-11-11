@@ -30,9 +30,9 @@ export default async function handler(req, res) {
         })
       );
 
-      res.status(200).json({ message: 'Permissions updated successfully' });
-    } 
-    finally {
+      // Indicate that the client should refresh the session
+      res.status(200).json({ message: 'Permissions updated successfully', session_update: true });
+    } finally {
       await disconnectPrisma();
     }
   } else {

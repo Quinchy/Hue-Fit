@@ -51,13 +51,16 @@ export const authOptions = {
       };
       return session;
     },
-    async jwt({ token, user }) {
+    async jwt({ token, user, trigger, session }) {
       if (user) {
         token.id = user.id;
         token.role = user.role;
         token.roleId = user.roleId;
         token.userNo = user.userNo;
         token.permissions = await fetchPermissions(user.roleId);
+      }
+      if (trigger === "update" || session?.triggerUpdate) {
+        token.permissions = await fetchPermissions(token.roleId);
       }
       return token;
     },

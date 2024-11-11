@@ -26,9 +26,12 @@ export default async function handler(req, res) {
       roles,
       currentRoleId: roleId,
       currentRoleName: roles.find((role) => role.id === roleId)?.name || '',
+      session_update: true, // Optional flag to indicate the client might need to refresh
     });
-  } 
-  finally {
+  } catch (error) {
+    console.error("Error fetching permissions:", error);
+    res.status(500).json({ error: 'Error fetching permissions' });
+  } finally {
     await disconnectPrisma();
   }
 }

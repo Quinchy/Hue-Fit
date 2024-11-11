@@ -7,7 +7,7 @@ import CustomInput from '../../components/Input';
 import DefaultButton from '../../components/Button';
 import GradientCard from '../../components/GradientCard';
 import Link from '../../components/Link';
-import { API_BASE_URL } from '@env';
+import { EXPO_PUBLIC_API_URL } from '@env';
 
 export default function RegisterScreen({ navigation }) {
   // State for input fields
@@ -18,7 +18,7 @@ export default function RegisterScreen({ navigation }) {
   const [confirmPassword, setConfirmPassword] = useState('');
 
   // Log the imported API_BASE_URL to verify it’s being read correctly
-  console.log("API_BASE_URL:", API_BASE_URL);
+  console.log("EXPO_PUBLIC_API_URL:", EXPO_PUBLIC_API_URL);
 
   // Handle registration
   const handleRegister = async () => {
@@ -34,7 +34,7 @@ export default function RegisterScreen({ navigation }) {
 
     try {
       // Use the imported API_BASE_URL instead of Constants.manifest.extra
-      const apiUrl = `${API_BASE_URL}/api/mobile/auth/register`;
+      const apiUrl = `${EXPO_PUBLIC_API_URL}/api/mobile/auth/register`;
       console.log("apiUrl:", apiUrl); // Log the constructed URL
 
       // Make API request

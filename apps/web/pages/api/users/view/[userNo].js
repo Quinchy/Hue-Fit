@@ -17,7 +17,7 @@ export default async function handler(req, res) {
   try {
     const user = await prisma.users.findFirst({
       where: { userNo },
-      include: { Role: true, AdminProfile: true },
+      include: { Role: true, AdminProfile: true, VendorProfiles: true },
     });
 
     if (!user) {
@@ -32,6 +32,18 @@ export default async function handler(req, res) {
         firstName: user.AdminProfile?.firstName || null,
         lastName: user.AdminProfile?.lastName || null,
         profilePicture: user.AdminProfile?.profilePicture || null,
+      });
+    } else if (user.Role.name === "VENDOR") {
+      return res.status(200).json({
+        userNo: user.userNo,
+        username: user.username,
+        role: user.Role.name,
+        firstName: user.VendorProfiles?.firstName || null,
+        lastName: user.VendorProfiles?.lastName || null,
+        profilePicture: user.VendorProfiles?.profilePicture || null,
+        contactNo: user.VendorProfiles?.contactNo || null,
+        email: user.VendorProfiles?.email || null,
+        position: user.VendorProfiles?.position || null,
       });
     } else {
       return res.status(200).json({

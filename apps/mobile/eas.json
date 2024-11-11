@@ -6,6 +6,17 @@
     "production": {
       "android": {
         "buildType": "apk"
+      },
+      "env": {
+        "API_URL": "https://hue-fit-web.vercel.app"
+      }
+    },
+    "development": {
+      "android": {
+        "buildType": "app-bundle"
+      },
+      "env": {
+        "API_URL": "https://hue-fit-web.vercel.app"
       }
     }
   }
