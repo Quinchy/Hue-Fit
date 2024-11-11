@@ -24,7 +24,7 @@ export default function ViewProduct() {
           <p><strong>Product Number:</strong> X328D</p>
           <p><strong>Description:</strong> A comfortable and stylish upper wear ideal for casual outings. Made with premium cotton for breathability and durability.</p>
           <p><strong>Clothing Type:</strong> Upperwear</p>
-          <p><strong>Shop:</strong> ChaCharme Men's Apparel / Clothing</p>
+          <p><strong>Shop:</strong> ChaCharme Men&apos;s Apparel / Clothing</p>
           <p><strong>Total Quantity:</strong> 45</p>
         </Card>
       </div>
