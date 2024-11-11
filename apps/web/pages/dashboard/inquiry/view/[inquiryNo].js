@@ -1,68 +1,64 @@
 import DashboardLayoutWrapper from "@/components/ui/dashboard-layout";
 import { Card, CardTitle } from "@/components/ui/card";
-import {
-  Table,
-  TableBody,
-  TableCell,
-  TableHead,
-  TableHeader,
-  TableRow,
-} from "@/components/ui/table";
-import {
-  DropdownMenu,
-  DropdownMenuContent,
-  DropdownMenuGroup,
-  DropdownMenuItem,
-  DropdownMenuTrigger,
-} from "@/components/ui/dropdown-menu";
-import {
-  Pagination,
-  PaginationContent,
-  PaginationEllipsis,
-  PaginationItem,
-  PaginationLink,
-  PaginationNext,
-  PaginationPrevious,
-} from "@/components/ui/pagination";
-import Link from "next/link";
+import { Label } from "@/components/ui/label";
 import routes from '@/routes';
-import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
-import { Eye } from 'lucide-react';
-import { Pencil } from 'lucide-react';
-import { Trash2 } from 'lucide-react';
-import { Plus } from 'lucide-react';
-import { Search } from 'lucide-react';
-import { ChevronDown } from 'lucide-react';
-import { NotepadText } from 'lucide-react';
-import { buttonVariants } from "@/components/ui/button"
+import { MoveLeft } from 'lucide-react';
+import { useRouter } from 'next/router';
 
 export default function ViewInquiry() {
+  const router = useRouter();
+
+  const handleGoBack = () => {
+    router.push(routes.inquiry);
+  };
   return (
     <DashboardLayoutWrapper>
       {/* Header with Back Button */}
       <div className="flex flex-row justify-between items-center mb-5">
         <CardTitle className="text-4xl">Inquiry Detail</CardTitle>
-        <Button variant="outline" className="text-lg font-medium bg-black text-white px-4 py-2">
-          <Link href={routes.inquiry}>
-            &larr; Back to Inquiries
-          </Link>
+        <Button variant="outline" onClick={handleGoBack} className="font-normal">
+          <MoveLeft className="scale-125" />
+          Back to Inquiries
         </Button>
       </div>
 
       {/* Inquiry Detail Card */}
-      <Card className="p-6 rounded-lg shadow-md">
-        <div className="text-lg font-semibold mb-3">
-          Email: carlandrei.tallorin@gmail.com
+      <Card className="flex flex-col gap-5 p-6 rounded-lg shadow-md">
+        <div className="flex flex-row gap-3 items-center">
+          <Label className="font-bold">Email:</Label>
+          Email
         </div>
-        <div className="mb-2">
-          <strong>Subject:</strong> Unlock New Potential
+        <div className="flex flex-row gap-3 items-center">
+          <Label className="font-bold">Subject:</Label>
+          Subject
         </div>
-        <div className="mb-2">
-          <strong>Message:</strong> ChaCharmie Men&apos;s Apparel offers a stylish selection of men&apos;s clothing, combining modern designs with quality craftsmanship. Whether you&apos;re looking for casual wear, business attire, or trendy accessories, ChaCharmie provides versatile options that cater to every occasion. Stay sharp, comfortable, and on-trend with our curated collections.
+        <div className="flex flex-col gap-3">
+          <Label className="font-bold">Message:</Label>
+          Lorem ipsum odor amet, consectetuer adipiscing elit. Nulla libero euismod at aptent blandit amet auctor. 
+          Natoque varius posuere vehicula scelerisque pulvinar iaculis augue. Litora semper suspendisse porttitor 
+          inceptos pellentesque venenatis tortor cras. Hendrerit interdum ipsum egestas sed suscipit cubilia. 
+          Facilisis cubilia malesuada arcu eleifend sit. Mollis tortor dictum vel; tempor dignissim mus pulvinar sodales pretium.
+          Ac dapibus vehicula fames venenatis ac.
+          Lorem ipsum odor amet, consectetuer adipiscing elit. Nulla libero euismod at aptent blandit amet auctor. 
+          Natoque varius posuere vehicula scelerisque pulvinar iaculis augue. Litora semper suspendisse porttitor 
+          inceptos pellentesque venenatis tortor cras. Hendrerit interdum ipsum egestas sed suscipit cubilia. 
+          Facilisis cubilia malesuada arcu eleifend sit. Mollis tortor dictum vel; tempor dignissim mus pulvinar sodales pretium.
+          Ac dapibus vehicula fames venenatis ac.
+          Lorem ipsum odor amet, consectetuer adipiscing elit. Nulla libero euismod at aptent blandit amet auctor. 
+          Natoque varius posuere vehicula scelerisque pulvinar iaculis augue. Litora semper suspendisse porttitor 
+          inceptos pellentesque venenatis tortor cras. Hendrerit interdum ipsum egestas sed suscipit cubilia. 
+          Facilisis cubilia malesuada arcu eleifend sit. Mollis tortor dictum vel; tempor dignissim mus pulvinar sodales pretium.
+          Ac dapibus vehicula fames venenatis ac.
+          Lorem ipsum odor amet, consectetuer adipiscing elit. Nulla libero euismod at aptent blandit amet auctor. 
+          Natoque varius posuere vehicula scelerisque pulvinar iaculis augue. Litora semper suspendisse porttitor 
+          inceptos pellentesque venenatis tortor cras. Hendrerit interdum ipsum egestas sed suscipit cubilia. 
+          Facilisis cubilia malesuada arcu eleifend sit. Mollis tortor dictum vel; tempor dignissim mus pulvinar sodales pretium.
+          Ac dapibus vehicula fames venenatis ac.
         </div>
-        <div className="mt-2">
-          <strong>Date:</strong> October 14, 2024
+        <div className="flex flex-row gap-3 items-center">
+          <Label className="font-bold">Date:</Label>
+          Date
         </div>
       </Card>
     </DashboardLayoutWrapper>

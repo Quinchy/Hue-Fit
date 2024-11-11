@@ -3,13 +3,13 @@ import { useState } from 'react';
 import Dialog from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
 import Image from 'next/image';
+import Link from 'next/link';
 
 const BusinessLicense = ({ imageUrl }) => {
   const [isModalOpen, setIsModalOpen] = useState(false);
 
-  // Determine if the file is a PDF
   const isPdf = imageUrl.toLowerCase().endsWith('.pdf');
-  const placeholderImage = '/images/placeholder-pdf.png'; // Path to the PDF placeholder image
+  const placeholderImage = '/images/placeholder-pdf.png'; // Update this path if necessary
 
   const handleOpenModal = () => {
     setIsModalOpen(true);
@@ -21,32 +21,39 @@ const BusinessLicense = ({ imageUrl }) => {
 
   return (
     <div className="flex flex-col items-center">
-      {/* Thumbnail */}
+      {/* Thumbnail or placeholder for PDF */}
       <Image
-        src={isPdf ? placeholderImage : imageUrl} // Use placeholder for PDFs
+        src={isPdf ? placeholderImage : imageUrl}
         alt="Business License"
-        width={128} // 32rem converted to pixels (assuming 1rem = 16px)
-        height={128} // 32rem converted to pixels (assuming 1rem = 16px)
+        width={128}
+        height={128}
         onClick={!isPdf ? handleOpenModal : undefined} // Only open modal for images
         className="cursor-pointer object-cover rounded shadow-md"
       />
-      {/* Open button for PDFs to open in a new tab */}
+
+      {/* Open PDF Button, prevents form submission */}
       {isPdf && (
-        <a href={imageUrl} target="_blank" rel="noopener noreferrer" className="mt-2">
-          <Button>Open PDF</Button>
-        </a>
+        <Link
+          href={imageUrl}
+          target="_blank"
+          rel="noopener noreferrer"
+          onClick={(e) => e.stopPropagation()}
+          className="mt-2 bg-primary text-background w-full text-center font-bold rounded px-4 py-2"
+        >
+          Open PDF
+        </Link>
       )}
 
-      {/* Modal Popup for image files only */}
+      {/* Image Modal for image files only */}
       {!isPdf && isModalOpen && (
         <Dialog onClose={handleCloseModal} isOpen={isModalOpen}>
           <div className="relative flex items-center justify-center">
             <Image
               src={imageUrl}
               alt="Business License Full View"
-              width={720}   // 45rem converted to pixels (assuming 1rem = 16px)
-              height={720}  // 45rem converted to pixels (assuming 1rem = 16px)
-              className="object-scale-down rounded shadow-lg"
+              width={420}
+              height={420}
+              className="object-fill rounded shadow-lg"
             />
           </div>
         </Dialog>

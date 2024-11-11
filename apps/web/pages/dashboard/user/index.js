@@ -45,8 +45,12 @@ export default function UsersPage() {
     }
   };
 
-  const handleAddUserClick = () => {
-    router.push(routes.userAdd.replace("[userNo]", "new")); // Navigates to /dashboard/user/add/new
+  const handleViewClick = (userNo, role) => {
+    // Passing `userNo` and `role` as query parameters to the view route
+    router.push({
+      pathname: routes.userView.replace("[userNo]", userNo),
+      query: { role },
+    });
   };
 
   return (
@@ -55,7 +59,7 @@ export default function UsersPage() {
         <CardTitle className="text-4xl">Users</CardTitle>
         <div className="flex flex-row gap-5">
           <Input type="text" className="min-w-[30rem]" placeholder="Search user" variant="icon" icon={Search} />
-          <Button onClick={handleAddUserClick}>
+          <Button href={routes.userAdd}>
             <Plus className="scale-110 stroke-[3px]" />
             Add User
           </Button>
@@ -73,9 +77,10 @@ export default function UsersPage() {
             </TableRow>
           </TableHeader>
           <TableBody>
+            {/* Replace hardcoded TableRow items with dynamic data as needed */}
             <TableRow>
               <TableCell className="max-w-[1rem]">
-                 <Image src="/images/profile-picture.png" alt="Profile" width={60} height={60} className="rounded-full" />
+                <Image src="/images/profile-picture.png" alt="Profile" width={60} height={60} className="rounded-full" />
               </TableCell>
               <TableCell className="max-w-[3rem] font-medium">Full Name</TableCell>
               <TableCell className="max-w-[3rem]">
@@ -83,7 +88,7 @@ export default function UsersPage() {
                 <div className="text-primary/55">Email</div>
               </TableCell>
               <TableCell className="max-w-[1rem] text-center">
-                <p className="py-1 w-full rounded font-bold text-card bg-purple-500 uppercase">ADMIN</p>
+                <p className="py-1 w-full rounded font-bold text-card bg-yellow-500 uppercase">ADMIN</p>
               </TableCell>
               <TableCell className="max-w-[1rem] text-center">
                 <DropdownMenu>
@@ -96,13 +101,21 @@ export default function UsersPage() {
                   <DropdownMenuContent className="w-50">
                     <DropdownMenuGroup>
                       <DropdownMenuItem className="justify-center uppercase text-base tracking-wide font-semibold">
-                        <Button variant="none" className="text-base" onClick={() => router.push(routes.userView.replace("[userNo]", 1))}>
+                        <Button
+                          variant="none"
+                          className="text-base"
+                          onClick={() => handleViewClick(1, "ADMIN")} // Pass role as "ADMIN"
+                        >
                           <Eye className="scale-125"/>
                           View
                         </Button>
                       </DropdownMenuItem>
                       <DropdownMenuItem className="justify-center">
-                        <Button variant="none" className="text-base" onClick={() => router.push(routes.userEdit.replace("[userNo]", 1))}>
+                        <Button
+                          variant="none"
+                          className="text-base"
+                          onClick={() => router.push(routes.userEdit.replace("[userNo]", 1))}
+                        >
                           <Pencil className="scale-125"/>
                           Edit
                         </Button>
@@ -120,7 +133,7 @@ export default function UsersPage() {
             </TableRow>
             <TableRow>
               <TableCell className="max-w-[1rem]">
-                 <Image src="/images/profile-picture.png" alt="Profile" width={60} height={60} className="rounded-full" />
+                <Image src="/images/profile-picture.png" alt="Profile" width={60} height={60} className="rounded-full" />
               </TableCell>
               <TableCell className="max-w-[3rem] font-medium">Full Name</TableCell>
               <TableCell className="max-w-[3rem]">
@@ -128,7 +141,7 @@ export default function UsersPage() {
                 <div className="text-primary/55">Email</div>
               </TableCell>
               <TableCell className="max-w-[1rem] text-center">
-                <p className="py-1 w-full rounded font-bold text-card bg-yellow-500 uppercase">VENDOR</p>
+                <p className="py-1 w-full rounded font-bold text-card bg-purple-500 uppercase">VENDOR</p>
               </TableCell>
               <TableCell className="max-w-[1rem] text-center">
                 <DropdownMenu>
@@ -141,13 +154,21 @@ export default function UsersPage() {
                   <DropdownMenuContent className="w-50">
                     <DropdownMenuGroup>
                       <DropdownMenuItem className="justify-center uppercase text-base tracking-wide font-semibold">
-                        <Button variant="none" className="text-base" onClick={() => router.push(routes.userView.replace("[userNo]", 2))}>
+                        <Button
+                          variant="none"
+                          className="text-base"
+                          onClick={() => handleViewClick(1, "VENDOR")} // Pass role as "ADMIN"
+                        >
                           <Eye className="scale-125"/>
                           View
                         </Button>
                       </DropdownMenuItem>
                       <DropdownMenuItem className="justify-center">
-                        <Button variant="none" className="text-base" onClick={() => router.push(routes.userEdit.replace("[userNo]", 2))}>
+                        <Button
+                          variant="none"
+                          className="text-base"
+                          onClick={() => router.push(routes.userEdit.replace("[userNo]", 1))}
+                        >
                           <Pencil className="scale-125"/>
                           Edit
                         </Button>
@@ -165,15 +186,15 @@ export default function UsersPage() {
             </TableRow>
             <TableRow>
               <TableCell className="max-w-[1rem]">
-                 <Image src="/images/profile-picture.png" alt="Profile" width={60} height={60} className="rounded-full" />
+                <Image src="/images/profile-picture.png" alt="Profile" width={60} height={60} className="rounded-full" />
               </TableCell>
               <TableCell className="max-w-[3rem] font-medium">Full Name</TableCell>
               <TableCell className="max-w-[3rem]">
-                <div>Userame</div>
+                <div>Username</div>
                 <div className="text-primary/55">Email</div>
               </TableCell>
               <TableCell className="max-w-[1rem] text-center">
-                <p className="py-1 w-full rounded font-bold text-card bg-sky-500 uppercase">CUSTOMER</p>
+                <p className="py-1 w-full rounded font-bold text-card bg-sky-500 uppercase">Customer</p>
               </TableCell>
               <TableCell className="max-w-[1rem] text-center">
                 <DropdownMenu>
@@ -186,13 +207,21 @@ export default function UsersPage() {
                   <DropdownMenuContent className="w-50">
                     <DropdownMenuGroup>
                       <DropdownMenuItem className="justify-center uppercase text-base tracking-wide font-semibold">
-                        <Button variant="none" className="text-base" onClick={() => router.push(routes.userView.replace("[userNo]", 3))}>
+                        <Button
+                          variant="none"
+                          className="text-base"
+                          onClick={() => handleViewClick(1, "CUSTOMER")}
+                        >
                           <Eye className="scale-125"/>
                           View
                         </Button>
                       </DropdownMenuItem>
                       <DropdownMenuItem className="justify-center">
-                        <Button variant="none" className="text-base" onClick={() => router.push(routes.userEdit.replace("[userNo]", 3))}>
+                        <Button
+                          variant="none"
+                          className="text-base"
+                          onClick={() => router.push(routes.userEdit.replace("[userNo]", 1))}
+                        >
                           <Pencil className="scale-125"/>
                           Edit
                         </Button>

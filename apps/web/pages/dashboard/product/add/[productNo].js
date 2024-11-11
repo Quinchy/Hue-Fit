@@ -1,29 +1,29 @@
-import { useState } from 'react';
-import { useRouter } from 'next/router';
+// AddProduct.js
+import { useState } from "react";
+import { useRouter } from "next/router";
 import DashboardLayoutWrapper from "@/components/ui/dashboard-layout";
-import { Card, CardTitle } from "@/components/ui/card";
+import { CardTitle, Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { Plus, ChevronDown } from 'lucide-react';
-import {
-  DropdownMenu,
-  DropdownMenuContent,
-  DropdownMenuGroup,
-  DropdownMenuItem,
-  DropdownMenuTrigger,
-} from "@/components/ui/dropdown-menu";
+import { Plus, MoveLeft, Trash2 } from "lucide-react";
+import { Select, SelectContent, SelectGroup, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import ProductVariantCard from "../components/product-variant-card";
+import Image from "next/image";
+import { Label } from "@/components/ui/label";
 
 export default function AddProduct() {
   const router = useRouter();
   const [variants, setVariants] = useState([
     { id: 1, size: "Small", quantity: "", measurements: [] },
-    { id: 2, size: "Medium", quantity: "", measurements: [] },
-    { id: 3, size: "Large", quantity: "", measurements: [] },
   ]);
 
   const addVariant = () => {
     const newVariant = { id: variants.length + 1, size: "", quantity: "", measurements: [] };
     setVariants([...variants, newVariant]);
+  };
+
+  const removeVariant = (variantId) => {
+    setVariants((prevVariants) => prevVariants.filter((variant) => variant.id !== variantId));
   };
 
   const addMeasurement = (variantId) => {
@@ -39,115 +39,88 @@ export default function AddProduct() {
     setVariants(updatedVariants);
   };
 
+  const handleMeasurementChange = (variantId, index, field, value) => {
+    const updatedVariants = variants.map((variant) => {
+      if (variant.id === variantId) {
+        const updatedMeasurements = [...variant.measurements];
+        updatedMeasurements[index][field] = value;
+        return { ...variant, measurements: updatedMeasurements };
+      }
+      return variant;
+    });
+    setVariants(updatedVariants);
+  };
+
+  const handleUnitSelect = (variantId, index, unit) => {
+    handleMeasurementChange(variantId, index, "unit", unit);
+  };
+
   return (
     <DashboardLayoutWrapper>
       <div className="flex justify-between items-center mb-5">
         <CardTitle className="text-4xl">Add Product</CardTitle>
         <Button variant="outline" onClick={() => router.push('/dashboard/product')}>
-          ← Back to Products
+          <MoveLeft className="scale-125" />
+          Back to Products
         </Button>
       </div>
 
       <div className="flex gap-5 mb-10">
-        <div className="w-1/4 flex flex-col items-center">
-          <img src="/path/to/default-thumbnail.png" alt="Product Thumbnail" className="h-32 w-32 object-cover rounded mb-3" />
-          <Button variant="outline">+ Add Thumbnail</Button>
+        <div className="flex flex-col items-center gap-5">
+          <div className="bg-accent rounded border-8 border-card">
+            <Image src="/images/placeholder-picture.png" alt="Profile" width={320} height={320} className="max-w-[30rem]" />
+          </div>
+          <Button variant="outline" className="w-full">
+            <Plus className="scale-110 stroke-[3px] mr-2" />
+            Add Thumbnail
+          </Button>
         </div>
         <Card className="flex-1 p-5">
-          <h2 className="font-semibold text-lg mb-4">Product Information</h2>
+          <CardTitle className="text-2xl">Product Information</CardTitle>
           <div className="mb-4">
-            <label className="block font-semibold">Description</label>
-            <Input placeholder="Enter a description about the product" />
+            <Label className="font-bold">Description</Label>
+            <Input variant="textarea" placeholder="Enter a description about the product" />
           </div>
           <div className="mb-4">
             <label className="block font-semibold">Clothing Type</label>
-            <DropdownMenu>
-              <DropdownMenuTrigger asChild>
-                <Button variant="outline" className="w-full justify-between">
-                  Select a clothing type
-                  <ChevronDown className="ml-2" />
-                </Button>
-              </DropdownMenuTrigger>
-              <DropdownMenuContent className="w-full">
-                <DropdownMenuGroup>
-                  <DropdownMenuItem>Upper Wear</DropdownMenuItem>
-                  <DropdownMenuItem>Lower Wear</DropdownMenuItem>
-                  <DropdownMenuItem>Foot Wear</DropdownMenuItem>
-                </DropdownMenuGroup>
-              </DropdownMenuContent>
-            </DropdownMenu>
+            <Select>
+              <SelectTrigger className="w-1/2">
+                <SelectValue placeholder="Select an outfit category" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectGroup>
+                  <SelectItem value="upperwear">Upper Wear</SelectItem>
+                  <SelectItem value="lowerwear">Lower Wear</SelectItem>
+                  <SelectItem value="footwear">Foot Wear</SelectItem>
+                </SelectGroup>
+              </SelectContent>
+            </Select>
           </div>
         </Card>
       </div>
 
-      <div className="mb-5">
-        <CardTitle className="text-2xl">Product Variant</CardTitle>
+      <div className="mb-5 flex flex-row items-center gap-5">
+        <CardTitle className="text-2xl min-w-[14rem]">Product Variants</CardTitle>
+        <div className="h-[1px] w-full bg-primary/25"></div>
       </div>
 
       {variants.map((variant) => (
-        <div key={variant.id} className="flex gap-5 mb-5">
-          <div className="w-1/4 flex flex-col items-center">
-            <img src="/path/to/default-variant.png" alt="Variant Image" className="h-32 w-32 object-cover rounded mb-3" />
-            <Button variant="outline">+ Add More</Button>
-          </div>
-          <Card className="flex-1 p-5">
-            <h2 className="font-semibold text-lg mb-4">Product Variant Information</h2>
-            <div className="mb-4">
-              <label className="block font-semibold">Name</label>
-              <Input placeholder="Enter the product name" />
-            </div>
-            <div className="mb-4 flex gap-4">
-              <div className="flex-1">
-                <label className="block font-semibold">Price</label>
-                <Input placeholder="Enter the price" />
-              </div>
-              <div className="flex-1">
-                <label className="block font-semibold">Color</label>
-                <Input placeholder="Select or enter a color in hex" />
-              </div>
-            </div>
-            <div className="mb-4">
-              <label className="block font-semibold">Size</label>
-              <div className="flex gap-2">
-                {["XS", "S", "M", "L", "XL", "XXL"].map((size) => (
-                  <Button key={size} variant="outline" className="px-4">{size}</Button>
-                ))}
-              </div>
-            </div>
-
-            <h3 className="font-semibold text-lg mt-4 mb-2">Specific Measurements</h3>
-            {variant.measurements.map((measurement, index) => (
-              <div key={index} className="flex gap-3 mb-3">
-                <Input placeholder="Context (e.g., Chest)" className="flex-1" />
-                <Input placeholder="Value" className="flex-1" />
-                <DropdownMenu>
-                  <DropdownMenuTrigger asChild>
-                    <Button variant="outline" className="flex-1 justify-between">
-                      Pick a unit
-                      <ChevronDown className="ml-2" />
-                    </Button>
-                  </DropdownMenuTrigger>
-                  <DropdownMenuContent className="w-full">
-                    <DropdownMenuGroup>
-                      <DropdownMenuItem>Inch</DropdownMenuItem>
-                      <DropdownMenuItem>cm</DropdownMenuItem>
-                    </DropdownMenuGroup>
-                  </DropdownMenuContent>
-                </DropdownMenu>
-              </div>
-            ))}
-            <Button variant="ghost" className="w-full mt-2" onClick={() => addMeasurement(variant.id)}>
-              + Add Specific Measurements
-            </Button>
-          </Card>
-        </div>
+        <ProductVariantCard
+          key={variant.id}
+          variant={variant}
+          onAddMeasurement={addMeasurement}
+          onMeasurementChange={(index, field, value) => handleMeasurementChange(variant.id, index, field, value)}
+          onUnitSelect={(index, unit) => handleUnitSelect(variant.id, index, unit)}
+          onRemove={() => removeVariant(variant.id)} // Pass the remove function
+        />
       ))}
 
-      <Button variant="ghost" className="w-full mt-4" onClick={addVariant}>
-        + Add More Variant
+      <Button variant="outline" className="w-full mt-4" onClick={addVariant}>
+        <Plus className="scale-110 stroke-[3px]" />
+        Add Product Variant
       </Button>
 
-      <Button variant="primary" className="w-full mt-4">
+      <Button variant="default" className="w-full mt-4 mb-20">
         Submit
       </Button>
     </DashboardLayoutWrapper>

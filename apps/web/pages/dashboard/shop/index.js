@@ -13,12 +13,14 @@ import { Skeleton } from "@/components/ui/skeleton";
 import Link from "next/link";
 import { buttonVariants } from "@/components/ui/button";
 import routes from "@/routes";
+import { useRouter } from "next/router";
 
 export default function Shop() {
   const [shops, setShops] = useState([]);
   const [loading, setLoading] = useState(true);
   const [currentPage, setCurrentPage] = useState(1);
   const [totalPages, setTotalPages] = useState(1);
+  const router = useRouter();
 
   const fetchShops = async (page = 1) => {
     setLoading(true);
@@ -38,6 +40,14 @@ export default function Shop() {
   useEffect(() => {
     fetchShops(currentPage);
   }, [currentPage]);
+
+  const handleViewClick = (shopNo) => {
+    router.push(routes.shopView.replace("[shopNo]", shopNo));
+  };
+
+  const handleEditClick = (shopNo) => {
+    router.push(routes.shopEdit.replace("[shopNo]", shopNo));
+  };
 
   return (
     <DashboardLayoutWrapper>
@@ -63,10 +73,10 @@ export default function Shop() {
               </DropdownMenuGroup>
             </DropdownMenuContent>
           </DropdownMenu> 
-          <Button>
+          <Link className={buttonVariants({ variant: "default" })} href={routes.shopAdd}>
             <Plus className="scale-110 stroke-[3px]" />
             Add Shop
-          </Button>
+          </Link>
         </div>
       </div>
       <DashboardPagesNavigation>
@@ -122,13 +132,13 @@ export default function Shop() {
                         <DropdownMenuContent className="w-50">
                           <DropdownMenuGroup>
                             <DropdownMenuItem className="justify-center uppercase text-base tracking-wide font-semibold">
-                              <Button variant="none" className="text-base">
+                              <Button variant="none" className="text-base" onClick={() => handleViewClick("shopNo")}>
                                 <Eye className="scale-125"/>
                                 View
                               </Button>
                             </DropdownMenuItem>
                             <DropdownMenuItem className="justify-center">
-                              <Button variant="none" className="text-base">
+                              <Button variant="none" className="text-base" onClick={() => handleEditClick("shopNo")}>
                                 <Pencil className="scale-125"/>
                                 Edit
                               </Button>

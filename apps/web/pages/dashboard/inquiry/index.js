@@ -29,8 +29,14 @@ import { Eye, Trash2, ChevronDown } from 'lucide-react';
 import { Search } from 'lucide-react';
 import { NotepadText } from 'lucide-react';
 import { Input } from "@/components/ui/input";
+import routes from "@/routes";
+import { useRouter } from "next/router";
 
 export default function Inquiries() {
+  const router = useRouter();
+  const handleViewClick = (inquiryNo) => {
+    router.push(routes.inquiryView.replace("[requestNo]", inquiryNo));
+  };
   return (
     <DashboardLayoutWrapper>
       {/* Page Header */}
@@ -95,7 +101,7 @@ export default function Inquiries() {
                   <DropdownMenuContent className="w-50">
                     <DropdownMenuGroup>
                       <DropdownMenuItem className="justify-center uppercase text-base tracking-wide font-semibold">
-                        <Button variant="none" className="text-base">
+                        <Button variant="none" className="text-base" onClick={() => handleViewClick("inquiryNo")}>
                           <Eye className="scale-125" />
                           View
                         </Button>
@@ -129,7 +135,7 @@ export default function Inquiries() {
                   <DropdownMenuContent className="w-50">
                     <DropdownMenuGroup>
                       <DropdownMenuItem className="justify-center uppercase text-base tracking-wide font-semibold">
-                        <Button variant="none" className="text-base">
+                        <Button variant="none" className="text-base" onClick={() => handleViewClick("inquiryNo")}>
                           <Eye className="scale-125" />
                           View
                         </Button>

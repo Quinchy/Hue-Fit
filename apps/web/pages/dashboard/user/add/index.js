@@ -3,7 +3,9 @@ import { useRouter } from 'next/router';
 import DashboardLayoutWrapper from "@/components/ui/dashboard-layout";
 import { Card, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
+import { Plus, MoveLeft } from 'lucide-react';
 import routes from '@/routes';
+import Image from 'next/image';
 import {
   Select,
   SelectContent,
@@ -11,17 +13,15 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import Image from 'next/image';
-import { MoveLeft } from 'lucide-react';
-import { Pencil } from 'lucide-react';
+// Import the role-specific form components
 import AddAdminForm from '../components/add-admin-form';
 import AddVendorForm from '../components/add-vendor-form';
 import AddCustomerForm from '../components/add-customer-form';
 
-export default function EditUserPage() {
+export default function AddUserPage() {
   const router = useRouter();
   const [form, setForm] = useState({
-    role: 'VENDOR',
+    role: '',
     firstName: '',
     lastName: '',
     username: '',
@@ -37,12 +37,11 @@ export default function EditUserPage() {
     setForm((prevForm) => ({ ...prevForm, role: value }));
   };
 
-
   return (
     <DashboardLayoutWrapper>
       {/* Header with Back to Users Button */}
       <div className="flex items-center justify-between mb-4">
-        <CardTitle className="text-4xl">Edit User</CardTitle>
+        <CardTitle className="text-4xl">Add User</CardTitle>
         <Button variant="outline" onClick={() => router.push(routes.user)}>
           <MoveLeft className="scale-125" />
           Back to Users
@@ -55,10 +54,11 @@ export default function EditUserPage() {
             <Image src="/images/placeholder-profile-picture.png" alt="Profile" width={320} height={320} className='max-w-[30rem]' />
           </div>
           <Button variant="outline" className="w-full">
-            <Pencil className="scale-110 stroke-[3px] mr-2" />
-            Edit Picture
+            <Plus className="scale-110 stroke-[3px] mr-2" />
+            Add Picture
           </Button>
         </div>
+
         {/* Form Section */}
         <div className="w-3/4 space-y-6 mb-20">
           {/* Role Information */}

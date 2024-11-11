@@ -3,7 +3,9 @@ import React, { useState, useCallback, useRef } from 'react';
 import { GoogleMap, LoadScript, Marker, Autocomplete } from '@react-google-maps/api';
 import { Input } from '@/components/ui/input';
 
-const MapPicker = ({ onLocationSelect, center }) => {
+const DEFAULT_CENTER = { lat: 14.5995, lng: 120.9842 }; // Manila's coordinates
+
+const MapPicker = ({ onLocationSelect, center = DEFAULT_CENTER }) => {
   const [selectedPosition, setSelectedPosition] = useState(null);
   const autocompleteRef = useRef(null);
 

@@ -50,6 +50,7 @@ export default function ShopRequests() {
         const data = await response.json();
         setRequests(data.requests || []); // Ensure requests is always an array
         setTotalPages(data.totalPages || 1); // Default to at least 1 page
+        setCurrentPage(data.currentPage || 1); // Default to at least 1 page
       } catch (error) {
         console.error("Error fetching shop requests:", error);
       }
@@ -66,7 +67,6 @@ export default function ShopRequests() {
   };
 
   const handleManageClick = (requestNo) => {
-    console.log("Manage request:", requestNo);
     router.push(routes.shopRequestManage.replace("[requestNo]", requestNo));
   };
 
@@ -191,15 +191,33 @@ export default function ShopRequests() {
         </Table>
         <Pagination className="flex flex-col items-end">
           <PaginationContent>
-            <PaginationPrevious onClick={() => handlePageChange(currentPage - 1)} disabled={currentPage === 1} />
-            {Array.from({ length: totalPages }, (_, i) => i + 1).map((page) => (
-              <PaginationItem key={page} active={page === currentPage}>
-                <PaginationLink onClick={() => handlePageChange(page)}>
-                  {page}
+            {/* Previous button, disabled on the first page */}
+            {currentPage > 1 && (
+              <PaginationPrevious
+                onClick={() => handlePageChange(currentPage - 1)}
+              />
+            )}
+
+            {/* Page numbers */}
+            {Array.from({ length: totalPages }).map((_, index) => (
+              <PaginationItem key={index}>
+                <PaginationLink
+                  href="#"
+                  isActive={index + 1 === currentPage}
+                  onClick={() => handlePageChange(index + 1)}
+                >
+                  {index + 1}
                 </PaginationLink>
               </PaginationItem>
             ))}
-            <PaginationNext onClick={() => handlePageChange(currentPage + 1)} disabled={currentPage === totalPages} />
+
+            {/* Next button, disabled on the last page */}
+            {currentPage < totalPages && (
+              <PaginationNext
+                href="#"
+                onClick={() => handlePageChange(currentPage + 1)}
+              />
+            )}
           </PaginationContent>
         </Pagination>
       </Card>
