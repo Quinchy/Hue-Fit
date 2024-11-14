@@ -9,6 +9,15 @@ import GetStartedScreen from './screens/GetStartedScreen';
 import LoginScreen from './screens/account/LoginScreen';
 import RegisterScreen from './screens/account/RegisterScreen';
 import HomeScreen from './screens/app/HomeScreen';
+import CartScreen from './screens/app/CartScreen';
+import InputScreen from './screens/app/InputScreen';
+import NotificationScreen from './screens/app/NotificationScreen';
+import PlaygroundScreen from './screens/app/PlaygroundScreen';
+import ProductViewScreen from './screens/app/ProductViewScreen';
+import ProfileSettingsScreen from './screens/app/ProfileSettingsScreen';
+import ShopLocationScreen from './screens/app/ShopLocationScreen';
+import WardrobeScreen from './screens/app/WardrobeScreen';
+import SettingsScreen from './screens/app/SettingsScreen';
 import { LinearGradient } from 'expo-linear-gradient';
 import { Easing } from 'react-native';
 
@@ -80,6 +89,13 @@ export default function App() {
           <Stack.Screen name="Login" component={LoginScreen} options={{ unmountOnBlur: true }} />
           <Stack.Screen name="Register" component={RegisterScreen} options={{ unmountOnBlur: true }} />
           <Stack.Screen name="Home" component={HomeScreen} options={{ unmountOnBlur: true }} />
+          <Stack.Screen name="Wardrobe" component={WardrobeScreen} options={{ unmountOnBlur: true }} />
+          <Stack.Screen name="Cart" component={CartScreen} options={{ unmountOnBlur: true }} />
+          <Stack.Screen name="Profile Settings" component={ProfileSettingsScreen} options={{ unmountOnBlur: true }} />
+          <Stack.Screen name="Shop Location" component={ShopLocationScreen} options={{ unmountOnBlur: true }} />
+          <Stack.Screen name="Settings" component={SettingsScreen} options={{ unmountOnBlur: true }} />
+          <Stack.Screen name="Notification" component={NotificationScreen} options={{ unmountOnBlur: true }} />
+          <Stack.Screen name="Input" component={InputScreen} options={{ unmountOnBlur: true }} />
         </Stack.Navigator>
       </NavigationContainer>
     </NativeBaseProvider>

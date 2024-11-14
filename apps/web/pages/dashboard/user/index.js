@@ -33,6 +33,9 @@ import {
 import { Input } from "@/components/ui/input";
 import { Search } from 'lucide-react';
 import Image from 'next/image';
+import Link from 'next/link';
+import { buttonVariants } from '@/components/ui/button';
+import { NotepadText } from 'lucide-react';
 
 export default function UsersPage() {
   const [currentPage, setCurrentPage] = useState(1);
@@ -59,10 +62,31 @@ export default function UsersPage() {
         <CardTitle className="text-4xl">Users</CardTitle>
         <div className="flex flex-row gap-5">
           <Input type="text" className="min-w-[30rem]" placeholder="Search user" variant="icon" icon={Search} />
-          <Button href={routes.userAdd}>
+          <DropdownMenu>
+            <DropdownMenuTrigger asChild>
+              <Button variant="outline" className="font-normal">
+                <NotepadText className="scale-125" />
+                Filter by Role
+              </Button>
+            </DropdownMenuTrigger>
+            <DropdownMenuContent className="w-48">
+              <DropdownMenuGroup>
+                <DropdownMenuItem className="justify-center uppercase text-base tracking-wide font-semibold">
+                  <Button variant="none" className="text-base">Admin</Button>
+                </DropdownMenuItem>
+                <DropdownMenuItem className="justify-center">
+                  <Button variant="none" className="text-base">Vendor</Button>
+                </DropdownMenuItem>
+                <DropdownMenuItem className="justify-center">
+                  <Button variant="none" className="text-base">Customer</Button>
+                </DropdownMenuItem>
+              </DropdownMenuGroup>
+            </DropdownMenuContent>
+          </DropdownMenu> 
+          <Link className={buttonVariants({ variant: "default" })} href={routes.userAdd}>
             <Plus className="scale-110 stroke-[3px]" />
             Add User
-          </Button>
+          </Link>
         </div>
       </div>
       <Card className="flex flex-col gap-5 justify-between min-h-[49.1rem]">

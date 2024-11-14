@@ -1,5 +1,3 @@
-// components/ManageShopRequest.js
-
 import { useState, useEffect } from 'react';
 import { useRouter } from 'next/router';
 import DashboardLayoutWrapper from "@/components/ui/dashboard-layout";
@@ -24,7 +22,7 @@ import { useFormik } from 'formik';
 import { manageShopRequestSchema } from '@/utils/validation-schema';
 import { LoadingMessage } from "@/components/ui/loading-message";
 import { Skeleton } from "@/components/ui/skeleton";
-import { ErrorMessage, InputErrorMessage, InputErrorStyle } from "@/components/ui/error-message";
+import { ErrorMessage, InputErrorMessage } from "@/components/ui/error-message";
 
 export default function ManageShopRequest() {
   const [request, setRequest] = useState(null);
@@ -41,7 +39,7 @@ export default function ManageShopRequest() {
         try {
           const response = await fetch(`/api/shop-requests/get-manage-shop-request?requestNo=${requestNo}`);
           const data = await response.json();
-          setRequest(data);
+          setRequest(data);  // Set the full request data
         } catch (error) {
           console.error("Error fetching request data:", error);
         } finally {
@@ -55,8 +53,6 @@ export default function ManageShopRequest() {
   const formik = useFormik({
     initialValues: {
       status: request?.status || "",
-      username: "",
-      password: "",
     },
     enableReinitialize: true,
     validationSchema: manageShopRequestSchema,
@@ -67,7 +63,6 @@ export default function ManageShopRequest() {
         const requestPayload = {
           requestNo: request.requestNo,
           status: values.status,
-          ...(values.status === "ACTIVE" && { username: values.username, password: values.password }),
         };
         const response = await fetch(`/api/shop-requests/update-shop-requests`, {
           method: 'POST',
@@ -78,9 +73,11 @@ export default function ManageShopRequest() {
         const responseData = await response.json();
         if (!response.ok) throw new Error(responseData.message || "An unexpected error occurred.");
         router.push(routes.shopRequest);
-      } catch (error) {
+      } 
+      catch (error) {
         setErrorMessage(error.message || "Failed to submit the request. Please try again.");
-      } finally {
+      } 
+      finally {
         setSubmitting(false);
       }
     },
@@ -121,6 +118,8 @@ export default function ManageShopRequest() {
     router.push(routes.shopRequest);
   };
 
+  const isStatusLocked = request.status === "DONE";
+
   return (
     <DashboardLayoutWrapper>
       <div className='flex flex-row items-center justify-between'>
@@ -146,9 +145,38 @@ export default function ManageShopRequest() {
             </div>
           </div>
         </div>
+
         <form onSubmit={formik.handleSubmit}>
           <div className='flex flex-col gap-5'>
-            <CardTitle className="text-2xl">Shop Information</CardTitle>
+            <CardTitle className="text-2xl">Contact Person Information</CardTitle>
+            <div className="grid grid-cols-2 gap-4">
+              {request.contactPerson && (
+                <>
+                  <div className="flex flex-col gap-2">
+                    <Label>First Name</Label>
+                    <Input readOnly value={request.contactPerson.firstName} className="cursor-default" />
+                  </div>
+                  <div className="flex flex-col gap-2">
+                    <Label>Last Name</Label>
+                    <Input readOnly value={request.contactPerson.lastName} className="cursor-default" />
+                  </div>
+                  <div className="flex flex-col gap-2">
+                    <Label>Contact Number</Label>
+                    <Input readOnly value={request.contactPerson.contactNo} className="cursor-default" />
+                  </div>
+                  <div className="flex flex-col gap-2">
+                    <Label>Email</Label>
+                    <Input readOnly value={request.contactPerson.email} className="cursor-default" />
+                  </div>
+                  <div className="flex flex-col gap-2">
+                    <Label>Position</Label>
+                    <Input readOnly value={request.contactPerson.position} className="cursor-default" />
+                  </div>
+                </>
+              )}
+            </div>
+
+            <CardTitle className="text-2xl mt-8">Shop Information</CardTitle>
             <div className="grid grid-cols-2 gap-4">
               <div className="flex flex-col gap-2">
                 <Label>Shop Name</Label>
@@ -191,30 +219,37 @@ export default function ManageShopRequest() {
                 <Input readOnly value={request.latitude || 'N/A'} className="cursor-default" />
               </div>
             </div>
-            <div className="flex flex-col gap-2">
-              <CardTitle className="text-2xl">Location on Map</CardTitle>
+
+            <div className="flex flex-col gap-2 mt-8">
+              <Label>Location on Map</Label>
               <MapView latitude={request.latitude} longitude={request.longitude} />
               <div className="flex flex-col gap-2 mt-4 mb-4">
                 <Label>Google Map Place Name</Label>
                 <Input readOnly value={request.googleMapPlaceName || 'N/A'} className="cursor-default" />
               </div>
             </div>
-            <div className="flex flex-col items-start gap-2">
-              <Label>Business License URL</Label>
-              {request.businessLicense ? (
-                <BusinessLicense imageUrl={request.businessLicense} />
+
+            <Label>Business License URLs</Label>
+            <div className="flex flex-row items-center gap-5">
+              {request.businessLicense.length > 0 ? (
+                request.businessLicense.map((url, index) => (
+                  <BusinessLicense key={index} imageUrl={url} />
+                ))
               ) : (
-                <p>N/A</p>
+                <p>No business licenses available.</p>
               )}
             </div>
-            <div className="flex flex-col gap-2">
+
+            <div className="flex flex-col gap-2 mt-8">
               <Label>Status</Label>
               <Select
                 name="status"
-                value={formik.values.status}
+                value={formik.values.status || request?.shopStatus}
                 onValueChange={(value) => formik.setFieldValue("status", value)}
+                disabled={isStatusLocked}
+                className="w-[180px]"
               >
-                <SelectTrigger className="w-[180px]">
+                <SelectTrigger>
                   <SelectValue placeholder="Select a status" />
                 </SelectTrigger>
                 <SelectContent>
@@ -229,41 +264,12 @@ export default function ManageShopRequest() {
             </div>
 
             {errorMessage && <ErrorMessage message={errorMessage} className="text-red-500 mt-4" />}
-
-            {formik.values.status === "ACTIVE" && (
-              <div className="flex flex-col gap-4 mt-6">
-                <CardTitle className="text-2xl">Create Vendor Account</CardTitle>
-                <div className="flex flex-col gap-2">
-                  <Label>Username</Label>
-                  <Input
-                    name="username"
-                    placeholder="Enter username"
-                    value={formik.values.username}
-                    onChange={formik.handleChange}
-                    onBlur={formik.handleBlur}
-                    className={InputErrorStyle(formik.errors.username, formik.touched.username)}
-                  />
-                  <InputErrorMessage error={formik.errors.username} touched={formik.touched.username} />
-                </div>
-                <div className="flex flex-col gap-2">
-                  <Label>Password</Label>
-                  <Input
-                    name="password"
-                    type="password"
-                    placeholder="Enter password"
-                    value={formik.values.password}
-                    onChange={formik.handleChange}
-                    onBlur={formik.handleBlur}
-                    className={InputErrorStyle(formik.errors.password, formik.touched.password)}
-                  />
-                  <InputErrorMessage error={formik.errors.password} touched={formik.touched.password} />
-                </div>
-              </div>
+            
+            {!isStatusLocked && (
+              <Button type="submit" className="w-full mt-4" disabled={submitting}>
+                {submitting ? <LoadingMessage message="Submitting..." /> : "Submit"}
+              </Button>
             )}
-
-            <Button type="submit" className="w-full mt-4" disabled={submitting}>
-              {submitting ? <LoadingMessage message="Submitting..." /> : "Submit"}
-            </Button>
           </div>
         </form>
       </Card>

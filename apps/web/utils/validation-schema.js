@@ -18,25 +18,35 @@ export const permissionSchema = Yup.object({
   ),
 });
 
-export const partnershipRequestSchema = Yup.object({
+export const contactInfoSchema = Yup.object({
   firstName: Yup.string().required("First name is required."),
   lastName: Yup.string().required("Last name is required."),
   contactNo: Yup.string().required("Contact number is required."),
   email: Yup.string().email("Invalid email format.").required("Email is required."),
   position: Yup.string().required("Position is required."),
-  businessLicense: Yup.mixed()
-    .required("Business license is required.")
-    .test(
-      "fileSize",
-      "File size must be less than or equal to 20 MB",
-      (value) => !value || (value && value.size <= 20 * 1024 * 1024)
-    )
-    .test(
-      "fileType",
-      "File must be an image (jpg, jpeg, png, webp) or PDF",
-      (value) =>
-        !value || (value && ["image/jpeg", "image/png", "image/webp", "application/pdf"].includes(value.type))
-    ),
+});
+
+export const shopInfoSchema = Yup.object({
+  businessLicense: Yup.array()
+  .test(
+    "fileCount",
+    "You can upload a maximum of 5 files.",
+    (value) => value && value.length <= 5
+  )
+  .test(
+    "atLeastOneFile",
+    "At least one business license is required.",
+    (value) => value && value.length >= 1
+  )
+  .test(
+    "fileProperties",
+    "Each file must be a valid URL.",
+    (value) =>
+      value &&
+      value.every(
+        (url) => typeof url === "string" && url.startsWith("https") // Simple check to ensure it's a URL
+      )
+  ),
   shopName: Yup.string().required("Shop name is required."),
   shopContactNo: Yup.string().required("Shop contact number is required."),
   buildingNo: Yup.string().nullable(),
@@ -45,21 +55,29 @@ export const partnershipRequestSchema = Yup.object({
   municipality: Yup.string().required("Municipality is required."),
   province: Yup.string().required("Province is required."),
   postalNumber: Yup.string().required("Postal number is required."),
-  googleMapPlaceName: Yup.string().nullable(),
-  longitude: Yup.number().nullable(),
-  latitude: Yup.number().nullable(),
 });
 
+export const accountInfoSchema = Yup.object({
+  username: Yup.string().required("Username is required."),
+  password: Yup.string().required("Password is required."),
+});
+
+export const locationInfoSchema = Yup.object().shape({
+  googleMapPlaceName: Yup.string().nullable(),
+  latitude: Yup.number().required(),
+  longitude: Yup.number().required(),
+}).test(
+  'location-selected',
+  'You should mark the location of your shop on the Google Map or enter your registered Google Map Location on map picker.',
+  function (value) {
+    const { latitude, longitude } = value;
+    // Check if both latitude and longitude are not null
+    return latitude != null && longitude != null;
+  }
+);
+
 export const manageShopRequestSchema = Yup.object().shape({
-  status: Yup.string().required("Status is required"),
-  username: Yup.lazy((value) =>
-    value === "ACTIVE"
-      ? Yup.string().required("Username is required")
-      : Yup.string().notRequired()
-  ),
-  password: Yup.lazy((value) =>
-    value === "ACTIVE"
-      ? Yup.string().required("Password is required")
-      : Yup.string().notRequired()
-  ),
+  status: Yup.string()
+    .oneOf(["ACTIVE", "REJECTED"], "Please choose between ACTIVE or REJECTED status to submit")
+    .required("Status is required"),
 });

@@ -1,11 +1,12 @@
 import React from 'react'
 import { Text, View } from 'react-native';
+import BackgroundProvider from '../../providers/BackgroundProvider';
 
 const ProductViewScreen = () =>{
   return (
-    <View>
+    <BackgroundProvider>
         <Text>ProductView Screen</Text>
-    </View>
+    </BackgroundProvider>
   )
 }
 

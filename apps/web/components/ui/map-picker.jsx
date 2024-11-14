@@ -1,13 +1,23 @@
 // components/MapPicker.js
-import React, { useState, useCallback, useRef } from 'react';
-import { GoogleMap, LoadScript, Marker, Autocomplete } from '@react-google-maps/api';
+import React, { useState, useCallback, useRef, useEffect } from 'react';
+import { GoogleMap, useJsApiLoader, Marker, Autocomplete } from '@react-google-maps/api';
 import { Input } from '@/components/ui/input';
+import { Skeleton } from '@/components/ui/skeleton'; // Import the Skeleton component
 
-const DEFAULT_CENTER = { lat: 14.5995, lng: 120.9842 }; // Manila's coordinates
+const libraries = ['places']; // Define libraries outside the component to prevent re-creation on each render
+const BATAAN_CENTER = { lat: 14.676041, lng: 120.536389 }; // Precise Bataan coordinates
 
-const MapPicker = ({ onLocationSelect, center = DEFAULT_CENTER }) => {
+const MapPicker = ({ onLocationSelect, center = BATAAN_CENTER }) => {
   const [selectedPosition, setSelectedPosition] = useState(null);
+  const [mapCenter, setMapCenter] = useState(center);
+  const [inputValue, setInputValue] = useState(''); // State to control the input value
   const autocompleteRef = useRef(null);
+
+  // Use useJsApiLoader instead of LoadScript for better performance
+  const { isLoaded, loadError } = useJsApiLoader({
+    googleMapsApiKey: process.env.NEXT_PUBLIC_GOOGLE_MAPS_API_KEY,
+    libraries, // Use the predefined libraries array
+  });
 
   const handleMapClick = useCallback(
     (event) => {
@@ -15,7 +25,7 @@ const MapPicker = ({ onLocationSelect, center = DEFAULT_CENTER }) => {
       const lng = event.latLng.lng();
       const newPosition = { lat, lng };
       setSelectedPosition(newPosition);
-      if (onLocationSelect) onLocationSelect(newPosition, "None"); // Send "None" as the place name
+      if (onLocationSelect) onLocationSelect(newPosition, 'None');
     },
     [onLocationSelect]
   );
@@ -28,33 +38,54 @@ const MapPicker = ({ onLocationSelect, center = DEFAULT_CENTER }) => {
       const newPosition = { lat, lng };
 
       setSelectedPosition(newPosition);
-      if (onLocationSelect) onLocationSelect(newPosition, place.name); // Send place name
+      setMapCenter(newPosition);
+      setInputValue(place.name || ''); // Update input value to fix controlled/uncontrolled warning
+      if (onLocationSelect) onLocationSelect(newPosition, place.name);
     }
   };
 
-  return (
-    <LoadScript googleMapsApiKey={process.env.NEXT_PUBLIC_GOOGLE_MAPS_API_KEY} libraries={['places']}>
-      <GoogleMap
-        mapContainerStyle={{ width: '100%', height: '700px', borderRadius: '10px' }}
-        center={selectedPosition || center}
-        zoom={selectedPosition ? 15 : 6}
-        onClick={handleMapClick}
-        options={{
-          disableDefaultUI: false,
-          mapTypeControl: true,
-        }}
-      >
-        <Autocomplete onLoad={(ref) => (autocompleteRef.current = ref)} onPlaceChanged={handlePlaceSelected}>
-          <Input
-            type="text"
-            placeholder="Search for a place"
-            className="absolute top-2 left-2 z-10 w-80 p-2 border rounded-md shadow-sm"
-          />
-        </Autocomplete>
+  useEffect(() => {
+    setMapCenter(BATAAN_CENTER);
+  }, []);
 
-        {selectedPosition && <Marker position={selectedPosition} />}
-      </GoogleMap>
-    </LoadScript>
+  if (loadError) {
+    return <div>Error loading maps</div>;
+  }
+
+  if (!isLoaded) {
+    // Display Skeleton while the map is loading
+    return (
+      <div style={{ width: '100%', height: '700px', borderRadius: '10px' }}>
+        <Skeleton className="w-full h-full rounded-md" />
+      </div>
+    );
+  }
+
+  return (
+    <GoogleMap
+      mapContainerStyle={{ width: '100%', height: '700px', borderRadius: '10px' }}
+      center={mapCenter}
+      zoom={selectedPosition ? 15 : 10}
+      onClick={handleMapClick}
+      options={{
+        disableDefaultUI: false,
+        mapTypeControl: true,
+      }}
+    >
+      <Autocomplete
+        onLoad={(ref) => (autocompleteRef.current = ref)}
+        onPlaceChanged={handlePlaceSelected}
+      >
+        <Input
+          type="text"
+          placeholder="Search for a place"
+          value={inputValue} // Make input controlled
+          onChange={(e) => setInputValue(e.target.value)} // Update input value on change
+          className="absolute top-2 left-2 z-10 w-80 p-2 border rounded-md shadow-sm"
+        />
+      </Autocomplete>
+      {selectedPosition && <Marker position={selectedPosition} />}
+    </GoogleMap>
   );
 };
 

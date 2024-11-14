@@ -1,41 +1,75 @@
-// /pages/api/shop-requests/get-shop-requests.js
-
 import prisma from '@/utils/helpers';
 
 export default async function handler(req, res) {
-  if (req.method !== 'GET') {
-    return res.status(405).json({ message: 'Method not allowed' });
-  }
+  const { page = 1, perPage = 10, status = "PENDING" } = req.query;
 
   try {
-    // Parse page number and ensure it defaults to 1 if not specified or invalid
-    const page = parseInt(req.query.page, 10) || 1;
-    const pageSize = 7;
-    const offset = (page - 1) * pageSize;
+    // Step 1: Calculate total requests and pages
+    console.log("Fetching total requests count...");
+    const totalRequests = await prisma.partnershipRequests.count();
+    const totalPages = Math.ceil(totalRequests / perPage);
 
-    const [totalRequests, requests] = await Promise.all([
-      // Count only the PENDING requests
-      prisma.partnershipRequests.count({
-        where: { status: 'PENDING' },
-      }),
-      prisma.partnershipRequests.findMany({
-        where: { status: 'PENDING' },
-        orderBy: { created_at: 'asc' },
-        skip: offset,
-        take: pageSize,
-      }),
-    ]);
+    console.log(`Total requests: ${totalRequests}, Total pages: ${totalPages}`);
 
-    // Calculate total pages
-    const totalPages = Math.max(1, Math.ceil(totalRequests / pageSize));
+    // Step 2: Fetch the requests with the associated shop and address data
+    console.log("Fetching partnership requests with associated Shop and Address...");
+    const requests = await prisma.partnershipRequests.findMany({
+      skip: (page - 1) * perPage, // Pagination offset
+      take: perPage, // Pagination limit
+      where: { status },
+      include: {
+        Shop: {
+          select: {
+            shopNo: true,
+            name: true,
+            contactNo: true,
+            addressId: true, // Fetch the related addressId
+            Address: {
+              select: {
+                buildingNo: true,
+                street: true,
+                barangay: true,
+                municipality: true,
+                province: true,
+              },
+            },
+          },
+        },
+      },
+    });
 
-    return res.status(200).json({
-      requests,
-      totalPages,
-      currentPage: page,
+    console.log(`Fetched ${requests.length} requests`);
+
+    // Step 3: Format the data for the table
+    console.log("Formatting the requests data...");
+    const formattedRequests = requests.map((request) => {
+      console.log("Request:", request);
+
+      // Safely access the Address properties, ensuring they exist
+      const address = request.Shop.Address
+        ? `${request.Shop.Address.buildingNo} ${request.Shop.Address.street}, ${request.Shop.Address.barangay}, ${request.Shop.Address.municipality}, ${request.Shop.Address.province}`
+        : "No Address Provided"; // Fallback in case Address is not present
+
+      return {
+        requestNo: request.requestNo,
+        shopName: request.Shop.name,
+        shopContactNo: request.Shop.contactNo,
+        address: address,
+        status: request.status,
+      };
+    });
+
+    console.log("Formatted requests data:", formattedRequests);
+
+    // Step 4: Send response with formatted data
+    console.log("Sending the formatted response...");
+    res.status(200).json({
+      requests: formattedRequests,
+      totalPages: totalPages,
+      currentPage: parseInt(page),
     });
   } catch (error) {
-    console.error('Error fetching shop requests:', error);
-    return res.status(500).json({ message: 'Internal server error', requests: [], totalPages: 1 });
+    console.error("Error fetching shop requests:", error);
+    res.status(500).json({ message: 'Internal server error' });
   }
 }

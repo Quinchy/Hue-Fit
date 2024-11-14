@@ -1,31 +1,47 @@
 // prisma/seed.js
 
 const { PrismaClient } = require('@prisma/client');
-const bcrypt = require('bcrypt');
-
 const prisma = new PrismaClient();
 
 async function main() {
-  // Define the password to be hashed
-  const rawPassword = 'admin'; // Replace with the desired password
-  const hashedPassword = await bcrypt.hash(rawPassword, 10); // Hash the password with a salt round of 10
+  const shopNo = "1ecfb3d7";
 
-  // Upsert the user to update the password
-  await prisma.users.upsert({
-    where: { username: 'admin' }, // Identify user to update by username or userNo
-    update: {
-      password: hashedPassword, // Update the password with the hashed version
-    },
-    create: {
-      userNo: '797a951b-c0df-4193-bcf2-393ccd152d67', // Use the same userNo or generate a new one if needed
-      username: 'admin',
-      password: hashedPassword,
-      status: 'ACTIVE',
-      roleId: 1,
-    },
-  });
+  // Define the type and measurement mappings based on the IDs shown in the images
+  const typeMeasurementsData = [
+    // UPPERWEAR: typeId = 1
+    { typeId: 1, measurementName: "SHOULDER" },
+    { typeId: 1, measurementName: "SLEEVE" },
+    { typeId: 1, measurementName: "BUST" },
+    { typeId: 1, measurementName: "CUFF" },
 
-  console.log('Admin user seeded with updated password.');
+    // LOWERWEAR: typeId = 2
+    { typeId: 2, measurementName: "WAIST" },
+    { typeId: 2, measurementName: "HIP" },
+    { typeId: 2, measurementName: "INSEAM" },
+
+    // FOOTWEAR: typeId = 3
+    { typeId: 3, measurementName: "FOOT" },
+  ];
+
+  for (const item of typeMeasurementsData) {
+    // Find the measurement ID by name
+    const measurement = await prisma.measurements.findFirst({
+      where: { name: item.measurementName, shopNo },
+    });
+
+    if (measurement) {
+      await prisma.typeMeasurements.create({
+        data: {
+          shopNo,
+          typeId: item.typeId,
+          measurementId: measurement.id,
+        },
+      });
+      console.log(`Inserted measurement ${item.measurementName} for typeId ${item.typeId}`);
+    } else {
+      console.error(`Measurement ${item.measurementName} not found`);
+    }
+  }
 }
 
 main()

@@ -1,67 +1,142 @@
 import * as React from "react";
 import { useState } from "react";
-import { Upload } from 'lucide-react';
-import { ErrorMessage } from "@/components/ui/error-message";
+import { Upload, X } from 'lucide-react';
+import { Button } from "@/components/ui/button";
+import { supabase } from "@/supabaseClient"; // Import your supabase client
 
-const FileUpload = ({ onFileSelect, maxSizeMB = 20 }) => {
-  const [error, setError] = useState("");
-  const [fileName, setFileName] = useState(""); // State to store file name
+const FileUpload = ({ onFileSelect, maxFiles = 5, className = "" }) => {
+  const [fileMap, setFileMap] = useState({}); // Use an object to store files with unique keys
   const allowedTypes = ["image/jpeg", "image/png", "image/webp", "application/pdf"];
+  const [uploading, setUploading] = useState(false); // Track upload state
 
-  const handleFileChange = (event) => {
-    const file = event.target.files[0]; // Only allow one file
+  const handleFileChange = async (event) => {
+    const files = Array.from(event.target.files).slice(0, maxFiles - Object.keys(fileMap).length);
+    const updatedFileMap = { ...fileMap };
+    const uploadedUrls = [];
 
-    // Reset error state
-    setError('');
-    setFileName('');
+    setUploading(true);
 
-    if (file) {
-      // Check file type
-      if (!allowedTypes.includes(file.type)) {
-        setError('Unsupported file type. Only JPEG, PNG, WEBP, and PDF are allowed.');
-        return;
+    for (let index = 0; index < files.length; index++) {
+      const file = files[index];
+      const uniqueKey = `file${Date.now()}-${index}`; // Generate a unique key for each file
+
+      try {
+        const { data, error } = await uploadFileToSupabase(file);
+        if (error) throw error;
+
+        // Log the data object to inspect it
+        console.log("Supabase upload response data:", data);
+
+        // Store the file URL in state and push the URL to uploadedUrls
+        if (data && data.publicURL) {
+          updatedFileMap[uniqueKey] = { file, url: data.publicURL };
+          uploadedUrls.push(data.publicURL);
+          console.log(`Uploaded file URL: ${data.publicURL}`); // Log the URL after the file is uploaded
+        } else {
+          console.error("No public URL returned for file:", file.name);
+        }
+      } catch (error) {
+        console.error("Error uploading file:", error.message);
       }
-
-      // Check file size (in MB)
-      const fileSizeMB = file.size / (1024 * 1024);
-      if (fileSizeMB > maxSizeMB) {
-        setError(`File too large. Max size is ${maxSizeMB}MB.`);
-        return;
-      }
-
-      // If valid, set file name and pass file to parent handler
-      setFileName(file.name);
-      if (onFileSelect) onFileSelect(file);
     }
+
+    setFileMap(updatedFileMap);
+    setUploading(false);
+
+    // Pass the uploaded file URLs to the parent component
+    if (onFileSelect) onFileSelect(uploadedUrls);
   };
 
+  const uploadFileToSupabase = async (file) => {
+    const fileBuffer = await file.arrayBuffer();
+    const { data, error } = await supabase.storage
+      .from('business-licenses') // Your Supabase bucket
+      .upload(`licenses/${file.name}`, fileBuffer, {
+        cacheControl: '3600',
+        upsert: false,
+        contentType: file.type,
+      });
+  
+    if (error) {
+      console.error("Error uploading file:", error.message);
+      return { error };
+    }
+  
+    // Generate the public URL manually
+    const publicURL = `${process.env.NEXT_PUBLIC_SUPABASE_URL}/storage/v1/object/public/business-licenses/${data.path}`;
+  
+    return { data: { ...data, publicURL }, error: null };
+  };
+  
+  const handleRemoveFile = async (event, fileKey) => {
+    event.preventDefault();
+  
+    const fileToRemove = fileMap[fileKey];
+    console.log("Removing file:", fileToRemove.file.name);
+  
+    // Remove the file from fileMap
+    const updatedFileMap = { ...fileMap };
+    delete updatedFileMap[fileKey];
+    setFileMap(updatedFileMap);
+  
+    const filePathToRemove = `licenses/${fileToRemove.file.name}`;  // Use the path to the file stored in Supabase
+    
+    // Log the file path to ensure it's correct
+    console.log("Deleting file from Supabase at path:", filePathToRemove);
+  
+    // Remove the file from Supabase storage
+    try {
+      const { error } = await supabase.storage
+        .from('business-licenses')
+        .remove([filePathToRemove]);
+  
+      if (error) {
+        console.error("Error removing file from Supabase:", error.message);
+      } else {
+        console.log("File removed from Supabase successfully.");
+      }
+    } catch (error) {
+      console.error("Error during file removal:", error);
+    }
+  
+    if (onFileSelect) {
+      onFileSelect(Object.values(updatedFileMap).map(f => f.url)); // Update parent with the remaining URLs
+    }
+  };
+  
   return (
-    <div className="flex flex-col items-center justify-center border border-dashed border-border rounded-lg p-5">
-      <div className="flex flex-col items-center justify-center h-[12rem] w-full rounded-lg relative">
+    <div className={`flex flex-col items-center justify-center border-2 border-dashed rounded-lg p-5 ${className}`}>
+      <div className="flex flex-col items-center justify-center h-fit w-full rounded-lg relative">
         <input
           type="file"
           accept={allowedTypes.join(",")}
           onChange={handleFileChange}
           className="absolute inset-0 opacity-0 cursor-pointer"
+          multiple
         />
         <div className="flex flex-col items-center text-muted-foreground dark:text-accent-foreground">
           <Upload className="mb-2 w-8 h-8 stroke-primary/50" />
           <button className="px-4 py-2 text-base text-primary/65 font-semibold border-2 rounded-md shadow-sm uppercase">
             Browse
           </button>
-          <p className="mt-3 text-base text-primary/50 font-medium">UPLOAD YOUR BUSINESS LICENSE HERE</p>
+          <p className="mt-3 text-base text-primary/50 font-medium">UPLOAD YOUR BUSINESS LICENSES HERE</p>
           <p className="text-xs font-light text-primary/35 text-center">
             FILES SUPPORTED: JPEG, PNG, WEBP, & PDF <br />
-            THE MAX FILE SIZE IS {maxSizeMB}MB
+            THE MAX FILE SIZE IS 20 MB PER FILE <br />
+            MAX {maxFiles} FILES
           </p>
         </div>
-        {fileName && (
-          <p className="mt-2 text-primary text-sm font-semibold">
-            Selected File: {fileName}
-          </p>
-        )}
+        <p className="mt-5 mb-2 text-primary/50 font-medium">Selected Files:</p>
+        {Object.keys(fileMap).map((fileKey) => (
+          <div className="flex flex-row items-center gap-2" key={fileKey}>
+            <p className="font-thin text-primary/85">{fileMap[fileKey].file.name}</p>
+            <Button variant="none" className="z-40 scale-125 hover:bg-accent p-1 h-5" onClick={(e) => handleRemoveFile(e, fileKey)}>
+              <X />
+            </Button>
+          </div>
+        ))}
+        {uploading && <p className="text-sm text-primary/50">Uploading...</p>}
       </div>
-      {error && <ErrorMessage message={error} className="mt-2" />}
     </div>
   );
 };

@@ -1,4 +1,3 @@
-// auth/[...nextauth].js
 import NextAuth from "next-auth";
 import CredentialsProvider from 'next-auth/providers/credentials';
 import prisma, { fetchPermissions, disconnectPrisma } from '@/utils/helpers';
@@ -14,6 +13,7 @@ export const authOptions = {
       },
       authorize: async (credentials) => {
         try {
+          // Fetch the user along with their role
           const user = await prisma.users.findFirst({
             where: { username: credentials.username },
             include: { Role: true },
@@ -25,13 +25,29 @@ export const authOptions = {
           const isPasswordValid = await bcrypt.compare(credentials.password, user.password);
           if (!isPasswordValid) throw new Error("Invalid credentials.");
 
-          return {
+          // Initialize user object for session
+          const sessionUser = {
             id: user.id,
             name: user.username,
             role: user.Role.name,
             roleId: user.roleId,
-            userNo: user.userNo
+            userNo: user.userNo,
           };
+
+          // If the role is VENDOR, fetch the shopNo from VendorProfile and add it to the user session data
+          if (user.Role.name === "VENDOR") {
+            const vendorProfile = await prisma.vendorProfile.findUnique({
+              where: { userId: user.id },
+              select: {
+                Shop: {
+                  select: { shopNo: true },
+                },
+              },
+            });
+            sessionUser.shopNo = vendorProfile?.Shop?.shopNo || null;
+          }
+
+          return sessionUser;
         } finally {
           await disconnectPrisma();
         }
@@ -48,6 +64,7 @@ export const authOptions = {
         roleId: token.roleId,
         userNo: token.userNo,
         permissions: token.permissions,
+        shopNo: token.shopNo, // Include shopNo in the session if it exists
       };
       return session;
     },
@@ -58,6 +75,11 @@ export const authOptions = {
         token.roleId = user.roleId;
         token.userNo = user.userNo;
         token.permissions = await fetchPermissions(user.roleId);
+
+        // Store shopNo in token if the user is a vendor
+        if (user.role === "VENDOR") {
+          token.shopNo = user.shopNo;
+        }
       }
       if (trigger === "update" || session?.triggerUpdate) {
         token.permissions = await fetchPermissions(token.roleId);

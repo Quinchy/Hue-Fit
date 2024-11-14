@@ -28,7 +28,7 @@ const BusinessLicense = ({ imageUrl }) => {
         width={128}
         height={128}
         onClick={!isPdf ? handleOpenModal : undefined} // Only open modal for images
-        className="cursor-pointer object-cover rounded shadow-md"
+        className="cursor-pointer object-contain rounded shadow-md min-h-[12rem] min-w-[10rem] bg-primary px-1"
       />
 
       {/* Open PDF Button, prevents form submission */}
@@ -53,7 +53,7 @@ const BusinessLicense = ({ imageUrl }) => {
               alt="Business License Full View"
               width={420}
               height={420}
-              className="object-fill rounded shadow-lg"
+              className="object-fill rounded shadow-lg min-h-[40rem] min-w-[40rem]"
             />
           </div>
         </Dialog>

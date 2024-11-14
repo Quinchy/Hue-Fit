@@ -5,7 +5,23 @@ import { NextResponse } from 'next/server';
 export async function middleware(req) {
   const token = await getToken({ req, secret: process.env.NEXTAUTH_SECRET });
   const url = req.nextUrl.clone();
+  const stepPaths = [
+    "/partnership/1",
+    "/partnership/2",
+    "/partnership/3",
+    "/partnership/4",
+    "/partnership/success"
+  ];
 
+  // Partnership path check for preventing skipping forward steps
+  if (url.pathname.startsWith('/partnership')) {
+    const currentStep = parseInt(req.cookies.get("currentStep") || "1"); // Default to step 1 if not set
+    const currentStepIndex = stepPaths.indexOf(url.pathname);
+
+    if (currentStepIndex > currentStep - 1) {
+      return NextResponse.redirect(new URL(stepPaths[currentStep - 1], url));
+    }
+  }
   // Redirect unauthenticated users trying to access /dashboard paths
   if (!token && url.pathname.startsWith('/dashboard')) {
     return NextResponse.redirect(new URL("/account/login", url));
@@ -47,9 +63,10 @@ export async function middleware(req) {
       }
     }
   }
+  
   return NextResponse.next();
 }
 
 export const config = {
-  matcher: ['/dashboard/:path*', '/account/:path*'],
+  matcher: ['/dashboard/:path*', '/account/:path*', '/partnership/:path*'],
 };

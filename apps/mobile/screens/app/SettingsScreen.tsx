@@ -2,12 +2,12 @@ import React from 'react'
 import { Text, View } from 'react-native';
 import BackgroundProvider from '../../providers/BackgroundProvider';
 
-const ProfileSettingsScreen = () =>{
+const SettingsScreen = () =>{
   return (
     <BackgroundProvider>
-        <Text>ProfileSettings Screen</Text>
+      <Text>Settings Screen</Text>
     </BackgroundProvider>
   )
 }
 
-export default ProfileSettingsScreen
+export default SettingsScreen

@@ -9,19 +9,23 @@ datasource db {
 
 model Users {
   id         Int      @id @default(autoincrement())
-  userNo     String   @unique  // Make userNo unique
-  username   String   @unique
+  userNo     String   @unique // Make userNo unique
+  username   String
   password   String
   status     String
   roleId     Int
   created_at DateTime @default(now())
   updated_at DateTime @updatedAt
 
-  Role          Roles         @relation(fields: [roleId], references: [id])
-  AdminProfile  AdminProfiles?
+  Role            Roles             @relation(fields: [roleId], references: [id])
+  AdminProfile    AdminProfiles?
   CustomerProfile CustomerProfiles?
-  VendorProfiles   VendorProfile?
-  OwnedShop     Shops?         @relation("ShopOwner") // Reference to Shops as owner
+  VendorProfiles  VendorProfile?
+  OwnedShop       Shops?            @relation("ShopOwner") // Reference to Shops as owner
+
+  partnershipRequests PartnershipRequests[]
+
+  @@unique([username, roleId])
 }
 
 model Roles {
@@ -46,77 +50,66 @@ model Pages {
 }
 
 model Permissions {
-  id          Int      @id @default(autoincrement())
-  can_view    Boolean  @default(false)
-  can_edit    Boolean  @default(false)
-  can_delete  Boolean  @default(false)
-  can_add     Boolean  @default(false)
-  roleId      Int
-  pageId      Int
+  id         Int     @id @default(autoincrement())
+  can_view   Boolean @default(false)
+  can_edit   Boolean @default(false)
+  can_delete Boolean @default(false)
+  can_add    Boolean @default(false)
+  roleId     Int
+  pageId     Int
 
-  created_at  DateTime @default(now())
-  updated_at  DateTime @updatedAt
+  created_at DateTime @default(now())
+  updated_at DateTime @updatedAt
 
-  Role        Roles    @relation(fields: [roleId], references: [id])
-  Page        Pages    @relation(fields: [pageId], references: [id])
-  
+  Role Roles @relation(fields: [roleId], references: [id])
+  Page Pages @relation(fields: [pageId], references: [id])
+
   @@unique([roleId, pageId])
 }
 
 model AdminProfiles {
   id             Int      @id @default(autoincrement())
   userId         Int      @unique // Ensures one-to-one relation with Users
-  profilePicture String
+  profilePicture String?
   firstName      String
   lastName       String
   created_at     DateTime @default(now())
   updated_at     DateTime @updatedAt
 
-  User           Users    @relation(fields: [userId], references: [id]) // Relation to Users
+  User Users @relation(fields: [userId], references: [id]) // Relation to Users
 }
 
 model CustomerProfiles {
   id                 Int      @id @default(autoincrement())
-  userId             Int   @unique
+  userId             Int      @unique
   customerFeaturesId Int?
-  email              String?  // Nullable field for email
+  email              String? // Nullable field for email
   firstName          String
   lastName           String
   created_at         DateTime @default(now())
   updated_at         DateTime @updatedAt
 
   // Assuming relation to Users
-  User               Users    @relation(fields: [userId], references: [id])
+  User Users @relation(fields: [userId], references: [id])
 }
 
 model PartnershipRequests {
-  id                Int       @id @default(autoincrement())
-  requestNo         String    @unique
-  firstName         String
-  lastName          String
-  contactNo         String
-  email             String
-  position          String
-  businessLicense   String   
-  shopName          String
-  shopContactNo     String
-  buildingNo        String?
-  street            String?
-  barangay          String
-  municipality      String
-  province          String
-  postalNumber      String
-  googleMapPlaceName String?   
-  longitude          Float?
-  latitude           Float?
-  created_at        DateTime  @default(now())
-  updated_at        DateTime  @updatedAt
-  status            String    @default("PENDING") // New status field
+  id         Int      @id @default(autoincrement())
+  requestNo  String   @unique
+  userId     Int // Foreign key for Users
+  shopId     Int // Foreign key for Shops
+  status     String   @default("PENDING")
+  created_at DateTime @default(now())
+  updated_at DateTime @updatedAt
+
+  // Relations
+  User Users @relation(fields: [userId], references: [id])
+  Shop Shops @relation(fields: [shopId], references: [id])
 }
 
 model VendorProfile {
-  id             Int             @id @default(autoincrement())
-  userId         Int             @unique
+  id             Int      @id @default(autoincrement())
+  userId         Int      @unique
   shopId         Int
   profilePicture String?
   firstName      String
@@ -124,55 +117,224 @@ model VendorProfile {
   contactNo      String
   email          String
   position       String
-  created_at     DateTime        @default(now())
-  updated_at     DateTime        @updatedAt
+  created_at     DateTime @default(now())
+  updated_at     DateTime @updatedAt
 
-  User           Users           @relation(fields: [userId], references: [id])
-  Shop           Shops           @relation("ShopEmployees", fields: [shopId], references: [id])
+  User Users @relation(fields: [userId], references: [id])
+  Shop Shops @relation("ShopEmployees", fields: [shopId], references: [id])
 }
 
 model Shops {
-  id              Int             @id @default(autoincrement())
-  shopNo          String          @unique
-  logo            String?
-  name            String
-  description     String?
-  status          String
-  contactNo       String
-  ownerUserNo     String          @unique // Now using userNo from Users
-  addressId       Int             @unique
-  businessLicense String
-  created_at      DateTime        @default(now())
-  updated_at      DateTime        @updatedAt
+  id          Int      @id @default(autoincrement())
+  shopNo      String   @unique
+  logo        String?
+  name        String
+  description String?
+  status      String
+  contactNo   String
+  ownerUserNo String   @unique // Now using userNo from Users
+  addressId   Int      @unique
+  created_at  DateTime @default(now())
+  updated_at  DateTime @updatedAt
 
-  Owner           Users           @relation("ShopOwner", fields: [ownerUserNo], references: [userNo]) // Reference to Users by userNo
-  Address         Addresses       @relation("ShopAddress", fields: [addressId], references: [id])
-  Employees       VendorProfile[] @relation("ShopEmployees")
+  Owner               Users                  @relation("ShopOwner", fields: [ownerUserNo], references: [userNo])
+  Address             Addresses              @relation("ShopAddress", fields: [addressId], references: [id])
+  Employees           VendorProfile[]        @relation("ShopEmployees")
+  partnershipRequests PartnershipRequests[]
+  BusinessLicenses    ShopBusinessLicenses[] // New relation for multiple business licenses
+  Products            Products[]
+  Type                Type[]
+  Category            Category[]
+  Colors              Colors[]
+  Sizes               Sizes[]
+  Units               Units[]
+  Measurements        Measurements[]
+  TypeMeasurements    TypeMeasurements[]
 }
 
 model Addresses {
-  id                Int                @id @default(autoincrement())
-  buildingNo        String
-  street            String
-  barangay          String
-  municipality      String
-  province          String
-  postalCode        String
-  googleMapId       Int                @unique // Ensures one-to-one relationship with GoogleMapLocations
-  created_at        DateTime           @default(now())
-  updated_at        DateTime           @updatedAt
+  id           Int      @id @default(autoincrement())
+  buildingNo   String?
+  street       String?
+  barangay     String
+  municipality String
+  province     String
+  postalCode   String
+  googleMapId  Int      @unique // Ensures one-to-one relationship with GoogleMapLocations
+  created_at   DateTime @default(now())
+  updated_at   DateTime @updatedAt
 
   GoogleMapLocation GoogleMapLocations @relation(fields: [googleMapId], references: [id])
-  Shop              Shops?              @relation("ShopAddress")
+  Shop              Shops?             @relation("ShopAddress")
 }
 
 model GoogleMapLocations {
-  id             Int          @id @default(autoincrement())
-  placeName      String?
-  latitude       Float?
-  longitude      Float?
-  created_at     DateTime     @default(now())
-  updated_at     DateTime     @updatedAt
+  id         Int      @id @default(autoincrement())
+  placeName  String?
+  latitude   Float
+  longitude  Float
+  created_at DateTime @default(now())
+  updated_at DateTime @updatedAt
 
-  Address        Addresses?   // Back relation, no need to specify @relation attributes here
+  Address Addresses? // Back relation, no need to specify @relation attributes here
+}
+
+model ShopBusinessLicenses {
+  id         Int      @id @default(autoincrement())
+  shopId     Int // Foreign key for Shops
+  licenseUrl String // URL for each uploaded business license file
+  created_at DateTime @default(now())
+
+  Shop Shops @relation(fields: [shopId], references: [id])
+}
+
+model Products {
+  id            Int      @id @default(autoincrement())
+  productNo     String   @unique
+  shopNo        String
+  typeId        Int
+  categoryId    Int
+  name          String
+  description   String?
+  thumbnailURL  String?
+  totalQuantity Int?
+  created_at    DateTime @default(now())
+  updated_at    DateTime @updatedAt
+
+  Shop            Shops             @relation(fields: [shopNo], references: [shopNo])
+  Type            Type              @relation(fields: [typeId], references: [id])
+  Category        Category          @relation(fields: [categoryId], references: [id])
+  ProductVariants ProductVariants[]
+}
+
+model Type {
+  id          Int      @id @default(autoincrement())
+  shopNo      String
+  name        String
+  description String?
+  created_at  DateTime @default(now())
+  updated_at  DateTime @updatedAt
+
+  Shop             Shops              @relation(fields: [shopNo], references: [shopNo])
+  Products         Products[]
+  TypeMeasurements TypeMeasurements[]
+}
+
+model Category {
+  id          Int      @id @default(autoincrement())
+  shopNo      String
+  name        String
+  description String?
+  created_at  DateTime @default(now())
+  updated_at  DateTime @updatedAt
+
+  Shop     Shops      @relation(fields: [shopNo], references: [shopNo])
+  Products Products[]
+}
+
+model ProductVariants {
+  id               Int      @id @default(autoincrement())
+  productVariantNo String   @unique
+  productNo        String
+  colorId          Int
+  price            Decimal
+  totalQuantity    Int
+  created_at       DateTime @default(now())
+  updated_at       DateTime @updatedAt
+
+  Product                    Products                     @relation(fields: [productNo], references: [productNo])
+  Color                      Colors                       @relation(fields: [colorId], references: [id])
+  ProductVariantSizes        ProductVariantSizes[]
+  ProductVariantMeasurements ProductVariantMeasurements[]
+}
+
+model Colors {
+  id         Int      @id @default(autoincrement())
+  shopNo     String
+  name       String
+  hexcode    String
+  created_at DateTime @default(now())
+  updated_at DateTime @updatedAt
+
+  Shop            Shops             @relation(fields: [shopNo], references: [shopNo])
+  ProductVariants ProductVariants[]
+}
+
+model Sizes {
+  id           Int      @id @default(autoincrement())
+  shopNo       String
+  name         String
+  abbreviation String
+  nextId       Int?
+  created_at   DateTime @default(now())
+  updated_at   DateTime @updatedAt
+
+  Shop                Shops                 @relation(fields: [shopNo], references: [shopNo])
+  ProductVariantSizes ProductVariantSizes[]
+}
+
+model ProductVariantSizes {
+  id               Int      @id @default(autoincrement())
+  productVariantNo String
+  sizeId           Int
+  quantity         Int
+  created_at       DateTime @default(now())
+  updated_at       DateTime @updatedAt
+
+  ProductVariant             ProductVariants              @relation(fields: [productVariantNo], references: [productVariantNo])
+  Size                       Sizes                        @relation(fields: [sizeId], references: [id])
+  ProductVariantMeasurements ProductVariantMeasurements[]
+}
+
+model Units {
+  id           Int      @id @default(autoincrement())
+  shopNo       String
+  name         String
+  abbreviation String
+  created_at   DateTime @default(now())
+  updated_at   DateTime @updatedAt
+
+  Shop                       Shops                        @relation(fields: [shopNo], references: [shopNo])
+  ProductVariantMeasurements ProductVariantMeasurements[]
+}
+
+model Measurements {
+  id         Int      @id @default(autoincrement())
+  shopNo     String
+  name       String
+  created_at DateTime @default(now())
+  updated_at DateTime @updatedAt
+
+  Shop                       Shops                        @relation(fields: [shopNo], references: [shopNo])
+  ProductVariantMeasurements ProductVariantMeasurements[]
+  TypeMeasurements           TypeMeasurements[]
+}
+
+model ProductVariantMeasurements {
+  id                   Int      @id @default(autoincrement())
+  productVariantSizeId Int
+  measurementId        Int
+  value                Decimal
+  unitId               Int
+  created_at           DateTime @default(now())
+  updated_at           DateTime @updatedAt
+
+  ProductVariantSize ProductVariantSizes @relation(fields: [productVariantSizeId], references: [id])
+  Measurement        Measurements        @relation(fields: [measurementId], references: [id])
+  Unit               Units               @relation(fields: [unitId], references: [id])
+  ProductVariants    ProductVariants?    @relation(fields: [productVariantsId], references: [id])
+  productVariantsId  Int?
+}
+
+model TypeMeasurements {
+  id            Int    @id @default(autoincrement())
+  shopNo        String
+  typeId        Int
+  measurementId Int
+
+  Type        Type         @relation(fields: [typeId], references: [id])
+  Measurement Measurements @relation(fields: [measurementId], references: [id])
+  Shop        Shops        @relation(fields: [shopNo], references: [shopNo])
+
+  @@unique([typeId, measurementId]) // Ensures each type-measurement pair is unique
 }

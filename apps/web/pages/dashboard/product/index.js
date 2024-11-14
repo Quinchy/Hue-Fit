@@ -47,10 +47,6 @@ export default function ProductsPage() {
     }
   };
 
-  const handleAddProductClick = () => {
-    router.push(routes.productAdd.replace("[productNo]", "new")); // Navigates to /dashboard/product/add/[productNo]
-  };
-
   const handleViewClick = () => {
     router.push(routes.productView.replace("[productNo]", "001"));
   };
@@ -65,10 +61,10 @@ export default function ProductsPage() {
         <CardTitle className="text-4xl">Products</CardTitle>
         <div className="flex flex-row gap-5">
           <Input type="text" className="min-w-[30rem]" placeholder="Search inquiries" variant="icon" icon={Search} />
-          <Button onClick={handleAddProductClick}>
+          <Link className={buttonVariants({ variant: "default" })} href={routes.productAdd}>
               <Plus className="scale-110 stroke-[3px]" />
               Add Product
-          </Button>
+          </Link>
           <DropdownMenu>
             <DropdownMenuTrigger asChild>
               <Button variant="outline" className="font-normal">

@@ -1,6 +1,9 @@
 // components/MapView.js
 import React from 'react';
-import { GoogleMap, LoadScript, Marker, MarkerF } from '@react-google-maps/api';
+import { GoogleMap, useJsApiLoader, MarkerF } from '@react-google-maps/api';
+import { Skeleton } from '@/components/ui/skeleton'; // Import Skeleton component for loading
+
+const libraries = []; // No additional libraries needed for basic map view
 
 const MapView = ({ latitude, longitude }) => {
   if (!latitude || !longitude) {
@@ -9,46 +12,63 @@ const MapView = ({ latitude, longitude }) => {
 
   const position = { lat: latitude, lng: longitude };
 
+  // Load Google Maps API script
+  const { isLoaded, loadError } = useJsApiLoader({
+    googleMapsApiKey: process.env.NEXT_PUBLIC_GOOGLE_MAPS_API_KEY,
+    libraries,
+  });
+
+  if (loadError) {
+    return <div>Error loading maps</div>;
+  }
+
+  if (!isLoaded) {
+    // Display Skeleton while the map is loading
+    return (
+      <div style={{ width: '100%', height: '400px', borderRadius: '10px' }}>
+        <Skeleton className="w-full h-full rounded-md" />
+      </div>
+    );
+  }
+
   return (
-    <LoadScript googleMapsApiKey={process.env.NEXT_PUBLIC_GOOGLE_MAPS_API_KEY}>
-      <GoogleMap
-        mapContainerStyle={{ width: '100%', height: '400px', borderRadius: '10px' }}
-        center={position}
-        zoom={15}
-        options={{
-          disableDefaultUI: true, // Hide default map UI
-          draggable: true,       // Prevent map dragging
-          zoomControl: false,     // Disable zoom control
-          streetViewControl: false,
-          fullscreenControl: false,
-          mapTypeControl: false,
-          styles: [
-            {
-              featureType: 'poi',
-              elementType: 'labels',
-              stylers: [{ visibility: 'off' }]
-            },
-            {
-              featureType: 'transit',
-              elementType: 'labels',
-              stylers: [{ visibility: 'off' }]
-            },
-            {
-              featureType: 'road',
-              elementType: 'labels.icon',
-              stylers: [{ visibility: 'off' }]
-            },
-            {
-              featureType: 'administrative',
-              elementType: 'labels',
-              stylers: [{ visibility: 'off' }]
-            }
-          ]
-        }}
-      >
-        <MarkerF position={position} />
-      </GoogleMap>
-    </LoadScript>
+    <GoogleMap
+      mapContainerStyle={{ width: '100%', height: '700px', borderRadius: '10px' }}
+      center={position}
+      zoom={15}
+      options={{
+        disableDefaultUI: true,
+        draggable: true,
+        zoomControl: false,
+        streetViewControl: false,
+        fullscreenControl: false,
+        mapTypeControl: false,
+        styles: [
+          {
+            featureType: 'poi',
+            elementType: 'labels',
+            stylers: [{ visibility: 'off' }],
+          },
+          {
+            featureType: 'transit',
+            elementType: 'labels',
+            stylers: [{ visibility: 'off' }],
+          },
+          {
+            featureType: 'road',
+            elementType: 'labels.icon',
+            stylers: [{ visibility: 'off' }],
+          },
+          {
+            featureType: 'administrative',
+            elementType: 'labels',
+            stylers: [{ visibility: 'off' }],
+          },
+        ],
+      }}
+    >
+      <MarkerF position={position} />
+    </GoogleMap>
   );
 };
 

@@ -40,13 +40,14 @@ export default function ShopRequests() {
   const [requests, setRequests] = useState([]);
   const [currentPage, setCurrentPage] = useState(1);
   const [totalPages, setTotalPages] = useState(1);
+  const [statusFilter, setStatusFilter] = useState("PENDING"); 
   const router = useRouter();
 
   useEffect(() => {
     const fetchRequests = async () => {
       setLoading(true);
       try {
-        const response = await fetch(`/api/shop-requests/get-shop-requests?page=${currentPage}`);
+        const response = await fetch(`/api/shop-requests/get-shop-requests?page=${currentPage}&status=${statusFilter}`);
         const data = await response.json();
         setRequests(data.requests || []); // Ensure requests is always an array
         setTotalPages(data.totalPages || 1); // Default to at least 1 page
@@ -56,9 +57,10 @@ export default function ShopRequests() {
       }
       setLoading(false);
     };
-
+  
     fetchRequests();
-  }, [currentPage]);
+  }, [currentPage, statusFilter]);
+  
 
   const handlePageChange = (page) => {
     if (page >= 1 && page <= totalPages) {
@@ -82,6 +84,11 @@ export default function ShopRequests() {
         return "bg-gray-200";
     }
   };
+  
+  const handleStatusFilterChange = (status) => {
+    setStatusFilter(status); // Update the filter state
+    setCurrentPage(1); // Reset to the first page for a new filter
+  };
 
   return (
     <DashboardLayoutWrapper>
@@ -98,11 +105,11 @@ export default function ShopRequests() {
             </DropdownMenuTrigger>
             <DropdownMenuContent className="w-48">
               <DropdownMenuGroup>
-                <DropdownMenuItem className="justify-center uppercase text-base tracking-wide font-semibold">
-                  <Button variant="none" className="text-base">Pending</Button>
+                <DropdownMenuItem onClick={() => handleStatusFilterChange("PENDING")} className="justify-center uppercase text-base tracking-wide font-semibold">
+                  PENDING
                 </DropdownMenuItem>
-                <DropdownMenuItem className="justify-center">
-                  <Button variant="none" className="text-base">Rejected</Button>
+                <DropdownMenuItem onClick={() => handleStatusFilterChange("DONE")} className="justify-center uppercase text-base tracking-wide font-semibold">
+                  DONE
                 </DropdownMenuItem>
               </DropdownMenuGroup>
             </DropdownMenuContent>
@@ -145,9 +152,11 @@ export default function ShopRequests() {
                   <TableCell className="max-w-[1.2rem] font-medium">{request.requestNo}</TableCell>
                   <TableCell className="max-w-[3rem] overflow-hidden whitespace-nowrap text-ellipsis">{request.shopName}</TableCell>
                   <TableCell className="max-w-[4rem] overflow-hidden whitespace-nowrap text-ellipsis">
-                    {`${request.buildingNo || ''} ${request.street || ''} ${request.barangay}, ${request.municipality}, ${request.province}`}
+                    {request.address} {/* Use the full address string from the API */}
                   </TableCell>
-                  <TableCell className="max-w-[1rem] text-center"><p className={`py-1 w-full rounded font-bold text-card ${getStatusBgColor(request.status)}`}>{request.status}</p></TableCell>
+                  <TableCell className="max-w-[1rem] text-center">
+                    <p className={`py-1 w-full rounded font-bold text-card ${getStatusBgColor(request.status)}`}>{request.status}</p>
+                  </TableCell>
                   <TableCell className="max-w-[1rem] text-center">
                     <DropdownMenu>
                       <DropdownMenuTrigger asChild>

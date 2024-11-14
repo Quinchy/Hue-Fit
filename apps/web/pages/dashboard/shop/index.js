@@ -43,7 +43,7 @@ export default function Shop() {
 
   const handleViewClick = (shopNo) => {
     router.push(routes.shopView.replace("[shopNo]", shopNo));
-  };
+  };  
 
   const handleEditClick = (shopNo) => {
     router.push(routes.shopEdit.replace("[shopNo]", shopNo));
@@ -132,13 +132,13 @@ export default function Shop() {
                         <DropdownMenuContent className="w-50">
                           <DropdownMenuGroup>
                             <DropdownMenuItem className="justify-center uppercase text-base tracking-wide font-semibold">
-                              <Button variant="none" className="text-base" onClick={() => handleViewClick("shopNo")}>
-                                <Eye className="scale-125"/>
+                              <Button variant="none" className="text-base" onClick={() => handleViewClick(shop.shopNo)}>
+                                <Eye className="scale-125" />
                                 View
                               </Button>
                             </DropdownMenuItem>
                             <DropdownMenuItem className="justify-center">
-                              <Button variant="none" className="text-base" onClick={() => handleEditClick("shopNo")}>
+                              <Button variant="none" className="text-base" onClick={() => handleEditClick(shop.shopNo)}>
                                 <Pencil className="scale-125"/>
                                 Edit
                               </Button>
