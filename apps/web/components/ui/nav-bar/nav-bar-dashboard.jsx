@@ -1,4 +1,5 @@
 // nav-bar-dashboard.js
+
 import { signOut, useSession } from "next-auth/react";
 import routes from '@/routes';
 import HueFitLogo from '@/public/images/HueFitLogo';
@@ -47,18 +48,28 @@ const NavbarDashboard = () => {
       try {
         if (!session?.user?.userNo) return;
 
-        const response = await fetch(`/api/users/view/${session.user.userNo}`);
-        if (response.ok) {
-          const data = await response.json();
-          setUserInfo({
-            firstName: data.firstName,
-            lastName: data.lastName,
-            role: data.role,
-            profilePicture: data.profilePicture || "/images/profile-picture.png",
-          });
+        // Check if user data is in localStorage
+        const cachedUserInfo = localStorage.getItem(`userInfo-${session.user.userNo}`);
+        if (cachedUserInfo) {
+          setUserInfo(JSON.parse(cachedUserInfo));
           setLoading(false);
         } else {
-          console.error("Failed to fetch user data");
+          const response = await fetch(`/api/users/view/${session.user.userNo}`);
+          if (response.ok) {
+            const data = await response.json();
+            const userData = {
+              firstName: data.firstName,
+              lastName: data.lastName,
+              role: data.role,
+              profilePicture: data.profilePicture || "/images/profile-picture.png",
+            };
+            setUserInfo(userData);
+            setLoading(false);
+            // Cache user data in localStorage
+            localStorage.setItem(`userInfo-${session.user.userNo}`, JSON.stringify(userData));
+          } else {
+            console.error("Failed to fetch user data");
+          }
         }
       } catch (error) {
         console.error("An error occurred while fetching user data:", error);

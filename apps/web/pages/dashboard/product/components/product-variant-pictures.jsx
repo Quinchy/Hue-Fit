@@ -1,25 +1,31 @@
-// components/ProductVariantPictures.jsx
+// product-variant-pictures.jsx
 import { useState } from 'react';
 import Image from 'next/image';
 import { Plus, Trash2 } from 'lucide-react';
 import { Label } from '@/components/ui/label';
+import { useFormikContext } from 'formik';
 
-export default function ProductVariantPictures() {
-  const [images, setImages] = useState([]);
+export default function ProductVariantPictures({ variantIndex }) {
+  const { values, setFieldValue } = useFormikContext();
+
+  const images = values.variants[variantIndex].images || [];
 
   // Handle image upload
   const handleImageUpload = (event) => {
     const file = event.target.files[0];
     if (file) {
       const imageUrl = URL.createObjectURL(file);
-      const uniqueId = `${file.name}-${Date.now()}`; // Unique ID for each image based on name and timestamp
-      setImages((prevImages) => [...prevImages, { id: uniqueId, url: imageUrl }]);
+      const uniqueId = `${file.name}-${Date.now()}`;
+      const newImage = { id: uniqueId, file, url: imageUrl };
+      const updatedImages = [...images, newImage];
+      setFieldValue(`variants.${variantIndex}.images`, updatedImages);
     }
   };
 
   // Handle image removal
   const handleRemoveImage = (id) => {
-    setImages((prevImages) => prevImages.filter((image) => image.id !== id));
+    const updatedImages = images.filter((image) => image.id !== id);
+    setFieldValue(`variants.${variantIndex}.images`, updatedImages);
   };
 
   return (
@@ -31,6 +37,7 @@ export default function ProductVariantPictures() {
             <div key={image.id} className="relative bg-accent rounded border-8 border-border w-[320px] h-[320px] overflow-hidden mb-5">
               <Image src={image.url} alt={`Product Image ${index + 1}`} width={320} height={320} className="object-contain w-full h-full" />
               <button
+                type="button"
                 onClick={() => handleRemoveImage(image.id)}
                 className="absolute top-2 right-2 bg-red-500 text-white p-2 rounded shadow-accent shadow-sm hover:bg-red-700"
                 aria-label="Remove Image"

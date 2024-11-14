@@ -15,13 +15,14 @@ export async function middleware(req) {
 
   // Partnership path check for preventing skipping forward steps
   if (url.pathname.startsWith('/partnership')) {
-    const currentStep = parseInt(req.cookies.get("currentStep") || "1"); // Default to step 1 if not set
+    const currentStep = parseInt(req.cookies.get("currentStep") || "1");
     const currentStepIndex = stepPaths.indexOf(url.pathname);
 
     if (currentStepIndex > currentStep - 1) {
       return NextResponse.redirect(new URL(stepPaths[currentStep - 1], url));
     }
   }
+
   // Redirect unauthenticated users trying to access /dashboard paths
   if (!token && url.pathname.startsWith('/dashboard')) {
     return NextResponse.redirect(new URL("/account/login", url));
@@ -30,9 +31,8 @@ export async function middleware(req) {
   // If user is authenticated, check for role-based and permission-based access restrictions
   if (token) {
     const userRole = token.role;
-    const userPermissions = token.permissions; // Array of permission objects for the user's role
+    const userPermissions = token.permissions;
 
-    // Restrict access based on routes and permissions, using integer pageId values
     const restrictedRoutes = {
       ["/dashboard/shop"]: { pageId: 1, permission: "can_view" },
       ["/dashboard/inquiry"]: { pageId: 2, permission: "can_view" },
@@ -57,7 +57,6 @@ export async function middleware(req) {
         );
 
         if (!hasPermission) {
-          // Redirect to dashboard if user lacks permission for the specific route
           return NextResponse.redirect(new URL("/dashboard", url));
         }
       }

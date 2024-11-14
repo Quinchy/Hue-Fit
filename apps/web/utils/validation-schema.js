@@ -81,3 +81,80 @@ export const manageShopRequestSchema = Yup.object().shape({
     .oneOf(["ACTIVE", "REJECTED"], "Please choose between ACTIVE or REJECTED status to submit")
     .required("Status is required"),
 });
+
+Yup.addMethod(Yup.array, 'unique', function (field, message) {
+  return this.test('unique', message, function (list) {
+    if (!list) return true; // If list is undefined or null, don't validate
+    const seen = new Set();
+    const isUnique = list.every(item => {
+      const identifier = item[field];
+      if (seen.has(identifier)) return false;
+      seen.add(identifier);
+      return true;
+    });
+    return isUnique;
+  });
+});
+
+export const coreProductSchema = Yup.object({
+  thumbnail: Yup.mixed().required("Product image thumbnail is required."),
+  name: Yup.string().required("Product name is required."),
+  description: Yup.string().nullable(),
+  type: Yup.string().required("Product type is required."),
+  category: Yup.string().required("Product category is required."),
+});
+
+const measurementSchema = Yup.object().shape({
+  measurementName: Yup.string().required('Measurement is required'),
+  value: Yup.number()
+    .typeError('Value must be a number')
+    .positive('Value must be greater than 0.')
+    .required('Value is required'),
+  unitName: Yup.string().required('Unit is required'),
+});
+
+const measurementsBySizeSchema = Yup.lazy((obj) =>
+  Yup.object(
+    Object.keys(obj || {}).reduce((acc, size) => {
+      acc[size] = Yup.object().shape({
+        quantity: Yup.number()
+          .integer('Quantity must be a whole number.')
+          .positive('Quantity must be greater than 0.')
+          .required('Quantity is required.'),
+        measurements: Yup.array()
+          .of(measurementSchema)
+          .min(1, 'At least one measurement is required.'),
+      });
+      return acc;
+    }, {})
+  )
+);
+
+export const productVariantSchema = Yup.object().shape({
+  price: Yup.number()
+    .typeError("Price must be a number.")
+    .positive("Price must be a positive number.")
+    .required("Price is required."),
+  color: Yup.string().required("Color is required."),
+  sizes: Yup.array().of(Yup.string()).min(1, "At least one size is required."),
+  measurementsBySize: measurementsBySizeSchema,
+  images: Yup.array()
+    .of(Yup.object().shape({
+      id: Yup.string().required(),
+      file: Yup.mixed().required('Image file is required'),
+      url: Yup.string().required(),
+    }))
+    .min(1, 'At least one image is required.')
+    .required('Product images are required.'),
+});
+
+export const productSchema = Yup.object({
+  thumbnail: Yup.mixed().required("Product image thumbnail is required."),
+  name: Yup.string().required("Product name is required."),
+  description: Yup.string().nullable(),
+  type: Yup.string().required("Product type is required."),
+  category: Yup.string().required("Product category is required."),
+  variants: Yup.array()
+    .of(productVariantSchema)
+    .min(1, "At least one product variant is required."),
+});

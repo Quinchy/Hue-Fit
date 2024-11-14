@@ -1,4 +1,5 @@
-import { useState, useEffect } from "react";
+// index.jsx
+import { useState, useEffect, useRef } from "react";
 import { useRouter } from "next/router";
 import useSWR from 'swr';
 import DashboardLayoutWrapper from "@/components/ui/dashboard-layout";
@@ -10,32 +11,117 @@ import { Select, SelectContent, SelectGroup, SelectItem, SelectTrigger, SelectVa
 import ProductVariantCard from "../components/product-variant-card";
 import Image from "next/image";
 import { Label } from "@/components/ui/label";
+import { useFormik, FormikProvider, FieldArray, setNestedObjectValues } from "formik";
+import { productSchema } from "@/utils/validation-schema";
+import { ErrorMessage, InputErrorMessage, InputErrorStyle } from "@/components/ui/error-message";
 
-// Fetcher function for SWR
 const fetcher = (url) => fetch(url).then((res) => res.json());
 
 export default function AddProduct() {
   const router = useRouter();
-  const [productType, setProductType] = useState(null);
-  const [measurements, setMeasurements] = useState([]);
+  const [previewImage, setPreviewImage] = useState("/images/placeholder-picture.png");
+  const fileInputRef = useRef(null);
 
-  // Fetch product-related info
-  const { data: productData, error: productError } = useSWR('/api/products/get-product-related-info', fetcher);
+  const usePersistentSWR = (key, fetcher) => {
+    const { data, error } = useSWR(key, async () => {
+      const cachedData = JSON.parse(localStorage.getItem(key));
+      if (cachedData) return cachedData;
+      const freshData = await fetcher(key);
+      localStorage.setItem(key, JSON.stringify(freshData));
+      return freshData;
+    }, {
+      revalidateOnFocus: false,
+      dedupingInterval: 1000000,
+      keepPreviousData: true
+    });
 
-  // Fetch measurements based on selected productType
-  useEffect(() => {
-    if (productType) {
-      fetch(`/api/products/get-measurement-by-type?productType=${productType}`)
-        .then(res => res.json())
-        .then(data => setMeasurements(data.measurements))
-        .catch(err => console.error('Error fetching measurements:', err));
-    }
-  }, [productType]);
+    useEffect(() => {
+      if (data) localStorage.setItem(key, JSON.stringify(data));
+    }, [data, key]);
+
+    return { data, error };
+  };
+
+  const { data: productData, error: productError } = usePersistentSWR('/api/products/get-product-related-info', fetcher);
 
   if (productError) return <div>Failed to load product information</div>;
-  if (!productData) return <div>Loading...</div>;
 
-  const { types, categories, sizes, units } = productData;
+  const { types = [], categories = [] } = productData || {};
+
+  const isCoreProductValid = () => {
+    return (
+      formik.values.thumbnail &&
+      formik.values.name &&
+      formik.values.type &&
+      formik.values.category &&
+      !formik.errors.thumbnail &&
+      !formik.errors.name &&
+      !formik.errors.type &&
+      !formik.errors.category
+    );
+  };
+  
+  const formik = useFormik({
+    initialValues: {
+      thumbnail: null,
+      name: "",
+      description: "",
+      type: "",
+      category: "",
+      variants: []
+    },
+    validationSchema: productSchema,
+    onSubmit: async (values) => {
+      const formData = new FormData();
+      formData.append('thumbnail', values.thumbnail);
+      formData.append('name', values.name);
+      formData.append('description', values.description);
+      formData.append('type', values.type);
+      formData.append('category', values.category);
+
+      values.variants.forEach((variant, variantIndex) => {
+        formData.append(`variants[${variantIndex}][price]`, variant.price);
+        formData.append(`variants[${variantIndex}][color]`, variant.color);
+        variant.sizes.forEach((size, sizeIndex) => {
+          formData.append(`variants[${variantIndex}][sizes][${sizeIndex}]`, size);
+        });
+        formData.append(`variants[${variantIndex}][measurementsBySize]`, JSON.stringify(variant.measurementsBySize));
+        variant.images.forEach((image, imageIndex) => {
+          formData.append(`variants[${variantIndex}][images][${imageIndex}]`, image.file);
+        });
+      });
+
+      try {
+        const response = await fetch('/api/products/add-product', {
+          method: 'POST',
+          body: formData,
+        });
+        const result = await response.json();
+        console.log('Server response:', result);
+      } catch (error) {
+        console.error('Error submitting form:', error);
+      }
+    },
+    validateOnMount: true,
+    validateOnBlur: true,
+    validateOnChange: true,
+  });
+  
+
+  const handleImageChange = (e) => {
+    const file = e.target.files[0];
+    if (file) {
+      const imageURL = URL.createObjectURL(file);
+      setPreviewImage(imageURL);
+      formik.setFieldValue("thumbnail", file);
+    }
+  };
+
+  const openFilePicker = () => {
+    if (fileInputRef.current) {
+      fileInputRef.current.click();
+    }
+  };
 
   return (
     <DashboardLayoutWrapper>
@@ -46,80 +132,150 @@ export default function AddProduct() {
           Back to Products
         </Button>
       </div>
-
-      <div className="flex gap-5 mb-10">
-        <div className="flex flex-col items-center gap-5">
-          <div className="bg-accent rounded border-8 border-border">
-            <Image src="/images/placeholder-picture.png" alt="Profile" width={320} height={320} className="max-w-[30rem]" />
+      <form onSubmit={formik.handleSubmit}>
+        <div className="flex gap-5 mb-10">
+          <div className="flex flex-col items-center gap-5">
+            <div className="bg-accent rounded border-8 border-border w-80 h-80 overflow-hidden">
+              <Image
+                src={previewImage}
+                alt="Product Preview"
+                width={320}
+                height={320}
+                className="object-cover w-full h-full"
+              />
+            </div>
+            <input
+              type="file"
+              accept="image/*"
+              ref={fileInputRef}
+              className="hidden"
+              onChange={handleImageChange}
+            />
+            <Button variant="outline" type="button" className="w-full" onClick={openFilePicker}>
+              <Plus className="scale-110 stroke-[3px] mr-2" />
+              Upload Image
+            </Button>
+            <InputErrorMessage error={formik.errors.thumbnail} touched={formik.touched.thumbnail} />
           </div>
-          <Button variant="outline" className="w-full">
-            <Plus className="scale-110 stroke-[3px] mr-2" />
-            Add Thumbnail
-          </Button>
+          <Card className="flex flex-1 flex-col p-5 gap-5">
+            <CardTitle className="text-2xl">Product Information</CardTitle>
+            <div className="flex flex-col gap-3">
+              <Label className="font-bold">Name</Label>
+              <Input
+                placeholder="Enter the product name"
+                name="name"
+                value={formik.values.name}
+                onChange={formik.handleChange}
+                onBlur={formik.handleBlur}
+                className={InputErrorStyle(formik.errors.name, formik.touched.name)}
+              />
+              <InputErrorMessage error={formik.errors.name} touched={formik.touched.name} />
+            </div>
+            <div className="flex flex-col gap-3">
+              <Label className="font-bold">Description</Label>
+              <Input
+                variant="textarea"
+                placeholder="Enter a product description"
+                name="description"
+                value={formik.values.description}
+                onChange={formik.handleChange}
+              />
+            </div>
+            <div className="flex flex-col gap-3">
+              <label className="block font-semibold">Type</label>
+              <Select onValueChange={(value) => formik.setFieldValue("type", value)}>
+                <SelectTrigger className="w-1/2"  >
+                  <SelectValue placeholder="Select a type of clothing product" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectGroup>
+                    {types.map((type) => (
+                      <SelectItem key={type.id} value={type.name}>
+                        {type.name}
+                      </SelectItem>
+                    ))}
+                  </SelectGroup>
+                </SelectContent>
+              </Select>
+              <InputErrorMessage error={formik.errors.type} touched={formik.touched.type} />
+            </div>
+            <div className="flex flex-col gap-3">
+              <Label className="block font-semibold">Category</Label>
+              <Select onValueChange={(value) => formik.setFieldValue("category", value)} >
+                <SelectTrigger className="w-1/2">
+                  <SelectValue placeholder="Select a category of clothing product" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectGroup>
+                    {categories.map((category) => (
+                      <SelectItem key={category.id} value={category.name}>
+                        {category.name}
+                      </SelectItem>
+                    ))}
+                  </SelectGroup>
+                </SelectContent>
+              </Select>
+              <InputErrorMessage error={formik.errors.category} touched={formik.touched.category} />
+            </div>
+          </Card>
         </div>
-        <Card className="flex-1 p-5">
-          <CardTitle className="text-2xl">Product Information</CardTitle>
-          <div className="mb-4">
-            <Label className="font-bold">Name</Label>
-            <Input placeholder="Enter a description about the product" />
-          </div>
-          <div className="mb-4">
-            <Label className="font-bold">Description</Label>
-            <Input variant="textarea" placeholder="Enter a description about the product" />
-          </div>
-          <div className="mb-4">
-            <label className="block font-semibold">Type</label>
-            <Select onValueChange={(value) => setProductType(value)}>
-              <SelectTrigger className="w-1/2">
-                <SelectValue placeholder="Select an outfit type" />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectGroup>
-                  {types.map(type => (
-                    <SelectItem key={type.id} value={type.name}>
-                      {type.name}
-                    </SelectItem>
+
+        {/* Variants Section */}
+        <FormikProvider value={formik}>
+          <FieldArray name="variants">
+            {({ push, remove }) => (
+              <>
+                <div className="mb-5 flex flex-row items-center gap-5">
+                  <CardTitle className="text-2xl min-w-[14rem]">Product Variants</CardTitle>
+                  <div className="h-[1px] w-full bg-primary/25"></div>
+                </div>
+
+                <div className="flex flex-col gap-5">
+                  {formik.values.variants.map((variant, index) => (
+                    <ProductVariantCard
+                      key={index}
+                      variant={variant}
+                      productType={formik.values.type}
+                      onRemove={() => remove(index)}
+                      variantIndex={index}
+                    />
                   ))}
-                </SelectGroup>
-              </SelectContent>
-            </Select>
-          </div>
-          <div className="mb-4">
-            <label className="block font-semibold">Category</label>
-            <Select>
-              <SelectTrigger className="w-1/2">
-                <SelectValue placeholder="Select an outfit category" />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectGroup>
-                  {categories.map(category => (
-                    <SelectItem key={category.id} value={category.name}>
-                      {category.name}
-                    </SelectItem>
-                  ))}
-                </SelectGroup>
-              </SelectContent>
-            </Select>
-          </div>
-        </Card>
-      </div>
+                </div>
 
-      <div className="mb-5 flex flex-row items-center gap-5">
-        <CardTitle className="text-2xl min-w-[14rem]">Product Variants</CardTitle>
-        <div className="h-[1px] w-full bg-primary/25"></div>
-      </div>
+                <Button
+                  variant="outline"
+                  className="w-full mt-4 mb-4"
+                  type="button"
+                  onClick={() => push({ price: '', color: '', sizes: [], measurementsBySize: {}, images: [] })}
+                  disabled={!isCoreProductValid()}
+                >
+                  <Plus className="scale-110 stroke-[3px]" />
+                  Add Product Variant
+                </Button>
 
-      {/* Display Product Variant cards */}
-      <ProductVariantCard />
+                {formik.errors.variants && typeof formik.errors.variants === 'string' && (
+                  <div className="text-red-500 text-sm text-center mt-2">{formik.errors.variants}</div>
+                )}
 
-      <Button variant="outline" className="w-full mt-4">
-        <Plus className="scale-110 stroke-[3px]" />
-        Add Product Variant
-      </Button>
+                {formik.values.variants.length === 0 && !formik.errors.variants && (
+                  <div className="text-red-500 text-sm text-center mt-2">
+                    Please create at least one product variant.
+                  </div>
+                )}
+              </>
+            )}
+          </FieldArray>
+        </FormikProvider>
 
-      <Button variant="default" className="w-full mt-4 mb-20">
-        Submit
-      </Button>
+        <Button
+          type="submit"
+          variant="default"
+          className="w-full mt-10 mb-20"
+          onClick={() => formik.setTouched(setNestedObjectValues(formik.values, true))}
+        >
+          Submit
+        </Button>
+      </form>
     </DashboardLayoutWrapper>
   );
 }
