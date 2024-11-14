@@ -6,22 +6,18 @@ import { Skeleton } from '@/components/ui/skeleton'; // Import Skeleton componen
 const libraries = []; // No additional libraries needed for basic map view
 
 const MapView = ({ latitude, longitude }) => {
-  if (!latitude || !longitude) {
-    return <p>Location not available</p>;
-  }
-
-  const position = { lat: latitude, lng: longitude };
-
   // Load Google Maps API script
   const { isLoaded, loadError } = useJsApiLoader({
     googleMapsApiKey: process.env.NEXT_PUBLIC_GOOGLE_MAPS_API_KEY,
     libraries,
   });
 
+  // Handle loading error
   if (loadError) {
     return <div>Error loading maps</div>;
   }
 
+  // Handle map script not loaded yet
   if (!isLoaded) {
     // Display Skeleton while the map is loading
     return (
@@ -30,6 +26,13 @@ const MapView = ({ latitude, longitude }) => {
       </div>
     );
   }
+
+  // After the map is loaded, check for latitude and longitude
+  if (!latitude || !longitude) {
+    return <p>Location not available</p>;
+  }
+
+  const position = { lat: latitude, lng: longitude };
 
   return (
     <GoogleMap

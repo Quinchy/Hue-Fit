@@ -8,7 +8,6 @@ import { Button } from "@/components/ui/button";
 import FileUpload from "@/components/ui/file-upload";
 import MapPicker from "@/components/ui/map-picker";
 import { useFormik } from "formik";
-import { partnershipRequestSchema } from "@/utils/validation-schema";
 import { InputErrorMessage, InputErrorStyle } from "@/components/ui/error-message";
 import { Plus } from "lucide-react";
 import Image from "next/image";
@@ -49,7 +48,6 @@ export default function AddShop() {
       longitude: null,
       latitude: null,
     },
-    validationSchema: partnershipRequestSchema,
     onSubmit: (values) => {
       // Submission logic
       console.log(values);
