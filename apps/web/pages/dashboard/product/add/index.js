@@ -1,4 +1,4 @@
-// index.jsx
+// pages/dashboard/product/index.jsx
 import { useState, useEffect, useRef } from "react";
 import { useRouter } from "next/router";
 import useSWR from 'swr';
@@ -8,12 +8,14 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Plus, MoveLeft } from "lucide-react";
 import { Select, SelectContent, SelectGroup, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import ProductVariantCard from "../components/product-variant-card";
 import Image from "next/image";
 import { Label } from "@/components/ui/label";
 import { useFormik, FormikProvider, FieldArray, setNestedObjectValues } from "formik";
 import { productSchema } from "@/utils/validation-schema";
 import { ErrorMessage, InputErrorMessage, InputErrorStyle } from "@/components/ui/error-message";
+import dynamic from 'next/dynamic';
+
+const ProductVariantCard = dynamic(() => import('../components/product-variant-card'), { ssr: false });
 
 const fetcher = (url) => fetch(url).then((res) => res.json());
 
@@ -44,23 +46,6 @@ export default function AddProduct() {
 
   const { data: productData, error: productError } = usePersistentSWR('/api/products/get-product-related-info', fetcher);
 
-  if (productError) return <div>Failed to load product information</div>;
-
-  const { types = [], categories = [] } = productData || {};
-
-  const isCoreProductValid = () => {
-    return (
-      formik.values.thumbnail &&
-      formik.values.name &&
-      formik.values.type &&
-      formik.values.category &&
-      !formik.errors.thumbnail &&
-      !formik.errors.name &&
-      !formik.errors.type &&
-      !formik.errors.category
-    );
-  };
-  
   const formik = useFormik({
     initialValues: {
       thumbnail: null,
@@ -106,7 +91,23 @@ export default function AddProduct() {
     validateOnBlur: true,
     validateOnChange: true,
   });
-  
+
+  if (productError) return <div>Failed to load product information</div>;
+
+  const { types = [], categories = [] } = productData || {};
+
+  const isCoreProductValid = () => {
+    return (
+      formik.values.thumbnail &&
+      formik.values.name &&
+      formik.values.type &&
+      formik.values.category &&
+      !formik.errors.thumbnail &&
+      !formik.errors.name &&
+      !formik.errors.type &&
+      !formik.errors.category
+    );
+  };
 
   const handleImageChange = (e) => {
     const file = e.target.files[0];
@@ -184,7 +185,10 @@ export default function AddProduct() {
             <div className="flex flex-col gap-3">
               <label className="block font-semibold">Type</label>
               <Select onValueChange={(value) => formik.setFieldValue("type", value)}>
-                <SelectTrigger className="w-1/2"  >
+                <SelectTrigger className={`w-1/2 
+                  ${InputErrorStyle(formik.errors.type, 
+                    formik.touched.type)}`}
+                >
                   <SelectValue placeholder="Select a type of clothing product" />
                 </SelectTrigger>
                 <SelectContent>
@@ -202,7 +206,10 @@ export default function AddProduct() {
             <div className="flex flex-col gap-3">
               <Label className="block font-semibold">Category</Label>
               <Select onValueChange={(value) => formik.setFieldValue("category", value)} >
-                <SelectTrigger className="w-1/2">
+                <SelectTrigger className={`w-1/2 
+                  ${InputErrorStyle(formik.errors.category, 
+                    formik.touched.category)}`}
+                >
                   <SelectValue placeholder="Select a category of clothing product" />
                 </SelectTrigger>
                 <SelectContent>
@@ -253,15 +260,16 @@ export default function AddProduct() {
                   Add Product Variant
                 </Button>
 
-                {formik.errors.variants && typeof formik.errors.variants === 'string' && (
-                  <div className="text-red-500 text-sm text-center mt-2">{formik.errors.variants}</div>
-                )}
-
-                {formik.values.variants.length === 0 && !formik.errors.variants && (
-                  <div className="text-red-500 text-sm text-center mt-2">
-                    Please create at least one product variant.
-                  </div>
-                )}
+                <ErrorMessage
+                  message={formik.errors.variants}
+                  condition={formik.errors.variants && typeof formik.errors.variants === 'string'}
+                  className="mt-2"
+                />
+                <ErrorMessage
+                  message="Please create at least one product variant."
+                  condition={formik.values.variants.length === 0 && !formik.errors.variants}
+                  className="mt-2"
+                />
               </>
             )}
           </FieldArray>

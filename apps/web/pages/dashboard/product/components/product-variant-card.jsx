@@ -1,16 +1,19 @@
-// product-variant-card.jsx
+// components/product-variant-card.jsx
 import { useState, useEffect } from 'react';
 import useSWR from 'swr';
 import { Card, CardTitle } from "@/components/ui/card";
 import { Label } from '@/components/ui/label';
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
-import ProductVariantPictures from './product-variant-pictures';
+import dynamic from 'next/dynamic';
 import { ToggleGroup, ToggleGroupItem } from "@/components/ui/toggle-group";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Plus, Trash2 } from 'lucide-react';
 import { useFormikContext, FieldArray } from 'formik';
 import { InputErrorMessage } from "@/components/ui/error-message";
+import { InputErrorStyle } from "@/components/ui/error-message";
+
+const ProductVariantPictures = dynamic(() => import('../components/product-variant-pictures'), { ssr: false });
 
 const fetcher = (url) => fetch(url).then((res) => res.json());
 
@@ -27,7 +30,7 @@ export default function ProductVariantCardWithMeasurements({ variant, productTyp
     XL: 'Extra Large',
     XXL: 'Double Extra Large',
   };
-  const { values, setFieldValue, setFieldTouched, getFieldProps, errors, touched } = useFormikContext();
+  const { values, setFieldValue, setFieldTouched, getFieldProps, errors, touched } = useFormikContext() || {};
 
   useEffect(() => {
     const loadProductData = async () => {
@@ -108,6 +111,12 @@ export default function ProductVariantCardWithMeasurements({ variant, productTyp
       <InputErrorMessage
         error={imagesError}
         touched={imagesTouched}
+        condition={
+          touched.variants &&
+          touched.variants[variantIndex] &&
+          errors.variants &&
+          errors.variants[variantIndex]?.images
+        }
       />
       <Card className="flex-1 p-5">
         <div className="flex justify-between items-center">
@@ -123,10 +132,18 @@ export default function ProductVariantCardWithMeasurements({ variant, productTyp
               id={`variants.${variantIndex}.price`}
               placeholder="Enter the price" 
               {...getFieldProps(`variants.${variantIndex}.price`)}
+              className={InputErrorStyle(errors.variants?.[variantIndex]?.price, touched.variants?.[variantIndex]?.price)}
             />
-            {touched.variants && touched.variants[variantIndex] && errors.variants && errors.variants[variantIndex]?.price ? (
-              <div className="text-red-500 text-sm">{errors.variants[variantIndex].price}</div>
-            ) : null}
+            <InputErrorMessage
+              error={errors.variants?.[variantIndex]?.price}
+              touched={touched.variants?.[variantIndex]?.price}
+              condition={
+                touched.variants &&
+                touched.variants[variantIndex] &&
+                errors.variants &&
+                errors.variants[variantIndex]?.price
+              }
+            />
           </div>
           <div className="flex-1 flex flex-col gap-3">
             <Label htmlFor="color">Color</Label>
@@ -136,7 +153,7 @@ export default function ProductVariantCardWithMeasurements({ variant, productTyp
                 setFieldValue(`variants.${variantIndex}.color`, value);
               }}
             >
-              <SelectTrigger className="w-full">
+              <SelectTrigger className={`w-full ${InputErrorStyle(errors.variants?.[variantIndex]?.color, touched.variants?.[variantIndex]?.color)}`}>
                 <SelectValue placeholder="Select a color" />
               </SelectTrigger>
               <SelectContent>
@@ -150,12 +167,19 @@ export default function ProductVariantCardWithMeasurements({ variant, productTyp
                 ))}
               </SelectContent>
             </Select>
-            {touched.variants && touched.variants[variantIndex] && errors.variants && errors.variants[variantIndex]?.color ? (
-              <div className="text-red-500 text-sm">{errors.variants[variantIndex].color}</div>
-            ) : null}
+            <InputErrorMessage
+              error={errors.variants?.[variantIndex]?.color}
+              touched={touched.variants?.[variantIndex]?.color}
+              condition={
+                touched.variants &&
+                touched.variants[variantIndex] &&
+                errors.variants &&
+                errors.variants[variantIndex]?.color
+              }
+            />
           </div>
         </div>
-        <div className="mb-4">
+        <div className="mb-4 flex flex-col gap-3">
           <Label>Size</Label>
           <ToggleGroup type="multiple" className="flex justify-start gap-2">
             {sizes.map((size) => (
@@ -171,9 +195,16 @@ export default function ProductVariantCardWithMeasurements({ variant, productTyp
               </ToggleGroupItem>
             ))}
           </ToggleGroup>
-          {errors.variants?.[variantIndex]?.sizes && touched.variants?.[variantIndex]?.sizes && (
-            <div className="text-red-500 text-sm">{errors.variants[variantIndex].sizes}</div>
-          )}
+          <InputErrorMessage
+            error={errors.variants?.[variantIndex]?.sizes}
+            touched={touched.variants?.[variantIndex]?.sizes}
+            condition={
+              touched.variants &&
+              touched.variants[variantIndex] &&
+              errors.variants &&
+              errors.variants[variantIndex]?.sizes
+            }
+          />
         </div>
         {values.variants[variantIndex].sizes?.map((size) => (
           <div key={size} className="border-t-2 border-t-border border-dashed py-4 mt-4">
@@ -190,7 +221,8 @@ export default function ProductVariantCardWithMeasurements({ variant, productTyp
                 onChange={(e) => {
                   setFieldValue(`variants.${variantIndex}.measurementsBySize.${size}.quantity`, e.target.value);
                   setFieldTouched(`variants.${variantIndex}.measurementsBySize.${size}.quantity`, true);
-                }}                    
+                }}    
+                className={InputErrorStyle(errors.variants?.[variantIndex]?.measurementsBySize?.[size]?.quantity, touched.variants?.[variantIndex]?.measurementsBySize?.[size]?.quantity)}                
               />
               <InputErrorMessage
                 error={errors.variants?.[variantIndex]?.measurementsBySize?.[size]?.quantity}
@@ -221,7 +253,10 @@ export default function ProductVariantCardWithMeasurements({ variant, productTyp
                               )
                             }
                           >
-                            <SelectTrigger className="w-full">
+                            <SelectTrigger className={`w-full 
+                              ${InputErrorStyle(errors.variants?.[variantIndex]?.measurementsBySize?.[size]?.measurements?.[index]?.measurementName, 
+                                touched.variants?.[variantIndex]?.measurementsBySize?.[size]?.measurements?.[index]?.measurementName)}`}
+                            >
                               <SelectValue placeholder="Select specific measurement" />
                             </SelectTrigger>
                             <SelectContent>
@@ -254,6 +289,10 @@ export default function ProductVariantCardWithMeasurements({ variant, productTyp
                                 e.target.value
                               )
                             }
+                            className={
+                              InputErrorStyle(errors.variants?.[variantIndex]?.measurementsBySize?.[size]?.measurements?.[index]?.value, 
+                              touched.variants?.[variantIndex]?.measurementsBySize?.[size]?.measurements?.[index]?.value
+                            )}
                           />
                           <InputErrorMessage
                             error={errors.variants?.[variantIndex]?.measurementsBySize?.[size]?.measurements?.[index]?.value}
@@ -273,7 +312,10 @@ export default function ProductVariantCardWithMeasurements({ variant, productTyp
                               )
                             }
                           >
-                            <SelectTrigger className="w-full">
+                            <SelectTrigger className={`w-full 
+                              ${InputErrorStyle(errors.variants?.[variantIndex]?.measurementsBySize?.[size]?.measurements?.[index]?.unitName, 
+                                touched.variants?.[variantIndex]?.measurementsBySize?.[size]?.measurements?.[index]?.unitName)}`}
+                            >
                               <SelectValue placeholder="Select unit" />
                             </SelectTrigger>
                             <SelectContent>

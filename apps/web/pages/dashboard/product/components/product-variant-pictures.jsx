@@ -1,4 +1,4 @@
-// product-variant-pictures.jsx
+// components/product-variant-pictures.jsx
 import { useState } from 'react';
 import Image from 'next/image';
 import { Plus, Trash2 } from 'lucide-react';
@@ -6,11 +6,10 @@ import { Label } from '@/components/ui/label';
 import { useFormikContext } from 'formik';
 
 export default function ProductVariantPictures({ variantIndex }) {
-  const { values, setFieldValue } = useFormikContext();
+  const { values, setFieldValue } = useFormikContext() || {};
 
-  const images = values.variants[variantIndex].images || [];
+  const images = values?.variants?.[variantIndex]?.images || [];
 
-  // Handle image upload
   const handleImageUpload = (event) => {
     const file = event.target.files[0];
     if (file) {
@@ -18,11 +17,10 @@ export default function ProductVariantPictures({ variantIndex }) {
       const uniqueId = `${file.name}-${Date.now()}`;
       const newImage = { id: uniqueId, file, url: imageUrl };
       const updatedImages = [...images, newImage];
-      setFieldValue(`variants.${variantIndex}.images`, updatedImages);
+      setFieldValue?.(`variants.${variantIndex}.images`, updatedImages);
     }
   };
 
-  // Handle image removal
   const handleRemoveImage = (id) => {
     const updatedImages = images.filter((image) => image.id !== id);
     setFieldValue(`variants.${variantIndex}.images`, updatedImages);
