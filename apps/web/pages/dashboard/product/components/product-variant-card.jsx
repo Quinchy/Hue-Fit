@@ -156,7 +156,13 @@ export default function ProductVariantCard({ variant, productType, onRemove, var
                   const updatedQuantities = { ...values.variants[variantIndex].quantities };
                   delete updatedQuantities[size.abbreviation];
                   setFieldValue(`variants.${variantIndex}.quantities`, updatedQuantities);
-                } else {
+
+                  // Remove specific measurements for this size
+                  const updatedMeasurements = { ...values.measurementsBySize };
+                  delete updatedMeasurements[size.abbreviation];
+                  setFieldValue("measurementsBySize", updatedMeasurements);
+                } 
+                else {
                   // If size is selected, add a field for its quantity
                   setFieldValue(`variants.${variantIndex}.quantities.${size.abbreviation}`, ' ');
                 }
