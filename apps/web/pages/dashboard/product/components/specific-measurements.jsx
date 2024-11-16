@@ -48,10 +48,11 @@ export default function SpecificMeasurements({ formik, productType }) {
   }, []);
 
   // Collect all sizes selected in any variant
-  const selectedSizes = [...new Set(values.variants.flatMap(variant => variant.sizes))];
+  const selectedSizes = [...new Set((values?.variants || []).flatMap(variant => variant.sizes || []))];
 
   // Initialize measurementsBySize for new sizes
   useEffect(() => {
+    if (!values?.measurementsBySize) return; 
     selectedSizes.forEach((size) => {
       if (!values.measurementsBySize[size]) {
         setFieldValue(`measurementsBySize.${size}`, {
