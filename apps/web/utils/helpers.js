@@ -2,13 +2,28 @@
 import { getServerSession } from "next-auth";
 import { authOptions } from "@/pages/api/auth/[...nextauth]";
 import { PrismaClient } from "@prisma/client";
+import { createClient } from '@supabase/supabase-js';
+import fs from 'fs';
+import formidable from 'formidable';
+import { v4 as uuidv4 } from 'uuid';
 
 const prisma = new PrismaClient();
+const supabase = createClient(process.env.NEXT_PUBLIC_SUPABASE_URL, process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY);
 
 // Helper to get session with user ID on the server
 export async function getSessionUser(req, res) {
   const session = await getServerSession(req, res, authOptions);
   return session?.user || null;
+}
+
+export async function getSessionShopNo(req, res) {
+  try {
+    const session = await getServerSession(req, res, authOptions);
+    return session?.user?.shopNo || null;
+  } catch (error) {
+    console.error("Error retrieving shopNo from session:", error);
+    return null;
+  }
 }
 
 // Helper to get userNo by session user ID
@@ -44,6 +59,76 @@ export async function fetchPermissions(roleId) {
 // Helper to disconnect Prisma client safely
 export async function disconnectPrisma() {
   await prisma.$disconnect();
+}
+
+// Helper to upload a file to Supabase Storage
+export async function uploadFileToSupabase(file, filepath, originalFilename, uniqueId, bucketPath) {
+  // Validate required parameters
+  if (!file || !filepath || !originalFilename || !uniqueId || !bucketPath) {
+    console.error("Invalid file or parameters provided");
+    return null;
+  }
+
+  // Extract the file extension
+  const fileExt = originalFilename.split('.').pop();
+
+  // Remove the extension from the original filename for more customization options
+  const bucketPathName = bucketPath.replace(/\//g, '-');
+
+  // Generate a unique filename
+  const uniqueSuffix = uuidv4(); // Generate a new UUID
+  const fileName = `${uniqueId}-${bucketPathName}-${uniqueSuffix}.${fileExt}`;
+
+  try {
+    // Read the file content as a Buffer
+    const fileContent = fs.readFileSync(filepath);
+
+    // Upload the file content to Supabase
+    const { data, error } = await supabase.storage
+      .from(bucketPath)
+      .upload(fileName, fileContent, {
+        cacheControl: '3600',
+        upsert: false, // Prevents overwriting files with the same name
+      });
+
+    if (error) {
+      console.error('Failed to upload file to Supabase:', error);
+      return null;
+    }
+
+    console.log('File uploaded to Supabase...');
+
+    // Construct and return the public URL for the uploaded file
+    const publicURL = `${process.env.NEXT_PUBLIC_SUPABASE_URL}/storage/v1/object/public/${bucketPath}/${fileName}`;
+    console.log('Public URL generated...');
+    return publicURL;
+
+  } catch (err) {
+    console.error('Error reading or uploading file:', err);
+    return null;
+  }
+}
+
+export function parseFormData(req) {
+  const form = formidable({ multiples: true }); // Initialize formidable with support for multiple files
+
+  return new Promise((resolve, reject) => {
+    form.parse(req, (err, fields, files) => {
+      if (err) {
+        reject(err); // Reject the promise on error
+      } else {
+        // Parse JSON strings into nested objects if necessary
+        for (const key in fields) {
+          try {
+            fields[key] = JSON.parse(fields[key]); // Attempt to parse JSON strings
+          } catch (e) {
+            // Leave the field as-is if it's not JSON
+          }
+        }
+        resolve({ fields, files }); // Resolve the promise with parsed fields and files
+      }
+    });
+  });
 }
 
 export default prisma; // Export PrismaClient for direct use when needed

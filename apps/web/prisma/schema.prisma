@@ -246,6 +246,17 @@ model ProductVariants {
   Color                      Colors                       @relation(fields: [colorId], references: [id])
   ProductVariantSizes        ProductVariantSizes[]
   ProductVariantMeasurements ProductVariantMeasurements[]
+  ProductVariantImages       ProductVariantImages[]
+}
+
+model ProductVariantImages {
+  id               Int      @id @default(autoincrement())
+  productVariantNo String // Reference to ProductVariants.productVariantNo
+  imageUrl         String // URL of the image
+  created_at       DateTime @default(now())
+  updated_at       DateTime @updatedAt
+
+  ProductVariant ProductVariants @relation(fields: [productVariantNo], references: [productVariantNo])
 }
 
 model Colors {
@@ -274,12 +285,13 @@ model Sizes {
 }
 
 model ProductVariantSizes {
-  id               Int      @id @default(autoincrement())
-  productVariantNo String
-  sizeId           Int
-  quantity         Int
-  created_at       DateTime @default(now())
-  updated_at       DateTime @updatedAt
+  id                    Int      @id @default(autoincrement())
+  productVariantSizesNo String   @unique // Unique identifier for ProductVariantSizes
+  productVariantNo      String // Reference to ProductVariants.productVariantNo
+  sizeId                Int
+  quantity              Int
+  created_at            DateTime @default(now())
+  updated_at            DateTime @updatedAt
 
   ProductVariant             ProductVariants              @relation(fields: [productVariantNo], references: [productVariantNo])
   Size                       Sizes                        @relation(fields: [sizeId], references: [id])
@@ -311,19 +323,19 @@ model Measurements {
 }
 
 model ProductVariantMeasurements {
-  id                   Int      @id @default(autoincrement())
-  productVariantSizeId Int
-  measurementId        Int
-  value                Decimal
-  unitId               Int
-  created_at           DateTime @default(now())
-  updated_at           DateTime @updatedAt
+  id                    Int      @id @default(autoincrement())
+  productVariantNo      String // Reference to ProductVariants.productVariantNo
+  productVariantSizesNo String // Reference to ProductVariantSizes.productVariantSizesNo
+  measurementId         Int
+  value                 Decimal
+  unitId                Int
+  created_at            DateTime @default(now())
+  updated_at            DateTime @updatedAt
 
-  ProductVariantSize ProductVariantSizes @relation(fields: [productVariantSizeId], references: [id])
+  ProductVariant     ProductVariants     @relation(fields: [productVariantNo], references: [productVariantNo])
+  ProductVariantSize ProductVariantSizes @relation(fields: [productVariantSizesNo], references: [productVariantSizesNo])
   Measurement        Measurements        @relation(fields: [measurementId], references: [id])
   Unit               Units               @relation(fields: [unitId], references: [id])
-  ProductVariants    ProductVariants?    @relation(fields: [productVariantsId], references: [id])
-  productVariantsId  Int?
 }
 
 model TypeMeasurements {

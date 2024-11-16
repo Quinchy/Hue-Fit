@@ -8,8 +8,8 @@ import { Button } from '@/components/ui/button';
 import dynamic from 'next/dynamic';
 import { ToggleGroup, ToggleGroupItem } from "@/components/ui/toggle-group";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { Plus, Trash2 } from 'lucide-react';
-import { useFormikContext, FieldArray } from 'formik';
+import { Trash2 } from 'lucide-react';
+import { useFormikContext } from 'formik';
 import { InputErrorMessage } from "@/components/ui/error-message";
 import { InputErrorStyle } from "@/components/ui/error-message";
 
@@ -17,19 +17,9 @@ const ProductVariantPictures = dynamic(() => import('../components/product-varia
 
 const fetcher = (url) => fetch(url).then((res) => res.json());
 
-export default function ProductVariantCardWithMeasurements({ variant, productType, onRemove, variantIndex }) {
+export default function ProductVariantCard({ variant, productType, onRemove, variantIndex }) {
   const [productData, setProductData] = useState(null);
-  const [measurementsData, setMeasurementsData] = useState(null);
 
-  const sizeOrder = ['XS', 'S', 'M', 'L', 'XL', 'XXL'];
-  const sizeNames = {
-    XS: 'Extra Small',
-    S: 'Small',
-    M: 'Medium',
-    L: 'Large',
-    XL: 'Extra Large',
-    XXL: 'Double Extra Large',
-  };
   const { values, setFieldValue, setFieldTouched, getFieldProps, errors, touched } = useFormikContext() || {};
 
   useEffect(() => {
@@ -46,64 +36,21 @@ export default function ProductVariantCardWithMeasurements({ variant, productTyp
     loadProductData();
   }, []);
 
-  useEffect(() => {
-    if (!productType) return;
-    const loadMeasurementsData = async () => {
-      const cachedMeasurements = JSON.parse(localStorage.getItem(`measurementsData-${productType}`));
-      if (cachedMeasurements) {
-        setMeasurementsData(cachedMeasurements);
-      } else {
-        const data = await fetcher(`/api/products/get-measurement-by-type?productType=${productType}`);
-        localStorage.setItem(`measurementsData-${productType}`, JSON.stringify(data));
-        setMeasurementsData(data);
-      }
-    };
-    loadMeasurementsData();
-  }, [productType]);
+  if (!productData) return <div>Loading...</div>;
 
-  if (!productData || !measurementsData) return <div>Loading...</div>;
-
-  const { colors, sizes, units } = productData;
-  const measurements = measurementsData.measurements;
-  const measurementLimit = measurementsData.count;
-
-  const toggleSize = (size) => {
-    const isSelected = values.variants[variantIndex].sizes?.includes(size);
-    const updatedSizes = isSelected
-      ? values.variants[variantIndex].sizes.filter((s) => s !== size)
-      : [...(values.variants[variantIndex].sizes || []), size];
-
-    setFieldValue(`variants.${variantIndex}.sizes`, updatedSizes);
-    setFieldTouched(`variants.${variantIndex}.sizes`, true);
-
-    if (isSelected) {
-      const measurementsBySize = { ...values.variants[variantIndex].measurementsBySize };
-      delete measurementsBySize[size];
-      setFieldValue(`variants.${variantIndex}.measurementsBySize`, measurementsBySize);
-    } else if (!values.variants[variantIndex].measurementsBySize[size]) {
-      setFieldValue(`variants.${variantIndex}.measurementsBySize.${size}`, {
-        quantity: '',
-        measurements: [],
-      });
-    }
-  };
-
-  const handleAddMeasurement = (size) => {
-    const measurementsArray = values.variants[variantIndex].measurementsBySize[size]?.measurements || [];
-    setFieldValue(`variants.${variantIndex}.measurementsBySize.${size}.measurements`, [
-      ...measurementsArray,
-      { measurementName: '', value: '', unitName: '' },
-    ]);
-  };
-
-  const handleRemoveMeasurement = (size, index) => {
-    const measurementsArray = values.variants[variantIndex].measurementsBySize[size]?.measurements || [];
-    measurementsArray.splice(index, 1);
-    setFieldValue(`variants.${variantIndex}.measurementsBySize.${size}.measurements`, measurementsArray);
-  };
+  const { colors, sizes } = productData;
 
   const imagesError = errors?.variants?.[variantIndex]?.images;
   const imagesTouched = touched?.variants?.[variantIndex]?.images;
+
+  const sizeNames = {
+    XS: 'Extra Small',
+    S: 'Small',
+    M: 'Medium',
+    L: 'Large',
+    XL: 'Extra Large',
+    XXL: 'Double Extra Large',
+  };
 
   return (
     <div className="flex flex-col gap-5 mb-5">
@@ -184,12 +131,37 @@ export default function ProductVariantCardWithMeasurements({ variant, productTyp
           <ToggleGroup type="multiple" className="flex justify-start gap-2">
             {sizes.map((size) => (
               <ToggleGroupItem
-                key={size.id}
-                value={size.abbreviation}
-                variant="outline"
-                selected={values.variants[variantIndex].sizes?.includes(size.abbreviation) || false}
-                onClick={() => toggleSize(size.abbreviation)}
-                className="min-w-14 min-h-14 border-2"
+              key={size.id}
+              value={size.abbreviation}
+              variant="outline"
+              selected={values.variants[variantIndex].sizes?.includes(size.abbreviation) || false}
+              onClick={() => {
+                const isSelected = values.variants[variantIndex].sizes?.includes(size.abbreviation);
+            
+                // Toggle size selection
+                const updatedSizes = isSelected
+                  ? values.variants[variantIndex].sizes.filter((s) => s !== size.abbreviation)
+                  : [...(values.variants[variantIndex].sizes || []), size.abbreviation];
+                setFieldValue(`variants.${variantIndex}.sizes`, updatedSizes);
+                setFieldTouched(`variants.${variantIndex}.sizes`, true);
+            
+                // Initialize quantities if not already set
+                if (!values.variants[variantIndex].quantities) {
+                  setFieldValue(`variants.${variantIndex}.quantities`, {});
+                }
+            
+                // Update quantities based on size selection
+                if (isSelected) {
+                  // If size is being deselected, remove it from quantities
+                  const updatedQuantities = { ...values.variants[variantIndex].quantities };
+                  delete updatedQuantities[size.abbreviation];
+                  setFieldValue(`variants.${variantIndex}.quantities`, updatedQuantities);
+                } else {
+                  // If size is selected, add a field for its quantity
+                  setFieldValue(`variants.${variantIndex}.quantities.${size.abbreviation}`, ' ');
+                }
+              }}
+              className="min-w-14 min-h-14 border-2"
               >
                 {size.abbreviation}
               </ToggleGroupItem>
@@ -206,153 +178,33 @@ export default function ProductVariantCardWithMeasurements({ variant, productTyp
             }
           />
         </div>
+
         {values.variants[variantIndex].sizes?.map((size) => (
           <div key={size} className="border-t-2 border-t-border border-dashed py-4 mt-4">
-            <h3 className="font-semibold text-lg mb-2">{`Specific Measurements - ${sizeNames[size]}`}</h3>
-            
+            <h3 className="font-semibold text-lg mb-2">{`Quantity for Size - ${sizeNames[size] || size}`}</h3>
+
             {/* Quantity Field */}
             <div className="flex-1 flex flex-col gap-3 mb-5">
-              <Label htmlFor={`variants.${variantIndex}.measurementsBySize.${size}.quantity`}>Quantity</Label>
+              <Label htmlFor={`variants.${variantIndex}.quantities.${size}`}>Quantity</Label>
               <Input 
-                id={`variants.${variantIndex}.measurementsBySize.${size}.quantity`}
+                id={`variants.${variantIndex}.quantities.${size}`}
                 type="number"
                 placeholder="Enter quantity"
-                value={values.variants[variantIndex].measurementsBySize[size]?.quantity || ""}
+                value={values.variants[variantIndex].quantities?.[size] || ""}
                 onChange={(e) => {
-                  setFieldValue(`variants.${variantIndex}.measurementsBySize.${size}.quantity`, e.target.value);
-                  setFieldTouched(`variants.${variantIndex}.measurementsBySize.${size}.quantity`, true);
+                  setFieldValue(`variants.${variantIndex}.quantities.${size}`, e.target.value);
+                  setFieldTouched(`variants.${variantIndex}.quantities.${size}`, true);
                 }}    
-                className={InputErrorStyle(errors.variants?.[variantIndex]?.measurementsBySize?.[size]?.quantity, touched.variants?.[variantIndex]?.measurementsBySize?.[size]?.quantity)}                
+                className={InputErrorStyle(errors.variants?.[variantIndex]?.quantities?.[size], touched.variants?.[variantIndex]?.quantities?.[size])}                
               />
               <InputErrorMessage
-                error={errors.variants?.[variantIndex]?.measurementsBySize?.[size]?.quantity}
-                touched={touched.variants?.[variantIndex]?.measurementsBySize?.[size]?.quantity}
+                error={errors.variants?.[variantIndex]?.quantities?.[size]}
+                touched={touched.variants?.[variantIndex]?.quantities?.[size]}
               />
             </div>
-
-            {/* Specific Measurements Mapping */}
-            <FieldArray name={`variants.${variantIndex}.measurementsBySize.${size}.measurements`}>
-              {({ push, remove }) => (
-                <>
-                  {values.variants[variantIndex].measurementsBySize[size]?.measurements?.map((measurement, index) => {
-                    const selectedMeasurementNames = values.variants[variantIndex].measurementsBySize[size]?.measurements
-                      ?.map((m, idx) => idx !== index ? m.measurementName : null)
-                      ?.filter(Boolean) || [];
-
-                    return (
-                      <div key={index} className="flex flex-row mb-5 gap-3 items-start min-h-[8rem]">
-                        {/* Measurement Name */}
-                        <div className="flex-1 flex flex-col gap-3 min-h-[8rem]">
-                          <Label>Measurement</Label>
-                          <Select
-                            value={measurement.measurementName || ""}
-                            onValueChange={(value) =>
-                              setFieldValue(
-                                `variants.${variantIndex}.measurementsBySize.${size}.measurements.${index}.measurementName`,
-                                value
-                              )
-                            }
-                          >
-                            <SelectTrigger className={`w-full 
-                              ${InputErrorStyle(errors.variants?.[variantIndex]?.measurementsBySize?.[size]?.measurements?.[index]?.measurementName, 
-                                touched.variants?.[variantIndex]?.measurementsBySize?.[size]?.measurements?.[index]?.measurementName)}`}
-                            >
-                              <SelectValue placeholder="Select specific measurement" />
-                            </SelectTrigger>
-                            <SelectContent>
-                              {measurements.map((measurementOption) => (
-                                <SelectItem
-                                  key={measurementOption.name}
-                                  value={measurementOption.name}
-                                  disabled={selectedMeasurementNames.includes(measurementOption.name)}
-                                >
-                                  {measurementOption.name.toUpperCase()}
-                                </SelectItem>
-                              ))}
-                            </SelectContent>
-                          </Select>
-                          <InputErrorMessage
-                            error={errors.variants?.[variantIndex]?.measurementsBySize?.[size]?.measurements?.[index]?.measurementName}
-                            touched={touched.variants?.[variantIndex]?.measurementsBySize?.[size]?.measurements?.[index]?.measurementName}
-                          />
-                        </div>
-
-                        {/* Value Input */}
-                        <div className="flex-1 flex flex-col gap-3 min-h-[8rem]">
-                          <Label>Value</Label>
-                          <Input
-                            placeholder="Value"
-                            value={measurement.value || ""}
-                            onChange={(e) =>
-                              setFieldValue(
-                                `variants.${variantIndex}.measurementsBySize.${size}.measurements.${index}.value`,
-                                e.target.value
-                              )
-                            }
-                            className={
-                              InputErrorStyle(errors.variants?.[variantIndex]?.measurementsBySize?.[size]?.measurements?.[index]?.value, 
-                              touched.variants?.[variantIndex]?.measurementsBySize?.[size]?.measurements?.[index]?.value
-                            )}
-                          />
-                          <InputErrorMessage
-                            error={errors.variants?.[variantIndex]?.measurementsBySize?.[size]?.measurements?.[index]?.value}
-                            touched={touched.variants?.[variantIndex]?.measurementsBySize?.[size]?.measurements?.[index]?.value}
-                          />
-                        </div>
-
-                        {/* Unit Selection */}
-                        <div className="flex-1 flex flex-col gap-3 min-h-[8rem]">
-                          <Label>Unit</Label>
-                          <Select
-                            value={measurement.unitName || ""}
-                            onValueChange={(value) =>
-                              setFieldValue(
-                                `variants.${variantIndex}.measurementsBySize.${size}.measurements.${index}.unitName`,
-                                value
-                              )
-                            }
-                          >
-                            <SelectTrigger className={`w-full 
-                              ${InputErrorStyle(errors.variants?.[variantIndex]?.measurementsBySize?.[size]?.measurements?.[index]?.unitName, 
-                                touched.variants?.[variantIndex]?.measurementsBySize?.[size]?.measurements?.[index]?.unitName)}`}
-                            >
-                              <SelectValue placeholder="Select unit" />
-                            </SelectTrigger>
-                            <SelectContent>
-                              {units.map((unit) => (
-                                <SelectItem key={unit.name} value={unit.name}>
-                                  {unit.name.toUpperCase()}
-                                </SelectItem>
-                              ))}
-                            </SelectContent>
-                          </Select>
-                          <InputErrorMessage
-                            error={errors.variants?.[variantIndex]?.measurementsBySize?.[size]?.measurements?.[index]?.unitName}
-                            touched={touched.variants?.[variantIndex]?.measurementsBySize?.[size]?.measurements?.[index]?.unitName}
-                          />
-                        </div>
-
-                        <Button
-                          variant="ghost"
-                          type="button"
-                          className="text-red-500 mt-[1.80rem] p-5 hover:bg-red-500 min-w-[3rem] min-h-[3rem]"
-                          onClick={() => remove(index)}
-                        >
-                          <Trash2 className="scale-110 stroke-[2px]" />
-                        </Button>
-                      </div>
-                    );
-                  })}
-                  {values.variants[variantIndex].measurementsBySize[size]?.measurements?.length < measurementLimit && (
-                    <Button variant="outline" type="button" className="w-full mt-2" onClick={() => handleAddMeasurement(size)}>
-                      <Plus className="scale-110 stroke-[3px]" /> Add Specific Measurement
-                    </Button>
-                  )}
-                </>
-              )}
-            </FieldArray>
           </div>
         ))}
+
       </Card>
     </div>
   );

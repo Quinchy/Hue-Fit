@@ -117,10 +117,6 @@ const measurementsBySizeSchema = Yup.lazy((obj) =>
   Yup.object(
     Object.keys(obj || {}).reduce((acc, size) => {
       acc[size] = Yup.object().shape({
-        quantity: Yup.number()
-          .integer('Quantity must be a whole number.')
-          .positive('Quantity must be greater than 0.')
-          .required('Quantity is required.'),
         measurements: Yup.array()
           .of(measurementSchema)
           .min(1, 'At least one measurement is required.'),
@@ -137,7 +133,18 @@ export const productVariantSchema = Yup.object().shape({
     .required("Price is required."),
   color: Yup.string().required("Color is required."),
   sizes: Yup.array().of(Yup.string()).min(1, "At least one size is required."),
-  measurementsBySize: measurementsBySizeSchema,
+  quantities: Yup.lazy((value) => 
+    Yup.object().shape(
+      Object.keys(value || {}).reduce((acc, size) => {
+        acc[size] = Yup.number()
+          .typeError('Quantity must be a number')
+          .integer('Quantity must be a whole number.')
+          .positive('Quantity must be greater than 0.')
+          .required('Quantity is required.');
+        return acc;
+      }, {})
+    )
+  ),
   images: Yup.array()
     .of(Yup.object().shape({
       id: Yup.string().required(),
@@ -149,7 +156,26 @@ export const productVariantSchema = Yup.object().shape({
 });
 
 export const productSchema = Yup.object({
-  thumbnail: Yup.mixed().required("Product image thumbnail is required."),
+  thumbnail: Yup.object()
+    .shape({
+      file: Yup.mixed()
+        .required("Product image thumbnail is required.")
+        .test(
+          "fileType",
+          "Unsupported file format",
+          (value) =>
+            value &&
+            ["image/jpeg", "image/png", "image/jpg"].includes(value.type)
+        )
+        .test(
+          "fileSize",
+          "File size is too large (max 5MB).",
+          (value) => value && value.size <= 5 * 1024 * 1024
+        ),
+      url: Yup.string().required("Thumbnail preview URL is required."),
+      id: Yup.string().required("Thumbnail unique ID is required."),
+    })
+    .required("Thumbnail object is required."),
   name: Yup.string().required("Product name is required."),
   description: Yup.string().nullable(),
   type: Yup.string().required("Product type is required."),
@@ -157,4 +183,5 @@ export const productSchema = Yup.object({
   variants: Yup.array()
     .of(productVariantSchema)
     .min(1, "At least one product variant is required."),
+  measurementsBySize: measurementsBySizeSchema,
 });
