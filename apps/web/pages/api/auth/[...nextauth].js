@@ -46,7 +46,8 @@ export const authOptions = {
           }
 
           return sessionUser;
-        } finally {
+        } 
+        finally {
           await disconnectPrisma();
         }
       },
@@ -90,11 +91,8 @@ export const authOptions = {
       }
     },
     async signOut() {
-      // Clear localStorage upon sign out
-      if (typeof window !== 'undefined') {
-        localStorage.removeItem("userToken");
-        localStorage.removeItem("userPermissions");
-      }
+      sessionStorage.clear();
+      console.log("Session storage cleared.");
     }
   }
 };

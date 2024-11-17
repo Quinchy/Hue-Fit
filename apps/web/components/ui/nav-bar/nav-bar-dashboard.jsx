@@ -154,9 +154,19 @@ const NavbarDashboard = () => {
             </Link>
           </DropdownMenuItem>
           <DropdownMenuItem>
-            <button onClick={() => signOut({ callbackUrl: '/' })} className="flex items-center gap-1 justify-start shadow-none text-red-500 font-semibold py-2 px-4 rounded w-full uppercase">
-              <LogOut /> Logout
-            </button>
+          <button
+            onClick={() => {
+              // Clear localStorage and sessionStorage
+              localStorage.clear();
+              sessionStorage.clear();
+
+              // Trigger signOut and redirect to the home page
+              signOut({ callbackUrl: '/' });
+            }}
+            className="flex items-center gap-1 justify-start shadow-none text-red-500 font-semibold py-2 px-4 rounded w-full uppercase"
+          >
+            <LogOut /> Logout
+          </button>
           </DropdownMenuItem>
         </DropdownMenuContent>
       </DropdownMenu>

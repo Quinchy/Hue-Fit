@@ -81,16 +81,16 @@ export default function AddProduct() {
 
       formData.append('measurementsBySize', JSON.stringify(values.measurementsBySize));
 
-      // try {
-      //   const response = await fetch('/api/products/add-product', {
-      //     method: 'POST',
-      //     body: formData,
-      //   });
-      //   const result = await response.json();
-      //   console.log('Server response:', result);
-      // } catch (error) {
-      //   console.error('Error submitting form:', error);
-      // }
+      try {
+        const response = await fetch('/api/products/add-product', {
+          method: 'POST',
+          body: formData,
+        });
+        const result = await response.json();
+        console.log('Server response:', result);
+      } catch (error) {
+        console.error('Error submitting form:', error);
+      }
     },
     validateOnMount: true,
     validateOnBlur: true,
