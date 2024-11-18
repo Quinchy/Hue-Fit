@@ -1,7 +1,6 @@
 import { useState } from 'react';
 import { useRouter } from 'next/router';
 import DashboardLayoutWrapper from "@/components/ui/dashboard-layout";
-import DashboardPagesNavigation from "@/components/ui/dashboard-pages-navigation";
 import { buttonVariants } from "@/components/ui/button";
 import Link from "next/link";
 import routes from '@/routes';
