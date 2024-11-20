@@ -119,8 +119,8 @@ export default function LoginScreen() {
                 ─────────── OR CONTINUE WITH ───────────
               </Text>
 
-              <OutlineButton title="GOOGLE" onPress={() => {}} />
-              <OutlineButton title="FACEBOOK" onPress={() => {}} />
+              <OutlineButton title="GOOGLE" width={"full"} onPress={() => {}} />
+              <OutlineButton title="FACEBOOK" width={"full"} onPress={() => {}} />
             </VStack>
           </GradientCard>
         </Center>
