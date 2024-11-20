@@ -1,24 +1,23 @@
-// BackgroundProvider.tsx
-import React, { ReactNode } from 'react';
+import React, { ReactNode, forwardRef } from 'react';
 import { ImageBackground, StyleSheet, View } from 'react-native';
 
 interface BackgroundProviderProps {
   children: ReactNode;
 }
 
-const BackgroundProvider: React.FC<BackgroundProviderProps> = ({ children }) => {
+const BackgroundProvider = forwardRef<View, BackgroundProviderProps>(({ children }, ref) => {
   return (
     <ImageBackground
-      source={require('../assets/tile-pattern-2.png')}
+      source={require('../assets/tile-pattern-2.png')} // Replace with your background image
       style={styles.background}
       resizeMode="repeat" // This will repeat the image as a tile pattern
     >
-      <View style={styles.overlay}>
+      <View ref={ref} style={styles.overlay}>
         {children}
       </View>
     </ImageBackground>
   );
-};
+});
 
 const styles = StyleSheet.create({
   background: {

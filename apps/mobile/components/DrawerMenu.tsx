@@ -2,7 +2,7 @@
 import React, { useEffect } from 'react';
 import { TouchableOpacity } from 'react-native';
 import { VStack, Text, IconButton, Box } from 'native-base';
-import { X } from 'lucide-react-native';
+import { X, LogOut } from 'lucide-react-native';
 import Animated, {
   useSharedValue,
   withTiming,
@@ -11,6 +11,8 @@ import Animated, {
   runOnJS,
 } from 'react-native-reanimated';
 import { PanGestureHandler, GestureHandlerGestureEvent } from 'react-native-gesture-handler';
+import AsyncStorage from '@react-native-async-storage/async-storage';
+import DefaultButton from '../components/Button';
 
 type DrawerMenuProps = {
   isOpen: boolean;
@@ -71,6 +73,18 @@ const DrawerMenu: React.FC<DrawerMenuProps> = ({ isOpen, onClose, navigation }) 
     }
   };
 
+  const handleLogout = async () => {
+    try {
+      await AsyncStorage.removeItem('user'); // Clear user data
+      animateClose();
+      navigation.reset({
+        index: 0,
+        routes: [{ name: 'Login' }], // Navigate to Login
+      });
+    } catch (error) {
+      console.error('Error during logout:', error);
+    }
+  };
   return (
     <PanGestureHandler onGestureEvent={handleSwipeClose}>
       <Animated.View
@@ -89,9 +103,15 @@ const DrawerMenu: React.FC<DrawerMenuProps> = ({ isOpen, onClose, navigation }) 
         ]}
       >
         <Box position="absolute" top={10} right={10}>
-          <IconButton icon={<X size={24} color="white" />} onPress={animateClose} />
+          <IconButton 
+            icon={<X size={24} 
+            color="white" />} 
+            onPress={animateClose}
+            _pressed={{ bg: 'gray.800' }}
+            borderRadius="full"
+          />
         </Box>
-        <VStack space={8} alignItems="center" mt={8}>
+        <VStack space={8} alignItems="center" mt={8} mx={16}>
           {['Home', 'Wardrobe', 'Cart', 'ProfileSettings', 'ShopLocation', 'Settings'].map((screen) => (
             <TouchableOpacity
               key={screen}
@@ -102,6 +122,12 @@ const DrawerMenu: React.FC<DrawerMenuProps> = ({ isOpen, onClose, navigation }) 
               </Text>
             </TouchableOpacity>
           ))}
+          {/* Logout Button */}
+          <DefaultButton 
+            title="LOG OUT" 
+            onPress={handleLogout}
+            icon={<LogOut size={20} color="black" />}
+          />
         </VStack>
       </Animated.View>
     </PanGestureHandler>

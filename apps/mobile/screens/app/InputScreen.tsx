@@ -1,24 +1,79 @@
 import React, { useState } from 'react';
-import { ScrollView, Image, TouchableOpacity } from 'react-native';
+import { ScrollView, Image } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
-import { VStack, Text, HStack, Center, Select, CheckIcon, Box, IconButton } from 'native-base';
+import { VStack, Text, HStack, Center, IconButton, Select } from 'native-base';
 import { ArrowLeft } from 'lucide-react-native';
 import BackgroundProvider from '../../providers/BackgroundProvider';
 import CustomInput from '../../components/Input';
+import CustomSelect from '../../components/Select';
 import DefaultButton from '../../components/Button';
 import GradientCard from '../../components/GradientCard';
+import LoadingSpinner from '../../components/Loading'; // For loading animation
 
 const InputScreen: React.FC = ({ navigation }) => {
-  const [outfitName, setOutfitName] = useState('My 2025 Outfit Drip');
-  const [height, setHeight] = useState('175');
-  const [weight, setWeight] = useState('60');
-  const [skinTone, setSkinTone] = useState('#fc1c27d');
-  const [age, setAge] = useState('20');
-  const [bodyShape, setBodyShape] = useState('Pear');
-  const [outfitStyle, setOutfitStyle] = useState('Casual');
-  const [preferredColor, setPreferredColor] = useState<string[]>([]);
+  const [outfitName, setOutfitName] = useState('');
+  const [height, setHeight] = useState('');
+  const [weight, setWeight] = useState('');
+  const [skinTone, setSkinTone] = useState('');
+  const [bodyShape, setBodyShape] = useState('');
+  const [age, setAge] = useState('');
+  const [loading, setLoading] = useState(false);
 
-  const colorOptions = ['#ffffff', '#ff0000', '#ffff00', '#00ff00', '#0000ff', '#ff00ff', '#00ffff'];
+  const handleGenerate = async () => {
+    setLoading(true); // Show the loading spinner
+
+    const userFeatures = {
+      outfitName: outfitName,
+      height: parseFloat(height),
+      weight: parseFloat(weight),
+      skintone: skinTone,
+      bodyshape: bodyShape,
+      age: parseInt(age, 10),
+    };
+    try {
+      console.log(userFeatures);
+      const response = await fetch(
+        `https://hue-fit-ai.onrender.com/generate-outfit?unique=${Date.now()}`,
+        {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            Connection: 'close',
+          },
+          body: JSON.stringify(userFeatures),
+        }
+      );
+
+      if (response.ok) {
+        const data = await response.json();
+        setLoading(false); // Stop loading spinner
+        navigation.navigate('Playground', { 
+          outfitData: data.outfit, 
+          outfitName: data.outfit_name // Pass outfit_name to Playground
+        }); 
+      } else {
+        console.error('Error generating outfit:', response.statusText);
+        setLoading(false);
+      }
+    } catch (error) {
+      console.error('Error generating outfit:', error);
+      setLoading(false);
+    }
+  };
+
+  if (loading) {
+    return <LoadingSpinner
+      size={200}
+      messages={[
+        'Matching multiple clothing items...',
+        'Creating a personalized color palette...',
+        'Browsing curated styles...',
+        'Finalizing the best outfit for you...',
+      ]}
+      visible={true}
+    />
+    ; // Keep showing the loading spinner until data is fetched
+  }
 
   return (
     <BackgroundProvider>
@@ -29,6 +84,8 @@ const InputScreen: React.FC = ({ navigation }) => {
             <IconButton
               icon={<ArrowLeft size={24} color="white" />}
               onPress={() => navigation.goBack()}
+              _pressed={{ bg: 'gray.700' }}
+              borderRadius={"full"}
             />
             <Image
               source={require('../../assets/icons/hue-fit-logo.png')}
@@ -40,137 +97,72 @@ const InputScreen: React.FC = ({ navigation }) => {
           <Center mt={10}>
             <GradientCard>
               <Center mb={6}>
-                <Text fontSize="xl" fontWeight="bold" color="white">
-                  CREATE OUTFIT
+                <Text fontSize="2xl" fontWeight="bold" color="white">
+                  GENERATE AN OUTFIT
                 </Text>
-                <Text fontSize="sm" color="gray.400" textAlign="center">
-                  Please fill the form to generate your tailored outfit.
+                <Text fontSize="md" color="gray.400" fontWeight="light" textAlign="center">
+                  Please fill the form to generate a tailored outfit.
                 </Text>
               </Center>
 
               {/* Input Form */}
               <VStack space={4}>
                 <CustomInput
-                  placeholder="Outfit Name"
+                  label="Outfit Name"
+                  placeholder="Type an Outfit Name"
                   value={outfitName}
                   onChangeText={setOutfitName}
                   variant="filled"
-                  bg="gray.700"
-                  color="white"
-                  placeholderTextColor="gray.400"
                 />
                 <CustomInput
-                  placeholder="Height (in cm)"
+                  label="Height"
+                  placeholder="Type your Height (in cm)"
                   value={height}
                   onChangeText={setHeight}
                   keyboardType="numeric"
                   variant="filled"
-                  bg="gray.700"
-                  color="white"
-                  placeholderTextColor="gray.400"
                 />
                 <CustomInput
-                  placeholder="Weight (in kg)"
+                  label="Weight"
+                  placeholder="Type your Weight (in kg)"
                   value={weight}
                   onChangeText={setWeight}
                   keyboardType="numeric"
                   variant="filled"
-                  bg="gray.700"
-                  color="white"
-                  placeholderTextColor="gray.400"
                 />
+                <CustomSelect
+                  label="Skin Tone"
+                  value={skinTone} // Bind state value
+                  onChange={(value) => setSkinTone(value)} // Update state
+                >
+                  <Select.Item label="Fair" value="Fair" />
+                  <Select.Item label="Light" value="Light" />
+                  <Select.Item label="Medium" value="Medium" />
+                  <Select.Item label="Dark" value="Dark" />
+                  <Select.Item label="Deep" value="Deep" />
+                </CustomSelect>
+                <CustomSelect
+                  label="Body Shape"
+                  value={bodyShape} // Bind state value
+                  onChange={(value) => setBodyShape(value)} // Update state
+                >
+                  <Select.Item label="Pear" value="Pear" />
+                  <Select.Item label="Apple" value="Apple" />
+                  <Select.Item label="Rectangle" value="Rectangle" />
+                  <Select.Item label="Triangle" value="Triangle" />
+                  <Select.Item label="Oval" value="Oval" />
+                  <Select.Item label="Athletic" value="Athletic" />
+                </CustomSelect>
                 <CustomInput
-                  placeholder="Skin Tone"
-                  value={skinTone}
-                  onChangeText={setSkinTone}
-                  variant="filled"
-                  bg="gray.700"
-                  color="white"
-                  placeholderTextColor="gray.400"
-                />
-                <CustomInput
-                  placeholder="Your Age"
+                  label="Age"
+                  placeholder="Type your Age"
                   value={age}
                   onChangeText={setAge}
                   keyboardType="numeric"
                   variant="filled"
-                  bg="gray.700"
-                  color="white"
-                  placeholderTextColor="gray.400"
                 />
-
-                {/* Select Components */}
-                <Box>
-                  <Text fontSize="sm" color="gray.400" mb={1}>Body Shape</Text>
-                  <Select
-                    selectedValue={bodyShape}
-                    minWidth="200"
-                    accessibilityLabel="Choose Body Shape"
-                    placeholder="Choose Body Shape"
-                    _selectedItem={{
-                      bg: "gray.700",
-                      endIcon: <CheckIcon size="5" />,
-                    }}
-                    mt={1}
-                    onValueChange={(itemValue) => setBodyShape(itemValue)}
-                    bg="gray.700"
-                    color="white"
-                  >
-                    <Select.Item label="Pear" value="Pear" />
-                    <Select.Item label="Rectangle" value="Rectangle" />
-                    <Select.Item label="Hourglass" value="Hourglass" />
-                    <Select.Item label="Inverted Triangle" value="Inverted Triangle" />
-                  </Select>
-                </Box>
-
-                <Box>
-                  <Text fontSize="sm" color="gray.400" mb={1}>Outfit Style</Text>
-                  <Select
-                    selectedValue={outfitStyle}
-                    minWidth="200"
-                    accessibilityLabel="Choose Outfit Style"
-                    placeholder="Choose Outfit Style"
-                    _selectedItem={{
-                      bg: "gray.700",
-                      endIcon: <CheckIcon size="5" />,
-                    }}
-                    mt={1}
-                    onValueChange={(itemValue) => setOutfitStyle(itemValue)}
-                    bg="gray.700"
-                    color="white"
-                  >
-                    <Select.Item label="Casual" value="Casual" />
-                    <Select.Item label="Formal" value="Formal" />
-                    <Select.Item label="Smart Casual" value="Smart Casual" />
-                    <Select.Item label="Sportswear" value="Sportswear" />
-                  </Select>
-                </Box>
-
-                {/* Color Selector */}
-                <Box>
-                  <Text fontSize="sm" color="gray.400" mb={1}>Preferred Color</Text>
-                  <HStack space={2}>
-                    {colorOptions.map((color) => (
-                      <TouchableOpacity
-                        key={color}
-                        onPress={() => setPreferredColor((prev) => 
-                          prev.includes(color) ? prev.filter(c => c !== color) : [...prev, color]
-                        )}
-                        style={{
-                          width: 30,
-                          height: 30,
-                          borderRadius: 15,
-                          backgroundColor: color,
-                          borderWidth: preferredColor.includes(color) ? 2 : 0,
-                          borderColor: "white",
-                        }}
-                      />
-                    ))}
-                  </HStack>
-                </Box>
-
                 {/* Generate Button */}
-                <DefaultButton title="GENERATE" onPress={() => console.log('Generate Outfit')} />
+                <DefaultButton my={10} title="GENERATE" onPress={handleGenerate} />
               </VStack>
             </GradientCard>
           </Center>

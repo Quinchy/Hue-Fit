@@ -3,7 +3,11 @@ import React from 'react';
 import { Box } from 'native-base';
 import { LinearGradient } from 'expo-linear-gradient';
 
-const GradientCard: React.FC = ({ children }) => {
+type GradientCardProps = {
+  children?: React.ReactNode; // Define children explicitly
+};
+
+const GradientCard: React.FC<GradientCardProps> = ({ children }) => {
   return (
     <Box
       bg="gray.900"

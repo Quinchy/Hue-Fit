@@ -1,13 +1,15 @@
 // src/components/RegisterButton.tsx
 import React from 'react';
-import { Button, IButtonProps, Text } from 'native-base';
+import { Button, IButtonProps, Text, Box, HStack } from 'native-base';
+
 
 interface DefaultButtonProps extends IButtonProps {
   title: string;
   onPress: () => void;
+  icon?: React.ReactNode; // Optional icon prop
 }
 
-const DefaultButton: React.FC<DefaultButtonProps> = ({ title, onPress, ...props }) => {
+const DefaultButton: React.FC<DefaultButtonProps> = ({ title, onPress, icon, ...props }) => {
   return (
     <Button
       onPress={onPress}
@@ -21,9 +23,12 @@ const DefaultButton: React.FC<DefaultButtonProps> = ({ title, onPress, ...props 
       width="100%"             // Full width
       {...props}
     >
-      <Text color="black" fontWeight="bold" fontSize="md">
-        {title}
-      </Text>
+      <HStack justifyContent="center" alignItems="center" space={2} flex={1}>
+        {icon && <Box>{icon}</Box>} 
+        <Text color="black" fontWeight="bold" fontSize="md" textAlign="center">
+          {title}
+        </Text>
+      </HStack>
     </Button>
   );
 };

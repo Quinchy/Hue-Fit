@@ -39,7 +39,7 @@ export default async function handler(req, res) {
     const hashedPassword = await bcrypt.hash(password, 10);
 
     // Generate a unique userNo
-    const userNo = uuidv4();
+    const userNo = uuidv4().replace(/-/g, '').slice(0, 8);
 
     // Fetch role ID based on the role name (assumes Roles table is pre-populated)
     const userRole = await prisma.roles.findFirst({

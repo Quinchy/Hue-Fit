@@ -15,7 +15,7 @@ const GeneratedOutfitCards: React.FC<GeneratedOutfitCardsProps> = ({ outfitName,
   return (
     <Pressable onPress={onPress}>
       <Box
-        bg="gray.700"
+        bg="gray.800"
         rounded="md"
         p={3}
         flexDirection="row"
@@ -33,10 +33,14 @@ const GeneratedOutfitCards: React.FC<GeneratedOutfitCardsProps> = ({ outfitName,
           <IconButton
             icon={<MoreVertical size={20} color="white" />}
             onPress={() => console.log("More options")}
+            _pressed={{ bg: 'gray.700' }}
+            borderRadius="full" 
           />
           <IconButton
             icon={<Star size={20} color="white" />}
             onPress={onFavoritePress}
+            _pressed={{ bg: 'gray.700' }}
+            borderRadius="full" 
           />
         </HStack>
       </Box>

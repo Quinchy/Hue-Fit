@@ -10,13 +10,24 @@ import GradientCard from '../../components/GradientCard';
 import Link from '../../components/Link';
 import AsyncStorage from '@react-native-async-storage/async-storage'; // For storing user data
 import { EXPO_PUBLIC_API_URL } from '@env';
+import { useNavigation } from '@react-navigation/native';
+import { NativeStackNavigationProp } from '@react-navigation/native-stack';
+import LoadingSpinner from '../../components/Loading';
 
-export default function LoginScreen({ navigation }) {
+type RootStackParamList = {
+  Home: undefined;
+  Register: undefined;
+};
+
+export default function LoginScreen() {
+  const navigation = useNavigation<NativeStackNavigationProp<RootStackParamList>>();
   const [username, setUsername] = useState('');
   const [password, setPassword] = useState('');
+  const [loading, setLoading] = useState(false);
 
   // Handle login
   const handleLogin = async () => {
+    setLoading(true); 
     try {
       const apiUrl = `${EXPO_PUBLIC_API_URL}/api/mobile/auth/login`; // Update to new login API
       const response = await fetch(apiUrl, {
@@ -38,6 +49,7 @@ export default function LoginScreen({ navigation }) {
           // Store the user data for session persistence
           await AsyncStorage.setItem('user', JSON.stringify(data));
           navigation.navigate('Home'); // Redirect to home screen
+          setLoading(false);
         } else {
           Alert.alert('Login failed', data.message || 'Invalid credentials');
         }
@@ -49,10 +61,13 @@ export default function LoginScreen({ navigation }) {
       }
     } catch (error) {
       console.error('Login error:', error);
+      setLoading(false);
       Alert.alert('Login error', 'An error occurred. Please try again.');
     }
   };
-  
+  if (loading) {
+    return <LoadingSpinner size={150} />; // Use your LoadingSpinner component here
+  }
   return (
     <BackgroundProvider>
       <ScrollView contentContainerStyle={{ flexGrow: 1 }}>
@@ -62,13 +77,13 @@ export default function LoginScreen({ navigation }) {
             style={{
               width: 75,
               height: 75,
-              marginTop: 175,
-              marginBottom: 25,
+              marginTop: 200,
+              marginBottom: 50,
             }}
             resizeMode="contain"
           />
           <GradientCard>
-            <Center mb={10}>
+            <Center mt={5} mb={10}>
               <Text fontSize="3xl" color="white" fontWeight="bold">
                 LOGIN
               </Text>
@@ -81,8 +96,20 @@ export default function LoginScreen({ navigation }) {
             </Center>
 
             <VStack space={4} alignItems="center">
-              <CustomInput placeholder="Username" value={username} onChangeText={setUsername} />
-              <CustomInput placeholder="Password" value={password} onChangeText={setPassword} isPassword />
+              <CustomInput 
+                label="Username"
+                placeholder="Username" 
+                value={username} 
+                onChangeText={setUsername} 
+                variant="filled"
+              />
+              <CustomInput 
+                label="Password"
+                placeholder="Password" 
+                value={password} 
+                onChangeText={setPassword} 
+                isPassword 
+              />
               <Text alignSelf="flex-end" color="gray.400" fontSize="sm" mt={-2} mb={2}>
                 Forgot Password?
               </Text>

@@ -75,13 +75,13 @@ export default function RegisterScreen({ navigation }) {
             style={{
               width: 75,
               height: 75,
-              marginTop: 175,
-              marginBottom: 25,
+              marginTop: 200,
+              marginBottom: 50,
             }}
             resizeMode="contain"
           />
           <GradientCard>
-            <Center mb={10}>
+            <Center mt={5} mb={10}>
               <Text fontSize="3xl" color="white" fontWeight="bold">
                 REGISTER
               </Text>
@@ -94,13 +94,39 @@ export default function RegisterScreen({ navigation }) {
             </Center>
             
             <VStack space={4} alignItems="center">
-              <CustomInput placeholder="First Name" value={firstName} onChangeText={setFirstName} />
-              <CustomInput placeholder="Last Name" value={lastName} onChangeText={setLastName} />
-              <CustomInput placeholder="Username" value={username} onChangeText={setUsername} />
-              <CustomInput placeholder="Password" value={password} onChangeText={setPassword} isPassword />
-              <CustomInput placeholder="Confirm Password" value={confirmPassword} onChangeText={setConfirmPassword} isPassword />
-              
-              <DefaultButton title="REGISTER" onPress={handleRegister} />
+              <CustomInput
+                label="First Name"
+                placeholder="First Name" 
+                value={firstName} 
+                onChangeText={setFirstName}
+              />
+              <CustomInput 
+                label="Last Name"
+                placeholder="Last Name" 
+                value={lastName} 
+                onChangeText={setLastName} 
+              />
+              <CustomInput 
+                label="Username"
+                placeholder="Username" 
+                value={username} 
+                onChangeText={setUsername} 
+              />
+              <CustomInput 
+                label="Password"
+                placeholder="Password" 
+                value={password} 
+                onChangeText={setPassword} 
+                isPassword 
+              />
+              <CustomInput 
+                label="Confirm Password"
+                placeholder="Confirm Password" 
+                value={confirmPassword} 
+                onChangeText={setConfirmPassword} 
+                isPassword 
+              />
+              <DefaultButton mt={10} title="REGISTER" onPress={handleRegister} />
             </VStack>
           </GradientCard>
         </Center>
