@@ -9,6 +9,7 @@ import Pants from '../../assets/icons/Pants.svg';
 import Sneaker from '../../assets/icons/Sneaker.svg';
 import OutlineButton from '../../components/OutlineButton';
 import DefaultButton from '../../components/Button';
+import { EXPO_PUBLIC_API_URL } from '@env';
 
 const PlaygroundScreen: React.FC = ({ route, navigation }) => {
   const { outfitData, outfitName } = route.params || {};
@@ -22,7 +23,7 @@ const PlaygroundScreen: React.FC = ({ route, navigation }) => {
     console.log("Sending request with outfitData:", outfitData);
 
     try {
-      const response = await fetch("http://192.168.254.105:3000/api/mobile/products/get-generated-products", {
+      const response = await fetch(`${EXPO_PUBLIC_API_URL}/api/mobile/products/get-generated-products`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ outfitData }),
