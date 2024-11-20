@@ -5,10 +5,9 @@ import routes from '@/routes';
 import DashboardLayoutWrapper from "@/components/ui/dashboard-layout";
 import { Card, CardTitle } from "@/components/ui/card";
 import Link from 'next/link';
-import { Plus, NotepadText, Search } from "lucide-react";
+import { Plus, NotepadText, Search, ChevronDown, Eye, Pencil, Trash2 } from "lucide-react";
 import { buttonVariants } from "@/components/ui/button";
-import { Pagination, PaginationPrevious, PaginationContent, PaginationItem,
-         PaginationNext, PaginationLink } from "@/components/ui/pagination";
+import { Pagination, PaginationPrevious, PaginationContent, PaginationItem, PaginationNext, PaginationLink } from "@/components/ui/pagination";
 import { Button } from "@/components/ui/button";
 import { Table, TableHead, TableHeader, TableBody, TableCell, TableRow} from "@/components/ui/table";
 import { DropdownMenu, DropdownMenuContent, DropdownMenuGroup, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
@@ -26,7 +25,7 @@ export default function ProductsPage() {
     async function fetchProducts() {
       const res = await fetch(`/api/products/get-product?page=${currentPage}&search=${searchTerm}`);
       const data = await res.json();
-
+      console.log("Fetched Products:", data);
       if (res.ok) {
         setProducts(data.products);
         setTotalPages(data.totalPages);
@@ -117,7 +116,15 @@ export default function ProductsPage() {
                 <TableCell>{product.name}</TableCell>
                 <TableCell className="text-center">{product.totalQuantity}</TableCell>
                 <TableCell className="text-center">
-                  <p className={`py-1 w-full rounded font-bold ${product.Type.name === "Upper Wear" ? "bg-blue-500" : product.Type.name === "Lower Wear" ? "bg-teal-500" : "bg-purple-500"} uppercase`}>
+                  <p className={`py-1 w-full rounded font-bold ${
+                    product.Type.name === "UPPERWEAR"
+                      ? "bg-blue-500"
+                      : product.Type.name === "LOWERWEAR"
+                      ? "bg-teal-500"
+                      : product.Type.name === "FOOTWEAR"
+                      ? "bg-purple-500"
+                      : "bg-gray-800"
+                  } uppercase`}>
                     {product.Type.name}
                   </p>
                 </TableCell>

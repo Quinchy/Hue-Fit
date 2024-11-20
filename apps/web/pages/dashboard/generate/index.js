@@ -3,13 +3,18 @@ import DashboardLayoutWrapper from "@/components/ui/dashboard-layout";
 import { Label } from "@/components/ui/label";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
+import { Skeleton } from "@/components/ui/skeleton"; // Import the Skeleton component
 import { useState } from "react";
+import { Loader } from "lucide-react";
 
 export default function Generate() {
   const [outfit, setOutfit] = useState(null); // To store the generated outfit
+  const [loading, setLoading] = useState(false); // Loading state
 
   const handleSubmit = async (event) => {
     event.preventDefault();
+    if (loading) return; // Prevent duplicate calls if already loading
+    setLoading(true); // Set loading to true when fetching starts
 
     // Get form data
     const formData = new FormData(event.target);
@@ -23,10 +28,11 @@ export default function Generate() {
 
     try {
       // Send data to the FastAPI endpoint
-      const response = await fetch("http://localhost:8000/generate-outfit", {
+      const response = await fetch(`https://hue-fit-ai.onrender.com/generate-outfit?unique=${Date.now()}`, {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
+          "Connection": "close",
         },
         body: JSON.stringify(userFeatures),
       });
@@ -39,6 +45,8 @@ export default function Generate() {
       }
     } catch (error) {
       console.error("Error generating outfit:", error);
+    } finally {
+      setLoading(false); // Set loading to false when fetching is complete
     }
   };
 
@@ -99,35 +107,108 @@ export default function Generate() {
                   required
                 />
               </div>
-              <Button type="submit">Generate Outfit</Button>
+              <Button
+                type="submit"
+                disabled={loading}
+                className="flex items-center justify-center"
+              >
+                {loading ? (
+                  <>
+                    <Loader className="animate-spin" width={20} />
+                    Generating Outfit...
+                  </>
+                ) : (
+                  "Generate Outfit"
+                )}
+              </Button>
             </div>
           </Card>
         </form>
         <div className="w-full flex flex-col gap-5">
           <CardTitle className="text-3xl">Recommended Outfits</CardTitle>
           <div className="w-full flex flex-col gap-5">
-            {outfit ? (
+            {loading ? (
               <>
-                <Card className="flex flex-col gap-1">
-                  <CardTitle className="text-2xl">Upper Wear</CardTitle>
-                  <div className="flex flex-row items-center gap-3">
-                    <Label>Product Name:</Label>
-                    <p>{outfit.upper_wear}</p>
-                  </div>
+                {/* Skeletons for loading */}
+                <Card className="flex flex-col items-center gap-5 p-5 shadow-lg">
+                  <Skeleton className="w-full h-48 rounded-lg" />
+                  <Skeleton className="w-3/4 h-6 rounded-lg" />
+                  <Skeleton className="w-1/4 h-6 rounded-lg" />
+                  <Skeleton className="w-1/2 h-8 rounded-lg" />
                 </Card>
-                <Card className="flex flex-col gap-1">
-                  <CardTitle className="text-2xl">Lower Wear</CardTitle>
-                  <div className="flex flex-row items-center gap-3">
-                    <Label>Product Name:</Label>
-                    <p>{outfit.lower_wear}</p>
-                  </div>
+                <Card className="flex flex-col items-center gap-5 p-5 shadow-lg">
+                  <Skeleton className="w-full h-48 rounded-lg" />
+                  <Skeleton className="w-3/4 h-6 rounded-lg" />
+                  <Skeleton className="w-1/4 h-6 rounded-lg" />
+                  <Skeleton className="w-1/2 h-8 rounded-lg" />
                 </Card>
-                <Card className="flex flex-col gap-1">
-                  <CardTitle className="text-2xl">Footwear</CardTitle>
-                  <div className="flex flex-row items-center gap-3">
-                    <Label>Product Name:</Label>
-                    <p>{outfit.footwear}</p>
-                  </div>
+                <Card className="flex flex-col items-center gap-5 p-5 shadow-lg">
+                  <Skeleton className="w-full h-48 rounded-lg" />
+                  <Skeleton className="w-3/4 h-6 rounded-lg" />
+                  <Skeleton className="w-1/4 h-6 rounded-lg" />
+                  <Skeleton className="w-1/2 h-8 rounded-lg" />
+                </Card>
+              </>
+            ) : outfit ? (
+              <>
+                {/* Upper Wear */}
+                <Card className="flex flex-col items-center gap-5 p-5 shadow-lg">
+                  <img
+                    src={outfit.upper_wear.thumbnail}
+                    alt={outfit.upper_wear.name}
+                    className="w-full h-48 object-cover rounded-lg"
+                  />
+                  <CardTitle className="text-2xl">{outfit.upper_wear.name}</CardTitle>
+                  <p className="text-lg font-bold">
+                    Price: ₱{outfit.upper_wear.price.toFixed(2)}
+                  </p>
+                  <Button
+                    as="a"
+                    href={`/product/${outfit.upper_wear.productVariantNo}`}
+                    className="w-full"
+                  >
+                    View Details
+                  </Button>
+                </Card>
+
+                {/* Lower Wear */}
+                <Card className="flex flex-col items-center gap-5 p-5 shadow-lg">
+                  <img
+                    src={outfit.lower_wear.thumbnail}
+                    alt={outfit.lower_wear.name}
+                    className="w-full h-48 object-cover rounded-lg"
+                  />
+                  <CardTitle className="text-2xl">{outfit.lower_wear.name}</CardTitle>
+                  <p className="text-lg font-bold">
+                    Price: ₱{outfit.lower_wear.price.toFixed(2)}
+                  </p>
+                  <Button
+                    as="a"
+                    href={`/product/${outfit.lower_wear.productVariantNo}`}
+                    className="w-full"
+                  >
+                    View Details
+                  </Button>
+                </Card>
+
+                {/* Footwear */}
+                <Card className="flex flex-col items-center gap-5 p-5 shadow-lg">
+                  <img
+                    src={outfit.footwear.thumbnail}
+                    alt={outfit.footwear.name}
+                    className="w-full h-48 object-cover rounded-lg"
+                  />
+                  <CardTitle className="text-2xl">{outfit.footwear.name}</CardTitle>
+                  <p className="text-lg font-bold">
+                    Price: ₱{outfit.footwear.price.toFixed(2)}
+                  </p>
+                  <Button
+                    as="a"
+                    href={`/product/${outfit.footwear.productVariantNo}`}
+                    className="w-full"
+                  >
+                    View Details
+                  </Button>
                 </Card>
               </>
             ) : (

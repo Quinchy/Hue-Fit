@@ -21,9 +21,14 @@ export default async function handler(req, res) {
   }
 
   try {
-    // Check if the username already exists
-    const existingUser = await prisma.users.findUnique({
-      where: { username },
+    const customerRole = await prisma.roles.findFirst({
+      where: { name: "CUSTOMER" },
+    });
+    const existingUser = await prisma.users.findFirst({
+      where: { 
+        username,
+        roleId: customerRole.id,
+      },
     });
 
     if (existingUser) {

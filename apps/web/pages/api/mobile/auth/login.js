@@ -9,11 +9,13 @@ export default async function handler(req, res) {
   const { username, password } = req.body;
 
   try {
-    // Query for the user with role ID 3 (CUSTOMER) only
+    const customerRole = await prisma.roles.findFirst({
+      where: { name: "CUSTOMER" },
+    });
     const user = await prisma.users.findFirst({
       where: {
         username,
-        roleId: 3, // Only allow CUSTOMER role
+        roleId: customerRole.id,
       },
     });
 
