@@ -1,7 +1,7 @@
 // components/product-variant-pictures.jsx
 import { useState } from 'react';
 import Image from 'next/image';
-import { Plus, Trash2 } from 'lucide-react';
+import { Plus, Trash2, Asterisk } from 'lucide-react';
 import { Label } from '@/components/ui/label';
 import { useFormikContext } from 'formik';
 

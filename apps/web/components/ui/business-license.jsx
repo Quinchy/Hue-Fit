@@ -1,6 +1,6 @@
 // components/ui/BusinessLicense.js
 import { useState } from 'react';
-import Dialog from '@/components/ui/dialog';
+import { Dialog, DialogContent, DialogTrigger } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
 import Image from 'next/image';
 import Link from 'next/link';
@@ -10,10 +10,6 @@ const BusinessLicense = ({ imageUrl }) => {
 
   const isPdf = imageUrl.toLowerCase().endsWith('.pdf');
   const placeholderImage = '/images/placeholder-pdf.png'; // Update this path if necessary
-
-  const handleOpenModal = () => {
-    setIsModalOpen(true);
-  };
 
   const handleCloseModal = () => {
     setIsModalOpen(false);
@@ -27,7 +23,7 @@ const BusinessLicense = ({ imageUrl }) => {
         alt="Business License"
         width={128}
         height={128}
-        onClick={!isPdf ? handleOpenModal : undefined} // Only open modal for images
+        onClick={!isPdf ? () => setIsModalOpen(true) : undefined} // Only open modal for images
         className="cursor-pointer object-contain rounded shadow-md min-h-[12rem] min-w-[10rem] bg-primary px-1"
       />
 
@@ -44,18 +40,26 @@ const BusinessLicense = ({ imageUrl }) => {
         </Link>
       )}
 
-      {/* Image Modal for image files only */}
-      {!isPdf && isModalOpen && (
-        <Dialog onClose={handleCloseModal} isOpen={isModalOpen}>
-          <div className="relative flex items-center justify-center">
-            <Image
-              src={imageUrl}
-              alt="Business License Full View"
-              width={420}
-              height={420}
-              className="object-fill rounded shadow-lg min-h-[40rem] min-w-[40rem]"
-            />
-          </div>
+      {/* Dialog for image files only */}
+      {!isPdf && (
+        <Dialog open={isModalOpen} onOpenChange={setIsModalOpen}>
+          <DialogTrigger asChild>
+            {/* Dialog Trigger is automatically handled */}
+          </DialogTrigger>
+          <DialogContent
+            onInteractOutside={handleCloseModal}
+            className="bg-background p-10 rounded-lg shadow-lg w-auto max-w-[90%] h-auto max-h-[90%] flex items-center justify-center"
+          >
+            <div className="relative">
+              <Image
+                src={imageUrl}
+                alt="Business License Full View"
+                width={750}
+                height={750}
+                className="max-w-[750px] max-h-[750px] object-contain rounded-lg shadow-md"
+              />
+            </div>
+          </DialogContent>
         </Dialog>
       )}
     </div>
