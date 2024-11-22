@@ -21,6 +21,10 @@ export default function AddSizeDialog({ buttonClassName = "", buttonName = "Add 
             <Input id="name" placeholder="Enter a Size name" />
           </div>
           <div className="flex flex-col gap-2">
+            <Label htmlFor="name" className="font-bold flex flex-row items-center">Abbreviation <Asterisk className="w-4"/></Label>
+            <Input id="name" placeholder="Enter an abbreviation" />
+          </div>
+          <div className="flex flex-col gap-2">
             <Label htmlFor="description" className="font-bold flex flex-row items-center">Next to <Asterisk className="w-4"/></Label>
             <Select>
               <SelectTrigger className="w-full">

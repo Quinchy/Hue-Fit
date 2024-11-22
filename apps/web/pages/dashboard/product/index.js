@@ -241,19 +241,19 @@ export default function ProductsPage() {
                       </DropdownMenuTrigger>
                       <DropdownMenuContent className="w-50">
                         <DropdownMenuGroup>
-                          <DropdownMenuItem>
+                          <DropdownMenuItem className="justify-center">
                             <Button variant="none" onClick={() => handleViewClick(product.productNo)}>
                               <Eye className="scale-125" />
                               View
                             </Button>
                           </DropdownMenuItem>
-                          <DropdownMenuItem>
+                          <DropdownMenuItem className="justify-center">
                             <Button variant="none" onClick={() => handleEditClick(product.productNo)}>
                               <Pencil className="scale-125" />
                               Edit
                             </Button>
                           </DropdownMenuItem>
-                          <DropdownMenuItem>
+                          <DropdownMenuItem className="justify-center">
                             <Button variant="none" className="font-bold text-red-500">
                               <Trash2 className="scale-125 stroke-red-500" />
                               Delete

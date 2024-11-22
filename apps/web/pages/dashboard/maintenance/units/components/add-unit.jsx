@@ -20,6 +20,10 @@ export default function AddUnitDialog({ buttonClassName = "", buttonName = "Add 
             <Input id="name" placeholder="Enter a unit name" />
           </div>
           <div className="flex flex-col gap-2">
+            <Label htmlFor="name" className="font-bold flex flex-row items-center">Abbreviation <Asterisk className="w-4"/></Label>
+            <Input id="name" placeholder="Enter an abbreviation" />
+          </div>
+          <div className="flex flex-col gap-2">
             <Label htmlFor="description">Description</Label>
             <Input id="description" placeholder="Enter a description" />
           </div>
