@@ -6,7 +6,7 @@ import DashboardLayoutWrapper from "@/components/ui/dashboard-layout";
 import { CardTitle, Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { Plus, MoveLeft, Trash2 } from "lucide-react";
+import { Plus, MoveLeft, Trash2, Asterisk } from "lucide-react";
 import { Select, SelectContent, SelectGroup, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import Image from "next/image";
 import { Label } from "@/components/ui/label";
@@ -160,7 +160,8 @@ export default function AddProduct() {
       </div>
       <form onSubmit={formik.handleSubmit}>
         <div className="flex gap-5 mb-10">
-          <div className="flex flex-col items-center gap-5">
+          <div className="flex flex-col items-start gap-3">
+            <Label className="font-bold flex flex-row items-center">Product Thumbnail <Asterisk className="w-4"/></Label>
             <div className="bg-accent rounded border-8 border-border w-80 h-[420px] overflow-hidden">
               <Image
                 src={previewImage}
@@ -188,7 +189,7 @@ export default function AddProduct() {
           <Card className="flex flex-1 flex-col p-5 gap-5">
             <CardTitle className="text-2xl">Product Information</CardTitle>
             <div className="flex flex-col gap-3">
-              <Label className="font-bold">Name</Label>
+              <Label className="font-bold flex flex-row items-center">Name <Asterisk className="w-4"/></Label>
               <Input
                 placeholder="Enter the product name"
                 name="name"
@@ -210,7 +211,7 @@ export default function AddProduct() {
               />
             </div>
             <div className="flex flex-col gap-3">
-              <label className="block font-semibold">Type</label>
+              <Label className="font-bold flex flex-row items-center">Type <Asterisk className="w-4"/></Label>
               <Select onValueChange={(value) => formik.setFieldValue("type", value)}>
                 <SelectTrigger className={`w-1/2 
                   ${InputErrorStyle(formik.errors.type, 
@@ -231,7 +232,7 @@ export default function AddProduct() {
               <InputErrorMessage error={formik.errors.type} touched={formik.touched.type} />
             </div>
             <div className="flex flex-col gap-3">
-              <Label className="block font-semibold">Category</Label>
+              <Label className="font-bold flex flex-row items-center">Category <Asterisk className="w-4"/></Label>
               <Select onValueChange={(value) => formik.setFieldValue("category", value)} >
                 <SelectTrigger className={`w-1/2 
                   ${InputErrorStyle(formik.errors.category, 

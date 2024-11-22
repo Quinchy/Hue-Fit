@@ -143,6 +143,7 @@ model Shops {
   partnershipRequests PartnershipRequests[]
   BusinessLicenses    ShopBusinessLicenses[] // New relation for multiple business licenses
   Products            Products[]
+  Tags                Tags[]
   Type                Type[]
   Category            Category[]
   Colors              Colors[]
@@ -194,10 +195,10 @@ model Products {
   shopNo        String
   typeId        Int
   categoryId    Int
+  tagId         Int
   name          String
   description   String?
   thumbnailURL  String?
-  tags          String?
   totalQuantity Int?
   created_at    DateTime @default(now())
   updated_at    DateTime @updatedAt
@@ -205,6 +206,7 @@ model Products {
   Shop            Shops             @relation(fields: [shopNo], references: [shopNo])
   Type            Type              @relation(fields: [typeId], references: [id])
   Category        Category          @relation(fields: [categoryId], references: [id])
+  Tags            Tags              @relation(fields: [tagId], references: [id])
   ProductVariants ProductVariants[]
 }
 
@@ -218,7 +220,22 @@ model Type {
 
   Shop             Shops              @relation(fields: [shopNo], references: [shopNo])
   Products         Products[]
+  Tags             Tags[]
   TypeMeasurements TypeMeasurements[]
+}
+
+model Tags {
+  id          Int      @id @default(autoincrement())
+  shopNo      String
+  typeId      Int
+  name        String
+  description String?  @default("")
+  created_at  DateTime @default(now())
+  updated_at  DateTime @updatedAt
+
+  Shop     Shops      @relation(fields: [shopNo], references: [shopNo])
+  Type     Type       @relation(fields: [typeId], references: [id])
+  Products Products[]
 }
 
 model Category {

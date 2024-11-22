@@ -5,7 +5,7 @@ import { Label } from '@/components/ui/label';
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { Trash2 } from 'lucide-react';
+import { Trash2, Asterisk } from 'lucide-react';
 import { useFormikContext, FieldArray } from 'formik';
 import { InputErrorMessage } from "@/components/ui/error-message";
 import { InputErrorStyle } from "@/components/ui/error-message";
@@ -98,7 +98,7 @@ export default function SpecificMeasurements({ formik, productType }) {
                     <div key={index} className="flex flex-row mb-5 gap-3 items-start min-h-[8rem]">
                       {/* Measurement Name */}
                       <div className="flex-1 flex flex-col gap-3 min-h-[8rem]">
-                        <Label>Measurement</Label>
+                        <Label  className="font-bold flex flex-row items-center">Measurement <Asterisk className="w-4"/></Label>
                         <Select
                           value={measurement.measurementName || ""}
                           onValueChange={(value) =>
@@ -134,7 +134,7 @@ export default function SpecificMeasurements({ formik, productType }) {
 
                       {/* Value Input */}
                       <div className="flex-1 flex flex-col gap-3 min-h-[8rem]">
-                        <Label>Value</Label>
+                        <Label className="font-bold flex flex-row items-center">Value <Asterisk className="w-4"/></Label>
                         <Input
                           placeholder="Value"
                           value={measurement.value || ""}
@@ -157,7 +157,7 @@ export default function SpecificMeasurements({ formik, productType }) {
 
                       {/* Unit Selection */}
                       <div className="flex-1 flex flex-col gap-3 min-h-[8rem]">
-                        <Label>Unit</Label>
+                        <Label className="font-bold flex flex-row items-center">Unit <Asterisk className="w-4"/></Label>
                         <Select
                           value={measurement.unitName || ""}
                           onValueChange={(value) =>

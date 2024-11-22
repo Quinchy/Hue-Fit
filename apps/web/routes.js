@@ -38,6 +38,21 @@ const routes = {
   userAdd: '/dashboard/user/add',
   userEdit: '/dashboard/user/edit/[userNo]',
   userView: '/dashboard/user/view/[userNo]',
+  maintenance: '/dashboard/maintenance',
+  types: '/dashboard/maintenance/types',
+  typesAdd: '/dashboard/maintenance/types/add/[typeNo]',
+  categories: '/dashboard/maintenance/categories',
+  categoriesAdd: '/dashboard/maintenance/categories/add/[categoryNo]',
+  tags: '/dashboard/maintenance/tags',
+  tagsAdd: '/dashboard/maintenance/tags/add/[tagNo]',
+  colors: '/dashboard/maintenance/colors',
+  colorsAdd: '/dashboard/maintenance/colors/add/[colorNo]',
+  measurements: '/dashboard/maintenance/measurements',
+  measurementsAdd: '/dashboard/maintenance/measurements/add/[measurementNo]',
+  units: '/dashboard/maintenance/units',
+  unitsAdd: '/dashboard/maintenance/units/add/[unitNo]',
+  sizes: '/dashboard/maintenance/sizes',
+  sizesAdd: '/dashboard/maintenance/sizes/add/[unitNo]',
 };
 
 export default routes;

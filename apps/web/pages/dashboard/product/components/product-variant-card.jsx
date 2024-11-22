@@ -8,7 +8,7 @@ import { Button } from '@/components/ui/button';
 import dynamic from 'next/dynamic';
 import { ToggleGroup, ToggleGroupItem } from "@/components/ui/toggle-group";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { Trash2 } from 'lucide-react';
+import { Trash2, Asterisk } from 'lucide-react';
 import { useFormikContext } from 'formik';
 import { InputErrorMessage } from "@/components/ui/error-message";
 import { InputErrorStyle } from "@/components/ui/error-message";
@@ -74,7 +74,7 @@ export default function ProductVariantCard({ variant, productType, onRemove, var
         </div>
         <div className="mb-4 flex gap-4">
           <div className="flex-1 flex flex-col gap-3">
-            <Label htmlFor={`variants.${variantIndex}.price`}>Price</Label>
+            <Label className="font-bold flex flex-row items-center" htmlFor={`variants.${variantIndex}.price`}>Price <Asterisk className="w-4"/></Label>
             <Input 
               id={`variants.${variantIndex}.price`}
               placeholder="Enter the price" 
@@ -93,7 +93,7 @@ export default function ProductVariantCard({ variant, productType, onRemove, var
             />
           </div>
           <div className="flex-1 flex flex-col gap-3">
-            <Label htmlFor="color">Color</Label>
+            <Label className="font-bold flex flex-row items-center" htmlFor="color">Color <Asterisk className="w-4"/></Label>
             <Select
               value={values.variants[variantIndex].color}
               onValueChange={(value) => {
@@ -127,7 +127,7 @@ export default function ProductVariantCard({ variant, productType, onRemove, var
           </div>
         </div>
         <div className="mb-4 flex flex-col gap-3">
-          <Label>Size</Label>
+          <Label className="font-bold flex flex-row items-center">Size <Asterisk className="w-4"/></Label>
           <ToggleGroup type="multiple" className="flex justify-start gap-2">
             {sizes.map((size) => (
               <ToggleGroupItem
@@ -191,7 +191,7 @@ export default function ProductVariantCard({ variant, productType, onRemove, var
 
             {/* Quantity Field */}
             <div className="flex-1 flex flex-col gap-3 mb-5">
-              <Label htmlFor={`variants.${variantIndex}.quantities.${size}`}>Quantity</Label>
+              <Label className="font-bold flex flex-row items-center" htmlFor={`variants.${variantIndex}.quantities.${size}`}>Quantity <Asterisk className="w-4"/></Label>
               <Input 
                 id={`variants.${variantIndex}.quantities.${size}`}
                 type="number"

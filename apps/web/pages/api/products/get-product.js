@@ -1,34 +1,35 @@
+// pages/api/products/get-product.js
 import { getSessionShopNo } from "/utils/helpers";
 import prisma from "/utils/helpers";
 
 export default async function handler(req, res) {
   try {
     const shopNo = await getSessionShopNo(req, res);
-    console.log("Session ShopNo:", shopNo);
     if (!shopNo) {
       return res.status(401).json({ message: "Unauthorized" });
     }
 
-    const { page = 1, search = "" } = req.query;
+    const { page = 1, search = "", type = "" } = req.query;
     const pageNumber = parseInt(page);
 
-    // Fetch products for this shopNo with pagination and search filter
+    // Fetch products for this shopNo with pagination, search filter, and type filter
     const products = await prisma.products.findMany({
       where: {
         shopNo: shopNo,
         name: {
-          contains: search,   // Filter products by name (case-insensitive)
-          mode: 'insensitive' // Case-insensitive search
+          contains: search,
+          mode: 'insensitive',
         },
+        ...(type && { Type: { name: type } }),
       },
-      skip: (pageNumber - 1) * 7,  // Skip products based on the current page
-      take: 7,                      // Limit to 7 products per page
+      skip: (pageNumber - 1) * 8,
+      take: 8,
       orderBy: {
-        created_at: "desc",          // Ordering products by creation date (can be customized)
+        created_at: "desc",
       },
       include: {
-        Type: true,                  // Include product type
-        Category: true,              // Include category data
+        Type: true,
+        Category: true,
       },
     });
 
@@ -40,16 +41,28 @@ export default async function handler(req, res) {
           contains: search,
           mode: 'insensitive',
         },
+        ...(type && { Type: { name: type } }),
       },
     });
 
-    const totalPages = Math.ceil(totalCount / 7);
+    // Fetch all types for the dropdown
+    const types = await prisma.type.findMany({
+      where: {
+        shopNo: shopNo,
+      },
+      select: {
+        name: true,
+      },
+    });
+
+    const totalPages = Math.ceil(totalCount / 8);
 
     return res.status(200).json({
       products,
       currentPage: pageNumber,
       totalPages,
       totalCount,
+      types,
     });
   } catch (error) {
     console.error("Error fetching products:", error);

@@ -5,7 +5,7 @@ import routes from '@/routes';
 import HueFitLogo from '@/public/images/HueFitLogo';
 import Link from 'next/link';
 import { useEffect, useState } from 'react';
-import { House, Store, Shirt, Tag, User, Settings, LogOut, MessageSquareMore } from 'lucide-react';
+import { House, Store, Shirt, Tag, User, Settings, LogOut, MessageSquareMore, Wrench } from 'lucide-react';
 import { ModeToggle } from "@/components/ui/mode-toggle";
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuLabel, DropdownMenuSeparator, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
 import Image from "next/image";
@@ -14,14 +14,15 @@ import { usePermissions } from "@/providers/permission-provider";
 
 const NavbarDashboard = () => {
   const { data: session } = useSession();
-  const { permissions, loading: permissionsLoading } = usePermissions();
+  const { permissions, loading: permissionsLoading, refetchPermissions } = usePermissions();
   const [userInfo, setUserInfo] = useState({
     firstName: "",
     lastName: "",
     role: "",
     profilePicture: "/images/profile-picture.png",
   });
-  const [loading, setLoading] = useState(true);
+  const [loading, setLoading] = useState(false);
+  const [cachedPermissions, setCachedPermissions] = useState([]);
 
   // Mapping from page label to pageId
   const pageIdMapping = {
@@ -31,6 +32,7 @@ const NavbarDashboard = () => {
     settings: 4,
     product: 5,
     order: 6,
+    maintenance: 7,
   };
 
   const links = [
@@ -41,6 +43,7 @@ const NavbarDashboard = () => {
     { route: routes.user, icon: <User />, label: "Users", pageId: "user" },
     { route: routes.inquiry, icon: <MessageSquareMore />, label: "Inquiries", pageId: "inquiry" },
     { route: routes.settings, icon: <Settings />, label: "Settings", pageId: "settings" },
+    { route: routes.maintenance, icon: <Wrench />, label: "Maintenance", pageId: "maintenance" },
   ];
 
   useEffect(() => {
@@ -53,7 +56,9 @@ const NavbarDashboard = () => {
         if (cachedUserInfo) {
           setUserInfo(JSON.parse(cachedUserInfo));
           setLoading(false);
-        } else {
+        } 
+        else {
+          setLoading(true);
           const response = await fetch(`/api/users/view/${session.user.userNo}`);
           if (response.ok) {
             const data = await response.json();
@@ -79,10 +84,30 @@ const NavbarDashboard = () => {
     fetchUserInfo();
   }, [session?.user?.userNo]);
 
+  useEffect(() => {
+    const fetchPermissions = async () => {
+      try {
+        // Check if permissions are cached
+        const cached = localStorage.getItem("permissions");
+        if (cached) {
+          setCachedPermissions(JSON.parse(cached));
+        } else if (!permissionsLoading && permissions) {
+          // Cache new permissions when loaded
+          localStorage.setItem("permissions", JSON.stringify(permissions));
+          setCachedPermissions(permissions);
+        }
+      } catch (error) {
+        console.error("Failed to fetch or cache permissions:", error);
+      }
+    };
+
+    fetchPermissions();
+  }, [permissions, permissionsLoading]);
+
   // Check if the user has the required permission for a specific page
   const hasPermission = (pageId) => {
     const pageIntegerId = pageIdMapping[pageId]; // Convert to integer pageId
-    return permissions?.some(perm => perm.pageId === pageIntegerId && perm.can_view);
+    return cachedPermissions?.some(perm => perm.pageId === pageIntegerId && perm.can_view);
   };
 
   return (
@@ -154,19 +179,19 @@ const NavbarDashboard = () => {
             </Link>
           </DropdownMenuItem>
           <DropdownMenuItem>
-          <button
-            onClick={() => {
-              // Clear localStorage and sessionStorage
-              localStorage.clear();
-              sessionStorage.clear();
+            <button
+              onClick={() => {
+                // Clear localStorage and sessionStorage
+                localStorage.clear();
+                sessionStorage.clear();
 
-              // Trigger signOut and redirect to the home page
-              signOut({ callbackUrl: '/' });
-            }}
-            className="flex items-center gap-1 justify-start shadow-none text-red-500 font-semibold py-2 px-4 rounded w-full uppercase"
-          >
-            <LogOut /> Logout
-          </button>
+                // Trigger signOut and redirect to the home page
+                signOut({ callbackUrl: '/' });
+              }}
+              className="flex items-center gap-1 justify-start shadow-none text-red-500 font-semibold py-2 px-4 rounded w-full uppercase"
+            >
+              <LogOut /> Logout
+            </button>
           </DropdownMenuItem>
         </DropdownMenuContent>
       </DropdownMenu>

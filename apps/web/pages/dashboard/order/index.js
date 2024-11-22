@@ -54,7 +54,7 @@ export default function Orders() {
             </DropdownMenuTrigger>
             <DropdownMenuContent className="w-48">
               <DropdownMenuGroup>
-                <DropdownMenuItem className="justify-center uppercase text-base tracking-wide font-semibold">
+                <DropdownMenuItem className="justify-center">
                   <Button variant="none" className="text-base">
                     Processing
                   </Button>

@@ -40,6 +40,7 @@ export async function middleware(req) {
       ["/dashboard/settings"]: { pageId: 4, permission: "can_view" },
       ["/dashboard/product"]: { pageId: 5, permission: "can_view" },
       ["/dashboard/order"]: { pageId: 6, permission: "can_view" },
+      ["/dashboard/maintenance"]: { pageId: 7, permission: "can_view" },
     };
 
     // Redirect authenticated users away from /account paths to their respective dashboards
