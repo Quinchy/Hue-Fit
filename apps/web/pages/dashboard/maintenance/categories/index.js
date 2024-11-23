@@ -15,27 +15,35 @@ export default function Categories() {
   const router = useRouter();
   const [categories, setCategories] = useState([]);
   const [loading, setLoading] = useState(true);
+  const [currentPage, setCurrentPage] = useState(1);
+  const [totalPages, setTotalPages] = useState(1);
+
+  const fetchCategories = async (page = 1) => {
+    setLoading(true);
+    try {
+      const response = await fetch(`/api/maintenance/categories/get-categories?page=${page}`);
+      if (response.ok) {
+        const data = await response.json();
+        setCategories(data.categories); // Assuming API returns { categories: [] }
+        setCurrentPage(data.currentPage);
+        setTotalPages(data.totalPages);
+      } else {
+        console.error("Failed to fetch categories");
+      }
+    } catch (error) {
+      console.error("An error occurred:", error);
+    } finally {
+      setLoading(false);
+    }
+  };
 
   useEffect(() => {
-    // Fetch categories from the API
-    const fetchCategories = async () => {
-      try {
-        const response = await fetch("/api/maintenance/categories/get-categories");
-        if (response.ok) {
-          const data = await response.json();
-          setCategories(data.categories); // Assuming API returns { categories: [] }
-        } else {
-          console.error("Failed to fetch categories");
-        }
-      } catch (error) {
-        console.error("An error occurred:", error);
-      } finally {
-        setLoading(false);
-      }
-    };
+    fetchCategories(currentPage);
+  }, [currentPage]);
 
-    fetchCategories();
-  }, []);
+  const handleAddCategory = async () => {
+    fetchCategories(currentPage); // Refresh the table after adding a category
+  };
 
   return (
     <DashboardLayoutWrapper>
@@ -49,28 +57,24 @@ export default function Categories() {
             <MoveLeft className="scale-125" />
             Back to Maintenance
           </Button>
-          <AddCategoryDialog />
+          <AddCategoryDialog onAdd={handleAddCategory} />
         </div>
       </div>
       <Card className="flex flex-col gap-5 justify-between min-h-[49.1rem]">
         <Table>
           <TableHeader>
             <TableRow>
-              <TableHead>Category ID</TableHead>
-              <TableHead>Category Name</TableHead>
-              <TableHead>Description</TableHead>
-              <TableHead>Action</TableHead>
+              <TableHead className="text-left w-[30%]">Category ID</TableHead>
+              <TableHead className="text-left w-[50%]">Category Name</TableHead>
+              <TableHead className="text-left w-[20%]">Action</TableHead>
             </TableRow>
           </TableHeader>
           <TableBody>
             {loading ? (
-              Array.from({ length: 5 }).map((_, index) => (
+              Array.from({ length: 8 }).map((_, index) => (
                 <TableRow key={index}>
                   <TableCell>
                     <Skeleton className="h-5 w-12" />
-                  </TableCell>
-                  <TableCell>
-                    <Skeleton className="h-5 w-48" />
                   </TableCell>
                   <TableCell>
                     <Skeleton className="h-5 w-48" />
@@ -83,10 +87,9 @@ export default function Categories() {
             ) : categories.length > 0 ? (
               categories.map((category) => (
                 <TableRow key={category.id}>
-                  <TableCell className="w-[10%]">{category.id}</TableCell>
-                  <TableCell className="w-[40%]">{category.name}</TableCell>
-                  <TableCell className="w-[40%]">{category.description}</TableCell>
-                  <TableCell>
+                  <TableCell className="text-left">{category.id}</TableCell>
+                  <TableCell className="text-left">{category.name}</TableCell>
+                  <TableCell className="text-left">
                     <DropdownMenu>
                       <DropdownMenuTrigger asChild>
                         <Button variant="outline" className="font-normal">
@@ -127,13 +130,32 @@ export default function Categories() {
               ))
             ) : (
               <TableRow>
-                <TableCell colSpan={4} className="text-center">
+                <TableCell colSpan={3} className="text-center">
                   No categories found.
                 </TableCell>
               </TableRow>
             )}
           </TableBody>
         </Table>
+        <div className="flex justify-between items-center mt-4">
+          <Button
+            variant="outline"
+            disabled={currentPage <= 1}
+            onClick={() => setCurrentPage((prev) => prev - 1)}
+          >
+            Previous
+          </Button>
+          <span>
+            Page {currentPage} of {totalPages}
+          </span>
+          <Button
+            variant="outline"
+            disabled={currentPage >= totalPages}
+            onClick={() => setCurrentPage((prev) => prev + 1)}
+          >
+            Next
+          </Button>
+        </div>
       </Card>
     </DashboardLayoutWrapper>
   );
