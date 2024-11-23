@@ -1,8 +1,6 @@
 // pages/api/products/get-measurement-by-type.js
 
-import { getServerSession } from "next-auth";
-import { authOptions } from "@/pages/api/auth/[...nextauth]";
-import prisma from '@/utils/helpers';
+import prisma , { getSessionShopNo } from '@/utils/helpers';
 
 export default async function handler(req, res) {
     if (req.method === 'GET') {
@@ -10,8 +8,7 @@ export default async function handler(req, res) {
 
         try {
             // Retrieve the session using getServerSession
-            const session = await getServerSession(req, res, authOptions);
-            const shopNo = session?.user?.shopNo;
+            const shopNo = await getSessionShopNo(req, res);
 
             if (!shopNo) {
                 return res.status(401).json({ error: 'Unauthorized: No shopNo found in session.' });
