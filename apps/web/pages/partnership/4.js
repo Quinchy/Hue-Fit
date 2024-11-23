@@ -1,5 +1,5 @@
 // 4.js (Final Step)
-import { useEffect, useContext } from "react";
+import { useEffect, useContext, useState } from "react";
 import { useFormik } from "formik";
 import { accountInfoSchema } from "@/utils/validation-schema";
 import { useRouter } from "next/router";
@@ -11,15 +11,18 @@ import { Button } from "@/components/ui/button";
 import WebsiteLayoutWrapper from "@/components/ui/website-layout";
 import { Check } from 'lucide-react';
 import { FormContext } from "@/providers/form-provider";
+import { LoadingMessage } from "@/components/ui/loading-message";
 
 export default function AccountInformationStep() {
   const router = useRouter();
   const { formData, updateFormData } = useContext(FormContext);
+  const [loading, setLoading] = useState(false);
 
   const formik = useFormik({
     initialValues: { username: "", password: "" },
     validationSchema: accountInfoSchema,
     onSubmit: async (values) => {
+      setLoading(true);
       updateFormData(values);
       const completeData = { ...formData, ...values };
       const formDataToSend = new FormData();
@@ -49,6 +52,7 @@ export default function AccountInformationStep() {
         document.cookie = "currentStep=5; path=/";
         router.push(routes.partnership5);
       }
+      setLoading(false);
     },
   });
 
@@ -69,7 +73,9 @@ export default function AccountInformationStep() {
           <LabelAndInput label="Username" name="username" placeholder="Enter your username" formik={formik} />
           <LabelAndInput label="Password" name="password" placeholder="Enter your password" formik={formik} type="password" />
 
-          <Button type="submit" className="w-full mt-4">Submit</Button>
+          <Button type="submit" className="w-full mt-4" disabled={loading}>
+            {loading ? <LoadingMessage message="Submitting..." /> : "Submit"}
+          </Button>
         </form>
       </Card>
     </WebsiteLayoutWrapper>

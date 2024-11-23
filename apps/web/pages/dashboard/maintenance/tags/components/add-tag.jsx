@@ -1,140 +1,163 @@
-// pages/dashboard/maintenance/tags/components/add-tag.jsx
 import { useState, useEffect } from "react";
-import { Dialog, DialogTrigger, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog";
+import { useFormik } from "formik";
+import {
+  Dialog,
+  DialogTrigger,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+  DialogFooter,
+} from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { Plus, Asterisk } from "lucide-react";
+import { Plus, Asterisk, CheckCircle2 } from "lucide-react";
 import { Label } from "@/components/ui/label";
 import { Select, SelectTrigger, SelectValue, SelectContent, SelectItem } from "@/components/ui/select";
+import { InputErrorStyle, InputErrorMessage } from "@/components/ui/error-message";
+import { Alert, AlertTitle, AlertDescription } from "@/components/ui/alert";
+import { addTagSchema } from "@/utils/validation-schema";
+import { LoadingMessage } from "@/components/ui/loading-message";
 
 export default function AddTagDialog({ buttonClassName = "", buttonName = "Add Tag", onTagAdded }) {
-  const [tagName, setTagName] = useState("");
-  const [typeId, setTypeId] = useState("");
-  const [types, setTypes] = useState([]); // Ensure types is always an array
+  const [isOpen, setIsOpen] = useState(false);
   const [loading, setLoading] = useState(false);
-  const [isOpen, setIsOpen] = useState(false); // State to control dialog visibility
+  const [errorMessage, setErrorMessage] = useState("");
+  const [showAlert, setShowAlert] = useState(false);
+  const [types, setTypes] = useState([]);
 
-  // Fetch types for assignment
   useEffect(() => {
     const fetchTypes = async () => {
       try {
         const response = await fetch("/api/maintenance/types/get-types");
         if (response.ok) {
           const data = await response.json();
-          setTypes(Array.isArray(data.types) ? data.types : []); // Ensure types is an array
+          setTypes(data.types || []);
         } else {
-          console.error("Failed to fetch types");
-          setTypes([]); // Fallback to empty array on failure
+          setTypes([]);
         }
       } catch (error) {
-        console.error("Error fetching types:", error);
-        setTypes([]); // Fallback to empty array on error
+        setTypes([]);
       }
     };
-
     fetchTypes();
   }, []);
 
-  const handleAddTag = async () => {
-    if (!tagName.trim()) {
-      alert("Tag name cannot be empty!");
-      return;
-    }
-    if (!typeId) {
-      alert("Please select a type!");
-      return;
-    }
+  const formik = useFormik({
+    initialValues: { name: "", typeName: "" },
+    validationSchema: addTagSchema,
+    onSubmit: async (values, { resetForm }) => {
+      setLoading(true);
+      setErrorMessage("");
+      try {
+        const response = await fetch("/api/maintenance/tags/add-tag", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify(values),
+        });
 
-    setLoading(true);
-    try {
-      const response = await fetch("/api/maintenance/tags/add-tag", {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify({ name: tagName, typeId }),
-      });
-
-      if (!response.ok) {
-        const errorData = await response.json();
-        alert(`Error: ${errorData.error}`);
+        if (response.ok) {
+          const { tag } = await response.json();
+          onTagAdded(tag);
+          resetForm();
+          setShowAlert(true);
+          setIsOpen(false);
+          setTimeout(() => {
+            setShowAlert(false);
+          }, 5000);
+        } else {
+          const errorData = await response.json();
+          setErrorMessage(errorData.error || "An error occurred.");
+        }
+      } catch {
+        setErrorMessage("An error occurred.");
+      } finally {
         setLoading(false);
-        return;
       }
-
-      const { tag } = await response.json();
-      alert("Tag added successfully!");
-
-      // Notify parent to update the tag list
-      if (onTagAdded) onTagAdded(tag);
-
-      // Close the dialog and reset form
-      setTagName("");
-      setTypeId("");
-      setIsOpen(false);
-    } catch (error) {
-      console.error("Failed to add tag:", error);
-      alert("An error occurred. Please try again.");
-    } finally {
-      setLoading(false);
-    }
-  };
+    },
+  });
 
   return (
-    <Dialog open={isOpen} onOpenChange={setIsOpen}>
-      <DialogTrigger asChild>
-        <Button className={buttonClassName}>
-          <Plus /> {buttonName}
-        </Button>
-      </DialogTrigger>
-      <DialogContent>
-        <DialogHeader>
-          <DialogTitle>Add Tag</DialogTitle>
-        </DialogHeader>
-        <div className="flex flex-col gap-4">
-          {/* Tag Name Input */}
-          <div className="flex flex-col gap-2">
-            <Label htmlFor="name" className="font-bold flex flex-row items-center">
-              Tag Name <Asterisk className="w-4" />
-            </Label>
-            <Input
-              id="name"
-              placeholder="Enter a tag name"
-              value={tagName}
-              onChange={(e) => setTagName(e.target.value)}
-              disabled={loading}
-            />
-          </div>
-
-          {/* Assign To Dropdown */}
-          <div className="flex flex-col gap-2">
-            <Label htmlFor="type" className="font-bold flex flex-row items-center">
-              Assign to <Asterisk className="w-4" />
-            </Label>
-            <Select value={typeId} onValueChange={(value) => setTypeId(value)}>
-              <SelectTrigger id="type" disabled={loading}>
-                <SelectValue placeholder="Select a clothing type" />
-              </SelectTrigger>
-              <SelectContent>
-                {types.length > 0 ? (
-                  types.map((type) => (
-                    <SelectItem key={type.id} value={type.id}>
+    <>
+      <Dialog
+        open={isOpen}
+        onOpenChange={(open) => {
+          setIsOpen(open);
+          if (!open) {
+            formik.resetForm();
+            setErrorMessage("");
+          }
+        }}
+      >
+        <DialogTrigger asChild>
+          <Button className={buttonClassName}>
+            <Plus /> {buttonName}
+          </Button>
+        </DialogTrigger>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Add Tag</DialogTitle>
+          </DialogHeader>
+          <form onSubmit={formik.handleSubmit} className="flex flex-col gap-4">
+            <div className="flex flex-col gap-2">
+              <Label htmlFor="name" className="font-bold flex flex-row items-center">
+                Tag Name <Asterisk className="w-4" />
+              </Label>
+              <Input
+                id="name"
+                name="name"
+                placeholder="Enter tag name"
+                value={formik.values.name}
+                onChange={formik.handleChange}
+                onBlur={formik.handleBlur}
+                className={InputErrorStyle(formik.errors.name, formik.touched.name)}
+              />
+              <InputErrorMessage error={formik.errors.name} touched={formik.touched.name} />
+            </div>
+            <div className="flex flex-col gap-2">
+              <Label htmlFor="typeName" className="font-bold flex flex-row items-center">
+                Assign to Type <Asterisk className="w-4" />
+              </Label>
+              <Select
+                value={formik.values.typeName}
+                onValueChange={(value) => formik.setFieldValue("typeName", value)}
+              >
+                <SelectTrigger className={InputErrorStyle(formik.errors.typeName, formik.touched.typeName)}>
+                  <SelectValue placeholder="Select a type" />
+                </SelectTrigger>
+                <SelectContent>
+                  {types.map((type) => (
+                    <SelectItem key={type.name} value={type.name}>
                       {type.name}
                     </SelectItem>
-                  ))
-                ) : (
-                  <SelectItem disabled>No types available</SelectItem>
-                )}
-              </SelectContent>
-            </Select>
-          </div>
+                  ))}
+                </SelectContent>
+              </Select>
+              <InputErrorMessage error={formik.errors.typeName} touched={formik.touched.typeName} />
+            </div>
+            {errorMessage && <Alert variant="error">{errorMessage}</Alert>}
+            <DialogFooter>
+              <Button type="submit" disabled={loading}>
+                {loading ? <LoadingMessage message="Adding..." /> : "Add"}
+              </Button>
+            </DialogFooter>
+          </form>
+        </DialogContent>
+      </Dialog>
+      {showAlert && (
+        <Alert className="fixed z-50 w-[25rem] bottom-10 flex items-center shadow-lg rounded-lg">
+        <CheckCircle2 className="h-10 w-10 stroke-green-500" />
+        <div className="ml-7">
+          <AlertTitle className="text-green-400 text-base font-semibold">Tag Added</AlertTitle>
+          <AlertDescription className="text-green-300">The tag has been added successfully.</AlertDescription>
         </div>
-        <DialogFooter>
-          <Button onClick={handleAddTag} disabled={loading}>
-            {loading ? "Adding..." : "Add"}
-          </Button>
-        </DialogFooter>
-      </DialogContent>
-    </Dialog>
+        <button
+          className="ml-auto mr-4 hover:text-primary/50 focus:outline-none"
+          onClick={() => setShowAlert(false)}
+        >
+          ✕
+        </button>
+      </Alert>
+      )}
+    </>
   );
 }

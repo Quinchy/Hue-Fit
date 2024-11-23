@@ -70,7 +70,6 @@ export default function ProductsPage() {
         if (res.ok) {
           setProducts(data.products);
           setTotalPages(data.totalPages || 1);
-          setCurrentPage(data.currentPage || 1);
           setTypes(data.types || []);
 
           // Store the data in local storage

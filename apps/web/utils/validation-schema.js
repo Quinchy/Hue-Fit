@@ -183,3 +183,16 @@ export const addSizeSchema = Yup.object({
   abbreviation: Yup.string().required("The Abbreviation field is required."),
   nextTo: Yup.string().nullable(),
 });
+
+export const addTypeSchema = Yup.object({
+  name: Yup.string().required("Type Name is required"),
+});
+
+export const addCategorySchema = Yup.object({
+  name: Yup.string().required("Category name is required."),
+});
+
+export const addTagSchema = Yup.object({
+  name: Yup.string().required("Tag Name is required"),
+  typeName: Yup.string().required("Type is required"),
+});

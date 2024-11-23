@@ -10,6 +10,14 @@ import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigge
 import { ChevronDown, Pencil, Trash2 } from "lucide-react";
 import { useEffect, useState } from "react";
 import { Skeleton } from "@/components/ui/skeleton";
+import {
+  Pagination,
+  PaginationPrevious,
+  PaginationContent,
+  PaginationItem,
+  PaginationNext,
+  PaginationLink,
+} from "@/components/ui/pagination";
 
 export default function Categories() {
   const router = useRouter();
@@ -24,8 +32,7 @@ export default function Categories() {
       const response = await fetch(`/api/maintenance/categories/get-categories?page=${page}`);
       if (response.ok) {
         const data = await response.json();
-        setCategories(data.categories); // Assuming API returns { categories: [] }
-        setCurrentPage(data.currentPage);
+        setCategories(data.categories);
         setTotalPages(data.totalPages);
       } else {
         console.error("Failed to fetch categories");
@@ -42,7 +49,13 @@ export default function Categories() {
   }, [currentPage]);
 
   const handleAddCategory = async () => {
-    fetchCategories(currentPage); // Refresh the table after adding a category
+    fetchCategories(currentPage);
+  };
+
+  const handlePageChange = (page) => {
+    if (page >= 1 && page <= totalPages) {
+      setCurrentPage(page);
+    }
   };
 
   return (
@@ -64,8 +77,8 @@ export default function Categories() {
         <Table>
           <TableHeader>
             <TableRow>
-              <TableHead className="text-left w-[30%]">Category ID</TableHead>
-              <TableHead className="text-left w-[50%]">Category Name</TableHead>
+              <TableHead className="text-left w-[10%]">Category ID</TableHead>
+              <TableHead className="text-left w-[80%]">Category Name</TableHead>
               <TableHead className="text-left w-[20%]">Action</TableHead>
             </TableRow>
           </TableHeader>
@@ -74,13 +87,13 @@ export default function Categories() {
               Array.from({ length: 8 }).map((_, index) => (
                 <TableRow key={index}>
                   <TableCell>
-                    <Skeleton className="h-5 w-12" />
+                    <Skeleton className="h-14 w-12" />
                   </TableCell>
                   <TableCell>
-                    <Skeleton className="h-5 w-48" />
+                    <Skeleton className="h-14 w-[70rem]" />
                   </TableCell>
                   <TableCell>
-                    <Skeleton className="h-8 w-24" />
+                    <Skeleton className="h-14 w-24" />
                   </TableCell>
                 </TableRow>
               ))
@@ -137,25 +150,23 @@ export default function Categories() {
             )}
           </TableBody>
         </Table>
-        <div className="flex justify-between items-center mt-4">
-          <Button
-            variant="outline"
-            disabled={currentPage <= 1}
-            onClick={() => setCurrentPage((prev) => prev - 1)}
-          >
-            Previous
-          </Button>
-          <span>
-            Page {currentPage} of {totalPages}
-          </span>
-          <Button
-            variant="outline"
-            disabled={currentPage >= totalPages}
-            onClick={() => setCurrentPage((prev) => prev + 1)}
-          >
-            Next
-          </Button>
-        </div>
+        {categories.length > 0 && (
+          <Pagination className="flex justify-end">
+            <PaginationContent>
+              {currentPage > 1 && (
+                <PaginationPrevious onClick={() => handlePageChange(currentPage - 1)} />
+              )}
+              {Array.from({ length: totalPages }, (_, i) => i + 1).map((page) => (
+                <PaginationItem key={page} active={page === currentPage}>
+                  <PaginationLink onClick={() => handlePageChange(page)}>{page}</PaginationLink>
+                </PaginationItem>
+              ))}
+              {currentPage < totalPages && (
+                <PaginationNext onClick={() => handlePageChange(currentPage + 1)} />
+              )}
+            </PaginationContent>
+          </Pagination>
+        )}
       </Card>
     </DashboardLayoutWrapper>
   );

@@ -24,20 +24,32 @@ import {
 import { ChevronDown, Pencil, Trash2 } from "lucide-react";
 import { Skeleton } from "@/components/ui/skeleton";
 import { useEffect, useState } from "react";
+import {
+  Pagination,
+  PaginationPrevious,
+  PaginationContent,
+  PaginationItem,
+  PaginationNext,
+  PaginationLink,
+} from "@/components/ui/pagination";
 
 export default function Tags() {
   const router = useRouter();
   const [tags, setTags] = useState([]); // Stores tag list
   const [loading, setLoading] = useState(true); // Loading state
+  const [currentPage, setCurrentPage] = useState(1); // Current page
+  const [totalPages, setTotalPages] = useState(1); // Total number of pages
 
   // Fetch tags on component load
   useEffect(() => {
     const fetchTags = async () => {
+      setLoading(true);
       try {
-        const response = await fetch("/api/maintenance/tags/get-tags"); // Fetch data from updated API
+        const response = await fetch(`/api/maintenance/tags/get-tags?page=${currentPage}`); // Fetch data with pagination
         if (response.ok) {
           const data = await response.json();
-          setTags(data.tags); // API now returns `tags: [{ id, name, typeName }]`
+          setTags(data.tags);
+          setTotalPages(data.totalPages || 1);
         } else {
           console.error("Failed to fetch tags");
         }
@@ -49,7 +61,7 @@ export default function Tags() {
     };
 
     fetchTags();
-  }, []);
+  }, [currentPage]);
 
   // Handle add-tag dialog's onTagAdded callback
   const handleAddTag = (newTag) => {
@@ -64,6 +76,12 @@ export default function Tags() {
   const handleDelete = (tag) => {
     console.log("Delete tag:", tag);
     // Add your delete logic here
+  };
+
+  const handlePageChange = (page) => {
+    if (page >= 1 && page <= totalPages) {
+      setCurrentPage(page);
+    }
   };
 
   return (
@@ -90,27 +108,27 @@ export default function Tags() {
           </TableHeader>
           <TableBody>
             {loading ? (
-              Array.from({ length: 5 }).map((_, index) => (
+              Array.from({ length: 8 }).map((_, index) => (
                 <TableRow key={index}>
                   <TableCell>
-                    <Skeleton className="h-5 w-12" />
+                    <Skeleton className="h-14 w-12" />
                   </TableCell>
                   <TableCell>
-                    <Skeleton className="h-5 w-48" />
+                    <Skeleton className="h-14 w-[45rem]" />
                   </TableCell>
                   <TableCell>
-                    <Skeleton className="h-5 w-32" />
+                    <Skeleton className="h-14 w-96" />
                   </TableCell>
                   <TableCell>
-                    <Skeleton className="h-8 w-24" />
+                    <Skeleton className="h-14 w-24" />
                   </TableCell>
                 </TableRow>
               ))
             ) : tags.length > 0 ? (
               tags.map((tag) => (
                 <TableRow key={tag.id}>
-                  <TableCell className="w-[20%]">{tag.id}</TableCell>
-                  <TableCell className="w-[30%]">{tag.name}</TableCell>
+                  <TableCell className="w-[10%]">{tag.id}</TableCell>
+                  <TableCell className="w-[50%]">{tag.name}</TableCell>
                   <TableCell className="w-[30%]">
                     {/* Display the typeName fetched from API */}
                     {tag.typeName || "Unassigned"}
@@ -159,6 +177,23 @@ export default function Tags() {
             )}
           </TableBody>
         </Table>
+        {tags.length > 0 && (
+          <Pagination className="flex flex-col items-end">
+            <PaginationContent>
+              {currentPage > 1 && (
+                <PaginationPrevious onClick={() => handlePageChange(currentPage - 1)} />
+              )}
+              {Array.from({ length: totalPages }, (_, i) => i + 1).map((page) => (
+                <PaginationItem key={page} active={page === currentPage}>
+                  <PaginationLink onClick={() => handlePageChange(page)}>{page}</PaginationLink>
+                </PaginationItem>
+              ))}
+              {currentPage < totalPages && (
+                <PaginationNext onClick={() => handlePageChange(currentPage + 1)} />
+              )}
+            </PaginationContent>
+          </Pagination>
+        )}
       </Card>
     </DashboardLayoutWrapper>
   );

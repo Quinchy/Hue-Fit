@@ -1,4 +1,3 @@
-// pages/api/maintenance/tags/add-tag.js
 import prisma, { getSessionShopNo } from "@/utils/helpers";
 
 export default async function handler(req, res) {
@@ -12,16 +11,31 @@ export default async function handler(req, res) {
       return res.status(401).json({ error: "Unauthorized" });
     }
 
-    const { name, typeId } = req.body;
-
+    const { typeName } = req.body;
+    let { name } = req.body;
     if (!name) {
       return res.status(400).json({ error: "Tag Name is required." });
     }
 
-    if (!typeId) {
-      return res.status(400).json({ error: "Type ID is required." });
+    if (!typeName) {
+      return res.status(400).json({ error: "Type Name is required." });
+    }
+    name = name.toUpperCase();
+    // Find the type ID using typeName and shopNo
+    const type = await prisma.type.findFirst({
+      where: {
+        name: typeName,
+        shopNo,
+      },
+    });
+
+    if (!type) {
+      return res.status(404).json({ error: "Type not found for the given name and shop." });
     }
 
+    const typeId = type.id;
+
+    // Check if the tag already exists
     const existingTag = await prisma.tags.findFirst({
       where: { name, shopNo },
     });
@@ -30,6 +44,7 @@ export default async function handler(req, res) {
       return res.status(400).json({ error: "Tag with this name already exists." });
     }
 
+    // Create the new tag
     const newTag = await prisma.tags.create({
       data: {
         shopNo,

@@ -11,6 +11,7 @@ import { addSizeSchema } from "@/utils/validation-schema";
 import { InputErrorMessage, InputErrorStyle } from "@/components/ui/error-message";
 import { Alert, AlertTitle, AlertDescription } from "@/components/ui/alert";
 import { CheckCircle2 } from "lucide-react";
+import { LoadingMessage } from "@/components/ui/loading-message";
 
 export default function AddSizeDialog({ buttonClassName = "", buttonName = "Add Size", onSizeAdded }) {
   const [sizes, setSizes] = useState([]);
@@ -58,10 +59,12 @@ export default function AddSizeDialog({ buttonClassName = "", buttonName = "Add 
         });
 
         if (response.ok) {
-          setShowAlert(true);
           resetForm();
           setIsDialogOpen(false);
           onSizeAdded && onSizeAdded();
+          setTimeout(() => {
+            setShowAlert(false);
+          }, 5000);
         } else {
           console.error("Failed to add size");
         }
@@ -171,7 +174,7 @@ export default function AddSizeDialog({ buttonClassName = "", buttonName = "Add 
             </div>
             <DialogFooter className="mt-10">
               <Button type="submit" disabled={formik.isSubmitting}>
-                {formik.isSubmitting ? "Adding..." : "Add"}
+                {loading ? <LoadingMessage message="Adding..." /> : "Add"}
               </Button>
             </DialogFooter>
           </form>

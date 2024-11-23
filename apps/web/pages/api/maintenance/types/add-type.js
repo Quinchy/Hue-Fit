@@ -13,11 +13,14 @@ export default async function handler(req, res) {
       return res.status(401).json({ error: "Unauthorized" });
     }
 
-    const { name } = req.body;
+    let { name } = req.body;
 
     if (!name) {
       return res.status(400).json({ error: "Name is required." });
     }
+
+    // Convert name to uppercase
+    name = name.toUpperCase();
 
     const existingType = await prisma.type.findFirst({
       where: {

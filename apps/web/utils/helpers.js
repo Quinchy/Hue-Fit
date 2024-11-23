@@ -116,15 +116,8 @@ export function parseFormData(req) {
     form.parse(req, (err, fields, files) => {
       if (err) {
         reject(err); // Reject the promise on error
-      } else {
-        // Parse JSON strings into nested objects if necessary
-        for (const key in fields) {
-          try {
-            fields[key] = JSON.parse(fields[key]); // Attempt to parse JSON strings
-          } catch (e) {
-            // Leave the field as-is if it's not JSON
-          }
-        }
+      } 
+      else {
         resolve({ fields, files }); // Resolve the promise with parsed fields and files
       }
     });

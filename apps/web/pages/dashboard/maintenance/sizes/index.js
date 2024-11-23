@@ -26,7 +26,6 @@ export default function Sizes() {
       if (response.ok) {
         const data = await response.json();
         setSizes(data.sizes || []);
-        setCurrentPage(data.currentPage || 1);
         setTotalPages(data.totalPages || 1);
       } else {
         console.error("Failed to fetch sizes");
@@ -151,7 +150,7 @@ export default function Sizes() {
           </TableBody>
         </Table>
         {sizes.length > 0 && (
-          <Pagination className="flex justify-end">
+          <Pagination className="flex flex-col items-end">
             <PaginationContent>
               {currentPage > 1 && (
                 <PaginationPrevious onClick={() => handlePageChange(currentPage - 1)} />

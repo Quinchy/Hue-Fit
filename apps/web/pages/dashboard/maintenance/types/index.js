@@ -23,6 +23,14 @@ import {
 import { ChevronDown, Pencil, Trash2 } from "lucide-react";
 import { Skeleton } from "@/components/ui/skeleton";
 import { useEffect, useState } from "react";
+import {
+  Pagination,
+  PaginationPrevious,
+  PaginationContent,
+  PaginationItem,
+  PaginationNext,
+  PaginationLink,
+} from "@/components/ui/pagination";
 
 export default function Types() {
   const router = useRouter();
@@ -38,7 +46,6 @@ export default function Types() {
       if (response.ok) {
         const data = await response.json();
         setTypes(data.types);
-        setCurrentPage(data.currentPage);
         setTotalPages(data.totalPages);
       } else {
         console.error("Failed to fetch types");
@@ -55,12 +62,11 @@ export default function Types() {
   }, [currentPage]);
 
   const handleAddType = async () => {
-    fetchTypes(currentPage); // Refresh the table dynamically after adding a type
+    fetchTypes(currentPage);
   };
 
   const handleEdit = (type) => {
     console.log("Edit type:", type);
-    // Add your edit logic here
   };
 
   const handleDelete = async (typeId) => {
@@ -80,6 +86,12 @@ export default function Types() {
       }
     } catch (error) {
       console.error("An error occurred:", error);
+    }
+  };
+
+  const handlePageChange = (page) => {
+    if (page >= 1 && page <= totalPages) {
+      setCurrentPage(page);
     }
   };
 
@@ -108,23 +120,23 @@ export default function Types() {
             {loading ? (
               Array.from({ length: 8 }).map((_, index) => (
                 <TableRow key={index}>
-                  <TableCell className="text-center">
-                    <Skeleton className="h-5 w-12" />
+                  <TableCell>
+                    <Skeleton className="h-14 w-10" />
                   </TableCell>
-                  <TableCell className="text-center">
-                    <Skeleton className="h-5 w-48" />
+                  <TableCell>
+                    <Skeleton className="h-14 w-[70rem]" />
                   </TableCell>
-                  <TableCell className="text-center">
-                    <Skeleton className="h-8 w-24" />
+                  <TableCell>
+                    <Skeleton className="h-14 w-24 text-end" />
                   </TableCell>
                 </TableRow>
               ))
             ) : types.length > 0 ? (
               types.map((type) => (
                 <TableRow key={type.id}>
-                  <TableCell className="w-[40%]">{type.id}</TableCell>
-                  <TableCell className="w-[40%]">{type.name.toUpperCase()}</TableCell>
-                  <TableCell className="w-[30%]">
+                  <TableCell className="w-[10%]">{type.id}</TableCell>
+                  <TableCell className="w-[80%]">{type.name.toUpperCase()}</TableCell>
+                  <TableCell className="w-[10%]">
                     <DropdownMenu>
                       <DropdownMenuTrigger asChild>
                         <Button variant="outline" className="font-normal">
@@ -135,10 +147,7 @@ export default function Types() {
                       <DropdownMenuContent className="w-50">
                         <DropdownMenuGroup>
                           <DropdownMenuItem className="justify-center">
-                            <Button
-                              variant="none"
-                              onClick={() => handleEdit(type)}
-                            >
+                            <Button variant="none" onClick={() => handleEdit(type)}>
                               <Pencil className="scale-125" />
                               Edit
                             </Button>
@@ -168,25 +177,23 @@ export default function Types() {
             )}
           </TableBody>
         </Table>
-        <div className="flex justify-between items-center mt-4">
-          <Button
-            variant="outline"
-            disabled={currentPage <= 1}
-            onClick={() => setCurrentPage((prev) => prev - 1)}
-          >
-            Previous
-          </Button>
-          <span>
-            Page {currentPage} of {totalPages}
-          </span>
-          <Button
-            variant="outline"
-            disabled={currentPage >= totalPages}
-            onClick={() => setCurrentPage((prev) => prev + 1)}
-          >
-            Next
-          </Button>
-        </div>
+        {types.length > 0 && (
+          <Pagination className="flex justify-end">
+            <PaginationContent>
+              {currentPage > 1 && (
+                <PaginationPrevious onClick={() => handlePageChange(currentPage - 1)} />
+              )}
+              {Array.from({ length: totalPages }, (_, i) => i + 1).map((page) => (
+                <PaginationItem key={page} active={page === currentPage}>
+                  <PaginationLink onClick={() => handlePageChange(page)}>{page}</PaginationLink>
+                </PaginationItem>
+              ))}
+              {currentPage < totalPages && (
+                <PaginationNext onClick={() => handlePageChange(currentPage + 1)} />
+              )}
+            </PaginationContent>
+          </Pagination>
+        )}
       </Card>
     </DashboardLayoutWrapper>
   );
