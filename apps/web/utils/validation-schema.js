@@ -192,3 +192,10 @@ export const addSizeSchema = Yup.object({
   abbreviation: Yup.string().required("The Abbreviation field is required."),
   nextTo: Yup.string().nullable(),
 });
+
+export const colorSchema = Yup.object({
+  name: Yup.string().required("Color name is required"),
+  hexCode: Yup.string()
+    .matches(/^#[0-9A-F]{6}$/i, "Hex code must be a valid color code")
+    .required("Hex code is required"),
+});

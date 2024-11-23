@@ -28,25 +28,31 @@ export default function Measurements() {
   const router = useRouter();
   const [measurements, setMeasurements] = useState([]);
   const [loading, setLoading] = useState(true);
+  const [currentPage, setCurrentPage] = useState(1);
+  const [totalPages, setTotalPages] = useState(1);
+
+  const fetchMeasurements = async (page = 1) => {
+    try {
+      setLoading(true);
+      const response = await fetch(
+        `/api/maintenance/measurements/get-measurements?page=${page}`
+      );
+      if (response.ok) {
+        const data = await response.json();
+        setMeasurements(data.measurements);
+        setCurrentPage(data.currentPage);
+        setTotalPages(data.totalPages);
+      } else {
+        console.error("Failed to fetch measurements");
+      }
+    } catch (error) {
+      console.error("An error occurred:", error);
+    } finally {
+      setLoading(false);
+    }
+  };
 
   useEffect(() => {
-    // Fetch measurements from the API
-    const fetchMeasurements = async () => {
-      try {
-        const response = await fetch("/api/maintenance/measurements/get-measurements");
-        if (response.ok) {
-          const data = await response.json();
-          setMeasurements(data.measurements); // Assuming API returns { measurements: [] }
-        } else {
-          console.error("Failed to fetch measurements");
-        }
-      } catch (error) {
-        console.error("An error occurred:", error);
-      } finally {
-        setLoading(false);
-      }
-    };
-
     fetchMeasurements();
   }, []);
 
@@ -105,7 +111,9 @@ export default function Measurements() {
                 <TableRow key={measurement.id}>
                   <TableCell className="w-[10%]">{measurement.id}</TableCell>
                   <TableCell className="w-[50%]">{measurement.name}</TableCell>
-                  <TableCell className="w-[30%]">{measurement.assignedTo}</TableCell>
+                  <TableCell className="w-[30%]">
+                    {measurement.assignedTo || "-"}
+                  </TableCell>
                   <TableCell>
                     <DropdownMenu>
                       <DropdownMenuTrigger asChild>
@@ -150,6 +158,27 @@ export default function Measurements() {
             )}
           </TableBody>
         </Table>
+        <div className="flex justify-end mt-4">
+          <div className="flex items-center gap-2">
+            <Button
+              variant="outline"
+              size="sm"
+              disabled={currentPage === 1}
+              onClick={() => fetchMeasurements(currentPage - 1)}
+            >
+              Previous
+            </Button>
+            <span>{`Page ${currentPage} of ${totalPages}`}</span>
+            <Button
+              variant="outline"
+              size="sm"
+              disabled={currentPage === totalPages}
+              onClick={() => fetchMeasurements(currentPage + 1)}
+            >
+              Next
+            </Button>
+          </div>
+        </div>
       </Card>
     </DashboardLayoutWrapper>
   );
