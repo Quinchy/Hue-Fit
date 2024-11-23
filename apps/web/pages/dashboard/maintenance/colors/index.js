@@ -13,17 +13,20 @@ import { Skeleton } from "@/components/ui/skeleton";
 
 export default function Colors() {
   const router = useRouter();
-  const [colors, setColors] = useState([]);
-  const [loading, setLoading] = useState(true);
+  const [colors, setColors] = useState([]); // Stores the list of colors
+  const [loading, setLoading] = useState(true); // Loading state
+  const [currentPage, setCurrentPage] = useState(1); // Current page for pagination
+  const [totalPages, setTotalPages] = useState(1); // Total number of pages
 
   useEffect(() => {
     // Fetch colors from the API
     const fetchColors = async () => {
       try {
-        const response = await fetch("/api/maintenance/colors/get-colors");
+        const response = await fetch(`/api/maintenance/colors/get-colors?page=${currentPage}`);
         if (response.ok) {
           const data = await response.json();
-          setColors(data.colors); // Assuming API returns { colors: [] }
+          setColors(data.colors); // Assuming API returns { colors: [], totalPages }
+          setTotalPages(data.totalPages || 1);
         } else {
           console.error("Failed to fetch colors");
         }
@@ -35,7 +38,12 @@ export default function Colors() {
     };
 
     fetchColors();
-  }, []);
+  }, [currentPage]);
+
+  const handleAddColor = (newColor) => {
+    // Add the new color to the top of the table
+    setColors((prevColors) => [newColor, ...prevColors]);
+  };
 
   const handleEdit = (color) => {
     console.log("Edit color:", color);
@@ -47,6 +55,18 @@ export default function Colors() {
     // Add your delete logic here
   };
 
+  const handleNextPage = () => {
+    if (currentPage < totalPages) {
+      setCurrentPage(currentPage + 1);
+    }
+  };
+
+  const handlePreviousPage = () => {
+    if (currentPage > 1) {
+      setCurrentPage(currentPage - 1);
+    }
+  };
+
   return (
     <DashboardLayoutWrapper>
       <div className="flex justify-between items-center">
@@ -56,7 +76,7 @@ export default function Colors() {
             <MoveLeft className="scale-125" />
             Back to Maintenance
           </Button>
-          <AddColorDialog />
+          <AddColorDialog onColorAdded={handleAddColor}/> {/* Pass the handler */}
         </div>
       </div>
       <Card className="flex flex-col gap-5 justify-between min-h-[49.1rem]">
@@ -148,6 +168,18 @@ export default function Colors() {
             )}
           </TableBody>
         </Table>
+        {/* Pagination Controls */}
+        <div className="flex justify-end items-center gap-4 p-4">
+          <Button variant="outline" onClick={handlePreviousPage} disabled={currentPage === 1}>
+            Previous
+          </Button>
+          <span>
+            Page {currentPage} of {totalPages}
+          </span>
+          <Button variant="outline" onClick={handleNextPage} disabled={currentPage === totalPages}>
+            Next
+          </Button>
+        </div>
       </Card>
     </DashboardLayoutWrapper>
   );

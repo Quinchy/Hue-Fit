@@ -1,4 +1,8 @@
-import { Card, CardTitle } from "@/components/ui/card";
+import React, { useState, useEffect } from "react";
+import {
+  Card,
+  CardTitle,
+} from "@/components/ui/card";
 import DashboardLayoutWrapper from "@/components/ui/dashboard-layout";
 import { Button } from "@/components/ui/button";
 import { MoveLeft } from "lucide-react";
@@ -22,21 +26,24 @@ import {
 } from "@/components/ui/dropdown-menu";
 import { ChevronDown, Pencil, Trash2 } from "lucide-react";
 import { Skeleton } from "@/components/ui/skeleton";
-import { useEffect, useState } from "react";
 
 export default function Units() {
   const router = useRouter();
   const [units, setUnits] = useState([]);
   const [loading, setLoading] = useState(true);
+  const [currentPage, setCurrentPage] = useState(1);
+  const [totalPages, setTotalPages] = useState(1);
 
   useEffect(() => {
     // Fetch units from the API
-    const fetchUnits = async () => {
+    const fetchUnits = async (page = 1) => {
       try {
-        const response = await fetch("/api/maintenance/units/get-units");
+        const response = await fetch(`/api/maintenance/units/get-units?page=${page}`);
         if (response.ok) {
           const data = await response.json();
           setUnits(data.units); // Assuming API returns { units: [] }
+          setCurrentPage(data.currentPage || 1);
+          setTotalPages(data.totalPages || 1);
         } else {
           console.error("Failed to fetch units");
         }
@@ -47,8 +54,8 @@ export default function Units() {
       }
     };
 
-    fetchUnits();
-  }, []);
+    fetchUnits(currentPage);
+  }, [currentPage]);
 
   const handleEdit = (unit) => {
     console.log("Edit unit:", unit);
@@ -60,6 +67,12 @@ export default function Units() {
     // Add your delete logic here
   };
 
+  const handlePageChange = (newPage) => {
+    if (newPage >= 1 && newPage <= totalPages) {
+      setCurrentPage(newPage);
+    }
+  };
+
   return (
     <DashboardLayoutWrapper>
       <div className="flex justify-between items-center">
@@ -69,7 +82,7 @@ export default function Units() {
             <MoveLeft className="scale-125" />
             Back to Maintenance
           </Button>
-          <AddUnitDialog />
+          <AddUnitDialog onSuccess={(newUnit) => setUnits((prevUnits) => [newUnit, ...prevUnits])}/>
         </div>
       </div>
       <Card className="flex flex-col gap-5 justify-between min-h-[49.1rem]">
@@ -150,6 +163,27 @@ export default function Units() {
             )}
           </TableBody>
         </Table>
+
+        {/* Pagination */}
+        <div className="flex justify-end items-center gap-4 p-4">
+          <Button
+            variant="outline"
+            disabled={currentPage === 1}
+            onClick={() => handlePageChange(currentPage - 1)}
+          >
+            Previous
+          </Button>
+          <span>
+            Page {currentPage} of {totalPages}
+          </span>
+          <Button
+            variant="outline"
+            disabled={currentPage === totalPages}
+            onClick={() => handlePageChange(currentPage + 1)}
+          >
+            Next
+          </Button>
+        </div>
       </Card>
     </DashboardLayoutWrapper>
   );
