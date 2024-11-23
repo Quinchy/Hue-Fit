@@ -54,6 +54,7 @@ export default function AddProduct() {
       description: "",
       type: "",
       category: "",
+      tags: "",
       variants: [],
       measurementsBySize: {},
     },
@@ -66,6 +67,7 @@ export default function AddProduct() {
       formData.append('description', values.description);
       formData.append('type', values.type);
       formData.append('category', values.category);
+      formData.append('tags', values.tags);
 
       values.variants.forEach((variant, variantIndex) => {
         formData.append(`variants[${variantIndex}][price]`, variant.price);
@@ -99,7 +101,19 @@ export default function AddProduct() {
 
   if (productError) return <div>Failed to load product information</div>;
 
-  const { types = [], categories = [] } = productData || {};
+  const { types = [], categories = [], tags = [] } = productData || {};
+
+  const getTypeNameById = (id) => {
+    const type = types.find((t) => t.id === parseInt(id));
+    return type ? type.name : '';
+  };
+
+  const getTagNameById = (id) => {
+    const tag = tags.find((t) => t.id === parseInt(id));
+    return tag ? tag.name : '';
+  };
+
+  const filteredTags = tags.filter(tag => tag.typeId === parseInt(formik.values.type));
 
   const isCoreProductValid = () => {
     return (
@@ -107,10 +121,12 @@ export default function AddProduct() {
       formik.values.name &&
       formik.values.type &&
       formik.values.category &&
+      formik.values.tags &&
       !formik.errors.thumbnail &&
       !formik.errors.name &&
       !formik.errors.type &&
-      !formik.errors.category
+      !formik.errors.category &&
+      !formik.errors.tags
     );
   };
 
@@ -120,8 +136,8 @@ export default function AddProduct() {
       const imageUrl = URL.createObjectURL(file);
       const uniqueId = `${file.name}-${Date.now()}`;
       const thumbnail = { file, url: imageUrl, id: uniqueId };
-      setPreviewImage(imageUrl); // Update preview
-      formik.setFieldValue("thumbnail", thumbnail); // Set structured object
+      setPreviewImage(imageUrl);
+      formik.setFieldValue("thumbnail", thumbnail);
     }
   };
 
@@ -130,6 +146,7 @@ export default function AddProduct() {
       fileInputRef.current.click();
     }
   };
+
   const markAllFieldsTouched = (values) => {
     const touched = {};
     const recursivelySetTouched = (obj, base = touched) => {
@@ -149,6 +166,7 @@ export default function AddProduct() {
     recursivelySetTouched(values);
     return touched;
   };
+
   return (
     <DashboardLayoutWrapper>
       <div className="flex justify-between items-center mb-5">
@@ -177,7 +195,7 @@ export default function AddProduct() {
               ref={fileInputRef}
               className="hidden"
               onChange={(e) => {
-                handleImageChange(e); // Custom handler
+                handleImageChange(e);
               }}
             />
             <Button variant="outline" type="button" className="w-full" onClick={openFilePicker}>
@@ -212,17 +230,22 @@ export default function AddProduct() {
             </div>
             <div className="flex flex-col gap-3">
               <Label className="font-bold flex flex-row items-center">Type <Asterisk className="w-4"/></Label>
-              <Select onValueChange={(value) => formik.setFieldValue("type", value)}>
+              <Select onValueChange={(value) => {
+                formik.setFieldValue("type", value);
+                formik.setFieldValue("tags", "");
+              }}>
                 <SelectTrigger className={`w-1/2 
                   ${InputErrorStyle(formik.errors.type, 
                     formik.touched.type)}`}
                 >
-                  <SelectValue placeholder="Select a type of clothing product" />
+                  <SelectValue placeholder="Select a type of clothing">
+                    {formik.values.type ? getTypeNameById(formik.values.type) : 'Select a type of clothing product'}
+                  </SelectValue>
                 </SelectTrigger>
                 <SelectContent>
                   <SelectGroup>
                     {types.map((type) => (
-                      <SelectItem key={type.id} value={type.name}>
+                      <SelectItem key={type.id} value={type.id.toString()}>
                         {type.name}
                       </SelectItem>
                     ))}
@@ -238,7 +261,9 @@ export default function AddProduct() {
                   ${InputErrorStyle(formik.errors.category, 
                     formik.touched.category)}`}
                 >
-                  <SelectValue placeholder="Select a category of clothing product" />
+                  <SelectValue placeholder="Select a category of clothing product">
+                    {formik.values.category || 'Select a category of clothing product'}
+                  </SelectValue>
                 </SelectTrigger>
                 <SelectContent>
                   <SelectGroup>
@@ -251,6 +276,29 @@ export default function AddProduct() {
                 </SelectContent>
               </Select>
               <InputErrorMessage error={formik.errors.category} touched={formik.touched.category} />
+            </div>
+            <div className="flex flex-col gap-3">
+              <Label className="font-bold flex flex-row items-center">Tags <Asterisk className="w-4"/></Label>
+              <Select disabled={!formik.values.type} onValueChange={(value) => formik.setFieldValue("tags", value)}>
+                <SelectTrigger className={`w-1/2 
+                  ${InputErrorStyle(formik.errors.tags, 
+                    formik.touched.tags)}`}
+                >
+                  <SelectValue placeholder="Select a tag">
+                    {formik.values.tags ? getTagNameById(formik.values.tags) : (!formik.values.type ? 'Please select type first' : 'Select tags of clothing product')}
+                  </SelectValue>
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectGroup>
+                    {filteredTags.map((tag) => (
+                      <SelectItem key={tag.id} value={tag.id.toString()}>
+                        {tag.name}
+                      </SelectItem>
+                    ))}
+                  </SelectGroup>
+                </SelectContent>
+              </Select>
+              <InputErrorMessage error={formik.errors.tags} touched={formik.touched.tags} />
             </div>
           </Card>
         </div>

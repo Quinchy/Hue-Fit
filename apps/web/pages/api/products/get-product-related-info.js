@@ -16,9 +16,10 @@ export default async function handler(req, res) {
             }
 
             // Fetch product-related information filtered by shopNo
-            const [productTypes, productCategories, colors, sizes, units] = await Promise.all([
+            const [productTypes, productCategories, tags, colors, sizes, units] = await Promise.all([
                 prisma.type.findMany({ where: { shopNo } }),
                 prisma.category.findMany({ where: { shopNo } }),
+                prisma.tags.findMany({ where: { shopNo } }),
                 prisma.colors.findMany({ where: { shopNo } }),
                 prisma.sizes.findMany({ where: { shopNo } }),
                 prisma.units.findMany({ where: { shopNo } })
@@ -27,6 +28,7 @@ export default async function handler(req, res) {
             return res.status(200).json({
                 types: productTypes,
                 categories: productCategories,
+                tags: tags,
                 colors: colors,
                 sizes: sizes,
                 units: units

@@ -180,8 +180,15 @@ export const productSchema = Yup.object({
   description: Yup.string().nullable(),
   type: Yup.string().required("Product type is required."),
   category: Yup.string().required("Product category is required."),
+  tags: Yup.string().required("Product tags is required."),
   variants: Yup.array()
     .of(productVariantSchema)
     .min(1, "At least one product variant is required."),
   measurementsBySize: measurementsBySizeSchema,
+});
+
+export const addSizeSchema = Yup.object({
+  name: Yup.string().required("The Size Name field is required."),
+  abbreviation: Yup.string().required("The Abbreviation field is required."),
+  nextTo: Yup.string().required("The Next To field is required.")
 });

@@ -27,8 +27,10 @@ export default async function handler(req, res) {
     const description = fields.description[0];
     const type = fields.type[0];
     const category = fields.category[0];
+    const tag = fields.tags[0];
     const typeId = await getTypeIdByName(type, shopNo);
     const categoryId = await getCategoryIdByName(category, shopNo);
+    const tagId = await getTagIdByName(tag, shopNo);
     const thumbnailURL = await uploadFileToSupabase(
       files.thumbnail[0],
       files.thumbnail[0].filepath,
@@ -45,6 +47,7 @@ export default async function handler(req, res) {
         description,
         typeId,
         categoryId,
+        tagId,
         thumbnailURL,
         totalQuantity,
         shopNo,
@@ -215,6 +218,23 @@ async function getCategoryIdByName(categoryName, shopNo) {
     return categoryRecord?.id || null;
   } catch (error) {
     console.error(`Error fetching category ID for category: ${categoryName}, shopNo: ${shopNo}`, error);
+    return null;
+  }
+}
+
+// Helper function to get the tag ID by tag name
+async function getTagIdByName(tagName, shopNo) {
+  try {
+    const tagRecord = await prisma.tags.findFirst({
+      where: {
+        name: tagName,
+        shopNo: shopNo,
+      },
+    });
+
+    return tagRecord?.id || null;
+  } catch (error) {
+    console.error(`Error fetching tag ID for tag: ${tagName}, shopNo: ${shopNo}`, error);
     return null;
   }
 }

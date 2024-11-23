@@ -17,6 +17,33 @@ const ProductVariantPictures = dynamic(() => import('../components/product-varia
 
 const fetcher = (url) => fetch(url).then((res) => res.json());
 
+function orderSizes(sizes) {
+  const sizeMap = new Map();
+  const nextIds = new Set();
+
+  sizes.forEach(size => {
+    sizeMap.set(size.id, size);
+    if (size.nextId !== null) {
+      nextIds.add(size.nextId);
+    }
+  });
+
+  const startIds = sizes.map(size => size.id).filter(id => !nextIds.has(id));
+
+  const orderedSizes = [];
+  startIds.forEach(startId => {
+    let currentSize = sizeMap.get(startId);
+    const visited = new Set();
+    while (currentSize && !visited.has(currentSize.id)) {
+      orderedSizes.push(currentSize);
+      visited.add(currentSize.id);
+      currentSize = sizeMap.get(currentSize.nextId);
+    }
+  });
+
+  return orderedSizes;
+}
+
 export default function ProductVariantCard({ variant, productType, onRemove, variantIndex }) {
   const [productData, setProductData] = useState(null);
 
@@ -40,17 +67,15 @@ export default function ProductVariantCard({ variant, productType, onRemove, var
 
   const { colors, sizes } = productData;
 
+  const orderedSizes = orderSizes(sizes);
+
+  const abbreviationToSizeMap = new Map();
+  orderedSizes.forEach(size => {
+    abbreviationToSizeMap.set(size.abbreviation, size);
+  });
+
   const imagesError = errors?.variants?.[variantIndex]?.images;
   const imagesTouched = touched?.variants?.[variantIndex]?.images;
-
-  const sizeNames = {
-    XS: 'Extra Small',
-    S: 'Small',
-    M: 'Medium',
-    L: 'Large',
-    XL: 'Extra Large',
-    XXL: 'Double Extra Large',
-  };
 
   return (
     <div className="flex flex-col gap-5 mb-5">
@@ -129,45 +154,38 @@ export default function ProductVariantCard({ variant, productType, onRemove, var
         <div className="mb-4 flex flex-col gap-3">
           <Label className="font-bold flex flex-row items-center">Size <Asterisk className="w-4"/></Label>
           <ToggleGroup type="multiple" className="flex justify-start gap-2">
-            {sizes.map((size) => (
+            {orderedSizes.map((size) => (
               <ToggleGroupItem
-              key={size.id}
-              value={size.abbreviation}
-              variant="outline"
-              selected={values.variants[variantIndex].sizes?.includes(size.abbreviation) || false}
-              onClick={() => {
-                const isSelected = values.variants[variantIndex].sizes?.includes(size.abbreviation);
-            
-                // Toggle size selection
-                const updatedSizes = isSelected
-                  ? values.variants[variantIndex].sizes.filter((s) => s !== size.abbreviation)
-                  : [...(values.variants[variantIndex].sizes || []), size.abbreviation];
-                setFieldValue(`variants.${variantIndex}.sizes`, updatedSizes);
-                setFieldTouched(`variants.${variantIndex}.sizes`, true);
-            
-                // Initialize quantities if not already set
-                if (!values.variants[variantIndex].quantities) {
-                  setFieldValue(`variants.${variantIndex}.quantities`, {});
-                }
-            
-                // Update quantities based on size selection
-                if (isSelected) {
-                  // If size is being deselected, remove it from quantities
-                  const updatedQuantities = { ...values.variants[variantIndex].quantities };
-                  delete updatedQuantities[size.abbreviation];
-                  setFieldValue(`variants.${variantIndex}.quantities`, updatedQuantities);
+                key={size.id}
+                value={size.abbreviation}
+                variant="outline"
+                selected={values.variants[variantIndex].sizes?.includes(size.abbreviation) || false}
+                onClick={() => {
+                  const isSelected = values.variants[variantIndex].sizes?.includes(size.abbreviation);
 
-                  // Remove specific measurements for this size
-                  const updatedMeasurements = { ...values.measurementsBySize };
-                  delete updatedMeasurements[size.abbreviation];
-                  setFieldValue("measurementsBySize", updatedMeasurements);
-                } 
-                else {
-                  // If size is selected, add a field for its quantity
-                  setFieldValue(`variants.${variantIndex}.quantities.${size.abbreviation}`, ' ');
-                }
-              }}
-              className="min-w-14 min-h-14 border-2"
+                  const updatedSizes = isSelected
+                    ? values.variants[variantIndex].sizes.filter((s) => s !== size.abbreviation)
+                    : [...(values.variants[variantIndex].sizes || []), size.abbreviation];
+                  setFieldValue(`variants.${variantIndex}.sizes`, updatedSizes);
+                  setFieldTouched(`variants.${variantIndex}.sizes`, true);
+
+                  if (!values.variants[variantIndex].quantities) {
+                    setFieldValue(`variants.${variantIndex}.quantities`, {});
+                  }
+
+                  if (isSelected) {
+                    const updatedQuantities = { ...values.variants[variantIndex].quantities };
+                    delete updatedQuantities[size.abbreviation];
+                    setFieldValue(`variants.${variantIndex}.quantities`, updatedQuantities);
+
+                    const updatedMeasurements = { ...values.measurementsBySize };
+                    delete updatedMeasurements[size.abbreviation];
+                    setFieldValue("measurementsBySize", updatedMeasurements);
+                  } else {
+                    setFieldValue(`variants.${variantIndex}.quantities.${size.abbreviation}`, ' ');
+                  }
+                }}
+                className="min-w-14 min-h-14 border-2"
               >
                 {size.abbreviation}
               </ToggleGroupItem>
@@ -185,31 +203,33 @@ export default function ProductVariantCard({ variant, productType, onRemove, var
           />
         </div>
 
-        {values.variants[variantIndex].sizes?.map((size) => (
-          <div key={size} className="border-t-2 border-t-border border-dashed py-4 mt-4">
-            <h3 className="font-semibold text-lg mb-2">{`Quantity for Size - ${sizeNames[size] || size}`}</h3>
+        {values.variants[variantIndex].sizes?.map((sizeAbbreviation) => {
+          const sizeObject = abbreviationToSizeMap.get(sizeAbbreviation);
+          return (
+            <div key={sizeAbbreviation} className="border-t-2 border-t-border border-dashed py-4 mt-4">
+              <h3 className="font-semibold text-lg mb-2">{`Quantity for Size - ${sizeObject?.name || sizeAbbreviation}`}</h3>
 
-            {/* Quantity Field */}
-            <div className="flex-1 flex flex-col gap-3 mb-5">
-              <Label className="font-bold flex flex-row items-center" htmlFor={`variants.${variantIndex}.quantities.${size}`}>Quantity <Asterisk className="w-4"/></Label>
-              <Input 
-                id={`variants.${variantIndex}.quantities.${size}`}
-                type="number"
-                placeholder="Enter quantity"
-                value={values.variants[variantIndex].quantities?.[size] || ""}
-                onChange={(e) => {
-                  setFieldValue(`variants.${variantIndex}.quantities.${size}`, e.target.value);
-                  setFieldTouched(`variants.${variantIndex}.quantities.${size}`, true);
-                }}    
-                className={InputErrorStyle(errors.variants?.[variantIndex]?.quantities?.[size], touched.variants?.[variantIndex]?.quantities?.[size])}                
-              />
-              <InputErrorMessage
-                error={errors.variants?.[variantIndex]?.quantities?.[size]}
-                touched={touched.variants?.[variantIndex]?.quantities?.[size]}
-              />
+              <div className="flex-1 flex flex-col gap-3 mb-5">
+                <Label className="font-bold flex flex-row items-center" htmlFor={`variants.${variantIndex}.quantities.${sizeAbbreviation}`}>Quantity <Asterisk className="w-4"/></Label>
+                <Input 
+                  id={`variants.${variantIndex}.quantities.${sizeAbbreviation}`}
+                  type="number"
+                  placeholder="Enter quantity"
+                  value={values.variants[variantIndex].quantities?.[sizeAbbreviation] || ""}
+                  onChange={(e) => {
+                    setFieldValue(`variants.${variantIndex}.quantities.${sizeAbbreviation}`, e.target.value);
+                    setFieldTouched(`variants.${variantIndex}.quantities.${sizeAbbreviation}`, true);
+                  }}    
+                  className={InputErrorStyle(errors.variants?.[variantIndex]?.quantities?.[sizeAbbreviation], touched.variants?.[variantIndex]?.quantities?.[sizeAbbreviation])}                
+                />
+                <InputErrorMessage
+                  error={errors.variants?.[variantIndex]?.quantities?.[sizeAbbreviation]}
+                  touched={touched.variants?.[variantIndex]?.quantities?.[sizeAbbreviation]}
+                />
+              </div>
             </div>
-          </div>
-        ))}
+          );
+        })}
 
       </Card>
     </div>
