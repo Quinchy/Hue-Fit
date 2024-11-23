@@ -190,5 +190,5 @@ export const productSchema = Yup.object({
 export const addSizeSchema = Yup.object({
   name: Yup.string().required("The Size Name field is required."),
   abbreviation: Yup.string().required("The Abbreviation field is required."),
-  nextTo: Yup.string().required("The Next To field is required.")
+  nextTo: Yup.string().nullable(),
 });

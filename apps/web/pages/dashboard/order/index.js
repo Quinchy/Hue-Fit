@@ -61,12 +61,12 @@ export default function Orders() {
                 </DropdownMenuItem>
                 <DropdownMenuItem className="justify-center">
                   <Button variant="none" className="text-base">
-                    Shipping
+                    Preparing
                   </Button>
                 </DropdownMenuItem>
                 <DropdownMenuItem className="justify-center">
                   <Button variant="none" className="text-base">
-                    Delivered
+                    Packaging
                   </Button>
                 </DropdownMenuItem>
               </DropdownMenuGroup>
@@ -147,7 +147,7 @@ export default function Orders() {
               <TableCell className="max-w-[1rem] text-center">Quantity</TableCell>
               <TableCell className="max-w-[1rem] text-center">Price</TableCell>
               <TableCell className="max-w-[1rem] text-center">
-                <p className="py-1 w-full rounded font-bold text-card bg-orange-500 uppercase">Shipping</p>
+                <p className="py-1 w-full rounded font-bold text-card bg-orange-500 uppercase">Preparing</p>
               </TableCell>
               <TableCell className="max-w-[1rem] text-center">
                 <DropdownMenu>
@@ -188,7 +188,7 @@ export default function Orders() {
               <TableCell className="max-w-[1rem] text-center">Quantity</TableCell>
               <TableCell className="max-w-[1rem] text-center">Price</TableCell>
               <TableCell className="max-w-[1rem] text-center">
-                <p className="py-1 w-full rounded font-bold text-card bg-green-500 uppercase">Delivered</p>
+                <p className="py-1 w-full rounded font-bold text-card bg-red-500 uppercase">Packaging</p>
               </TableCell>
               <TableCell className="max-w-[1rem] text-center">
                 <DropdownMenu>

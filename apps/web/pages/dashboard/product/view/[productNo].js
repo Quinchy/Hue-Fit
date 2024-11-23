@@ -141,7 +141,7 @@ export default function ViewProduct() {
               </div>
               <div className="flex flex-row gap-2">
                 <strong>Tags:</strong>
-                <p className="uppercase font-light">{product.tags || "N/A"}</p>
+                <p className="uppercase font-light">{product.Tags.name || "N/A"}</p>
               </div>
             </div>
           </div>

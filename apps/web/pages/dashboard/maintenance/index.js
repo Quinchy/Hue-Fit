@@ -21,6 +21,7 @@ export default function Maintenance() {
 
   useEffect(() => {
     const fetchAndUpdateTotals = async () => {
+      setLoading(true); // Start loading if updates are detected
       try {
         const cachedTotals = JSON.parse(localStorage.getItem("totals"));
         setTotals(cachedTotals); // Use cached data immediately if available
@@ -31,7 +32,6 @@ export default function Maintenance() {
 
         // If cache is empty or differs from server, update storage and state
         if (!cachedTotals || JSON.stringify(cachedTotals) !== JSON.stringify(serverTotals)) {
-          setLoading(true); // Start loading if updates are detected
           localStorage.setItem("totals", JSON.stringify(serverTotals));
           setTotals(serverTotals);
         }

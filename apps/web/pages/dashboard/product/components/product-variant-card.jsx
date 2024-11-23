@@ -77,6 +77,9 @@ export default function ProductVariantCard({ variant, productType, onRemove, var
   const imagesError = errors?.variants?.[variantIndex]?.images;
   const imagesTouched = touched?.variants?.[variantIndex]?.images;
 
+  const selectedSizes = values.variants[variantIndex].sizes || [];
+  const selectedOrderedSizes = orderedSizes.filter(size => selectedSizes.includes(size.abbreviation));
+
   return (
     <div className="flex flex-col gap-5 mb-5">
       <ProductVariantPictures variantIndex={variantIndex} />
@@ -203,7 +206,8 @@ export default function ProductVariantCard({ variant, productType, onRemove, var
           />
         </div>
 
-        {values.variants[variantIndex].sizes?.map((sizeAbbreviation) => {
+        {selectedOrderedSizes.map((size) => {
+          const sizeAbbreviation = size.abbreviation;
           const sizeObject = abbreviationToSizeMap.get(sizeAbbreviation);
           return (
             <div key={sizeAbbreviation} className="border-t-2 border-t-border border-dashed py-4 mt-4">

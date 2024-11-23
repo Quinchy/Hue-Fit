@@ -15,6 +15,7 @@ export default async function handler(req, res) {
       include: {
         Type: true,
         Category: true,
+        Tags: true,
         ProductVariants: {
           include: {
             ProductVariantImages: true,

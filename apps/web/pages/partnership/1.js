@@ -9,6 +9,7 @@ import { Button } from "@/components/ui/button";
 import { InputErrorMessage, InputErrorStyle } from "@/components/ui/error-message";
 import WebsiteLayoutWrapper from "@/components/ui/website-layout";
 import { useEffect } from "react";
+import { Asterisk } from "lucide-react";
 
 export default function ContactInformationStep() {
   const router = useRouter();
@@ -23,6 +24,7 @@ export default function ContactInformationStep() {
       router.push(routes.partnership2);
     },
   });
+
   useEffect(() => {
     const savedData = JSON.parse(sessionStorage.getItem("partnershipData") || "{}");
     formik.setValues(savedData);
@@ -31,11 +33,17 @@ export default function ContactInformationStep() {
   return (
     <WebsiteLayoutWrapper className="justify-center items-center">
       <div className="flex flex-col items-center gap-3">
-        <CardTitle className="text-8xl text-center font-black"> Innovate Through <br></br> AI-OUTFIT Generation </CardTitle>
-        <CardTitle className="text-2xl text-primary/80 font-base">{"Join us in revolutionizing men's fashion, one recommendation at a time."}</CardTitle>
+        <CardTitle className="text-8xl text-center font-black">
+          Innovate Through <br></br> AI-OUTFIT Generation
+        </CardTitle>
+        <CardTitle className="text-2xl text-primary/80 font-base">
+          {"Join us in revolutionizing men's fashion, one recommendation at a time."}
+        </CardTitle>
       </div>
       <div className="flex flex-row items-center">
-        <div className="p-1 border-2 border-primary rounded-full"><div className="p-3.5 bg-primary rounded-full"></div></div>
+        <div className="p-1 border-2 border-primary rounded-full">
+          <div className="p-3.5 bg-primary rounded-full"></div>
+        </div>
         <div className="h-[2px] w-36 border-t border-primary/50 border-dashed"></div>
         <div className="p-4 border-2 border-primary/50 rounded-full"></div>
         <div className="h-[2px] w-36 border-t border-primary/50 border-dashed"></div>
@@ -48,7 +56,9 @@ export default function ContactInformationStep() {
         <form onSubmit={formik.handleSubmit} className="flex flex-col gap-5 p-5">
           <CardTitle className="text-2xl">Contact Person Information</CardTitle>
           <div className="flex flex-col gap-3">
-            <Label htmlFor="firstName">First Name</Label>
+            <Label htmlFor="firstName" className="font-bold flex flex-row items-center">
+              First Name<Asterisk className="w-4" />
+            </Label>
             <Input
               id="firstName"
               placeholder="Enter your first name"
@@ -58,7 +68,9 @@ export default function ContactInformationStep() {
             <InputErrorMessage error={formik.errors.firstName} touched={formik.touched.firstName} />
           </div>
           <div className="flex flex-col gap-3">
-            <Label htmlFor="lastName">Last Name</Label>
+            <Label htmlFor="lastName" className="font-bold flex flex-row items-center">
+              Last Name<Asterisk className="w-4" />
+            </Label>
             <Input
               id="lastName"
               placeholder="Enter your last name"
@@ -68,7 +80,9 @@ export default function ContactInformationStep() {
             <InputErrorMessage error={formik.errors.lastName} touched={formik.touched.lastName} />
           </div>
           <div className="flex flex-col gap-3">
-            <Label htmlFor="contactNo">Contact Number</Label>
+            <Label htmlFor="contactNo" className="font-bold flex flex-row items-center">
+              Contact Number<Asterisk className="w-4" />
+            </Label>
             <Input
               id="contactNo"
               placeholder="Enter your contact number"
@@ -78,7 +92,9 @@ export default function ContactInformationStep() {
             <InputErrorMessage error={formik.errors.contactNo} touched={formik.touched.contactNo} />
           </div>
           <div className="flex flex-col gap-3">
-            <Label htmlFor="email">Email</Label>
+            <Label htmlFor="email" className="font-bold flex flex-row items-center">
+              Email<Asterisk className="w-4" />
+            </Label>
             <Input
               id="email"
               type="email"
@@ -89,7 +105,9 @@ export default function ContactInformationStep() {
             <InputErrorMessage error={formik.errors.email} touched={formik.touched.email} />
           </div>
           <div className="flex flex-col gap-3">
-            <Label htmlFor="position">Position</Label>
+            <Label htmlFor="position" className="font-bold flex flex-row items-center">
+              Position<Asterisk className="w-4" />
+            </Label>
             <Input
               id="position"
               placeholder="Enter your position"
@@ -98,7 +116,21 @@ export default function ContactInformationStep() {
             />
             <InputErrorMessage error={formik.errors.position} touched={formik.touched.position} />
           </div>
-          <Button type="submit" className="w-full mt-4">Next</Button>
+          <Button
+            type="submit"
+            className="w-full mt-4"
+            onClick={() => {
+              formik.setTouched({
+                firstName: true,
+                lastName: true,
+                contactNo: true,
+                email: true,
+                position: true,
+              });
+            }}
+          >
+            Next
+          </Button>
         </form>
       </Card>
     </WebsiteLayoutWrapper>

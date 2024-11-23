@@ -1,3 +1,4 @@
+// components/AddSizeDialog.jsx
 import { Dialog, DialogTrigger, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -18,13 +19,12 @@ export default function AddSizeDialog({ buttonClassName = "", buttonName = "Add 
   const [isDialogOpen, setIsDialogOpen] = useState(false);
 
   useEffect(() => {
-    // Fetch sizes from the API
     const fetchSizes = async () => {
       try {
         const response = await fetch("/api/maintenance/sizes/get-sizes");
         if (response.ok) {
           const data = await response.json();
-          setSizes(data.sizes || []); // Ensure fallback to empty array if API response is malformed
+          setSizes(data.sizes || []);
         } else {
           console.error("Failed to fetch sizes");
         }
@@ -38,12 +38,11 @@ export default function AddSizeDialog({ buttonClassName = "", buttonName = "Add 
     fetchSizes();
   }, []);
 
-  // Formik Setup
   const formik = useFormik({
     initialValues: {
       name: "",
       abbreviation: "",
-      nextTo: "",
+      nextTo: null,
     },
     validationSchema: addSizeSchema,
     onSubmit: async (values, { resetForm }) => {
@@ -62,7 +61,7 @@ export default function AddSizeDialog({ buttonClassName = "", buttonName = "Add 
           setShowAlert(true);
           resetForm();
           setIsDialogOpen(false);
-          onSizeAdded && onSizeAdded(); // Notify parent to refresh sizes
+          onSizeAdded && onSizeAdded();
         } else {
           console.error("Failed to add size");
         }
@@ -141,7 +140,7 @@ export default function AddSizeDialog({ buttonClassName = "", buttonName = "Add 
               {/* Next To Field */}
               <div className="flex flex-col gap-2">
                 <Label htmlFor="nextTo" className="font-bold flex flex-row items-center">
-                  Next to <Asterisk className="w-4" />
+                  Next to
                 </Label>
                 <Select
                   disabled={loading}
@@ -154,7 +153,7 @@ export default function AddSizeDialog({ buttonClassName = "", buttonName = "Add 
                     )}`}
                   >
                     <SelectValue
-                      placeholder={loading ? "Loading sizes..." : "Select a size"}
+                      placeholder={loading ? "Loading sizes..." : "Select a size or leave empty for largest"}
                     />
                   </SelectTrigger>
                   <SelectContent>
