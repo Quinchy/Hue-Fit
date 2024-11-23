@@ -1,6 +1,5 @@
-// Step 3 Component (Location Information)
-// File: 3.js
-import { useEffect } from "react";
+// 3.js
+import { useEffect, useContext } from "react";
 import { useFormik } from "formik";
 import { locationInfoSchema } from "@/utils/validation-schema";
 import { useRouter } from "next/router";
@@ -11,27 +10,25 @@ import { Button } from "@/components/ui/button";
 import MapPicker from "@/components/ui/map-picker";
 import WebsiteLayoutWrapper from "@/components/ui/website-layout";
 import { Check } from 'lucide-react';
+import { FormContext } from "@/providers/form-provider";
 
 export default function LocationInformationStep() {
   const router = useRouter();
+  const { formData, updateFormData } = useContext(FormContext);
 
   const formik = useFormik({
-    initialValues: { googleMapPlaceName: "", latitude: null, longitude: null },
+    initialValues: {
+      googleMapPlaceName: formData.googleMapPlaceName || "",
+      latitude: formData.latitude || null,
+      longitude: formData.longitude || null,
+    },
     validationSchema: locationInfoSchema,
     onSubmit: (values) => {
-      console.log('Location Information:', values);
-      const previousData = JSON.parse(sessionStorage.getItem("partnershipData")) || {};
-      const completeData = { ...previousData, ...values };
-      sessionStorage.setItem("partnershipData", JSON.stringify(completeData));
+      updateFormData(values);
       document.cookie = "currentStep=4; path=/";
       router.push(routes.partnership4);
     },
   });
-
-  useEffect(() => {
-    const savedData = JSON.parse(sessionStorage.getItem("partnershipData") || "{}");
-    formik.setValues(savedData);
-  }, []);
 
   const handleLocationSelect = (coords, placeName) => {
     formik.setFieldValue("latitude", coords.lat);

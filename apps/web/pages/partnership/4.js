@@ -1,6 +1,5 @@
-// Step 4 Component (Account Information, Final Submission)
-// File: 4.js
-import { useEffect } from "react";
+// 4.js (Final Step)
+import { useEffect, useContext } from "react";
 import { useFormik } from "formik";
 import { accountInfoSchema } from "@/utils/validation-schema";
 import { useRouter } from "next/router";
@@ -11,57 +10,47 @@ import { Label } from "@/components/ui/label";
 import { Button } from "@/components/ui/button";
 import WebsiteLayoutWrapper from "@/components/ui/website-layout";
 import { Check } from 'lucide-react';
+import { FormContext } from "@/providers/form-provider";
 
 export default function AccountInformationStep() {
   const router = useRouter();
+  const { formData, updateFormData } = useContext(FormContext);
 
   const formik = useFormik({
     initialValues: { username: "", password: "" },
     validationSchema: accountInfoSchema,
     onSubmit: async (values) => {
-      const previousData = JSON.parse(sessionStorage.getItem("partnershipData")) || {};
-      const completeData = { ...previousData, ...values };
-      const formData = new FormData();
-      console.log("Complete Data:", completeData);
-      console.log("Form Data:", formData);
-      if (values.businessLicense && values.businessLicense.length > 0) {
-        values.businessLicense.forEach((file, index) => {
-          // Check that file is of type `File`
-          if (file instanceof File) {
-            console.log(`Appending file: ${file.name}`);
-            formData.append(`businessLicense[${index}]`, file, file.name);
-          } else {
-            console.error("Not a valid file object:", file);
-          }
-        });
-      } else {
-        console.log("No business licenses selected.");
-      }
+      updateFormData(values);
+      const completeData = { ...formData, ...values };
+      const formDataToSend = new FormData();
+
       // Append each entry to FormData
       Object.entries(completeData).forEach(([key, value]) => {
-        formData.append(key, value);
+        if (key !== 'businessLicense') {
+          formDataToSend.append(key, value);
+        }
       });
-      // Log FormData contents for debugging
-      for (let [key, value] of formData.entries()) {
-        console.log(`${key}:`, value);
+
+      // Append business license files to FormData
+      if (completeData.businessLicense && completeData.businessLicense.length > 0) {
+        completeData.businessLicense.forEach((file, index) => {
+          if (file instanceof File) {
+            formDataToSend.append(`businessLicense[${index}]`, file, file.name);
+          }
+        });
       }
+
       const response = await fetch("/api/partnership/send-shop-request", {
         method: "POST",
-        body: formData,
+        body: formDataToSend,
       });
 
       if (response.ok) {
-        sessionStorage.removeItem("partnershipData");
         document.cookie = "currentStep=5; path=/";
         router.push(routes.partnership5);
       }
     },
   });
-
-  useEffect(() => {
-    const savedData = JSON.parse(sessionStorage.getItem("partnershipData") || "{}");
-    formik.setValues(savedData);
-  }, []);
 
   return (
     <WebsiteLayoutWrapper className="justify-center items-center">
