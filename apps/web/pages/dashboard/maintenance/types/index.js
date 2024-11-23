@@ -28,36 +28,59 @@ export default function Types() {
   const router = useRouter();
   const [types, setTypes] = useState([]);
   const [loading, setLoading] = useState(true);
+  const [currentPage, setCurrentPage] = useState(1);
+  const [totalPages, setTotalPages] = useState(1);
+
+  const fetchTypes = async (page = 1) => {
+    setLoading(true);
+    try {
+      const response = await fetch(`/api/maintenance/types/get-types?page=${page}`);
+      if (response.ok) {
+        const data = await response.json();
+        setTypes(data.types);
+        setCurrentPage(data.currentPage);
+        setTotalPages(data.totalPages);
+      } else {
+        console.error("Failed to fetch types");
+      }
+    } catch (error) {
+      console.error("An error occurred:", error);
+    } finally {
+      setLoading(false);
+    }
+  };
 
   useEffect(() => {
-    // Fetch types from the API
-    const fetchTypes = async () => {
-      try {
-        const response = await fetch("/api/maintenance/types/get-types");
-        if (response.ok) {
-          const data = await response.json();
-          setTypes(data.types); // Assuming API returns { types: [] }
-        } else {
-          console.error("Failed to fetch types");
-        }
-      } catch (error) {
-        console.error("An error occurred:", error);
-      } finally {
-        setLoading(false);
-      }
-    };
+    fetchTypes(currentPage);
+  }, [currentPage]);
 
-    fetchTypes();
-  }, []);
+  const handleAddType = async () => {
+    fetchTypes(currentPage); // Refresh the table dynamically after adding a type
+  };
 
   const handleEdit = (type) => {
     console.log("Edit type:", type);
     // Add your edit logic here
   };
 
-  const handleDelete = (type) => {
-    console.log("Delete type:", type);
-    // Add your delete logic here
+  const handleDelete = async (typeId) => {
+    try {
+      const response = await fetch(`/api/maintenance/types/delete-type`, {
+        method: "DELETE",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({ id: typeId }),
+      });
+
+      if (response.ok) {
+        setTypes((prevTypes) => prevTypes.filter((type) => type.id !== typeId));
+      } else {
+        console.error("Failed to delete type");
+      }
+    } catch (error) {
+      console.error("An error occurred:", error);
+    }
   };
 
   return (
@@ -69,7 +92,7 @@ export default function Types() {
             <MoveLeft className="scale-125" />
             Back to Maintenance
           </Button>
-          <AddTypeDialog />
+          <AddTypeDialog onAdd={handleAddType} />
         </div>
       </div>
       <Card className="flex flex-col gap-5 justify-between min-h-[49.1rem]">
@@ -83,15 +106,15 @@ export default function Types() {
           </TableHeader>
           <TableBody>
             {loading ? (
-              Array.from({ length: 5 }).map((_, index) => (
+              Array.from({ length: 8 }).map((_, index) => (
                 <TableRow key={index}>
-                  <TableCell>
+                  <TableCell className="text-center">
                     <Skeleton className="h-5 w-12" />
                   </TableCell>
-                  <TableCell>
+                  <TableCell className="text-center">
                     <Skeleton className="h-5 w-48" />
                   </TableCell>
-                  <TableCell>
+                  <TableCell className="text-center">
                     <Skeleton className="h-8 w-24" />
                   </TableCell>
                 </TableRow>
@@ -99,9 +122,9 @@ export default function Types() {
             ) : types.length > 0 ? (
               types.map((type) => (
                 <TableRow key={type.id}>
-                  <TableCell className="w-[10%]">{type.id}</TableCell>
-                  <TableCell className="w-[80%]">{type.name}</TableCell>
-                  <TableCell>
+                  <TableCell className="w-[40%]">{type.id}</TableCell>
+                  <TableCell className="w-[40%]">{type.name.toUpperCase()}</TableCell>
+                  <TableCell className="w-[30%]">
                     <DropdownMenu>
                       <DropdownMenuTrigger asChild>
                         <Button variant="outline" className="font-normal">
@@ -124,7 +147,7 @@ export default function Types() {
                             <Button
                               variant="none"
                               className="font-bold text-red-500"
-                              onClick={() => handleDelete(type)}
+                              onClick={() => handleDelete(type.id)}
                             >
                               <Trash2 className="scale-125 stroke-red-500" />
                               Delete
@@ -145,6 +168,25 @@ export default function Types() {
             )}
           </TableBody>
         </Table>
+        <div className="flex justify-between items-center mt-4">
+          <Button
+            variant="outline"
+            disabled={currentPage <= 1}
+            onClick={() => setCurrentPage((prev) => prev - 1)}
+          >
+            Previous
+          </Button>
+          <span>
+            Page {currentPage} of {totalPages}
+          </span>
+          <Button
+            variant="outline"
+            disabled={currentPage >= totalPages}
+            onClick={() => setCurrentPage((prev) => prev + 1)}
+          >
+            Next
+          </Button>
+        </div>
       </Card>
     </DashboardLayoutWrapper>
   );

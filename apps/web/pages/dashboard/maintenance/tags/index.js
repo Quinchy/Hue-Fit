@@ -1,3 +1,4 @@
+// pages/dashboard/maintenance/tags
 import { Card, CardTitle } from "@/components/ui/card";
 import DashboardLayoutWrapper from "@/components/ui/dashboard-layout";
 import { Button } from "@/components/ui/button";
@@ -26,22 +27,22 @@ import { useEffect, useState } from "react";
 
 export default function Tags() {
   const router = useRouter();
-  const [tags, setTags] = useState([]);
-  const [loading, setLoading] = useState(true);
+  const [tags, setTags] = useState([]); // Stores tag list
+  const [loading, setLoading] = useState(true); // Loading state
 
+  // Fetch tags on component load
   useEffect(() => {
-    // Fetch tags from the API
     const fetchTags = async () => {
       try {
-        const response = await fetch("/api/maintenance/tags/get-tags");
+        const response = await fetch("/api/maintenance/tags/get-tags"); // Fetch data from updated API
         if (response.ok) {
           const data = await response.json();
-          setTags(data.tags); // Assuming API returns { tags: [] }
+          setTags(data.tags); // API now returns `tags: [{ id, name, typeName }]`
         } else {
           console.error("Failed to fetch tags");
         }
       } catch (error) {
-        console.error("An error occurred:", error);
+        console.error("An error occurred while fetching tags:", error);
       } finally {
         setLoading(false);
       }
@@ -49,6 +50,11 @@ export default function Tags() {
 
     fetchTags();
   }, []);
+
+  // Handle add-tag dialog's onTagAdded callback
+  const handleAddTag = (newTag) => {
+    setTags((prevTags) => [newTag, ...prevTags]); // Update the tags list
+  };
 
   const handleEdit = (tag) => {
     console.log("Edit tag:", tag);
@@ -69,7 +75,7 @@ export default function Tags() {
             <MoveLeft className="scale-125" />
             Back to Maintenance
           </Button>
-          <AddTagDialog />
+          <AddTagDialog onTagAdded={handleAddTag} /> {/* Callback for new tags */}
         </div>
       </div>
       <Card className="flex flex-col gap-5 justify-between min-h-[49.1rem]">
@@ -103,9 +109,12 @@ export default function Tags() {
             ) : tags.length > 0 ? (
               tags.map((tag) => (
                 <TableRow key={tag.id}>
-                  <TableCell className="w-[10%]">{tag.id}</TableCell>
-                  <TableCell className="w-[40%]">{tag.name}</TableCell>
-                  <TableCell className="w-[30%]">{tag.assignTo}</TableCell>
+                  <TableCell className="w-[20%]">{tag.id}</TableCell>
+                  <TableCell className="w-[30%]">{tag.name}</TableCell>
+                  <TableCell className="w-[30%]">
+                    {/* Display the typeName fetched from API */}
+                    {tag.typeName || "Unassigned"}
+                  </TableCell>
                   <TableCell>
                     <DropdownMenu>
                       <DropdownMenuTrigger asChild>

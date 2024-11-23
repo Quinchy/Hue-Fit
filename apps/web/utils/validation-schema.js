@@ -37,15 +37,6 @@ export const shopInfoSchema = Yup.object({
     "atLeastOneFile",
     "At least one business license is required.",
     (value) => value && value.length >= 1
-  )
-  .test(
-    "fileProperties",
-    "Each file must be a valid URL.",
-    (value) =>
-      value &&
-      value.every(
-        (url) => typeof url === "string" && url.startsWith("https") // Simple check to ensure it's a URL
-      )
   ),
   shopName: Yup.string().required("Shop name is required."),
   shopContactNo: Yup.string().required("Shop contact number is required."),

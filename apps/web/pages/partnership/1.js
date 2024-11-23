@@ -1,3 +1,4 @@
+// form1.jsx
 import { useFormik } from "formik";
 import { contactInfoSchema } from "@/utils/validation-schema"; // Validation schema for Step 1
 import { useRouter } from "next/router";
@@ -8,27 +9,30 @@ import { Label } from "@/components/ui/label";
 import { Button } from "@/components/ui/button";
 import { InputErrorMessage, InputErrorStyle } from "@/components/ui/error-message";
 import WebsiteLayoutWrapper from "@/components/ui/website-layout";
-import { useEffect } from "react";
+import { useContext } from "react";
 import { Asterisk } from "lucide-react";
+import { FormContext } from "@/providers/form-provider";
 
 export default function ContactInformationStep() {
   const router = useRouter();
+  const { formData, updateFormData } = useContext(FormContext);
 
   // Formik setup with validation schema for Step 1
   const formik = useFormik({
-    initialValues: { firstName: "", lastName: "", contactNo: "", email: "", position: "" },
+    initialValues: {
+      firstName: formData.firstName || "",
+      lastName: formData.lastName || "",
+      contactNo: formData.contactNo || "",
+      email: formData.email || "",
+      position: formData.position || "",
+    },
     validationSchema: contactInfoSchema,
     onSubmit: (values) => {
-      sessionStorage.setItem("partnershipData", JSON.stringify(values));
+      updateFormData(values);
       document.cookie = "currentStep=2; path=/";
       router.push(routes.partnership2);
     },
   });
-
-  useEffect(() => {
-    const savedData = JSON.parse(sessionStorage.getItem("partnershipData") || "{}");
-    formik.setValues(savedData);
-  }, []);
 
   return (
     <WebsiteLayoutWrapper className="justify-center items-center">

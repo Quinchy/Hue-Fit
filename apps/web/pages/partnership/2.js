@@ -1,3 +1,4 @@
+// form2.jsx
 import { useFormik } from "formik";
 import { shopInfoSchema } from "@/utils/validation-schema";
 import { useRouter } from "next/router";
@@ -10,59 +11,32 @@ import { InputErrorMessage, InputErrorStyle } from "@/components/ui/error-messag
 import FileUpload from "@/components/ui/file-upload";
 import WebsiteLayoutWrapper from "@/components/ui/website-layout";
 import { Check } from 'lucide-react';
-import { useEffect } from "react";
+import { useEffect, useContext } from "react";
+import { FormContext } from "@/providers/form-provider";
 
 export default function ShopInformationStep() {
   const router = useRouter();
+  const { formData, updateFormData } = useContext(FormContext);
 
   const formik = useFormik({
     initialValues: {
-      shopName: "",
-      shopContactNo: "",
-      buildingNo: "",
-      street: "",
-      barangay: "",
-      municipality: "",
-      province: "",
-      postalNumber: "",
-      businessLicense: [], // Initially empty array for business licenses
+      shopName: formData.shopName || "",
+      shopContactNo: formData.shopContactNo || "",
+      buildingNo: formData.buildingNo || "",
+      street: formData.street || "",
+      barangay: formData.barangay || "",
+      municipality: formData.municipality || "",
+      province: formData.province || "",
+      postalNumber: formData.postalNumber || "",
+      businessLicense: formData.businessLicense || [], // Use context data
     },
     validationSchema: shopInfoSchema,
     onSubmit: (values) => {
-      const formData = new FormData();
-
-      // Append other fields
-      for (const key in values) {
-        if (key !== 'businessLicense') {
-          formData.append(key, values[key]);
-        }
-      }
-
-      // Append business license URLs to FormData (multiple files handled)
-      values.businessLicense.forEach((url, index) => {
-        formData.append(`businessLicense[${index}]`, url); // Adding each file URL
-      });
-
-      // Log FormData entries to debug
-      for (let pair of formData.entries()) {
-        console.log(pair[0] + ':', pair[1]);
-      }
-
-      // Log values before saving to sessionStorage
-      console.log('Formik values:', values);
-
-      const previousData = JSON.parse(sessionStorage.getItem("partnershipData")) || {};
-      sessionStorage.setItem("partnershipData", JSON.stringify({ ...previousData, ...values }));
+      updateFormData(values);
       document.cookie = "currentStep=3; path=/";
       router.push(routes.partnership3);
-      console.log('Session Storage:', JSON.parse(sessionStorage.getItem("partnershipData")));
     },
   });
-
-  useEffect(() => {
-    const savedData = JSON.parse(sessionStorage.getItem("partnershipData") || "{}");
-    formik.setValues(savedData);
-  }, []);
 
   return (
     <WebsiteLayoutWrapper className="justify-center items-center">
@@ -85,6 +59,7 @@ export default function ShopInformationStep() {
               <Label htmlFor="businessLicense">Business License</Label>
               <FileUpload
                 onFileSelect={(files) => formik.setFieldValue("businessLicense", files)}
+                initialFiles={formik.values.businessLicense}
                 className={formik.errors.businessLicense && formik.touched.businessLicense ? "border-red-500" : "border-border"}
               />
               <InputErrorMessage error={formik.errors.businessLicense} touched={formik.touched.businessLicense} />
