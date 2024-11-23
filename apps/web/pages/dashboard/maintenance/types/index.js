@@ -62,92 +62,90 @@ export default function Types() {
 
   return (
     <DashboardLayoutWrapper>
-      <div className="flex flex-col justify-between gap-7">
-        <div className="flex justify-between items-center mb-5">
-          <CardTitle className="text-4xl">Types</CardTitle>
-          <div className="flex gap-3">
-            <Button variant="outline" onClick={() => router.push(routes.maintenance)}>
-              <MoveLeft className="scale-125" />
-              Back to Maintenance
-            </Button>
-            <AddTypeDialog />
-          </div>
+      <div className="flex justify-between items-center">
+        <CardTitle className="text-4xl">Types</CardTitle>
+        <div className="flex gap-3">
+          <Button variant="outline" onClick={() => router.push(routes.maintenance)}>
+            <MoveLeft className="scale-125" />
+            Back to Maintenance
+          </Button>
+          <AddTypeDialog />
         </div>
-        <Card className="text-2xl">
-          <Table>
-            <TableHeader>
-              <TableRow>
-                <TableHead>ID</TableHead>
-                <TableHead>Name</TableHead>
-                <TableHead>Action</TableHead>
-              </TableRow>
-            </TableHeader>
-            <TableBody>
-              {loading ? (
-                Array.from({ length: 5 }).map((_, index) => (
-                  <TableRow key={index}>
-                    <TableCell>
-                      <Skeleton className="h-5 w-12" />
-                    </TableCell>
-                    <TableCell>
-                      <Skeleton className="h-5 w-48" />
-                    </TableCell>
-                    <TableCell>
-                      <Skeleton className="h-8 w-24" />
-                    </TableCell>
-                  </TableRow>
-                ))
-              ) : types.length > 0 ? (
-                types.map((type) => (
-                  <TableRow key={type.id}>
-                    <TableCell className="w-[10%]">{type.id}</TableCell>
-                    <TableCell className="w-[70%]">{type.name}</TableCell>
-                    <TableCell>
-                      <DropdownMenu>
-                        <DropdownMenuTrigger asChild>
-                          <Button variant="outline" className="font-normal">
-                            Action
-                            <ChevronDown className="scale-125" />
-                          </Button>
-                        </DropdownMenuTrigger>
-                        <DropdownMenuContent className="w-50">
-                          <DropdownMenuGroup>
-                            <DropdownMenuItem className="justify-center">
-                              <Button
-                                variant="none"
-                                onClick={() => handleEdit(type)}
-                              >
-                                <Pencil className="scale-125" />
-                                Edit
-                              </Button>
-                            </DropdownMenuItem>
-                            <DropdownMenuItem className="justify-center">
-                              <Button
-                                variant="none"
-                                className="font-bold text-red-500"
-                                onClick={() => handleDelete(type)}
-                              >
-                                <Trash2 className="scale-125 stroke-red-500" />
-                                Delete
-                              </Button>
-                            </DropdownMenuItem>
-                          </DropdownMenuGroup>
-                        </DropdownMenuContent>
-                      </DropdownMenu>
-                    </TableCell>
-                  </TableRow>
-                ))
-              ) : (
-                <TableRow>
-                  <TableCell colSpan={3} className="text-center">
-                    No types found.
+      </div>
+      <Card className="flex flex-col gap-5 justify-between min-h-[49.1rem]">
+        <Table>
+          <TableHeader>
+            <TableRow>
+              <TableHead>ID</TableHead>
+              <TableHead>Name</TableHead>
+              <TableHead>Action</TableHead>
+            </TableRow>
+          </TableHeader>
+          <TableBody>
+            {loading ? (
+              Array.from({ length: 5 }).map((_, index) => (
+                <TableRow key={index}>
+                  <TableCell>
+                    <Skeleton className="h-5 w-12" />
+                  </TableCell>
+                  <TableCell>
+                    <Skeleton className="h-5 w-48" />
+                  </TableCell>
+                  <TableCell>
+                    <Skeleton className="h-8 w-24" />
                   </TableCell>
                 </TableRow>
-              )}
-            </TableBody>
-          </Table>
-        </Card>
-      </div>
+              ))
+            ) : types.length > 0 ? (
+              types.map((type) => (
+                <TableRow key={type.id}>
+                  <TableCell className="w-[10%]">{type.id}</TableCell>
+                  <TableCell className="w-[80%]">{type.name}</TableCell>
+                  <TableCell>
+                    <DropdownMenu>
+                      <DropdownMenuTrigger asChild>
+                        <Button variant="outline" className="font-normal">
+                          Action
+                          <ChevronDown className="scale-125" />
+                        </Button>
+                      </DropdownMenuTrigger>
+                      <DropdownMenuContent className="w-50">
+                        <DropdownMenuGroup>
+                          <DropdownMenuItem className="justify-center">
+                            <Button
+                              variant="none"
+                              onClick={() => handleEdit(type)}
+                            >
+                              <Pencil className="scale-125" />
+                              Edit
+                            </Button>
+                          </DropdownMenuItem>
+                          <DropdownMenuItem className="justify-center">
+                            <Button
+                              variant="none"
+                              className="font-bold text-red-500"
+                              onClick={() => handleDelete(type)}
+                            >
+                              <Trash2 className="scale-125 stroke-red-500" />
+                              Delete
+                            </Button>
+                          </DropdownMenuItem>
+                        </DropdownMenuGroup>
+                      </DropdownMenuContent>
+                    </DropdownMenu>
+                  </TableCell>
+                </TableRow>
+              ))
+            ) : (
+              <TableRow>
+                <TableCell colSpan={3} className="text-center">
+                  No types found.
+                </TableCell>
+              </TableRow>
+            )}
+          </TableBody>
+        </Table>
+      </Card>
     </DashboardLayoutWrapper>
   );
 }

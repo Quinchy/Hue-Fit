@@ -62,97 +62,95 @@ export default function Units() {
 
   return (
     <DashboardLayoutWrapper>
-      <div className="flex flex-col justify-between gap-7">
-        <div className="flex justify-between items-center mb-5">
-          <CardTitle className="text-4xl">Units</CardTitle>
-          <div className="flex gap-3">
-            <Button variant="outline" onClick={() => router.push(routes.maintenance)}>
-              <MoveLeft className="scale-125" />
-              Back to Maintenance
-            </Button>
-            <AddUnitDialog />
-          </div>
+      <div className="flex justify-between items-center">
+        <CardTitle className="text-4xl">Units</CardTitle>
+        <div className="flex gap-3">
+          <Button variant="outline" onClick={() => router.push(routes.maintenance)}>
+            <MoveLeft className="scale-125" />
+            Back to Maintenance
+          </Button>
+          <AddUnitDialog />
         </div>
-        <Card className="text-2xl">
-          <Table>
-            <TableHeader>
-              <TableRow>
-                <TableHead>ID</TableHead>
-                <TableHead>Name</TableHead>
-                <TableHead>Abbreviation</TableHead>
-                <TableHead>Action</TableHead>
-              </TableRow>
-            </TableHeader>
-            <TableBody>
-              {loading ? (
-                Array.from({ length: 5 }).map((_, index) => (
-                  <TableRow key={index}>
-                    <TableCell>
-                      <Skeleton className="h-5 w-12" />
-                    </TableCell>
-                    <TableCell>
-                      <Skeleton className="h-5 w-48" />
-                    </TableCell>
-                    <TableCell>
-                      <Skeleton className="h-5 w-32" />
-                    </TableCell>
-                    <TableCell>
-                      <Skeleton className="h-8 w-24" />
-                    </TableCell>
-                  </TableRow>
-                ))
-              ) : units.length > 0 ? (
-                units.map((unit) => (
-                  <TableRow key={unit.id}>
-                    <TableCell className="w-[10%]">{unit.id}</TableCell>
-                    <TableCell className="w-[40%]">{unit.name}</TableCell>
-                    <TableCell className="w-[30%]">{unit.abbreviation}</TableCell>
-                    <TableCell>
-                      <DropdownMenu>
-                        <DropdownMenuTrigger asChild>
-                          <Button variant="outline" className="font-normal">
-                            Action
-                            <ChevronDown className="scale-125" />
-                          </Button>
-                        </DropdownMenuTrigger>
-                        <DropdownMenuContent className="w-50">
-                          <DropdownMenuGroup>
-                            <DropdownMenuItem className="justify-center">
-                              <Button
-                                variant="none"
-                                onClick={() => handleEdit(unit)}
-                              >
-                                <Pencil className="scale-125" />
-                                Edit
-                              </Button>
-                            </DropdownMenuItem>
-                            <DropdownMenuItem className="justify-center">
-                              <Button
-                                variant="none"
-                                className="font-bold text-red-500"
-                                onClick={() => handleDelete(unit)}
-                              >
-                                <Trash2 className="scale-125 stroke-red-500" />
-                                Delete
-                              </Button>
-                            </DropdownMenuItem>
-                          </DropdownMenuGroup>
-                        </DropdownMenuContent>
-                      </DropdownMenu>
-                    </TableCell>
-                  </TableRow>
-                ))
-              ) : (
-                <TableRow>
-                  <TableCell colSpan={4} className="text-center">
-                    No units found.
+      </div>
+      <Card className="flex flex-col gap-5 justify-between min-h-[49.1rem]">
+        <Table>
+          <TableHeader>
+            <TableRow>
+              <TableHead>ID</TableHead>
+              <TableHead>Name</TableHead>
+              <TableHead>Abbreviation</TableHead>
+              <TableHead>Action</TableHead>
+            </TableRow>
+          </TableHeader>
+          <TableBody>
+            {loading ? (
+              Array.from({ length: 5 }).map((_, index) => (
+                <TableRow key={index}>
+                  <TableCell>
+                    <Skeleton className="h-5 w-12" />
+                  </TableCell>
+                  <TableCell>
+                    <Skeleton className="h-5 w-48" />
+                  </TableCell>
+                  <TableCell>
+                    <Skeleton className="h-5 w-32" />
+                  </TableCell>
+                  <TableCell>
+                    <Skeleton className="h-8 w-24" />
                   </TableCell>
                 </TableRow>
-              )}
-            </TableBody>
-          </Table>
-        </Card>
-      </div>
+              ))
+            ) : units.length > 0 ? (
+              units.map((unit) => (
+                <TableRow key={unit.id}>
+                  <TableCell className="w-[10%]">{unit.id}</TableCell>
+                  <TableCell className="w-[40%]">{unit.name}</TableCell>
+                  <TableCell className="w-[30%]">{unit.abbreviation}</TableCell>
+                  <TableCell>
+                    <DropdownMenu>
+                      <DropdownMenuTrigger asChild>
+                        <Button variant="outline" className="font-normal">
+                          Action
+                          <ChevronDown className="scale-125" />
+                        </Button>
+                      </DropdownMenuTrigger>
+                      <DropdownMenuContent className="w-50">
+                        <DropdownMenuGroup>
+                          <DropdownMenuItem className="justify-center">
+                            <Button
+                              variant="none"
+                              onClick={() => handleEdit(unit)}
+                            >
+                              <Pencil className="scale-125" />
+                              Edit
+                            </Button>
+                          </DropdownMenuItem>
+                          <DropdownMenuItem className="justify-center">
+                            <Button
+                              variant="none"
+                              className="font-bold text-red-500"
+                              onClick={() => handleDelete(unit)}
+                            >
+                              <Trash2 className="scale-125 stroke-red-500" />
+                              Delete
+                            </Button>
+                          </DropdownMenuItem>
+                        </DropdownMenuGroup>
+                      </DropdownMenuContent>
+                    </DropdownMenu>
+                  </TableCell>
+                </TableRow>
+              ))
+            ) : (
+              <TableRow>
+                <TableCell colSpan={4} className="text-center">
+                  No units found.
+                </TableCell>
+              </TableRow>
+            )}
+          </TableBody>
+        </Table>
+      </Card>
     </DashboardLayoutWrapper>
   );
 }
