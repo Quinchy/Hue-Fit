@@ -27,28 +27,10 @@ export default function AddProduct() {
   const fileInputRef = useRef(null);
   const [submitting, setSubmitting] = useState(false);
 
-  const usePersistentSWR = (key, fetcher) => {
-    const { data, error, isLoading } = useSWR(key, fetcher, {
-      revalidateOnFocus: false,
-      dedupingInterval: 60000,
-      keepPreviousData: true,
-      revalidateOnMount: true,
-    });
-
-    useEffect(() => {
-      if (data) {
-        const cachedData = JSON.parse(localStorage.getItem(key));
-        if (JSON.stringify(cachedData) !== JSON.stringify(data)) {
-          localStorage.setItem(key, JSON.stringify(data));
-        }
-      }
-    }, [data, key]);
-
-    const cachedData = typeof window !== 'undefined' ? JSON.parse(localStorage.getItem(key)) : null;
-    return { data: data || cachedData, error, isLoading };
-  };
-
-  const { data: productData, error: productError, isLoading } = usePersistentSWR('/api/products/get-product-related-info', fetcher);
+  const { data: productData, error: productError, isLoading } = useSWR(
+    '/api/products/get-product-related-info',
+    fetcher
+  );
 
   const formik = useFormik({
     initialValues: {

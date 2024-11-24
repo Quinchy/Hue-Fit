@@ -9,46 +9,26 @@ import { Trash2, Asterisk } from 'lucide-react';
 import { useFormikContext, FieldArray } from 'formik';
 import { InputErrorMessage } from "@/components/ui/error-message";
 import { InputErrorStyle } from "@/components/ui/error-message";
+import useSWR from 'swr';
 
 const fetcher = (url) => fetch(url).then((res) => res.json());
 
 export default function SpecificMeasurements({ formik, productType }) {
-  const [measurementsData, setMeasurementsData] = useState(null);
-  const [productData, setProductData] = useState(null);
-
   const { values, setFieldValue, setFieldTouched, errors, touched } = useFormikContext() || {};
 
-  useEffect(() => {
-    const loadProductData = async () => {
-      const cachedData = JSON.parse(localStorage.getItem('productData'));
-      if (cachedData) {
-        setProductData(cachedData);
-      } else {
-        const data = await fetcher('/api/products/get-product-related-info');
-        localStorage.setItem('productData', JSON.stringify(data));
-        setProductData(data);
-      }
-    };
-    loadProductData();
-  }, []);
+  // Fetch product-related data using useSWR
+  const { data: productData, error: productError } = useSWR(
+    `/api/products/get-product-related-info`,
+    fetcher
+  );
 
-  useEffect(() => {
-    if (!productType || !productData) return;
+  // Dynamically fetch measurements based on productType
+  const typeName = productData?.types.find((type) => type.id === parseInt(productType))?.name;
 
-    const typeName = getTypeNameById(productType);
-
-    const loadMeasurementsData = async () => {
-      const cachedMeasurements = JSON.parse(localStorage.getItem(`measurementsData-${typeName}`));
-      if (cachedMeasurements) {
-        setMeasurementsData(cachedMeasurements);
-      } else {
-        const data = await fetcher(`/api/products/get-measurement-by-type?productType=${typeName}`);
-        localStorage.setItem(`measurementsData-${typeName}`, JSON.stringify(data));
-        setMeasurementsData(data);
-      }
-    };
-    loadMeasurementsData();
-  }, [productType, productData]);
+  const { data: measurementsData, error: measurementsError } = useSWR(
+    typeName ? `/api/products/get-measurement-by-type?productType=${typeName}` : null,
+    fetcher
+  );
 
   const getTypeNameById = (id) => {
     const type = productData.types.find((t) => t.id === parseInt(id));

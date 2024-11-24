@@ -1,5 +1,4 @@
-// components/product-variant-card.jsx
-import { useState, useEffect } from 'react';
+import { useEffect } from 'react';
 import useSWR from 'swr';
 import { Card, CardTitle } from "@/components/ui/card";
 import { Label } from '@/components/ui/label';
@@ -45,23 +44,9 @@ function orderSizes(sizes) {
 }
 
 export default function ProductVariantCard({ variant, productType, onRemove, variantIndex }) {
-  const [productData, setProductData] = useState(null);
-
   const { values, setFieldValue, setFieldTouched, getFieldProps, errors, touched } = useFormikContext() || {};
 
-  useEffect(() => {
-    const loadProductData = async () => {
-      const cachedData = JSON.parse(localStorage.getItem('productData'));
-      if (cachedData) {
-        setProductData(cachedData);
-      } else {
-        const data = await fetcher('/api/products/get-product-related-info');
-        localStorage.setItem('productData', JSON.stringify(data));
-        setProductData(data);
-      }
-    };
-    loadProductData();
-  }, []);
+  const { data: productData } = useSWR('/api/products/get-product-related-info', fetcher);
 
   if (!productData) return <div>Loading...</div>;
 
