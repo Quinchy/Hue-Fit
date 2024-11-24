@@ -1,39 +1,49 @@
 // providers/permission-provider.js
-import React, { createContext, useContext } from 'react';
+import React, { createContext, useContext, useEffect, useState } from 'react';
 import { useSession } from 'next-auth/react';
 import axios from 'axios';
-import useSWR from 'swr';
 
 const PermissionContext = createContext();
 
 export const PermissionProvider = ({ children }) => {
   const { data: session, update } = useSession();
+  const [permissions, setPermissions] = useState([]);
+  const [loading, setLoading] = useState(true);
 
-  const fetcher = (url, roleId) =>
-    axios.post(url, { roleId }).then((res) => res.data.permissions);
+  const fetchPermissions = async () => {
+    if (!session?.user?.roleId) return;
 
-  const { data: permissions, error, mutate } = useSWR(
-    session?.user?.roleId ? ['/api/settings/get-user-permissions', session.user.roleId] : null,
-    fetcher
-  );
-
-  const loading = !permissions && !error;
+    try {
+      setLoading(true);
+      const response = await axios.post('/api/settings/get-user-permissions', {
+        roleId: session.user.roleId,
+      });
+      setPermissions(response.data.permissions);
+    } catch (error) {
+      console.error("Failed to fetch permissions:", error);
+    } finally {
+      setLoading(false);
+    }
+  };
 
   const updatePermissions = async (roleId, newPermissions) => {
     try {
-      const response = await axios.post('/api/settings/set-user-permissions', {
-        roleId,
-        permissions: newPermissions,
-      });
+      const response = await axios.post('/api/settings/set-user-permissions', { roleId, permissions: newPermissions });
 
       if (response.data.session_update) {
-        await update({ triggerUpdate: true });
-        await mutate(); // Re-fetch permissions
+        await update({ triggerUpdate: true }); // Trigger NextAuth to update permissions
+        await fetchPermissions(); // Update local permissions state
       }
     } catch (error) {
       console.error("Error updating permissions:", error);
     }
   };
+
+  useEffect(() => {
+    if (session?.user?.roleId) {
+      fetchPermissions();
+    }
+  }, [session?.user?.roleId]);
 
   return (
     <PermissionContext.Provider value={{ permissions, loading, updatePermissions }}>

@@ -1,5 +1,4 @@
-// components/product-variant-card.jsx
-import { useState, useEffect } from 'react';
+import { useState } from 'react';
 import useSWR from 'swr';
 import { Card, CardTitle } from "@/components/ui/card";
 import { Label } from '@/components/ui/label';
@@ -45,23 +44,9 @@ function orderSizes(sizes) {
 }
 
 export default function ProductVariantCard({ variant, productType, onRemove, variantIndex }) {
-  const [productData, setProductData] = useState(null);
+  const { data: productData, error } = useSWR('/api/products/get-product-related-info', fetcher);
 
   const { values, setFieldValue, setFieldTouched, getFieldProps, errors, touched } = useFormikContext() || {};
-
-  useEffect(() => {
-    const loadProductData = async () => {
-      const cachedData = JSON.parse(localStorage.getItem('productData'));
-      if (cachedData) {
-        setProductData(cachedData);
-      } else {
-        const data = await fetcher('/api/products/get-product-related-info');
-        localStorage.setItem('productData', JSON.stringify(data));
-        setProductData(data);
-      }
-    };
-    loadProductData();
-  }, []);
 
   if (!productData) return <div>Loading...</div>;
 
@@ -112,21 +97,13 @@ export default function ProductVariantCard({ variant, productType, onRemove, var
             <InputErrorMessage
               error={errors.variants?.[variantIndex]?.price}
               touched={touched.variants?.[variantIndex]?.price}
-              condition={
-                touched.variants &&
-                touched.variants[variantIndex] &&
-                errors.variants &&
-                errors.variants[variantIndex]?.price
-              }
             />
           </div>
           <div className="flex-1 flex flex-col gap-3">
             <Label className="font-bold flex flex-row items-center" htmlFor="color">Color <Asterisk className="w-4"/></Label>
             <Select
               value={values.variants[variantIndex].color}
-              onValueChange={(value) => {
-                setFieldValue(`variants.${variantIndex}.color`, value);
-              }}
+              onValueChange={(value) => setFieldValue(`variants.${variantIndex}.color`, value)}
             >
               <SelectTrigger className={`w-full ${InputErrorStyle(errors.variants?.[variantIndex]?.color, touched.variants?.[variantIndex]?.color)}`}>
                 <SelectValue placeholder="Select a color" />
@@ -145,12 +122,6 @@ export default function ProductVariantCard({ variant, productType, onRemove, var
             <InputErrorMessage
               error={errors.variants?.[variantIndex]?.color}
               touched={touched.variants?.[variantIndex]?.color}
-              condition={
-                touched.variants &&
-                touched.variants[variantIndex] &&
-                errors.variants &&
-                errors.variants[variantIndex]?.color
-              }
             />
           </div>
         </div>
@@ -197,12 +168,6 @@ export default function ProductVariantCard({ variant, productType, onRemove, var
           <InputErrorMessage
             error={errors.variants?.[variantIndex]?.sizes}
             touched={touched.variants?.[variantIndex]?.sizes}
-            condition={
-              touched.variants &&
-              touched.variants[variantIndex] &&
-              errors.variants &&
-              errors.variants[variantIndex]?.sizes
-            }
           />
         </div>
 

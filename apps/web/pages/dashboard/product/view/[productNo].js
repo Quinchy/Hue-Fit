@@ -1,5 +1,5 @@
 import { useRouter } from 'next/router';
-import { useEffect, useState } from 'react';
+import useSWR from 'swr';
 import routes from '@/routes';
 import DashboardLayoutWrapper from "@/components/ui/dashboard-layout";
 import { Card, CardTitle } from "@/components/ui/card";
@@ -9,26 +9,20 @@ import { MoveLeft } from 'lucide-react';
 import { Table, TableHead, TableHeader, TableBody, TableCell, TableRow } from "@/components/ui/table";
 import { Skeleton } from "@/components/ui/skeleton";
 
+const fetcher = (url) => fetch(url).then((res) => res.json());
+
 export default function ViewProduct() {
   const router = useRouter();
   const { productNo } = router.query;
-  const [product, setProduct] = useState(null);
-  const [loading, setLoading] = useState(true);
 
-  useEffect(() => {
-    if (productNo) {
-      async function fetchProductDetails() {
-        setLoading(true);
-        const res = await fetch(`/api/products/get-product-details?productNo=${productNo}`);
-        const data = await res.json();
-        setProduct(data.product);
-        setLoading(false);
-      }
-      fetchProductDetails();
-    }
-  }, [productNo]);
+  const { data, isLoading } = useSWR(
+    productNo ? `/api/products/get-product-details?productNo=${productNo}` : null,
+    fetcher
+  );
 
-  if (loading) {
+  const product = data?.product;
+
+  if (isLoading) {
     return (
       <DashboardLayoutWrapper>
         <div className="flex justify-between items-center mb-5">
@@ -98,19 +92,15 @@ export default function ViewProduct() {
       <CardTitle className="text-2xl">{product.name}</CardTitle>
       <div className="flex gap-5 mb-10">
         <div className="flex items-start justify-center">
-          {loading ? (
-            <Skeleton className="h-[450px] w-[450px] rounded" />
-          ) : (
-            <Image
-              src={product.thumbnailURL || "/images/placeholder-picture.png"}
-              alt={product.name}
-              width={450}
-              height={450}
-              quality={75}
-              className="object-cover rounded"
-              priority
-            />
-          )}
+          <Image
+            src={product.thumbnailURL || "/images/placeholder-picture.png"}
+            alt={product.name}
+            width={450}
+            height={450}
+            quality={75}
+            className="object-fill rounded max-w-[450px] max-h-[450px] min-w-[450px] min-h-[450px]"
+            priority
+          />
         </div>
         <Card className="flex flex-col p-5 gap-4">
           <div className="flex flex-row gap-3">
@@ -163,7 +153,7 @@ export default function ViewProduct() {
                   width={250}
                   height={250}
                   quality={75}
-                  className="object-cover rounded"
+                  className="object-fit rounded max-w-[450px] max-h-[450px] min-w-[450px] min-h-[450px]"
                   priority
                 />
               ))}

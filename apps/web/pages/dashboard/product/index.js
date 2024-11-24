@@ -66,7 +66,9 @@ export default function ProductsPage() {
   };
 
   if (router.query.success === "true" && !showAlert) {
-    setShowAlert(true);
+    setTimeout(() => {
+      setShowAlert(false);
+    }, 5000);
     router.replace("/dashboard/product", undefined, { shallow: true });
   }
 
@@ -178,7 +180,9 @@ export default function ProductsPage() {
                             ? "bg-teal-500"
                             : product.Type.name === "FOOTWEAR"
                             ? "bg-purple-500"
-                            : "bg-gray-800"
+                            : product.Type.name === "OUTERWEAR"
+                            ? "bg-cyan-500"
+                            : "bg-gray-300"
                         } uppercase`}
                       >
                         {product.Type.name}

@@ -159,6 +159,7 @@ export default function AddProduct() {
                 width={320}
                 height={420}
                 className="object-cover w-full h-full"
+                priority
               />
             </div>
             <input
