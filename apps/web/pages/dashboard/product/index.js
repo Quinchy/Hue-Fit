@@ -66,6 +66,7 @@ export default function ProductsPage() {
   };
 
   if (router.query.success === "true" && !showAlert) {
+    setShowAlert(true);
     setTimeout(() => {
       setShowAlert(false);
     }, 5000);
