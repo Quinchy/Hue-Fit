@@ -21,7 +21,6 @@ import {
   DropdownMenuGroup,
 } from "@/components/ui/dropdown-menu";
 import { ChevronDown, Pencil, Trash2 } from "lucide-react";
-import { useEffect, useState } from "react";
 import {
   Pagination,
   PaginationPrevious,
@@ -31,52 +30,52 @@ import {
   PaginationLink,
 } from "@/components/ui/pagination";
 import { Skeleton } from "@/components/ui/skeleton";
+import { useState } from "react";
+import useSWR from "swr";
+
+const fetcher = (url) => fetch(url).then((res) => res.json());
 
 export default function Colors() {
   const router = useRouter();
-  const [colors, setColors] = useState([]);
-  const [loading, setLoading] = useState(true);
   const [currentPage, setCurrentPage] = useState(1);
-  const [totalPages, setTotalPages] = useState(1);
 
-  const fetchColors = async (page = 1) => {
-    try {
-      setLoading(true);
-      const response = await fetch(`/api/maintenance/colors/get-colors?page=${page}`);
-      if (response.ok) {
-        const data = await response.json();
-        setColors(data.colors || []);
-        setTotalPages(data.totalPages || 1);
-      } else {
-        console.error("Failed to fetch colors");
-      }
-    } catch (error) {
-      console.error("An error occurred:", error);
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  useEffect(() => {
-    fetchColors(currentPage);
-  }, [currentPage]);
+  const { data, isLoading, mutate } = useSWR(
+    `/api/maintenance/colors/get-colors?page=${currentPage}`,
+    fetcher
+  );
 
   const handleEdit = (color) => {
     console.log("Edit color:", color);
   };
 
-  const handleDelete = (color) => {
-    console.log("Delete color:", color);
-  };
+  const handleDelete = async (colorId) => {
+    try {
+      const response = await fetch(`/api/maintenance/colors/delete-color`, {
+        method: "DELETE",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({ id: colorId }),
+      });
 
-  const handlePageChange = (page) => {
-    if (page >= 1 && page <= totalPages) {
-      setCurrentPage(page);
+      if (response.ok) {
+        mutate();
+      } else {
+        console.error("Failed to delete color");
+      }
+    } catch (error) {
+      console.error("An error occurred:", error);
     }
   };
 
-  const handleAddColor = (newColor) => {
-    setColors((prevColors) => [newColor, ...prevColors]);
+  const handleAddColor = () => {
+    mutate();
+  };
+
+  const handlePageChange = (page) => {
+    if (page >= 1 && page <= (data?.totalPages || 1)) {
+      setCurrentPage(page);
+    }
   };
 
   return (
@@ -102,7 +101,7 @@ export default function Colors() {
             </TableRow>
           </TableHeader>
           <TableBody>
-            {loading ? (
+            {isLoading ? (
               Array.from({ length: 8 }).map((_, index) => (
                 <TableRow key={index}>
                   <TableCell>
@@ -119,8 +118,8 @@ export default function Colors() {
                   </TableCell>
                 </TableRow>
               ))
-            ) : colors.length > 0 ? (
-              colors.map((color) => (
+            ) : data?.colors?.length > 0 ? (
+              data.colors.map((color) => (
                 <TableRow key={color.id}>
                   <TableCell className="w-[10%]">{color.id}</TableCell>
                   <TableCell className="w-[50%]">{color.name}</TableCell>
@@ -159,7 +158,7 @@ export default function Colors() {
                             <Button
                               variant="none"
                               className="font-bold text-red-500"
-                              onClick={() => handleDelete(color)}
+                              onClick={() => handleDelete(color.id)}
                             >
                               <Trash2 className="scale-125 stroke-red-500" />
                               Delete
@@ -180,18 +179,18 @@ export default function Colors() {
             )}
           </TableBody>
         </Table>
-        {colors.length > 0 && (
+        {data?.colors?.length > 0 && (
           <Pagination className="flex flex-col items-end">
             <PaginationContent>
               {currentPage > 1 && (
                 <PaginationPrevious onClick={() => handlePageChange(currentPage - 1)} />
               )}
-              {Array.from({ length: totalPages }, (_, i) => i + 1).map((page) => (
+              {Array.from({ length: data.totalPages }, (_, i) => i + 1).map((page) => (
                 <PaginationItem key={page} active={page === currentPage}>
                   <PaginationLink onClick={() => handlePageChange(page)}>{page}</PaginationLink>
                 </PaginationItem>
               ))}
-              {currentPage < totalPages && (
+              {currentPage < data.totalPages && (
                 <PaginationNext onClick={() => handlePageChange(currentPage + 1)} />
               )}
             </PaginationContent>

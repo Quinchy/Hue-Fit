@@ -8,7 +8,6 @@ import AddCategoryDialog from "./components/add-category";
 import { Table, TableHead, TableHeader, TableBody, TableCell, TableRow } from "@/components/ui/table";
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger, DropdownMenuGroup } from "@/components/ui/dropdown-menu";
 import { ChevronDown, Pencil, Trash2 } from "lucide-react";
-import { useEffect, useState } from "react";
 import { Skeleton } from "@/components/ui/skeleton";
 import {
   Pagination,
@@ -18,42 +17,26 @@ import {
   PaginationNext,
   PaginationLink,
 } from "@/components/ui/pagination";
+import { useState } from "react";
+import useSWR from "swr";
+
+const fetcher = (url) => fetch(url).then((res) => res.json());
 
 export default function Categories() {
   const router = useRouter();
-  const [categories, setCategories] = useState([]);
-  const [loading, setLoading] = useState(true);
   const [currentPage, setCurrentPage] = useState(1);
-  const [totalPages, setTotalPages] = useState(1);
 
-  const fetchCategories = async (page = 1) => {
-    setLoading(true);
-    try {
-      const response = await fetch(`/api/maintenance/categories/get-categories?page=${page}`);
-      if (response.ok) {
-        const data = await response.json();
-        setCategories(data.categories);
-        setTotalPages(data.totalPages);
-      } else {
-        console.error("Failed to fetch categories");
-      }
-    } catch (error) {
-      console.error("An error occurred:", error);
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  useEffect(() => {
-    fetchCategories(currentPage);
-  }, [currentPage]);
+  const { data, isLoading, mutate } = useSWR(
+    `/api/maintenance/categories/get-categories?page=${currentPage}`,
+    fetcher
+  );
 
   const handleAddCategory = async () => {
-    fetchCategories(currentPage);
+    mutate();
   };
 
   const handlePageChange = (page) => {
-    if (page >= 1 && page <= totalPages) {
+    if (page >= 1 && page <= (data?.totalPages || 1)) {
       setCurrentPage(page);
     }
   };
@@ -83,7 +66,7 @@ export default function Categories() {
             </TableRow>
           </TableHeader>
           <TableBody>
-            {loading ? (
+            {isLoading ? (
               Array.from({ length: 8 }).map((_, index) => (
                 <TableRow key={index}>
                   <TableCell>
@@ -97,8 +80,8 @@ export default function Categories() {
                   </TableCell>
                 </TableRow>
               ))
-            ) : categories.length > 0 ? (
-              categories.map((category) => (
+            ) : data?.categories?.length > 0 ? (
+              data.categories.map((category) => (
                 <TableRow key={category.id}>
                   <TableCell className="text-left">{category.id}</TableCell>
                   <TableCell className="text-left">{category.name}</TableCell>
@@ -150,18 +133,18 @@ export default function Categories() {
             )}
           </TableBody>
         </Table>
-        {categories.length > 0 && (
+        {data?.categories?.length > 0 && (
           <Pagination className="flex justify-end">
             <PaginationContent>
               {currentPage > 1 && (
                 <PaginationPrevious onClick={() => handlePageChange(currentPage - 1)} />
               )}
-              {Array.from({ length: totalPages }, (_, i) => i + 1).map((page) => (
+              {Array.from({ length: data.totalPages }, (_, i) => i + 1).map((page) => (
                 <PaginationItem key={page} active={page === currentPage}>
                   <PaginationLink onClick={() => handlePageChange(page)}>{page}</PaginationLink>
                 </PaginationItem>
               ))}
-              {currentPage < totalPages && (
+              {currentPage < data.totalPages && (
                 <PaginationNext onClick={() => handlePageChange(currentPage + 1)} />
               )}
             </PaginationContent>

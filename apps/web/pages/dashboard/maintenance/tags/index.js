@@ -1,4 +1,3 @@
-// pages/dashboard/maintenance/tags
 import { Card, CardTitle } from "@/components/ui/card";
 import DashboardLayoutWrapper from "@/components/ui/dashboard-layout";
 import { Button } from "@/components/ui/button";
@@ -6,80 +5,55 @@ import { MoveLeft } from "lucide-react";
 import { useRouter } from "next/router";
 import routes from "@/routes";
 import AddTagDialog from "./components/add-tag";
-import {
-  Table,
-  TableHead,
-  TableHeader,
-  TableBody,
-  TableCell,
-  TableRow,
-} from "@/components/ui/table";
-import {
-  DropdownMenu,
-  DropdownMenuContent,
-  DropdownMenuItem,
-  DropdownMenuTrigger,
-  DropdownMenuGroup,
-} from "@/components/ui/dropdown-menu";
+import { Table, TableHead, TableHeader, TableBody, TableCell, TableRow } from "@/components/ui/table";
+import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger, DropdownMenuGroup } from "@/components/ui/dropdown-menu";
 import { ChevronDown, Pencil, Trash2 } from "lucide-react";
 import { Skeleton } from "@/components/ui/skeleton";
-import { useEffect, useState } from "react";
-import {
-  Pagination,
-  PaginationPrevious,
-  PaginationContent,
-  PaginationItem,
-  PaginationNext,
-  PaginationLink,
-} from "@/components/ui/pagination";
+import { Pagination, PaginationPrevious, PaginationContent, PaginationItem, PaginationNext, PaginationLink } from "@/components/ui/pagination";
+import { useState } from "react";
+import useSWR from "swr";
+
+const fetcher = (url) => fetch(url).then((res) => res.json());
 
 export default function Tags() {
   const router = useRouter();
-  const [tags, setTags] = useState([]); // Stores tag list
-  const [loading, setLoading] = useState(true); // Loading state
-  const [currentPage, setCurrentPage] = useState(1); // Current page
-  const [totalPages, setTotalPages] = useState(1); // Total number of pages
+  const [currentPage, setCurrentPage] = useState(1);
 
-  // Fetch tags on component load
-  useEffect(() => {
-    const fetchTags = async () => {
-      setLoading(true);
-      try {
-        const response = await fetch(`/api/maintenance/tags/get-tags?page=${currentPage}`); // Fetch data with pagination
-        if (response.ok) {
-          const data = await response.json();
-          setTags(data.tags);
-          setTotalPages(data.totalPages || 1);
-        } else {
-          console.error("Failed to fetch tags");
-        }
-      } catch (error) {
-        console.error("An error occurred while fetching tags:", error);
-      } finally {
-        setLoading(false);
-      }
-    };
-
-    fetchTags();
-  }, [currentPage]);
-
-  // Handle add-tag dialog's onTagAdded callback
-  const handleAddTag = (newTag) => {
-    setTags((prevTags) => [newTag, ...prevTags]); // Update the tags list
-  };
+  const { data, isLoading, mutate } = useSWR(
+    `/api/maintenance/tags/get-tags?page=${currentPage}`,
+    fetcher
+  );
 
   const handleEdit = (tag) => {
     console.log("Edit tag:", tag);
-    // Add your edit logic here
   };
 
-  const handleDelete = (tag) => {
-    console.log("Delete tag:", tag);
-    // Add your delete logic here
+  const handleDelete = async (tagId) => {
+    try {
+      const response = await fetch(`/api/maintenance/tags/delete-tag`, {
+        method: "DELETE",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({ id: tagId }),
+      });
+
+      if (response.ok) {
+        mutate();
+      } else {
+        console.error("Failed to delete tag");
+      }
+    } catch (error) {
+      console.error("An error occurred:", error);
+    }
+  };
+
+  const handleAddTag = () => {
+    mutate();
   };
 
   const handlePageChange = (page) => {
-    if (page >= 1 && page <= totalPages) {
+    if (page >= 1 && page <= (data?.totalPages || 1)) {
       setCurrentPage(page);
     }
   };
@@ -93,7 +67,7 @@ export default function Tags() {
             <MoveLeft className="scale-125" />
             Back to Maintenance
           </Button>
-          <AddTagDialog onTagAdded={handleAddTag} /> {/* Callback for new tags */}
+          <AddTagDialog onTagAdded={handleAddTag} />
         </div>
       </div>
       <Card className="flex flex-col gap-5 justify-between min-h-[49.1rem]">
@@ -107,7 +81,7 @@ export default function Tags() {
             </TableRow>
           </TableHeader>
           <TableBody>
-            {loading ? (
+            {isLoading ? (
               Array.from({ length: 8 }).map((_, index) => (
                 <TableRow key={index}>
                   <TableCell>
@@ -124,15 +98,12 @@ export default function Tags() {
                   </TableCell>
                 </TableRow>
               ))
-            ) : tags.length > 0 ? (
-              tags.map((tag) => (
+            ) : data?.tags?.length > 0 ? (
+              data.tags.map((tag) => (
                 <TableRow key={tag.id}>
                   <TableCell className="w-[10%]">{tag.id}</TableCell>
                   <TableCell className="w-[50%]">{tag.name}</TableCell>
-                  <TableCell className="w-[30%]">
-                    {/* Display the typeName fetched from API */}
-                    {tag.typeName || "Unassigned"}
-                  </TableCell>
+                  <TableCell className="w-[30%]">{tag.typeName || "Unassigned"}</TableCell>
                   <TableCell>
                     <DropdownMenu>
                       <DropdownMenuTrigger asChild>
@@ -156,7 +127,7 @@ export default function Tags() {
                             <Button
                               variant="none"
                               className="font-bold text-red-500"
-                              onClick={() => handleDelete(tag)}
+                              onClick={() => handleDelete(tag.id)}
                             >
                               <Trash2 className="scale-125 stroke-red-500" />
                               Delete
@@ -177,18 +148,18 @@ export default function Tags() {
             )}
           </TableBody>
         </Table>
-        {tags.length > 0 && (
+        {data?.tags?.length > 0 && (
           <Pagination className="flex flex-col items-end">
             <PaginationContent>
               {currentPage > 1 && (
                 <PaginationPrevious onClick={() => handlePageChange(currentPage - 1)} />
               )}
-              {Array.from({ length: totalPages }, (_, i) => i + 1).map((page) => (
+              {Array.from({ length: data.totalPages }, (_, i) => i + 1).map((page) => (
                 <PaginationItem key={page} active={page === currentPage}>
                   <PaginationLink onClick={() => handlePageChange(page)}>{page}</PaginationLink>
                 </PaginationItem>
               ))}
-              {currentPage < totalPages && (
+              {currentPage < data.totalPages && (
                 <PaginationNext onClick={() => handlePageChange(currentPage + 1)} />
               )}
             </PaginationContent>

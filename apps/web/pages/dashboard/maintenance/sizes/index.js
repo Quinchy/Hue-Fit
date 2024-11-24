@@ -9,54 +9,53 @@ import { Table, TableHead, TableHeader, TableBody, TableCell, TableRow } from "@
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger, DropdownMenuGroup } from "@/components/ui/dropdown-menu";
 import { ChevronDown, Pencil, Trash2 } from "lucide-react";
 import { Skeleton } from "@/components/ui/skeleton";
-import { useEffect, useState } from "react";
 import { Pagination, PaginationPrevious, PaginationContent, PaginationItem, PaginationNext, PaginationLink } from "@/components/ui/pagination";
+import { useState } from "react";
+import useSWR from "swr";
+
+const fetcher = (url) => fetch(url).then((res) => res.json());
 
 export default function Sizes() {
   const router = useRouter();
-  const [sizes, setSizes] = useState([]);
-  const [loading, setLoading] = useState(true);
   const [currentPage, setCurrentPage] = useState(1);
-  const [totalPages, setTotalPages] = useState(1);
 
-  const fetchSizes = async (page) => {
-    setLoading(true);
-    try {
-      const response = await fetch(`/api/maintenance/sizes/get-sizes?page=${page}`);
-      if (response.ok) {
-        const data = await response.json();
-        setSizes(data.sizes || []);
-        setTotalPages(data.totalPages || 1);
-      } else {
-        console.error("Failed to fetch sizes");
-      }
-    } catch (error) {
-      console.error("An error occurred:", error);
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  useEffect(() => {
-    fetchSizes(currentPage);
-  }, [currentPage]);
+  const { data, isLoading, mutate } = useSWR(
+    `/api/maintenance/sizes/get-sizes?page=${currentPage}`,
+    fetcher
+  );
 
   const handleEdit = (size) => {
     console.log("Edit size:", size);
   };
 
-  const handleDelete = (size) => {
-    console.log("Delete size:", size);
-  };
+  const handleDelete = async (sizeId) => {
+    try {
+      const response = await fetch(`/api/maintenance/sizes/delete-size`, {
+        method: "DELETE",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({ id: sizeId }),
+      });
 
-  const handlePageChange = (page) => {
-    if (page >= 1 && page <= totalPages) {
-      setCurrentPage(page);
+      if (response.ok) {
+        mutate();
+      } else {
+        console.error("Failed to delete size");
+      }
+    } catch (error) {
+      console.error("An error occurred:", error);
     }
   };
 
   const handleSizeAdded = () => {
-    fetchSizes(currentPage);
+    mutate();
+  };
+
+  const handlePageChange = (page) => {
+    if (page >= 1 && page <= (data?.totalPages || 1)) {
+      setCurrentPage(page);
+    }
   };
 
   return (
@@ -82,7 +81,7 @@ export default function Sizes() {
             </TableRow>
           </TableHeader>
           <TableBody>
-            {loading ? (
+            {isLoading ? (
               Array.from({ length: 8 }).map((_, index) => (
                 <TableRow key={index}>
                   <TableCell>
@@ -99,8 +98,8 @@ export default function Sizes() {
                   </TableCell>
                 </TableRow>
               ))
-            ) : sizes.length > 0 ? (
-              sizes.map((size) => (
+            ) : data?.sizes?.length > 0 ? (
+              data.sizes.map((size) => (
                 <TableRow key={size.id}>
                   <TableCell className="w-[10%]">{size.id}</TableCell>
                   <TableCell className="w-[50%]">{size.name}</TableCell>
@@ -128,7 +127,7 @@ export default function Sizes() {
                             <Button
                               variant="none"
                               className="font-bold text-red-500"
-                              onClick={() => handleDelete(size)}
+                              onClick={() => handleDelete(size.id)}
                             >
                               <Trash2 className="scale-125 stroke-red-500" />
                               Delete
@@ -149,18 +148,18 @@ export default function Sizes() {
             )}
           </TableBody>
         </Table>
-        {sizes.length > 0 && (
+        {data?.sizes?.length > 0 && (
           <Pagination className="flex flex-col items-end">
             <PaginationContent>
               {currentPage > 1 && (
                 <PaginationPrevious onClick={() => handlePageChange(currentPage - 1)} />
               )}
-              {Array.from({ length: totalPages }, (_, i) => i + 1).map((page) => (
+              {Array.from({ length: data.totalPages }, (_, i) => i + 1).map((page) => (
                 <PaginationItem key={page} active={page === currentPage}>
                   <PaginationLink onClick={() => handlePageChange(page)}>{page}</PaginationLink>
                 </PaginationItem>
               ))}
-              {currentPage < totalPages && (
+              {currentPage < data.totalPages && (
                 <PaginationNext onClick={() => handlePageChange(currentPage + 1)} />
               )}
             </PaginationContent>
