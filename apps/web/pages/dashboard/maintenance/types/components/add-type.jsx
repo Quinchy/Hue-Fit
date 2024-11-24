@@ -109,7 +109,7 @@ export default function AddTypeDialog({
         </DialogContent>
       </Dialog>
       {showAlert && (
-        <Alert className="fixed z-50 w-[25rem] bottom-10 flex items-center shadow-lg rounded-lg">
+        <Alert className="fixed z-50 w-[25rem] right-10 bottom-10 flex items-center shadow-lg rounded-lg">
           <CheckCircle2 className="h-10 w-10 stroke-green-500" />
           <div className="ml-7">
             <AlertTitle className="text-green-400 text-base font-semibold">Type Added</AlertTitle>
