@@ -1,16 +1,16 @@
 // pages/dashboard/product/index.jsx
-import { useState, useRef } from "react";
+import { useState, useEffect, useRef } from "react";
 import { useRouter } from "next/router";
 import useSWR from 'swr';
 import DashboardLayoutWrapper from "@/components/ui/dashboard-layout";
 import { CardTitle, Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { Plus, MoveLeft, Asterisk, Loader } from "lucide-react";
+import { Plus, MoveLeft, Trash2, Asterisk, Loader } from "lucide-react";
 import { Select, SelectContent, SelectGroup, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import Image from "next/image";
 import { Label } from "@/components/ui/label";
-import { useFormik, FormikProvider, FieldArray } from "formik";
+import { useFormik, FormikProvider, FieldArray, setNestedObjectValues } from "formik";
 import { productSchema } from "@/utils/validation-schema";
 import { ErrorMessage, InputErrorMessage, InputErrorStyle } from "@/components/ui/error-message";
 import dynamic from 'next/dynamic';
@@ -27,11 +27,28 @@ export default function AddProduct() {
   const fileInputRef = useRef(null);
   const [submitting, setSubmitting] = useState(false);
 
-  const { data: productData, error: productError, isLoading } = useSWR(
-    '/api/products/get-product-related-info',
-    fetcher,
-    { revalidateOnFocus: false, dedupingInterval: 60000 }
-  );
+  const usePersistentSWR = (key, fetcher) => {
+    const { data, error, isLoading } = useSWR(key, fetcher, {
+      revalidateOnFocus: false,
+      dedupingInterval: 60000,
+      keepPreviousData: true,
+      revalidateOnMount: true,
+    });
+
+    useEffect(() => {
+      if (data) {
+        const cachedData = JSON.parse(localStorage.getItem(key));
+        if (JSON.stringify(cachedData) !== JSON.stringify(data)) {
+          localStorage.setItem(key, JSON.stringify(data));
+        }
+      }
+    }, [data, key]);
+
+    const cachedData = typeof window !== 'undefined' ? JSON.parse(localStorage.getItem(key)) : null;
+    return { data: data || cachedData, error, isLoading };
+  };
+
+  const { data: productData, error: productError, isLoading } = usePersistentSWR('/api/products/get-product-related-info', fetcher);
 
   const formik = useFormik({
     initialValues: {
@@ -47,6 +64,7 @@ export default function AddProduct() {
     validationSchema: productSchema,
     onSubmit: async (values) => {
       setSubmitting(true);
+      console.log("Form Values:", JSON.stringify(values, null, 2));
       const formData = new FormData();
       formData.append('thumbnail', values.thumbnail.file);
       formData.append('name', values.name);
@@ -75,14 +93,18 @@ export default function AddProduct() {
           body: formData,
         });
         const result = await response.json();
+        console.log('Server response:', result);
         if (response.ok) {
           router.push('/dashboard/product?success=true');
         } else {
+          // Handle server errors here
           console.error('Server error:', result.message);
         }
-      } catch (error) {
+      } 
+      catch (error) {
         console.error('Error submitting form:', error);
-      } finally {
+      }
+      finally {
         setSubmitting(false);
       }
     },
@@ -137,6 +159,26 @@ export default function AddProduct() {
     if (fileInputRef.current) {
       fileInputRef.current.click();
     }
+  };
+
+  const markAllFieldsTouched = (values) => {
+    const touched = {};
+    const recursivelySetTouched = (obj, base = touched) => {
+      Object.keys(obj).forEach((key) => {
+        if (typeof obj[key] === 'object' && obj[key] !== null && !Array.isArray(obj[key])) {
+          base[key] = {};
+          recursivelySetTouched(obj[key], base[key]);
+        } else if (Array.isArray(obj[key])) {
+          base[key] = obj[key].map((item) =>
+            typeof item === 'object' && item !== null ? markAllFieldsTouched(item) : true
+          );
+        } else {
+          base[key] = true;
+        }
+      });
+    };
+    recursivelySetTouched(values);
+    return touched;
   };
 
   return (
@@ -337,4 +379,4 @@ export default function AddProduct() {
       </form>
     </DashboardLayoutWrapper>
   );
-}
+} 

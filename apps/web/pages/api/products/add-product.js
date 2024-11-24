@@ -94,12 +94,15 @@ export default async function handler(req, res) {
       // Insert sizes and quantities for the product variant
       for (let index = 0; index < sizeKeys.length; index++) {
         const sizeKey = sizeKeys[index];
-        const sizeAbbreviation = String(fields[sizeKey][0]);
+        const sizeAbbreviation = String(fields[sizeKey][0]); // Example: "S"
         const sizeId = await getSizeIdByAbbreviation(sizeAbbreviation, shopNo);
         const quantityKey = quantityKeys[index];
         const quantity = parseInt(fields[quantityKey], 10);
         const productVariantSizesNo = uuidv4();
-
+      
+        console.log('SizeId:', sizeId, 'Quantity:', quantity, 'SizeAbbreviation:', sizeAbbreviation);
+      
+        // Insert size and quantity into the database
         await prisma.productVariantSizes.create({
           data: {
             productVariantSizesNo,
@@ -109,30 +112,45 @@ export default async function handler(req, res) {
           },
         });
         console.log('Sizes and quantities inserted successfully...');
-
+      
         // Insert specific measurements for the product variant
-        const measurementsForSize = fields.measurementsBySize[sizeAbbreviation];
-
-        if (measurementsForSize && measurementsForSize.measurements) {
-          for (const measurement of measurementsForSize.measurements) {
-            const { measurementName, value, unitName } = measurement;
-
-            const measurementId = await getMeasurementIdByName(measurementName, shopNo);
-            const unitId = await getUnitIdByName(unitName, shopNo);
-
-            await prisma.productVariantMeasurements.create({
-              data: {
-                productVariantNo,
-                productVariantSizesNo,
-                measurementId,
-                value: parseFloat(value),
-                unitId,
-              },
-            });
+        try {
+          // Parse measurementsBySize JSON string (if not already parsed)
+          const parsedMeasurements = fields.measurementsBySize && Array.isArray(fields.measurementsBySize)
+            ? JSON.parse(fields.measurementsBySize[0])
+            : {};
+      
+          const measurementsForSize = parsedMeasurements[sizeAbbreviation]; // Access "S" or "M"
+      
+          if (measurementsForSize && measurementsForSize.measurements) {
+            for (const measurement of measurementsForSize.measurements) {
+              const { measurementName, value, unitName } = measurement;
+              console.log('MeasurementName:', measurementName, 'Value:', value, 'UnitName:', unitName);
+      
+              const measurementId = await getMeasurementIdByName(measurementName, shopNo);
+              const unitId = await getUnitIdByName(unitName, shopNo);
+              console.log('MeasurementId:', measurementId);
+      
+              // Insert measurement data into the database
+              await prisma.productVariantMeasurements.create({
+                data: {
+                  productVariantNo,
+                  productVariantSizesNo,
+                  measurementId,
+                  value: parseFloat(value),
+                  unitId,
+                },
+              });
+            }
+            console.log('Specific measurements inserted successfully...');
+          } else {
+            console.log(`No measurements found for size: ${sizeAbbreviation}`);
           }
-          console.log('Specific measurements inserted successfully...');
+        } catch (error) {
+          console.error(`Error processing measurements for size: ${sizeAbbreviation}`, error);
         }
       }
+      
       console.log('Sizes and quantities + specific measurements inserted successfully...');
 
       // Insert images for the product variant
