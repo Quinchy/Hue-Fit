@@ -1,0 +1,8 @@
+{
+    "functions": {
+        "api/products/add-product": {
+        "maxDuration": 30,
+        "memory": 1024 
+        }
+    }
+}
