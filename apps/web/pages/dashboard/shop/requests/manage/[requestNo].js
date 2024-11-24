@@ -22,13 +22,18 @@ import { useFormik } from 'formik';
 import { manageShopRequestSchema } from '@/utils/validation-schema';
 import { LoadingMessage } from "@/components/ui/loading-message";
 import { Skeleton } from "@/components/ui/skeleton";
-import { ErrorMessage, InputErrorMessage } from "@/components/ui/error-message";
+import { ErrorMessage, InputErrorMessage, InputErrorStyle } from "@/components/ui/error-message";
+import { Textarea } from "@/components/ui/textarea";
+import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
+import { MailCheck } from 'lucide-react';
+import { Asterisk } from 'lucide-react';
 
 export default function ManageShopRequest() {
   const [request, setRequest] = useState(null);
   const [loading, setLoading] = useState(true);
   const [submitting, setSubmitting] = useState(false);
   const [errorMessage, setErrorMessage] = useState("");
+  const [showAlert, setShowAlert] = useState(false);
   const router = useRouter();
   const { requestNo } = router.query;
 
@@ -53,6 +58,8 @@ export default function ManageShopRequest() {
   const formik = useFormik({
     initialValues: {
       status: request?.status || "",
+      email: request?.contactPerson?.email || "",
+      message: "",
     },
     enableReinitialize: true,
     validationSchema: manageShopRequestSchema,
@@ -63,6 +70,8 @@ export default function ManageShopRequest() {
         const requestPayload = {
           requestNo: request.requestNo,
           status: values.status,
+          email: values.email,
+          message: values.message,
         };
         const response = await fetch(`/api/shop-requests/update-shop-requests`, {
           method: 'POST',
@@ -72,7 +81,20 @@ export default function ManageShopRequest() {
 
         const responseData = await response.json();
         if (!response.ok) throw new Error(responseData.message || "An unexpected error occurred.");
-        router.push(routes.shopRequest);
+        if (values.status === "ACTIVE") {
+          router.push(`${routes.shopRequest}?alert=accepted`);
+        } 
+        else if (values.status === "REJECTED") {
+          router.push(`${routes.shopRequest}?alert=rejected`);
+        }
+        else if (values.status === "PENDING" && values.message) {
+          setShowAlert(true);
+          setTimeout(() => {
+            setShowAlert(false);
+          }, 5000);
+        } else {
+          router.push(routes.shopRequest);
+        }
       } 
       catch (error) {
         setErrorMessage(error.message || "Failed to submit the request. Please try again.");
@@ -118,10 +140,44 @@ export default function ManageShopRequest() {
     router.push(routes.shopRequest);
   };
 
+  const handleStatusChange = (value) => {
+    formik.setFieldValue("status", value);
+    if (value === "ACTIVE") {
+      formik.setFieldValue(
+        "message",
+        "Congratulations! Your partnership request has been approved, and your vendor account has been activated. You can now access the vendor dashboard by logging in at https://hue-fit-web.vercel.app/account/login."
+      );
+    } else if (value === "REJECTED") {
+      formik.setFieldValue(
+        "message",
+        "We regret to inform you that your partnership request has not been approved. Thank you for your interest in HueFit."
+      );
+    } else {
+      formik.setFieldValue("message", "");
+    }
+  };
+
   const isStatusLocked = request.status === "DONE";
 
   return (
     <DashboardLayoutWrapper>
+      {showAlert && (
+        <Alert className="fixed z-50 w-[30rem] right-10 bottom-10 flex items-center shadow-accent shadow-lg rounded-lg">
+          <MailCheck className="h-10 w-10 stroke-sky-500" />
+          <div className="ml-7">
+            <AlertTitle className="text-sky-500 text-base font-semibold">Pending Request Updated</AlertTitle>
+            <AlertDescription className="text-sky-400">
+              The email message has been send successfully.
+            </AlertDescription>
+          </div>
+          <button
+            className="ml-auto mr-4 hover:text-sky-700 focus:outline-none"
+            onClick={() => setShowAlert(false)}
+          >
+            ✕
+          </button>
+        </Alert>
+      )}
       <div className='flex flex-row items-center justify-between'>
         <div className='flex flex-row gap-2 items-center'>
           <CardTitle className="text-4xl">Request Number:</CardTitle>
@@ -241,11 +297,14 @@ export default function ManageShopRequest() {
             </div>
 
             <div className="flex flex-col gap-2 mt-8">
-              <Label>Status</Label>
+              <Label className="font-bold flex flex-row items-center">Status<Asterisk className="w-4" /></Label>
               <Select
                 name="status"
                 value={formik.values.status || request?.shopStatus}
-                onValueChange={(value) => formik.setFieldValue("status", value)}
+                onValueChange={(value) => {
+                  formik.setFieldValue("status", value);
+                  handleStatusChange(value);
+                }}
                 disabled={isStatusLocked}
                 className="w-[180px]"
               >
@@ -256,13 +315,24 @@ export default function ManageShopRequest() {
                   <SelectGroup>
                     <SelectItem value="PENDING">PENDING</SelectItem>
                     <SelectItem value="REJECTED">REJECTED</SelectItem>
-                    <SelectItem value="ACTIVE">ACTIVE</SelectItem>
+                    <SelectItem value="ACTIVE">ACCEPTED</SelectItem>
                   </SelectGroup>
                 </SelectContent>
               </Select>
               <InputErrorMessage error={formik.errors.status} touched={formik.touched.status} />
             </div>
-
+            <div className="flex flex-col gap-2">
+              <Label className="font-bold flex flex-row items-center">Message<Asterisk className="w-4" /></Label>
+              <Textarea
+                value={formik.values.message}
+                onChange={formik.handleChange}
+                name="message"
+                placeholder="Write a message"
+                rows={4}
+                className={`${InputErrorStyle(formik.errors.message, formik.touched.message)}`}
+              />
+               <InputErrorMessage error={formik.errors.message} touched={formik.touched.message} />
+            </div>
             {errorMessage && <ErrorMessage message={errorMessage} className="text-red-500 mt-4" />}
             
             {!isStatusLocked && (

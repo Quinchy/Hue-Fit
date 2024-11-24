@@ -9,8 +9,9 @@ import { Label } from "@/components/ui/label";
 import { Button } from "@/components/ui/button";
 import MapPicker from "@/components/ui/map-picker";
 import WebsiteLayoutWrapper from "@/components/ui/website-layout";
-import { Check } from 'lucide-react';
+import { Check, Asterisk } from 'lucide-react';
 import { FormContext } from "@/providers/form-provider";
+import { InputErrorMessage } from "@/components/ui/error-message";
 
 export default function LocationInformationStep() {
   const router = useRouter();
@@ -52,15 +53,14 @@ export default function LocationInformationStep() {
         <form onSubmit={formik.handleSubmit} className="flex flex-col gap-5 p-5">
           <CardTitle className="text-2xl">Location Information</CardTitle>
           <div className="flex flex-col gap-2">
-            <Label>{"Your Shop's Google Map Location"}</Label>
+            <Label className={`font-bold flex flex-row items-center`}>{"Your Shop's Google Map Location"}<Asterisk className="w-4" /></Label>
             <MapPicker onLocationSelect={handleLocationSelect} />
           </div>
           <Button type="submit" className="w-full mt-4">Next</Button>
-          {(formik.errors.latitude && formik.touched.latitude) && (
-            <div className="text-red-500 mt-2">
-              {formik.errors.latitude}
-            </div>
-          )}
+          <div className="flex flex-col items-center justify-center">
+            <InputErrorMessage error={formik.errors.latitude} touched={formik.touched.latitude} />
+            <InputErrorMessage error={formik.errors.longitude} touched={formik.touched.longitude} />
+          </div>
         </form>
       </Card>
     </WebsiteLayoutWrapper>

@@ -1,15 +1,20 @@
-// File: /api/shop-requests/update-shop-requests.js
-import prisma from "@/utils/helpers"; // Direct Prisma client import from helpers
+import prisma from "@/utils/helpers";
+import nodemailer from "nodemailer";
 
 export default async function handler(req, res) {
   if (req.method !== 'POST') {
     return res.status(405).json({ error: 'Method not allowed' });
   }
 
-  const { requestNo, status } = req.body;
+  let { requestNo, status, email, message } = req.body;
+
+  // Map "ACCEPTED" status to "ACTIVE" for database operations
+  if (status === "ACCEPTED") {
+    status = "ACTIVE";
+  }
 
   // Validate status
-  if (status !== 'REJECTED' && status !== 'ACTIVE') {
+  if (!["PENDING", "REJECTED", "ACTIVE"].includes(status)) {
     return res.status(400).json({ error: 'Invalid status value' });
   }
 
@@ -28,14 +33,8 @@ export default async function handler(req, res) {
       return res.status(404).json({ error: 'Partnership request not found' });
     }
 
-    // Only proceed if the request status is currently "PENDING"
-    if (partnershipRequest.status !== 'PENDING') {
-      return res.status(400).json({ error: 'Request is not in PENDING state' });
-    }
-
     // Run the update operations in a transaction
     await prisma.$transaction(async (tx) => {
-      // Update the user and shop status
       await tx.users.update({
         where: { id: partnershipRequest.userId },
         data: { status },
@@ -46,17 +45,39 @@ export default async function handler(req, res) {
         data: { status },
       });
 
-      // Update partnership request status to "DONE" for both ACTIVE and REJECTED
       await tx.partnershipRequests.update({
         where: { requestNo },
-        data: { status: 'DONE' },
+        data: { status },
       });
     });
 
-    return res.status(200).json({ message: 'Request status successfully updated' });
-  } 
-  catch (error) {
-    return res.status(500).json({
+    // Prepare the default message if not provided
+    let defaultMessage;
+    if (status === "ACTIVE") {
+      defaultMessage = `Congratulations! Your partnership request has been approved, and your vendor account has been activated. You can now access the vendor dashboard by logging in at https://hue-fit-web.vercel.app/account/login.`;
+    } else if (status === "REJECTED") {
+      defaultMessage = `We regret to inform you that your partnership request has not been approved. Thank you for your interest in HueFit.`;
+    }
+
+    // Send email notification
+    const transporter = nodemailer.createTransport({
+      service: "gmail",
+      auth: {
+        user: process.env.NOREPLY_EMAIL,
+        pass: process.env.NOREPLY_PASSWORD,
+      },
+    });
+
+    await transporter.sendMail({
+      from: `"HueFit" <${process.env.NOREPLY_EMAIL}>`,
+      to: email,
+      subject: `Partnership Request Update - ${status}`,
+      text: message || defaultMessage,
+    });
+
+    res.status(200).json({ message: 'Request status successfully updated and email sent' });
+  } catch (error) {
+    res.status(500).json({
       error: 'An error occurred while updating the request status',
       details: error.message,
     });

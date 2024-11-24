@@ -3,14 +3,14 @@
 @tailwind utilities;
 
 :root {
-  --rainbow1: #ff0090;
-  --rainbow2: #ed6b00;
-  --rainbow3: #edc600;
-  --rainbow4: #7fff24;
-  --rainbow5: #0fbbff;
-  --rainbow6: #ae00ff;
-  --one-opacity-white: rgba(255, 255, 255, 0.01);
-  --gradient-opacity-black: linear-gradient(0deg, #000000 15%, #66666600 100%) no-repeat;
+  --rainbow1: #FF75C3;
+  --rainbow2: #FFA647;
+  --rainbow3: #FFE83F;
+  --rainbow4: #9FFF5B;
+  --rainbow5: #70E2FF;
+  --rainbow6: #B678EB;
+  --one-opacity-white: rgba(255, 255, 255, 0.00);
+  --black: #000000;
   --warning: #E24A4A;
   --starred: #E2B84A;
   --success: #7BE24A;
@@ -22,9 +22,9 @@
 @layer base {
   :root {
     --background-image: url('../public/images/tile-pattern-2.png');
-    --background: 223 16% 87%;
+    --background: 223 16% 85%;
     --foreground: 240 10% 30%;
-    --card: 0 0% 100%;
+    --card: 0 0% 95%;
     --card-foreground: 240 10% 3.9%;
     --popover: 0 0% 100%;
     --popover-foreground: 240 10% 3.9%;
@@ -34,7 +34,7 @@
     --secondary-foreground: 240 5.9% 10%;
     --muted: 240 4.8% 95.9%;
     --muted-foreground: 240 3.8% 45%;
-    --accent: 200 10% 87%;
+    --accent: 200 10% 90%;
     --accent-foreground: 250 5% 40%;
     --destructive: 0 84.2% 60.2%;
     --destructive-foreground: 0 0% 98%;
@@ -51,9 +51,9 @@
 
   .dark {
     --background-image: url('../public/images/tile-pattern.png');
-    --background: 0 0% 10%;
+    --background: 0 0% 12%;
     --foreground: 0 0% 98%;
-    --card: 0 0% 7%;
+    --card: 0 0% 10%;
     --card-foreground: 0 0% 98%;
     --popover: 0 0% 10%;
     --popover-foreground: 0 0% 98%;

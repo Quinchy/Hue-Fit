@@ -56,26 +56,27 @@ const FileUpload = ({ onFileSelect, maxFiles = 5, className = "", initialFiles =
           multiple
         />
         <div className="flex flex-col items-center text-muted-foreground dark:text-accent-foreground">
-          <Upload className="mb-2 w-8 h-8 stroke-primary/50" />
-          <button className="px-4 py-2 text-base text-primary/65 font-semibold border-2 rounded-md shadow-sm uppercase">
+          <Upload className="mb-2 w-8 h-8 stroke-border" />
+          <button className="px-10 py-2 text-base text-primary/25 font-medium border-2 rounded-md shadow-sm uppercase">
             Browse
           </button>
           <p className="mt-3 text-base text-primary/50 font-medium">UPLOAD YOUR BUSINESS LICENSES HERE</p>
           <p className="text-xs font-light text-primary/35 text-center">
             FILES SUPPORTED: JPEG, PNG, WEBP, & PDF <br />
-            THE MAX FILE SIZE IS 20 MB PER FILE <br />
-            MAX {maxFiles} FILES
+            THE MAX FILE SIZE IS 20 MB PER FILE AND MAXIMUM OF {maxFiles} FILES
           </p>
         </div>
-        <p className="mt-5 mb-2 text-primary/50 font-medium">Selected Files:</p>
-        {Object.keys(fileMap).map((fileKey) => (
-          <div className="flex flex-row items-center gap-2" key={fileKey}>
-            <p className="font-thin text-primary/85">{fileMap[fileKey].name}</p>
-            <Button variant="none" className="z-40 scale-125 hover:bg-accent p-1 h-5" onClick={(e) => handleRemoveFile(e, fileKey)}>
-              <X />
-            </Button>
-          </div>
-        ))}
+        <p className="mt-5 mb-2 text-primary/50 font-medium">Uploaded Files:</p>
+        <div className="flex flex-wrap gap-5 justify-center">
+          {Object.keys(fileMap).map((fileKey) => (
+            <div className="flex flex-row items-center" key={fileKey}>
+              <p className="font-thin text-primary/85">{fileMap[fileKey].name}</p>
+              <Button variant="none" className="z-40 scale-125 hover:bg-accent p-1 h-5" onClick={(e) => handleRemoveFile(e, fileKey)}>
+                <X />
+              </Button>
+            </div>
+          ))}
+        </div>
       </div>
     </div>
   );

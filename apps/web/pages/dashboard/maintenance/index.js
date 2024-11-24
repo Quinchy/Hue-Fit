@@ -18,43 +18,16 @@ import AddColorDialog from "./colors/components/add-color";
 import AddSizeDialog from "./sizes/components/add-size";
 import AddMeasurementDialog from "./measurements/components/add-measurement";
 import AddUnitDialog from "./units/components/add-unit";
-import { useEffect, useState } from "react";
-import axios from "axios";
 import { Skeleton } from "@/components/ui/skeleton";
+import useSWR from "swr";
+
+const fetcher = (url) => fetch(url).then((res) => res.json());
 
 export default function Maintenance() {
-  const [totals, setTotals] = useState(null);
-  const [loading, setLoading] = useState(true); // Set loading to true initially
-
-  useEffect(() => {
-    const fetchAndUpdateTotals = async () => {
-      setLoading(true);
-      try {
-        // Fetch current totals from the server
-        const response = await axios.get("/api/maintenance/get-items-total");
-        const serverTotals = response.data;
-
-        // Update storage and state
-        localStorage.setItem("totals", JSON.stringify(serverTotals));
-        setTotals(serverTotals);
-      } catch (error) {
-        console.error("Failed to fetch totals:", error);
-
-        // Fallback to cached data if available
-        const cachedTotals = JSON.parse(localStorage.getItem("totals"));
-        if (cachedTotals) {
-          setTotals(cachedTotals);
-        }
-      } finally {
-        setLoading(false); // Ensure loading stops
-      }
-    };
-
-    fetchAndUpdateTotals();
-  }, []);
+  const { data: totals, isLoading } = useSWR("/api/maintenance/get-items-total", fetcher);
 
   const renderSkeletonOrTotal = (value) => {
-    return loading ? <Skeleton className="h-4 w-8" /> : value; // Use loading state
+    return isLoading ? <Skeleton className="h-4 w-8" /> : value;
   };
 
   return (

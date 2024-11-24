@@ -1,4 +1,3 @@
-// pages/api/maintenance/measurements/get-measurements.js
 import prisma, { getSessionShopNo } from "@/utils/helpers";
 
 export default async function handler(req, res) {
@@ -16,19 +15,43 @@ export default async function handler(req, res) {
     const { page = 1 } = req.query;
     const pageNumber = parseInt(page, 10);
 
-    // Fetch measurements with pagination
+    // Fetch measurements with pagination, including the "Assign To" data
     const measurements = await prisma.measurements.findMany({
       where: { shopNo },
-      select: { id: true, name: true, created_at: true },
+      select: {
+        id: true,
+        name: true,
+        created_at: true,
+        TypeMeasurements: {
+          select: {
+            Type: {
+              select: {
+                name: true,
+              },
+            },
+          },
+        },
+      },
       skip: (pageNumber - 1) * 8,
       take: 8,
     });
+
+    // Map to include the assigned type name
+    const formattedMeasurements = measurements.map((measurement) => ({
+      id: measurement.id,
+      name: measurement.name,
+      createdAt: measurement.created_at,
+      assignedTo:
+        measurement.TypeMeasurements.length > 0
+          ? measurement.TypeMeasurements.map((tm) => tm.Type.name).join(", ")
+          : null,
+    }));
 
     const totalMeasurements = await prisma.measurements.count({ where: { shopNo } });
     const totalPages = Math.ceil(totalMeasurements / 8);
 
     return res.status(200).json({
-      measurements,
+      measurements: formattedMeasurements,
       currentPage: pageNumber,
       totalPages,
       totalMeasurements,

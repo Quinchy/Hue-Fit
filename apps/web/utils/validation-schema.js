@@ -55,8 +55,8 @@ export const accountInfoSchema = Yup.object({
 
 export const locationInfoSchema = Yup.object().shape({
   googleMapPlaceName: Yup.string().nullable(),
-  latitude: Yup.number().required(),
-  longitude: Yup.number().required(),
+  latitude: Yup.number().required("Latitude is required."),
+  longitude: Yup.number().required("Longitude is required."),
 }).test(
   'location-selected',
   'You should mark the location of your shop on the Google Map or enter your registered Google Map Location on map picker.',
@@ -69,8 +69,10 @@ export const locationInfoSchema = Yup.object().shape({
 
 export const manageShopRequestSchema = Yup.object().shape({
   status: Yup.string()
-    .oneOf(["ACTIVE", "REJECTED"], "Please choose between ACTIVE or REJECTED status to submit")
+    .oneOf(["ACTIVE", "REJECTED", "PENDING"], "Please choose between PENDING, ACCEPTED or REJECTED status to submit")
     .required("Status is required"),
+  message: Yup.string()
+    .required("Message is required"),
 });
 
 Yup.addMethod(Yup.array, 'unique', function (field, message) {
@@ -197,9 +199,21 @@ export const addTagSchema = Yup.object({
   typeName: Yup.string().required("Type is required"),
 });
 
-export const colorSchema = Yup.object({
+export const addColorSchema = Yup.object({
   name: Yup.string().required("Color name is required"),
   hexCode: Yup.string()
     .matches(/^#[0-9A-F]{6}$/i, "Hex code must be a valid color code")
     .required("Hex code is required"),
+});
+
+export const addMeasurementSchema = Yup.object({
+  name: Yup.string().required("Measurement name is required"),
+  assignTo: Yup.string().required("You must assign to a clothing type"),
+});
+
+export const addUnitSchema = Yup.object({
+  name: Yup.string().required("Unit name is required"),
+  abbreviation: Yup.string()
+    .max(10, "Abbreviation must be 10 characters or less")
+    .required("Abbreviation is required"),
 });

@@ -5,66 +5,78 @@ import { MoveLeft } from "lucide-react";
 import { useRouter } from "next/router";
 import routes from "@/routes";
 import AddColorDialog from "./components/add-color";
-import { Table, TableHead, TableHeader, TableBody, TableCell, TableRow } from "@/components/ui/table";
-import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger, DropdownMenuGroup } from "@/components/ui/dropdown-menu";
+import {
+  Table,
+  TableHead,
+  TableHeader,
+  TableBody,
+  TableCell,
+  TableRow,
+} from "@/components/ui/table";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+  DropdownMenuGroup,
+} from "@/components/ui/dropdown-menu";
 import { ChevronDown, Pencil, Trash2 } from "lucide-react";
 import { useEffect, useState } from "react";
+import {
+  Pagination,
+  PaginationPrevious,
+  PaginationContent,
+  PaginationItem,
+  PaginationNext,
+  PaginationLink,
+} from "@/components/ui/pagination";
 import { Skeleton } from "@/components/ui/skeleton";
 
 export default function Colors() {
   const router = useRouter();
-  const [colors, setColors] = useState([]); // Stores the list of colors
-  const [loading, setLoading] = useState(true); // Loading state
-  const [currentPage, setCurrentPage] = useState(1); // Current page for pagination
-  const [totalPages, setTotalPages] = useState(1); // Total number of pages
+  const [colors, setColors] = useState([]);
+  const [loading, setLoading] = useState(true);
+  const [currentPage, setCurrentPage] = useState(1);
+  const [totalPages, setTotalPages] = useState(1);
+
+  const fetchColors = async (page = 1) => {
+    try {
+      setLoading(true);
+      const response = await fetch(`/api/maintenance/colors/get-colors?page=${page}`);
+      if (response.ok) {
+        const data = await response.json();
+        setColors(data.colors || []);
+        setTotalPages(data.totalPages || 1);
+      } else {
+        console.error("Failed to fetch colors");
+      }
+    } catch (error) {
+      console.error("An error occurred:", error);
+    } finally {
+      setLoading(false);
+    }
+  };
 
   useEffect(() => {
-    // Fetch colors from the API
-    const fetchColors = async () => {
-      try {
-        const response = await fetch(`/api/maintenance/colors/get-colors?page=${currentPage}`);
-        if (response.ok) {
-          const data = await response.json();
-          setColors(data.colors); // Assuming API returns { colors: [], totalPages }
-          setTotalPages(data.totalPages || 1);
-        } else {
-          console.error("Failed to fetch colors");
-        }
-      } catch (error) {
-        console.error("An error occurred:", error);
-      } finally {
-        setLoading(false);
-      }
-    };
-
-    fetchColors();
+    fetchColors(currentPage);
   }, [currentPage]);
-
-  const handleAddColor = (newColor) => {
-    // Add the new color to the top of the table
-    setColors((prevColors) => [newColor, ...prevColors]);
-  };
 
   const handleEdit = (color) => {
     console.log("Edit color:", color);
-    // Add your edit logic here
   };
 
   const handleDelete = (color) => {
     console.log("Delete color:", color);
-    // Add your delete logic here
   };
 
-  const handleNextPage = () => {
-    if (currentPage < totalPages) {
-      setCurrentPage(currentPage + 1);
+  const handlePageChange = (page) => {
+    if (page >= 1 && page <= totalPages) {
+      setCurrentPage(page);
     }
   };
 
-  const handlePreviousPage = () => {
-    if (currentPage > 1) {
-      setCurrentPage(currentPage - 1);
-    }
+  const handleAddColor = (newColor) => {
+    setColors((prevColors) => [newColor, ...prevColors]);
   };
 
   return (
@@ -76,14 +88,14 @@ export default function Colors() {
             <MoveLeft className="scale-125" />
             Back to Maintenance
           </Button>
-          <AddColorDialog onColorAdded={handleAddColor}/> {/* Pass the handler */}
+          <AddColorDialog onColorAdded={handleAddColor} />
         </div>
       </div>
       <Card className="flex flex-col gap-5 justify-between min-h-[49.1rem]">
         <Table>
           <TableHeader>
             <TableRow>
-              <TableHead>Color Id</TableHead>
+              <TableHead>Color ID</TableHead>
               <TableHead>Color Name</TableHead>
               <TableHead>Hexcode</TableHead>
               <TableHead>Action</TableHead>
@@ -91,19 +103,19 @@ export default function Colors() {
           </TableHeader>
           <TableBody>
             {loading ? (
-              Array.from({ length: 5 }).map((_, index) => (
+              Array.from({ length: 8 }).map((_, index) => (
                 <TableRow key={index}>
                   <TableCell>
-                    <Skeleton className="h-5 w-12" />
+                    <Skeleton className="h-14 w-12" />
                   </TableCell>
                   <TableCell>
-                    <Skeleton className="h-5 w-48" />
+                    <Skeleton className="h-14 w-[30rem]" />
                   </TableCell>
                   <TableCell>
-                    <Skeleton className="h-5 w-32" />
+                    <Skeleton className="h-14 w-[20rem]" />
                   </TableCell>
                   <TableCell>
-                    <Skeleton className="h-8 w-24" />
+                    <Skeleton className="h-14 w-24" />
                   </TableCell>
                 </TableRow>
               ))
@@ -114,11 +126,11 @@ export default function Colors() {
                   <TableCell className="w-[50%]">{color.name}</TableCell>
                   <TableCell className="w-[30%]">
                     <div
-                      className="flex items-center gap-2"
+                      className="flex items-center gap-2 text-base font-medium"
                       style={{ color: color.hexcode }}
                     >
                       <span
-                        className="w-6 h-6 rounded-full border"
+                        className="w-7 h-7 rounded-sm border-accent border-2"
                         style={{ backgroundColor: color.hexcode }}
                       ></span>
                       {color.hexcode}
@@ -168,18 +180,23 @@ export default function Colors() {
             )}
           </TableBody>
         </Table>
-        {/* Pagination Controls */}
-        <div className="flex justify-end items-center gap-4 p-4">
-          <Button variant="outline" onClick={handlePreviousPage} disabled={currentPage === 1}>
-            Previous
-          </Button>
-          <span>
-            Page {currentPage} of {totalPages}
-          </span>
-          <Button variant="outline" onClick={handleNextPage} disabled={currentPage === totalPages}>
-            Next
-          </Button>
-        </div>
+        {colors.length > 0 && (
+          <Pagination className="flex flex-col items-end">
+            <PaginationContent>
+              {currentPage > 1 && (
+                <PaginationPrevious onClick={() => handlePageChange(currentPage - 1)} />
+              )}
+              {Array.from({ length: totalPages }, (_, i) => i + 1).map((page) => (
+                <PaginationItem key={page} active={page === currentPage}>
+                  <PaginationLink onClick={() => handlePageChange(page)}>{page}</PaginationLink>
+                </PaginationItem>
+              ))}
+              {currentPage < totalPages && (
+                <PaginationNext onClick={() => handlePageChange(currentPage + 1)} />
+              )}
+            </PaginationContent>
+          </Pagination>
+        )}
       </Card>
     </DashboardLayoutWrapper>
   );

@@ -22,7 +22,6 @@ import {
 } from "@/components/ui/dropdown-menu";
 import { ChevronDown, Pencil, Trash2 } from "lucide-react";
 import { Skeleton } from "@/components/ui/skeleton";
-import { useEffect, useState } from "react";
 import {
   Pagination,
   PaginationPrevious,
@@ -31,38 +30,22 @@ import {
   PaginationNext,
   PaginationLink,
 } from "@/components/ui/pagination";
+import useSWR from "swr";
+import { useState } from "react";
+
+const fetcher = (url) => fetch(url).then((res) => res.json());
 
 export default function Types() {
   const router = useRouter();
-  const [types, setTypes] = useState([]);
-  const [loading, setLoading] = useState(true);
   const [currentPage, setCurrentPage] = useState(1);
-  const [totalPages, setTotalPages] = useState(1);
 
-  const fetchTypes = async (page = 1) => {
-    setLoading(true);
-    try {
-      const response = await fetch(`/api/maintenance/types/get-types?page=${page}`);
-      if (response.ok) {
-        const data = await response.json();
-        setTypes(data.types);
-        setTotalPages(data.totalPages);
-      } else {
-        console.error("Failed to fetch types");
-      }
-    } catch (error) {
-      console.error("An error occurred:", error);
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  useEffect(() => {
-    fetchTypes(currentPage);
-  }, [currentPage]);
+  const { data, isLoading, mutate } = useSWR(
+    `/api/maintenance/types/get-types?page=${currentPage}`,
+    fetcher
+  );
 
   const handleAddType = async () => {
-    fetchTypes(currentPage);
+    mutate();
   };
 
   const handleEdit = (type) => {
@@ -80,7 +63,7 @@ export default function Types() {
       });
 
       if (response.ok) {
-        setTypes((prevTypes) => prevTypes.filter((type) => type.id !== typeId));
+        mutate();
       } else {
         console.error("Failed to delete type");
       }
@@ -90,7 +73,7 @@ export default function Types() {
   };
 
   const handlePageChange = (page) => {
-    if (page >= 1 && page <= totalPages) {
+    if (page >= 1 && page <= (data?.totalPages || 1)) {
       setCurrentPage(page);
     }
   };
@@ -117,7 +100,7 @@ export default function Types() {
             </TableRow>
           </TableHeader>
           <TableBody>
-            {loading ? (
+            {isLoading ? (
               Array.from({ length: 8 }).map((_, index) => (
                 <TableRow key={index}>
                   <TableCell>
@@ -131,8 +114,8 @@ export default function Types() {
                   </TableCell>
                 </TableRow>
               ))
-            ) : types.length > 0 ? (
-              types.map((type) => (
+            ) : data?.types?.length > 0 ? (
+              data.types.map((type) => (
                 <TableRow key={type.id}>
                   <TableCell className="w-[10%]">{type.id}</TableCell>
                   <TableCell className="w-[80%]">{type.name.toUpperCase()}</TableCell>
@@ -177,18 +160,18 @@ export default function Types() {
             )}
           </TableBody>
         </Table>
-        {types.length > 0 && (
+        {data?.types?.length > 0 && (
           <Pagination className="flex justify-end">
             <PaginationContent>
               {currentPage > 1 && (
                 <PaginationPrevious onClick={() => handlePageChange(currentPage - 1)} />
               )}
-              {Array.from({ length: totalPages }, (_, i) => i + 1).map((page) => (
+              {Array.from({ length: data.totalPages }, (_, i) => i + 1).map((page) => (
                 <PaginationItem key={page} active={page === currentPage}>
                   <PaginationLink onClick={() => handlePageChange(page)}>{page}</PaginationLink>
                 </PaginationItem>
               ))}
-              {currentPage < totalPages && (
+              {currentPage < data.totalPages && (
                 <PaginationNext onClick={() => handlePageChange(currentPage + 1)} />
               )}
             </PaginationContent>

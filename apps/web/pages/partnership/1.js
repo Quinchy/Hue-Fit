@@ -1,4 +1,3 @@
-// form1.jsx
 import { useFormik } from "formik";
 import { contactInfoSchema } from "@/utils/validation-schema"; // Validation schema for Step 1
 import { useRouter } from "next/router";
@@ -9,30 +8,53 @@ import { Label } from "@/components/ui/label";
 import { Button } from "@/components/ui/button";
 import { InputErrorMessage, InputErrorStyle } from "@/components/ui/error-message";
 import WebsiteLayoutWrapper from "@/components/ui/website-layout";
-import { useContext } from "react";
+import { useContext, useEffect, useState } from "react";
 import { Asterisk } from "lucide-react";
 import { FormContext } from "@/providers/form-provider";
 
 export default function ContactInformationStep() {
   const router = useRouter();
   const { formData, updateFormData } = useContext(FormContext);
+  const [loaded, setLoaded] = useState(false); // To ensure form is populated after data load
 
   // Formik setup with validation schema for Step 1
   const formik = useFormik({
     initialValues: {
-      firstName: formData.firstName || "",
-      lastName: formData.lastName || "",
-      contactNo: formData.contactNo || "",
-      email: formData.email || "",
-      position: formData.position || "",
+      firstName: "",
+      lastName: "",
+      contactNo: "",
+      email: "",
+      position: "",
     },
     validationSchema: contactInfoSchema,
     onSubmit: (values) => {
       updateFormData(values);
+      localStorage.setItem("contactInfo", JSON.stringify(values));
       document.cookie = "currentStep=2; path=/";
       router.push(routes.partnership2);
     },
   });
+
+  // Load saved form data on component mount
+  useEffect(() => {
+    const savedFormData = JSON.parse(localStorage.getItem("contactInfo"));
+    if (savedFormData) {
+      formik.setValues(savedFormData);
+    }
+    setLoaded(true); // Ensure form renders after loading data
+  }, []);
+
+  // Save form data to localStorage whenever it changes
+  useEffect(() => {
+    if (loaded) {
+      localStorage.setItem("contactInfo", JSON.stringify(formik.values));
+    }
+  }, [formik.values, loaded]);
+
+  if (!loaded) {
+    // Avoid rendering form until data is loaded
+    return null;
+  }
 
   return (
     <WebsiteLayoutWrapper className="justify-center items-center">

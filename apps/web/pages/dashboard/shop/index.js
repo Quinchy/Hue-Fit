@@ -99,17 +99,18 @@ export default function Shop() {
             </TableRow>
           </TableHeader>
           <TableBody>
-            {loading
-              ? Array.from({ length: 7 }).map((_, index) => (
-                  <TableRow key={index}>
-                    <TableCell className="max-w-[1rem]"><Skeleton className="h-14 w-full" /></TableCell>
-                    <TableCell className="max-w-[3rem]"><Skeleton className="h-14 w-full" /></TableCell>
-                    <TableCell className="max-w-[4rem]"><Skeleton className="h-14 w-full" /></TableCell>
-                    <TableCell className="max-w-[1rem] text-center"><Skeleton className="h-14 w-full" /></TableCell>
-                    <TableCell className="max-w-[1rem] text-center"><Skeleton className="h-14 w-full" /></TableCell>
-                  </TableRow>
-                ))
-              : shops.map((shop) => (
+          {loading
+            ? Array.from({ length: 7 }).map((_, index) => (
+                <TableRow key={index}>
+                  <TableCell className="max-w-[1rem]"><Skeleton className="h-14 w-full" /></TableCell>
+                  <TableCell className="max-w-[3rem]"><Skeleton className="h-14 w-full" /></TableCell>
+                  <TableCell className="max-w-[4rem]"><Skeleton className="h-14 w-full" /></TableCell>
+                  <TableCell className="max-w-[1rem] text-center"><Skeleton className="h-14 w-full" /></TableCell>
+                  <TableCell className="max-w-[1rem] text-center"><Skeleton className="h-14 w-full" /></TableCell>
+                </TableRow>
+              ))
+            : shops.length > 0
+              ? shops.map((shop) => (
                   <TableRow key={shop.shopNo}>
                     <TableCell className="max-w-[1rem] font-medium">{shop.shopNo}</TableCell>
                     <TableCell className="max-w-[3rem] overflow-hidden whitespace-nowrap text-ellipsis">{shop.name}</TableCell>
@@ -154,7 +155,15 @@ export default function Shop() {
                       </DropdownMenu> 
                     </TableCell>
                   </TableRow>
-                ))}
+                ))
+              : (
+                <TableRow>
+                  <TableCell colSpan={5} className="text-center align-middle h-[30rem] text-primary/50 text-lg font-thin tracking-wide">
+                    There are no partnered shop yet. 
+                  </TableCell>
+                </TableRow>
+              )
+          }
           </TableBody>
         </Table>
         <Pagination className="flex flex-col items-end">

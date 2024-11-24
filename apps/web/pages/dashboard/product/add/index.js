@@ -1,19 +1,20 @@
 // pages/dashboard/product/index.jsx
-import { useState, useEffect, useRef } from "react";
+import { useState, useRef } from "react";
 import { useRouter } from "next/router";
 import useSWR from 'swr';
 import DashboardLayoutWrapper from "@/components/ui/dashboard-layout";
 import { CardTitle, Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { Plus, MoveLeft, Trash2, Asterisk } from "lucide-react";
+import { Plus, MoveLeft, Asterisk, Loader } from "lucide-react";
 import { Select, SelectContent, SelectGroup, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import Image from "next/image";
 import { Label } from "@/components/ui/label";
-import { useFormik, FormikProvider, FieldArray, setNestedObjectValues } from "formik";
+import { useFormik, FormikProvider, FieldArray } from "formik";
 import { productSchema } from "@/utils/validation-schema";
 import { ErrorMessage, InputErrorMessage, InputErrorStyle } from "@/components/ui/error-message";
 import dynamic from 'next/dynamic';
+import { LoadingMessage } from "@/components/ui/loading-message";
 
 const ProductVariantCard = dynamic(() => import('../components/product-variant-card'), { ssr: false });
 const SpecificMeasurements = dynamic(() => import('../components/specific-measurements'), { ssr: false });
@@ -24,28 +25,13 @@ export default function AddProduct() {
   const router = useRouter();
   const [previewImage, setPreviewImage] = useState("/images/placeholder-picture.png");
   const fileInputRef = useRef(null);
+  const [submitting, setSubmitting] = useState(false);
 
-  const usePersistentSWR = (key, fetcher) => {
-    const { data, error } = useSWR(key, async () => {
-      const cachedData = JSON.parse(localStorage.getItem(key));
-      if (cachedData) return cachedData;
-      const freshData = await fetcher(key);
-      localStorage.setItem(key, JSON.stringify(freshData));
-      return freshData;
-    }, {
-      revalidateOnFocus: false,
-      dedupingInterval: 1000000,
-      keepPreviousData: true
-    });
-
-    useEffect(() => {
-      if (data) localStorage.setItem(key, JSON.stringify(data));
-    }, [data, key]);
-
-    return { data, error };
-  };
-
-  const { data: productData, error: productError } = usePersistentSWR('/api/products/get-product-related-info', fetcher);
+  const { data: productData, error: productError, isLoading } = useSWR(
+    '/api/products/get-product-related-info',
+    fetcher,
+    { revalidateOnFocus: false, dedupingInterval: 60000 }
+  );
 
   const formik = useFormik({
     initialValues: {
@@ -60,7 +46,7 @@ export default function AddProduct() {
     },
     validationSchema: productSchema,
     onSubmit: async (values) => {
-      console.log("Form Values:", JSON.stringify(values, null, 2));
+      setSubmitting(true);
       const formData = new FormData();
       formData.append('thumbnail', values.thumbnail.file);
       formData.append('name', values.name);
@@ -89,9 +75,15 @@ export default function AddProduct() {
           body: formData,
         });
         const result = await response.json();
-        console.log('Server response:', result);
+        if (response.ok) {
+          router.push('/dashboard/product?success=true');
+        } else {
+          console.error('Server error:', result.message);
+        }
       } catch (error) {
         console.error('Error submitting form:', error);
+      } finally {
+        setSubmitting(false);
       }
     },
     validateOnMount: true,
@@ -147,26 +139,6 @@ export default function AddProduct() {
     }
   };
 
-  const markAllFieldsTouched = (values) => {
-    const touched = {};
-    const recursivelySetTouched = (obj, base = touched) => {
-      Object.keys(obj).forEach((key) => {
-        if (typeof obj[key] === 'object' && obj[key] !== null && !Array.isArray(obj[key])) {
-          base[key] = {};
-          recursivelySetTouched(obj[key], base[key]);
-        } else if (Array.isArray(obj[key])) {
-          base[key] = obj[key].map((item) =>
-            typeof item === 'object' && item !== null ? markAllFieldsTouched(item) : true
-          );
-        } else {
-          base[key] = true;
-        }
-      });
-    };
-    recursivelySetTouched(values);
-    return touched;
-  };
-
   return (
     <DashboardLayoutWrapper>
       <div className="flex justify-between items-center mb-5">
@@ -194,9 +166,7 @@ export default function AddProduct() {
               accept="image/*"
               ref={fileInputRef}
               className="hidden"
-              onChange={(e) => {
-                handleImageChange(e);
-              }}
+              onChange={(e) => handleImageChange(e)}
             />
             <Button variant="outline" type="button" className="w-full" onClick={openFilePicker}>
               <Plus className="scale-110 stroke-[3px] mr-2" />
@@ -230,15 +200,17 @@ export default function AddProduct() {
             </div>
             <div className="flex flex-col gap-3">
               <Label className="font-bold flex flex-row items-center">Type <Asterisk className="w-4"/></Label>
-              <Select onValueChange={(value) => {
-                formik.setFieldValue("type", value);
-                formik.setFieldValue("tags", "");
-              }}>
-                <SelectTrigger className={`w-1/2 
-                  ${InputErrorStyle(formik.errors.type, 
-                    formik.touched.type)}`}
-                >
-                  <SelectValue placeholder="Select a type of clothing">
+              <Select 
+                onValueChange={(value) => {
+                  formik.setFieldValue("type", value);
+                  formik.setFieldValue("tags", "");
+                }} 
+                disabled={isLoading}
+              >
+                <SelectTrigger className={`w-1/2 ${InputErrorStyle(formik.errors.type, formik.touched.type)}`}>
+                  <SelectValue placeholder={isLoading ? 
+                    <span className="flex items-center gap-2"><Loader className="animate-spin" /> Loading clothing types...</span> 
+                    : "Select a type of clothing"}>
                     {formik.values.type ? getTypeNameById(formik.values.type) : 'Select a type of clothing product'}
                   </SelectValue>
                 </SelectTrigger>
@@ -256,12 +228,14 @@ export default function AddProduct() {
             </div>
             <div className="flex flex-col gap-3">
               <Label className="font-bold flex flex-row items-center">Category <Asterisk className="w-4"/></Label>
-              <Select onValueChange={(value) => formik.setFieldValue("category", value)} >
-                <SelectTrigger className={`w-1/2 
-                  ${InputErrorStyle(formik.errors.category, 
-                    formik.touched.category)}`}
-                >
-                  <SelectValue placeholder="Select a category of clothing product">
+              <Select 
+                onValueChange={(value) => formik.setFieldValue("category", value)}
+                disabled={isLoading}
+              >
+                <SelectTrigger className={`w-1/2 ${InputErrorStyle(formik.errors.category, formik.touched.category)}`}>
+                  <SelectValue placeholder={isLoading ? 
+                    <span className="flex items-center gap-2"><Loader className="animate-spin" /> Loading clothing categories...</span> 
+                    : "Select a category of clothing"}>
                     {formik.values.category || 'Select a category of clothing product'}
                   </SelectValue>
                 </SelectTrigger>
@@ -279,13 +253,15 @@ export default function AddProduct() {
             </div>
             <div className="flex flex-col gap-3">
               <Label className="font-bold flex flex-row items-center">Tags <Asterisk className="w-4"/></Label>
-              <Select disabled={!formik.values.type} onValueChange={(value) => formik.setFieldValue("tags", value)}>
-                <SelectTrigger className={`w-1/2 
-                  ${InputErrorStyle(formik.errors.tags, 
-                    formik.touched.tags)}`}
-                >
-                  <SelectValue placeholder="Select a tag">
-                    {formik.values.tags ? getTagNameById(formik.values.tags) : (!formik.values.type ? 'Please select type first' : 'Select tags of clothing product')}
+              <Select 
+                onValueChange={(value) => formik.setFieldValue("tags", value)}
+                disabled={!formik.values.type || isLoading}
+              >
+                <SelectTrigger className={`w-1/2 ${InputErrorStyle(formik.errors.tags, formik.touched.tags)}`}>
+                  <SelectValue placeholder={isLoading ? 
+                    <span className="flex items-center gap-2"><Loader className="animate-spin" /> Loading clothing tags...</span> 
+                    : "Select a tag of clothing"}>
+                    {formik.values.tags ? getTagNameById(formik.values.tags) : 'Select tags'}
                   </SelectValue>
                 </SelectTrigger>
                 <SelectContent>
@@ -302,8 +278,6 @@ export default function AddProduct() {
             </div>
           </Card>
         </div>
-
-        {/* Variants Section */}
         <FormikProvider value={formik}>
           <FieldArray name="variants">
             {({ push, remove }) => (
@@ -312,7 +286,6 @@ export default function AddProduct() {
                   <CardTitle className="text-2xl min-w-[14rem]">Product Variants</CardTitle>
                   <div className="h-[1px] w-full bg-primary/25"></div>
                 </div>
-
                 <div className="flex flex-col gap-5">
                   {formik.values.variants.map((variant, index) => (
                     <ProductVariantCard
@@ -324,7 +297,6 @@ export default function AddProduct() {
                     />
                   ))}
                 </div>
-
                 <Button
                   variant="outline"
                   className="w-full mt-4 mb-4"
@@ -335,7 +307,6 @@ export default function AddProduct() {
                   <Plus className="scale-110 stroke-[3px]" />
                   Add Product Variant
                 </Button>
-
                 <ErrorMessage
                   message={formik.errors.variants}
                   condition={formik.errors.variants && typeof formik.errors.variants === 'string'}
@@ -349,25 +320,18 @@ export default function AddProduct() {
               </>
             )}
           </FieldArray>
-
-          {/* Specific Measurements Section */}
           <div className="mb-5 mt-10 flex flex-row items-center gap-5">
             <CardTitle className="text-2xl min-w-[19rem]">Specific Measurements</CardTitle>
             <div className="h-[1px] w-full bg-primary/25"></div>
           </div>
           <SpecificMeasurements formik={formik} productType={formik.values.type} />
         </FormikProvider>
-
         <Button
           type="submit"
           variant="default"
           className="w-full mt-10 mb-20"
-          onClick={() => {
-            const allTouched = markAllFieldsTouched(formik.values);
-            formik.setTouched(allTouched);
-          }}
         >
-          Submit
+          {submitting ? <LoadingMessage message="Submitting..." /> : "Submit"}
         </Button>
       </form>
     </DashboardLayoutWrapper>

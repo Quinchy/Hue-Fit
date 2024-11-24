@@ -23,6 +23,14 @@ import {
 import { ChevronDown, Pencil, Trash2 } from "lucide-react";
 import { Skeleton } from "@/components/ui/skeleton";
 import { useEffect, useState } from "react";
+import {
+  Pagination,
+  PaginationPrevious,
+  PaginationContent,
+  PaginationItem,
+  PaginationNext,
+  PaginationLink,
+} from "@/components/ui/pagination";
 
 export default function Measurements() {
   const router = useRouter();
@@ -53,8 +61,8 @@ export default function Measurements() {
   };
 
   useEffect(() => {
-    fetchMeasurements();
-  }, []);
+    fetchMeasurements(currentPage);
+  }, [currentPage]);
 
   const handleEdit = (measurement) => {
     console.log("Edit measurement:", measurement);
@@ -64,6 +72,12 @@ export default function Measurements() {
   const handleDelete = (measurement) => {
     console.log("Delete measurement:", measurement);
     // Add your delete logic here
+  };
+
+  const handlePageChange = (page) => {
+    if (page >= 1 && page <= totalPages) {
+      setCurrentPage(page);
+    }
   };
 
   return (
@@ -90,19 +104,19 @@ export default function Measurements() {
           </TableHeader>
           <TableBody>
             {loading ? (
-              Array.from({ length: 5 }).map((_, index) => (
+              Array.from({ length: 8 }).map((_, index) => (
                 <TableRow key={index}>
                   <TableCell>
-                    <Skeleton className="h-5 w-12" />
+                    <Skeleton className="h-14 w-12" />
                   </TableCell>
                   <TableCell>
-                    <Skeleton className="h-5 w-48" />
+                    <Skeleton className="h-14 w-[45rem]" />
                   </TableCell>
                   <TableCell>
-                    <Skeleton className="h-5 w-32" />
+                    <Skeleton className="h-14 w-[20rem]" />
                   </TableCell>
                   <TableCell>
-                    <Skeleton className="h-8 w-24" />
+                    <Skeleton className="h-14 w-24" />
                   </TableCell>
                 </TableRow>
               ))
@@ -158,27 +172,23 @@ export default function Measurements() {
             )}
           </TableBody>
         </Table>
-        <div className="flex justify-end mt-4">
-          <div className="flex items-center gap-2">
-            <Button
-              variant="outline"
-              size="sm"
-              disabled={currentPage === 1}
-              onClick={() => fetchMeasurements(currentPage - 1)}
-            >
-              Previous
-            </Button>
-            <span>{`Page ${currentPage} of ${totalPages}`}</span>
-            <Button
-              variant="outline"
-              size="sm"
-              disabled={currentPage === totalPages}
-              onClick={() => fetchMeasurements(currentPage + 1)}
-            >
-              Next
-            </Button>
-          </div>
-        </div>
+        {measurements.length > 0 && (
+          <Pagination className="flex flex-col items-end">
+            <PaginationContent>
+              {currentPage > 1 && (
+                <PaginationPrevious onClick={() => handlePageChange(currentPage - 1)} />
+              )}
+              {Array.from({ length: totalPages }, (_, i) => i + 1).map((page) => (
+                <PaginationItem key={page} active={page === currentPage}>
+                  <PaginationLink onClick={() => handlePageChange(page)}>{page}</PaginationLink>
+                </PaginationItem>
+              ))}
+              {currentPage < totalPages && (
+                <PaginationNext onClick={() => handlePageChange(currentPage + 1)} />
+              )}
+            </PaginationContent>
+          </Pagination>
+        )}
       </Card>
     </DashboardLayoutWrapper>
   );

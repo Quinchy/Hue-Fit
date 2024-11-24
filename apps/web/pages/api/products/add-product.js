@@ -25,12 +25,10 @@ export default async function handler(req, res) {
     // Part 1: Insert Product Data
     const name = fields.name[0];
     const description = fields.description[0];
-    const type = fields.type[0];
+    const typeId = parseInt(fields.type[0], 10);
     const category = fields.category[0];
-    const tag = fields.tags[0];
-    const typeId = await getTypeIdByName(type, shopNo);
+    const tagId = parseInt(fields.tags[0], 10);
     const categoryId = await getCategoryIdByName(category, shopNo);
-    const tagId = await getTagIdByName(tag, shopNo);
     const thumbnailURL = await uploadFileToSupabase(
       files.thumbnail[0],
       files.thumbnail[0].filepath,

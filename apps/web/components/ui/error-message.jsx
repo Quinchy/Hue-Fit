@@ -16,7 +16,7 @@ export function InputErrorMessage({ error, touched, condition = true }) {
 }
 
 export function InputErrorStyle(error, touched) {
-  return error && touched ? "border-2 border-red-500" : "border-none";
+  return error && touched ? "border-2 border-red-500" : "border-2";
 }
 
 export function ErrorMessage({ message, className = "", condition = true }) {

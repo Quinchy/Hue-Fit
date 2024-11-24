@@ -1,8 +1,5 @@
 import React, { useState, useEffect } from "react";
-import {
-  Card,
-  CardTitle,
-} from "@/components/ui/card";
+import { Card, CardTitle } from "@/components/ui/card";
 import DashboardLayoutWrapper from "@/components/ui/dashboard-layout";
 import { Button } from "@/components/ui/button";
 import { MoveLeft } from "lucide-react";
@@ -26,6 +23,14 @@ import {
 } from "@/components/ui/dropdown-menu";
 import { ChevronDown, Pencil, Trash2 } from "lucide-react";
 import { Skeleton } from "@/components/ui/skeleton";
+import {
+  Pagination,
+  PaginationPrevious,
+  PaginationContent,
+  PaginationItem,
+  PaginationNext,
+  PaginationLink,
+} from "@/components/ui/pagination";
 
 export default function Units() {
   const router = useRouter();
@@ -41,7 +46,7 @@ export default function Units() {
         const response = await fetch(`/api/maintenance/units/get-units?page=${page}`);
         if (response.ok) {
           const data = await response.json();
-          setUnits(data.units); // Assuming API returns { units: [] }
+          setUnits(data.units || []);
           setCurrentPage(data.currentPage || 1);
           setTotalPages(data.totalPages || 1);
         } else {
@@ -67,9 +72,9 @@ export default function Units() {
     // Add your delete logic here
   };
 
-  const handlePageChange = (newPage) => {
-    if (newPage >= 1 && newPage <= totalPages) {
-      setCurrentPage(newPage);
+  const handlePageChange = (page) => {
+    if (page >= 1 && page <= totalPages) {
+      setCurrentPage(page);
     }
   };
 
@@ -82,7 +87,7 @@ export default function Units() {
             <MoveLeft className="scale-125" />
             Back to Maintenance
           </Button>
-          <AddUnitDialog onSuccess={(newUnit) => setUnits((prevUnits) => [newUnit, ...prevUnits])}/>
+          <AddUnitDialog onSuccess={(newUnit) => setUnits((prevUnits) => [newUnit, ...prevUnits])} />
         </div>
       </div>
       <Card className="flex flex-col gap-5 justify-between min-h-[49.1rem]">
@@ -97,19 +102,19 @@ export default function Units() {
           </TableHeader>
           <TableBody>
             {loading ? (
-              Array.from({ length: 5 }).map((_, index) => (
+              Array.from({ length: 8 }).map((_, index) => (
                 <TableRow key={index}>
                   <TableCell>
-                    <Skeleton className="h-5 w-12" />
+                    <Skeleton className="h-14 w-12" />
                   </TableCell>
                   <TableCell>
-                    <Skeleton className="h-5 w-48" />
+                    <Skeleton className="h-14 w-[40rem]" />
                   </TableCell>
                   <TableCell>
-                    <Skeleton className="h-5 w-32" />
+                    <Skeleton className="h-14 w-[20rem]" />
                   </TableCell>
                   <TableCell>
-                    <Skeleton className="h-8 w-24" />
+                    <Skeleton className="h-14 w-24" />
                   </TableCell>
                 </TableRow>
               ))
@@ -117,7 +122,7 @@ export default function Units() {
               units.map((unit) => (
                 <TableRow key={unit.id}>
                   <TableCell className="w-[10%]">{unit.id}</TableCell>
-                  <TableCell className="w-[40%]">{unit.name}</TableCell>
+                  <TableCell className="w-[60%]">{unit.name}</TableCell>
                   <TableCell className="w-[30%]">{unit.abbreviation}</TableCell>
                   <TableCell>
                     <DropdownMenu>
@@ -163,27 +168,23 @@ export default function Units() {
             )}
           </TableBody>
         </Table>
-
-        {/* Pagination */}
-        <div className="flex justify-end items-center gap-4 p-4">
-          <Button
-            variant="outline"
-            disabled={currentPage === 1}
-            onClick={() => handlePageChange(currentPage - 1)}
-          >
-            Previous
-          </Button>
-          <span>
-            Page {currentPage} of {totalPages}
-          </span>
-          <Button
-            variant="outline"
-            disabled={currentPage === totalPages}
-            onClick={() => handlePageChange(currentPage + 1)}
-          >
-            Next
-          </Button>
-        </div>
+        {units.length > 0 && (
+          <Pagination className="flex flex-col items-end">
+            <PaginationContent>
+              {currentPage > 1 && (
+                <PaginationPrevious onClick={() => handlePageChange(currentPage - 1)} />
+              )}
+              {Array.from({ length: totalPages }, (_, i) => i + 1).map((page) => (
+                <PaginationItem key={page} active={page === currentPage}>
+                  <PaginationLink onClick={() => handlePageChange(page)}>{page}</PaginationLink>
+                </PaginationItem>
+              ))}
+              {currentPage < totalPages && (
+                <PaginationNext onClick={() => handlePageChange(currentPage + 1)} />
+              )}
+            </PaginationContent>
+          </Pagination>
+        )}
       </Card>
     </DashboardLayoutWrapper>
   );

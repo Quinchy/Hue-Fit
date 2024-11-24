@@ -1,20 +1,23 @@
 import prisma from '@/utils/helpers';
 
 export default async function handler(req, res) {
-  const { page = 1, perPage = 10, status = "PENDING" } = req.query;
+  const { page = 1, perPage = 7, status = "PENDING" } = req.query;
 
   try {
-    // Step 1: Calculate total requests and pages
-    console.log("Fetching total requests count...");
-    const totalRequests = await prisma.partnershipRequests.count();
-    const totalPages = Math.ceil(totalRequests / perPage);
+    // Step 1: Calculate total requests matching the status
+    const totalRequests = await prisma.partnershipRequests.count({
+      where: { status },
+    });
 
-    console.log(`Total requests: ${totalRequests}, Total pages: ${totalPages}`);
+    // Step 2: Calculate total pages
+    const totalPages = totalRequests === 0 ? 1 : Math.ceil(totalRequests / perPage);
 
-    // Step 2: Fetch the requests with the associated shop and address data
-    console.log("Fetching partnership requests with associated Shop and Address...");
+    // Step 3: Ensure the page number is within valid bounds
+    const currentPage = Math.max(1, Math.min(page, totalPages)); // Clamp page to valid range
+
+    // Step 4: Fetch the requests with pagination and related data
     const requests = await prisma.partnershipRequests.findMany({
-      skip: (page - 1) * perPage, // Pagination offset
+      skip: (currentPage - 1) * perPage, // Pagination offset
       take: perPage, // Pagination limit
       where: { status },
       include: {
@@ -38,35 +41,26 @@ export default async function handler(req, res) {
       },
     });
 
-    console.log(`Fetched ${requests.length} requests`);
-
-    // Step 3: Format the data for the table
-    console.log("Formatting the requests data...");
+    // Step 5: Format the data for the response
     const formattedRequests = requests.map((request) => {
-      console.log("Request:", request);
-
-      // Safely access the Address properties, ensuring they exist
-      const address = request.Shop.Address
-        ? `${request.Shop.Address.buildingNo} ${request.Shop.Address.street}, ${request.Shop.Address.barangay}, ${request.Shop.Address.municipality}, ${request.Shop.Address.province}`
-        : "No Address Provided"; // Fallback in case Address is not present
+      const address = request.Shop?.Address
+        ? `${request.Shop.Address.buildingNo || ''} ${request.Shop.Address.street || ''}, ${request.Shop.Address.barangay || ''}, ${request.Shop.Address.municipality || ''}, ${request.Shop.Address.province || ''}`
+        : "No Address Provided";
 
       return {
         requestNo: request.requestNo,
-        shopName: request.Shop.name,
-        shopContactNo: request.Shop.contactNo,
+        shopName: request.Shop?.name || "Unknown Shop",
+        shopContactNo: request.Shop?.contactNo || "No Contact Info",
         address: address,
         status: request.status,
       };
     });
 
-    console.log("Formatted requests data:", formattedRequests);
-
-    // Step 4: Send response with formatted data
-    console.log("Sending the formatted response...");
+    // Step 6: Send the response
     res.status(200).json({
       requests: formattedRequests,
       totalPages: totalPages,
-      currentPage: parseInt(page),
+      currentPage: currentPage,
     });
   } catch (error) {
     console.error("Error fetching shop requests:", error);

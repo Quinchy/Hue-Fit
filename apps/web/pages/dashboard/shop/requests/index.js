@@ -34,6 +34,8 @@ import {
 import { Card, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Pencil, Trash2, ChevronDown, NotepadText } from 'lucide-react';
+import { MailCheck,  MailMinus } from 'lucide-react';
+import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 
 export default function ShopRequests() {
   const [loading, setLoading] = useState(true);
@@ -42,6 +44,22 @@ export default function ShopRequests() {
   const [totalPages, setTotalPages] = useState(1);
   const [statusFilter, setStatusFilter] = useState("PENDING"); 
   const router = useRouter();
+  const { alert } = router.query; // Read the alert query parameter
+  const [showAlert, setShowAlert] = useState(false);
+
+  useEffect(() => {
+    if (alert) {
+      setShowAlert(true);
+
+      // Automatically hide the alert after 5 seconds
+      const timeout = setTimeout(() => {
+        setShowAlert(false);
+        router.replace(routes.shopRequest, undefined, { shallow: true }); // Remove query parameter
+      }, 5000);
+
+      return () => clearTimeout(timeout);
+    }
+  }, [alert, router]);
 
   useEffect(() => {
     const fetchRequests = async () => {
@@ -92,6 +110,43 @@ export default function ShopRequests() {
 
   return (
     <DashboardLayoutWrapper>
+      {showAlert && (
+        <Alert
+          className="fixed z-50 w-[30rem] right-10 bottom-10 flex items-center shadow-accent shadow-lg rounded-lg"
+        >
+          {alert === "accepted" ? (
+            <>
+              <MailCheck className="h-10 w-10 stroke-green-500" />
+              <div className="ml-7">
+                <AlertTitle className="text-green-500 text-base font-semibold">
+                  Request Accepted
+                </AlertTitle>
+                <AlertDescription className="text-green-400">
+                  The shop request has been successfully accepted.
+                </AlertDescription>
+              </div>
+            </>
+          ) : (
+            <>
+              <MailMinus className="h-10 w-10 stroke-red-500" />
+              <div className="ml-7">
+                <AlertTitle className="text-red-500 text-base font-semibold">
+                  Request Rejected
+                </AlertTitle>
+                <AlertDescription className="text-red-400">
+                  The shop request has been successfully rejected.
+                </AlertDescription>
+              </div>
+            </>
+          )}
+          <button
+            className="ml-auto mr-4 hover:text-gray-700 focus:outline-none"
+            onClick={() => setShowAlert(false)}
+          >
+            ✕
+          </button>
+        </Alert>
+      )}
       <div className="flex flex-row justify-between">
         <CardTitle className="text-4xl">Shop Requests</CardTitle>
         <div className="flex flex-row gap-5">
@@ -191,7 +246,7 @@ export default function ShopRequests() {
               ))
             ) : (
               <TableRow>
-                <TableCell colSpan={5} className="text-center py-5">
+                <TableCell colSpan={5} className="text-center align-middle h-[30rem] text-primary/50 text-lg font-thin tracking-wide">
                   There are no shop-partnership requests yet.
                 </TableCell>
               </TableRow>
@@ -207,18 +262,43 @@ export default function ShopRequests() {
               />
             )}
 
-            {/* Page numbers */}
-            {Array.from({ length: totalPages }).map((_, index) => (
-              <PaginationItem key={index}>
-                <PaginationLink
-                  href="#"
-                  isActive={index + 1 === currentPage}
-                  onClick={() => handlePageChange(index + 1)}
-                >
-                  {index + 1}
-                </PaginationLink>
-              </PaginationItem>
-            ))}
+            {/* Page numbers with ellipsis */}
+            {Array.from({ length: totalPages }).map((_, index) => {
+              const page = index + 1;
+
+              // Always show the first, last, and current page, along with pages adjacent to the current page
+              if (
+                page === 1 || 
+                page === totalPages || 
+                (page >= currentPage - 1 && page <= currentPage + 1)
+              ) {
+                return (
+                  <PaginationItem key={page}>
+                    <PaginationLink
+                      href="#"
+                      isActive={page === currentPage}
+                      onClick={() => handlePageChange(page)}
+                    >
+                      {page}
+                    </PaginationLink>
+                  </PaginationItem>
+                );
+              }
+
+              // Show ellipsis when necessary
+              if (
+                (page === currentPage - 2 && currentPage > 3) || 
+                (page === currentPage + 2 && currentPage < totalPages - 2)
+              ) {
+                return (
+                  <PaginationItem key={page} disabled>
+                    <span className="px-2">...</span>
+                  </PaginationItem>
+                );
+              }
+
+              return null; // Skip other pages
+            })}
 
             {/* Next button, disabled on the last page */}
             {currentPage < totalPages && (

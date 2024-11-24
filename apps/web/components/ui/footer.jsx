@@ -34,7 +34,7 @@ const Footer = () => {
           <Link href={routes.contact}>Contact</Link>
         </div>
       </div>
-      <div className='flex gap-5 text-primary/50'>
+      <div className='flex gap-5 text-xs text-primary/50'>
         <p>© 2024 Hue-Fit Technology Inc and Other Affiliates. All Rights Reserved.</p>
         <p>Terms of Use</p>
         <p>Privacy Policy</p>

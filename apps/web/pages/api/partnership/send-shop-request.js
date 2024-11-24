@@ -60,9 +60,10 @@ export default async function handler(req, res) {
       
       await prisma.$transaction(async (prisma) => {
         const hashedPassword = password ? await bcrypt.hash(password, 10) : null;
+        const userNo = uuidv4().slice(0, 8);
         const newUser = await prisma.users.create({
           data: {
-            userNo: uuidv4().slice(0, 8),
+            userNo,
             username,
             password: hashedPassword,
             status: "PENDING",
@@ -136,6 +137,23 @@ export default async function handler(req, res) {
     } 
     catch (error) {
       console.error("Error processing partnership request:", error);
+
+      // Handle Prisma error for unique constraints
+      if (error.code === 'P2002') {
+        const field = error.meta?.target?.[0];
+        let errorMessage;
+  
+        if (field === 'username') {
+          errorMessage = "The username is already taken. Please choose another.";
+        } else if (field === 'shopName') {
+          errorMessage = "The shop name is already registered. Please choose another.";
+        } else {
+          errorMessage = `Duplicate value detected for the field '${field}'.`;
+        }
+  
+        return res.status(409).json({ message: errorMessage });
+      }
+  
       res.status(500).json({ message: "Internal server error" });
     };
 }

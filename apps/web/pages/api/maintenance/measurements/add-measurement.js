@@ -13,30 +13,44 @@ export default async function handler(req, res) {
       return res.status(401).json({ error: "Unauthorized" });
     }
 
-    const { name } = req.body;
-
+    const { name, assignTo } = req.body;
+    console.log("name", name);
+    console.log("assignTo", assignTo);
     if (!name) {
       return res.status(400).json({ error: "Name is a required field." });
     }
 
-    const existingMeasurement = await prisma.measurements.findFirst({
+    if (!assignTo) {
+      return res.status(400).json({ error: "Assign To is a required field." });
+    }
+
+    const type = await prisma.type.findFirst({
       where: {
-        name,
+        name: assignTo,
         shopNo,
       },
     });
-
-    if (existingMeasurement) {
-      return res.status(400).json({ error: "Measurement with this name already exists." });
+    console.log("type", type);
+    if (!type) {
+      return res.status(400).json({ error: "Invalid type specified in Assign To." });
     }
 
+    const typeId = type.id;
+    
     const newMeasurement = await prisma.measurements.create({
       data: {
         shopNo,
         name,
       },
     });
-
+    console.log("newMeasurement", newMeasurement);
+    await prisma.typeMeasurements.create({
+      data: {
+        shopNo,
+        typeId: typeId,
+        measurementId: newMeasurement.id,
+      },
+    });
     return res.status(201).json({ success: true, measurement: newMeasurement });
   } catch (error) {
     console.error("Error adding measurement:", error);
