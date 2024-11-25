@@ -13,7 +13,8 @@ export default async function handler(req, res) {
       return res.status(401).json({ error: "Unauthorized" });
     }
 
-    const { name, assignTo } = req.body;
+    let { name, assignTo } = req.body;
+    name = name.toUpperCase();
     console.log("name", name);
     console.log("assignTo", assignTo);
     if (!name) {

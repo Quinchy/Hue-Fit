@@ -12,8 +12,9 @@ export default async function handler(req, res) {
       return res.status(401).json({ error: "Unauthorized" });
     }
 
-    const { name, abbreviation } = req.body;
-
+    let { name, abbreviation } = req.body;
+    name = name.toUpperCase();
+    abbreviation = abbreviation.toUpperCase();
     if (!name || !abbreviation) {
       return res.status(400).json({ error: "Name and Abbreviation are required fields." });
     }

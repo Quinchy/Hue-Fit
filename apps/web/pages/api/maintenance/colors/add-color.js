@@ -12,8 +12,10 @@ export default async function handler(req, res) {
       return res.status(401).json({ error: "Unauthorized" });
     }
 
-    const { name, hexCode } = req.body;
-
+    let { name, hexCode } = req.body;
+    name = name.toUpperCase();
+    hexCode = hexCode.toUpperCase();
+    
     if (!name || !hexCode) {
       return res.status(400).json({ error: "Name and Hex Code are required fields." });
     }
