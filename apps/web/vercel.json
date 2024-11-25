@@ -1,7 +1,7 @@
 {
     "functions": {
         "pages/api/products/add-product.js": {
-        "maxDuration": 30,
+        "maxDuration": 60,
         "memory": 1024 
         }
     }
