@@ -3,12 +3,12 @@
 @tailwind utilities;
 
 :root {
-  --rainbow1: #FF75C3;
-  --rainbow2: #FFA647;
-  --rainbow3: #FFE83F;
-  --rainbow4: #9FFF5B;
-  --rainbow5: #70E2FF;
-  --rainbow6: #B678EB;
+  --rainbow1: #eb5ead;
+  --rainbow2: #e3923b;
+  --rainbow3: #d9c21e;
+  --rainbow4: #7cd43d;
+  --rainbow5: #52c5e3;
+  --rainbow6: #975acc;
   --one-opacity-white: rgba(255, 255, 255, 0.00);
   --black: #000000;
   --warning: #E24A4A;
@@ -57,7 +57,7 @@
     --card-foreground: 0 0% 98%;
     --popover: 0 0% 10%;
     --popover-foreground: 0 0% 98%;
-    --primary: 0 0% 98%;
+    --primary: 0 0% 100%;
     --primary-foreground: 240 5.9% 10%;
     --secondary: 240 3.7% 15.9%;
     --secondary-foreground: 0 0% 98%;

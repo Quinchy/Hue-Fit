@@ -9,21 +9,29 @@ import { Label } from "@/components/ui/label";
 import Image from 'next/image';
 import { Pencil, PencilLine, Save, X, MoveLeft } from 'lucide-react';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { VariantDetails } from "./edit-product-variant";
+import { SpecificMeasurements } from "./edit-specific-measurement";
 
+// Optimized fetcher function with error handling
 const fetcher = (url) => fetch(url).then((res) => res.json());
 
 export default function EditProduct() {
   const router = useRouter();
   const { productNo } = router.query;
 
+  // SWR options to prevent unnecessary re-fetches
+  const swrOptions = { revalidateOnFocus: false };
+
   const { data: productData, isLoading: productInfoLoading } = useSWR(
     '/api/products/get-product-related-info',
-    fetcher
+    fetcher,
+    swrOptions
   );
 
   const { data, isLoading } = useSWR(
     productNo ? `/api/products/get-product-details?productNo=${productNo}` : null,
-    fetcher
+    fetcher,
+    swrOptions
   );
 
   const product = data?.product || {};
@@ -35,9 +43,16 @@ export default function EditProduct() {
   const categories = productData?.categories || [];
   const tags = productData?.tags || [];
 
-  // Set initial product state
+  // Log productData when it's available
   useEffect(() => {
-    if (product && Object.keys(product).length > 0) {
+    if (productData) {
+      console.log(productData);
+    }
+  }, [productData]);
+
+  // Set initial product state when product and tags are available
+  useEffect(() => {
+    if (product && Object.keys(product).length > 0 && tags.length > 0) {
       setEditableProduct(product);
       // Filter tags based on product type
       const associatedTags = tags.filter((tag) => tag.typeId === product.Type?.id);
@@ -47,7 +62,7 @@ export default function EditProduct() {
 
   // Update filtered tags when type changes
   useEffect(() => {
-    if (editableProduct?.Type?.id) {
+    if (editableProduct?.Type?.id && tags.length > 0) {
       const associatedTags = tags.filter((tag) => tag.typeId === editableProduct.Type.id);
       setFilteredTags(associatedTags);
     }
@@ -227,6 +242,18 @@ export default function EditProduct() {
           </div>
         </Card>
       </div>
+      <div className="mb-5 flex flex-row items-center gap-5">
+        <CardTitle className="text-2xl min-w-[16.5rem]">Variant Information</CardTitle>
+        <div className="h-[1px] w-full bg-primary/25"></div>
+      </div>
+      {/* Variants Component */}
+      <VariantDetails product={productData} />
+      <div className="mb-5 flex flex-row items-center gap-5">
+        <CardTitle className="text-2xl min-w-[27.5rem]">Specific Measurement Information</CardTitle>
+        <div className="h-[1px] w-full bg-primary/25"></div>
+      </div>
+      {/* Specific Measurement Component */}
+      <SpecificMeasurements />
     </DashboardLayoutWrapper>
   );
 }

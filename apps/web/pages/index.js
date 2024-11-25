@@ -14,11 +14,11 @@ export default function Home() {
     <div className="mt-[16rem]">
       <div className="flex flex-col items-center gap-4">
         <h1 className={`text-[8rem] text-primary font-black subpixel-antialiased tracking-tight text-center leading-[7rem] ${gloock.className}`}>
-          DISCOVER <br /> <p className="bg-[linear-gradient(90deg,_var(--rainbow1)_15%,_var(--rainbow2)_20%,_var(--rainbow3)_30%,_var(--rainbow4)_40%,_var(--rainbow5)_55%,_var(--rainbow6)_70%)] bg-clip-text text-transparent">
+          DISCOVER <br /> <p className="bg-[linear-gradient(90deg,_var(--rainbow1)_15%,_var(--rainbow2)_20%,_var(--rainbow3)_30%,_var(--rainbow4)_40%,_var(--rainbow5)_55%,_var(--rainbow6)_90%)] bg-clip-text text-transparent">
           YOUR STYLE
           </p>
         </h1>
-        <p className="uppercase font-thin text-lg w-[49%] text-[1.25rem] text-center">
+        <p className="uppercase font-thin text-lg w-[49%] text-[1.25rem] text-primary text-center">
           Hue-fit is a mobile app that uses Artificial intelligence to recommend outfits, 
           from upper wear to footwear tailored to your unique features, helping your look and feel your best.
         </p>

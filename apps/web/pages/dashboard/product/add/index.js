@@ -16,8 +16,8 @@ import { ErrorMessage, InputErrorMessage, InputErrorStyle } from "@/components/u
 import dynamic from 'next/dynamic';
 import { LoadingMessage } from "@/components/ui/loading-message";
 
-const ProductVariantCard = dynamic(() => import('../components/product-variant-card'), { ssr: false });
-const SpecificMeasurements = dynamic(() => import('../components/specific-measurements'), { ssr: false });
+const ProductVariantCard = dynamic(() => import('./product-variant-card'), { ssr: false });
+const SpecificMeasurements = dynamic(() => import('./specific-measurements'), { ssr: false });
 
 const fetcher = (url) => fetch(url).then((res) => res.json());
 

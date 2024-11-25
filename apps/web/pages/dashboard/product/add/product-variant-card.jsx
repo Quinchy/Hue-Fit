@@ -12,7 +12,7 @@ import { useFormikContext } from 'formik';
 import { InputErrorMessage } from "@/components/ui/error-message";
 import { InputErrorStyle } from "@/components/ui/error-message";
 
-const ProductVariantPictures = dynamic(() => import('../components/product-variant-pictures'), { ssr: false });
+const ProductVariantPictures = dynamic(() => import('./product-variant-pictures'), { ssr: false });
 
 const fetcher = (url) => fetch(url).then((res) => res.json());
 
