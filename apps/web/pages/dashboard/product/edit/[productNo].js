@@ -247,7 +247,7 @@ export default function EditProduct() {
         <div className="h-[1px] w-full bg-primary/25"></div>
       </div>
       {/* Variants Component */}
-      <VariantDetails product={productData} />
+      <VariantDetails product={product} />
       <div className="mb-5 flex flex-row items-center gap-5">
         <CardTitle className="text-2xl min-w-[27.5rem]">Specific Measurement Information</CardTitle>
         <div className="h-[1px] w-full bg-primary/25"></div>
