@@ -197,7 +197,7 @@ export default function ViewProduct() {
                           <TableCell className="font-medium tracking-wide">{size.Size.name} ({size.Size.abbreviation})</TableCell>
                           {size.ProductVariantMeasurements.map((measurement) => (
                             <TableCell key={measurement.id}>
-                              {measurement.value} {measurement.Unit.abbreviation}
+                              {parseFloat(measurement.value).toFixed(2)} {measurement.Unit.abbreviation}
                             </TableCell>
                           ))}
                           <TableCell>{size.quantity}</TableCell>

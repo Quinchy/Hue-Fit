@@ -113,13 +113,13 @@ export function parseFormData(req) {
   const form = formidable({ multiples: true }); // Initialize formidable with support for multiple files
 
   return new Promise((resolve, reject) => {
+    const form = formidable({
+      maxFileSize: 50 * 1024 * 1024, // 50 MB
+      maxFieldsSize: 50 * 1024 * 1024, // 50 MB
+    });
     form.parse(req, (err, fields, files) => {
-      if (err) {
-        reject(err); // Reject the promise on error
-      } 
-      else {
-        resolve({ fields, files }); // Resolve the promise with parsed fields and files
-      }
+      if (err) reject(err);
+      else resolve({ fields, files });
     });
   });
 }
