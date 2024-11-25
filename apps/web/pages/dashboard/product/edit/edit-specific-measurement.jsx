@@ -4,7 +4,7 @@ import { Card, CardTitle } from "@/components/ui/card";
 
 const fetcher = (url) => fetch(url).then((res) => res.json());
 
-export function SpecificMeasurements({ productNo }) {
+export default function SpecificMeasurements({ productNo }) {
 
   return (
     <Card className="p-5 mb-20">

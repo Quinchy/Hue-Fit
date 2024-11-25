@@ -1,6 +1,6 @@
 import { Card, CardTitle } from "@/components/ui/card";
 
-export function VariantDetails({ product }) {
+export default function VariantDetails({ product }) {
   const variants = product || [];
 
   return (

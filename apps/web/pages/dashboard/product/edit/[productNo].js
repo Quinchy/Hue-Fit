@@ -9,8 +9,8 @@ import { Label } from "@/components/ui/label";
 import Image from 'next/image';
 import { Pencil, PencilLine, Save, X, MoveLeft } from 'lucide-react';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { VariantDetails } from "./edit-product-variant";
-import { SpecificMeasurements } from "./edit-specific-measurement";
+import VariantDetails from "./edit-product-variant";
+import SpecificMeasurements from "./edit-specific-measurement";
 
 // Optimized fetcher function with error handling
 const fetcher = (url) => fetch(url).then((res) => res.json());
