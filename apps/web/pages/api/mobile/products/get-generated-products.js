@@ -24,8 +24,6 @@ export default async function handler(req, res) {
     console.log("Fetching product variants with productVariantNos:", productVariantNos);
 
     const products = [];
-    const colorIds = new Set();
-
     for (const productVariantNo of productVariantNos) {
       const productVariant = await prisma.productVariants.findUnique({
         where: { productVariantNo },
@@ -36,45 +34,29 @@ export default async function handler(req, res) {
       });
 
       if (productVariant) {
-        console.log("Found productVariant:", productVariant);
-
-        // Fetch the first image for this productVariantNo from ProductVariantImages
         const productVariantImage = await prisma.productVariantImages.findFirst({
           where: { productVariantNo },
-          orderBy: { created_at: "asc" }, // Ensures we get the first image
+          orderBy: { created_at: "asc" },
         });
 
         const thumbnail = productVariantImage
           ? productVariantImage.imageUrl
-          : productVariant.Product.thumbnailURL; // Fallback to product's thumbnailURL if no variant image is found
+          : productVariant.Product.thumbnailURL;
 
         products.push({
-          name: productVariant.Product.name,
+          name: `${productVariant.Color.name} ${productVariant.Product.name}`,
           price: productVariant.price,
-          thumbnail, // Use the fetched variant image or fallback
-          tags: productVariant.Product.tags, // Fetch the tags directly
-          colorId: productVariant.colorId,
+          thumbnail,
+          tags: productVariant.Product.tags,
         });
-
-        colorIds.add(productVariant.colorId);
       } else {
         console.warn(`No product variant found for ${productVariantNo}`);
       }
     }
 
-    console.log("Collected products:", products);
-    console.log("Collected colorIds:", Array.from(colorIds));
-
-    const colors = await prisma.colors.findMany({
-      where: { id: { in: Array.from(colorIds) } },
-    });
-
-    console.log("Fetched colors:", colors);
-
     const totalPrice = products.reduce((sum, item) => sum + Number(item.price), 0);
-    console.log("Total price:", totalPrice);
 
-    res.status(200).json({ products, colors, totalPrice });
+    res.status(200).json({ products, totalPrice });
   } catch (error) {
     console.error("Error in get-generated-products API:", error);
     res.status(500).json({ message: "Internal server error", error: error.message });

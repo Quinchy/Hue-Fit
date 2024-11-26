@@ -1,59 +1,18 @@
-import React, { useEffect, useState } from "react";
-import { ScrollView, Image, TouchableOpacity } from "react-native";
+import React from "react";
+import { ScrollView, Image } from "react-native";
 import { VStack, Text, Box, HStack, IconButton, Center } from "native-base";
-import { House, Menu, MoveRight } from "lucide-react-native";
+import { House, Menu } from "lucide-react-native";
 import BackgroundProvider from "../../providers/BackgroundProvider";
-import LoadingSpinner from "../../components/Loading";
-import Shirt from '../../assets/icons/Shirt.svg';
-import Pants from '../../assets/icons/Pants.svg';
-import Sneaker from '../../assets/icons/Sneaker.svg';
-import OutlineButton from '../../components/OutlineButton';
-import DefaultButton from '../../components/Button';
-import { EXPO_PUBLIC_API_URL } from '@env';
+import DefaultButton from "../../components/Button";
 
 const PlaygroundScreen: React.FC = ({ route, navigation }) => {
-  const { outfitData, outfitName } = route.params || {};
-  const [generatedData, setGeneratedData] = useState([]);
-  const [colorPalette, setColorPalette] = useState([]);
-  const [totalPrice, setTotalPrice] = useState(0);
-  const [loading, setLoading] = useState(true);
+  const { outfit_name, upper_wear, lower_wear, footwear, outerwear } = route.params || {};
 
-  const fetchGeneratedProducts = async () => {
-    console.log("Fetching generated products...");
-    console.log("Sending request with outfitData:", outfitData);
-
-    try {
-      const response = await fetch(`${EXPO_PUBLIC_API_URL}/api/mobile/products/get-generated-products`, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ outfitData }),
-      });
-
-      if (response.ok) {
-        const data = await response.json();
-        console.log("Response data:", data);
-        setGeneratedData(data.products);
-        setColorPalette(data.colors);
-        setTotalPrice(data.totalPrice);
-        setLoading(false);
-      } else {
-        const errorText = await response.text();
-        console.error("Error response text:", errorText);
-        setLoading(false);
-      }
-    } catch (error) {
-      console.error("Error in fetchGeneratedProducts:", error);
-      setLoading(false);
-    }
-  };
-
-  useEffect(() => {
-    fetchGeneratedProducts();
-  }, []);
-
-  if (loading) {
-    return <LoadingSpinner messages={["Fetching generated outfit..."]} />;
-  }
+  const totalPrice =
+    (upper_wear?.price || 0) +
+    (lower_wear?.price || 0) +
+    (footwear?.price || 0) +
+    (outerwear?.price || 0);
 
   return (
     <BackgroundProvider>
@@ -82,129 +41,79 @@ const PlaygroundScreen: React.FC = ({ route, navigation }) => {
         <VStack space={4} px={4} py={2}>
           {/* Outfit Name */}
           <Text color="white" fontSize="2xl" fontWeight="bold">
-            Outfit Name: {outfitName || "Unnamed Outfit"}
+            Outfit Name: {outfit_name || "Unnamed Outfit"}
           </Text>
 
-          {/* Generated Outfit Tags */}
-          <VStack mb={6}>
-            <Text color="white" fontSize="lg" fontWeight="bold" textTransform={"uppercase"} mb={2}>
-              Generated Outfit
-            </Text>
-            {/* Upperwear */}
+          {/* Render Outfit Components */}
+          {upper_wear && (
             <HStack alignItems="center" mb={2} space={2}>
               <Box bg="gray.800" p={3} borderRadius="md" justifyContent="center" alignItems="center">
-                <Shirt width={30} height={30} color="white" />
+                <Image source={{ uri: upper_wear.thumbnail }} style={{ width: 50, height: 50 }} />
               </Box>
               <Box bg="gray.800" flex={1} p={4} borderRadius="md" justifyContent="center">
-                <Text color="white" fontSize="md" fontWeight="light" textTransform={"uppercase"} textAlign="center">
-                  {generatedData[0]?.tags || "None"}
+                <Text color="white" fontSize="md" fontWeight="light">
+                  {upper_wear.name}
+                </Text>
+                <Text fontWeight="light" color="gray.400">
+                  ₱{upper_wear.price}
                 </Text>
               </Box>
             </HStack>
+          )}
 
-            {/* Lowerwear */}
+          {lower_wear && (
             <HStack alignItems="center" mb={2} space={2}>
               <Box bg="gray.800" p={3} borderRadius="md" justifyContent="center" alignItems="center">
-                <Pants width={30} height={30} color="white" />
+                <Image source={{ uri: lower_wear.thumbnail }} style={{ width: 50, height: 50 }} />
               </Box>
               <Box bg="gray.800" flex={1} p={4} borderRadius="md" justifyContent="center">
-                <Text color="white" fontSize="md" fontWeight="light" textTransform={"uppercase"} textAlign="center">
-                  {generatedData[1]?.tags || "None"}
+                <Text color="white" fontSize="md" fontWeight="light">
+                  {lower_wear.name}
+                </Text>
+                <Text fontWeight="light" color="gray.400">
+                  ₱{lower_wear.price}
                 </Text>
               </Box>
             </HStack>
+          )}
 
-            {/* Footwear */}
+          {footwear && (
             <HStack alignItems="center" mb={2} space={2}>
               <Box bg="gray.800" p={3} borderRadius="md" justifyContent="center" alignItems="center">
-                <Sneaker width={30} height={30} color="white" />
+                <Image source={{ uri: footwear.thumbnail }} style={{ width: 50, height: 50 }} />
               </Box>
               <Box bg="gray.800" flex={1} p={4} borderRadius="md" justifyContent="center">
-                <Text color="white" fontSize="md" fontWeight="light" textTransform={"uppercase"} textAlign="center">
-                  {generatedData[2]?.tags || "None"}
+                <Text color="white" fontSize="md" fontWeight="light">
+                  {footwear.name}
+                </Text>
+                <Text fontWeight="light" color="gray.400">
+                  ₱{footwear.price}
                 </Text>
               </Box>
             </HStack>
-          </VStack>
+          )}
 
-          <VStack space={4} py={2} alignItems="flex-end">
-            {/* Color Palette */}
-            <HStack space={2}>
-              {colorPalette.map((color, index) => (
-                <Box
-                  key={index}
-                  bg={color.hexcode}
-                  width={8}
-                  height={8}
-                  borderRadius="md"
-                  borderWidth={1}
-                  borderColor="gray.500"
-                />
-              ))}
+          {outerwear && (
+            <HStack alignItems="center" mb={2} space={2}>
+              <Box bg="gray.800" p={3} borderRadius="md" justifyContent="center" alignItems="center">
+                <Image source={{ uri: outerwear.thumbnail }} style={{ width: 50, height: 50 }} />
+              </Box>
+              <Box bg="gray.800" flex={1} p={4} borderRadius="md" justifyContent="center">
+                <Text color="white" fontSize="md" fontWeight="light">
+                  {outerwear.name}
+                </Text>
+                <Text fontWeight="light" color="gray.400">
+                  ₱{outerwear.price}
+                </Text>
+              </Box>
             </HStack>
+          )}
 
-            {/* Generated Products */}
-            {generatedData.length > 0 ? (
-              <VStack space={4} width="100%" alignItems="flex-end">
-                {generatedData.map((product, index) => {
-                  // Find the color name that matches the product's colorId
-                  const color = colorPalette.find((c) => c.id === product.colorId);
+          {/* Total Price */}
+          <Text color="white" fontSize="lg" fontWeight="bold">
+            Total Price: ₱{totalPrice}
+          </Text>
 
-                  return (
-                    <Box
-                      key={index}
-                      bg="gray.800"
-                      p={2}
-                      borderRadius="md"
-                      borderColor="gray.700"
-                      borderWidth={1}
-                      flexDirection="row"
-                      alignItems="center"
-                      justifyContent="space-between"
-                      width="100%"
-                    >
-                      <HStack space={2} flex={1}>
-                        <Image
-                          source={{ uri: product.thumbnail }}
-                          style={{ width: 100, height: 100, borderRadius: 8 }}
-                        />
-                        <VStack flex={1} space={2} alignContent="flex-start">
-                          <VStack flex={1}>
-                            {/* Combine color name and product name */}
-                            <Text color="white" fontSize="sm" fontWeight="light">
-                              {color ? `${color.name} ${product.name}` : product.name}
-                            </Text>
-                            <Text fontWeight="light" color="gray.400">
-                              ₱{product.price}
-                            </Text>
-                          </VStack>
-                          <OutlineButton
-                            title="VIEW PRODUCT"
-                            iconRight={<MoveRight size={15} color="gray" />}
-                            width="fit-content"
-                            height={39}
-                            py={1}
-                            fontWeight="light"
-                            fontSize="xs"
-                            onPress={() => {}}
-                          />
-                        </VStack>
-                      </HStack>
-                    </Box>
-                  );
-                })}
-              </VStack>
-            ) : (
-              <Text color="gray.400" textAlign="center" alignSelf="flex-end">
-                No products found.
-              </Text>
-            )}
-
-            {/* Total Price */}
-            <Text color="white" fontSize="lg" fontWeight="bold">
-              Total Price: ₱{totalPrice}
-            </Text>
-          </VStack>
           <DefaultButton title="SAVE OUTFIT" mt={5} mb={10} onPress={() => {}} />
         </VStack>
       </ScrollView>

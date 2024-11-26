@@ -17,23 +17,27 @@ const InputScreen: React.FC = ({ navigation }) => {
   const [skinTone, setSkinTone] = useState('');
   const [bodyShape, setBodyShape] = useState('');
   const [age, setAge] = useState('');
+  const [preference, setPreference] = useState('All Random'); // User preference
   const [loading, setLoading] = useState(false);
 
   const handleGenerate = async () => {
-    setLoading(true); // Show the loading spinner
-
-    const userFeatures = {
-      outfitName: outfitName,
-      height: parseFloat(height),
-      weight: parseFloat(weight),
-      skintone: skinTone,
-      bodyshape: bodyShape,
-      age: parseInt(age, 10),
-    };
+    setLoading(true);
+  
     try {
+      const userFeatures = {
+        height: parseFloat(height),
+        weight: parseFloat(weight),
+        age: parseInt(age, 10),
+        skintone: skinTone,      // Match "skintone"
+        bodyshape: bodyShape,    // Match "bodyshape"
+        category: preference,    // Match "category"
+        outfit_name: outfitName, // Match "outfit_name"
+      };
+  
       console.log(userFeatures);
+  
       const response = await fetch(
-        `https://hue-fit-ai.onrender.com/generate-outfit?unique=${Date.now()}`,
+        `http://127.0.0.1:8000/generate-outfit?unique=${Date.now()}`,
         {
           method: 'POST',
           headers: {
@@ -43,14 +47,25 @@ const InputScreen: React.FC = ({ navigation }) => {
           body: JSON.stringify(userFeatures),
         }
       );
-
+  
       if (response.ok) {
         const data = await response.json();
-        setLoading(false); // Stop loading spinner
-        navigation.navigate('Playground', { 
-          outfitData: data.outfit, 
-          outfitName: data.outfit_name // Pass outfit_name to Playground
-        }); 
+        setLoading(false);
+  
+        // Extract only the necessary data for navigation
+        const { outfit_name, best_combination } = data;
+        const { upper_wear, lower_wear, footwear, outerwear } = best_combination;
+  
+        const passedData = {
+          outfit_name,
+          upper_wear,
+          lower_wear,
+          footwear,
+          ...(outerwear && { outerwear }), // Include outerwear if available
+        };
+  
+        // Navigate to the Playground screen and pass the data
+        navigation.navigate('Playground', passedData);
       } else {
         console.error('Error generating outfit:', response.statusText);
         setLoading(false);
@@ -59,7 +74,7 @@ const InputScreen: React.FC = ({ navigation }) => {
       console.error('Error generating outfit:', error);
       setLoading(false);
     }
-  };
+  };  
 
   if (loading) {
     return <LoadingSpinner
@@ -107,6 +122,11 @@ const InputScreen: React.FC = ({ navigation }) => {
 
               {/* Input Form */}
               <VStack space={4}>
+                {/* User Features Label */}
+                <Text fontSize="lg" fontWeight="bold" color="white" mt={2}>
+                  User Features
+                </Text>
+
                 <CustomInput
                   label="Outfit Name"
                   placeholder="Type an Outfit Name"
@@ -146,12 +166,12 @@ const InputScreen: React.FC = ({ navigation }) => {
                   value={bodyShape} // Bind state value
                   onChange={(value) => setBodyShape(value)} // Update state
                 >
-                  <Select.Item label="Pear" value="Pear" />
-                  <Select.Item label="Apple" value="Apple" />
-                  <Select.Item label="Rectangle" value="Rectangle" />
-                  <Select.Item label="Triangle" value="Triangle" />
-                  <Select.Item label="Oval" value="Oval" />
+                  <Select.Item label="Bulky" value="Bulky" />
                   <Select.Item label="Athletic" value="Athletic" />
+                  <Select.Item label="Skinny" value="Skinny" />
+                  <Select.Item label="Fit" value="Fit" />
+                  <Select.Item label="Skinny Fat" value="Skinny Fat" />
+                  <Select.Item label="Chubby" value="Chubby" />
                 </CustomSelect>
                 <CustomInput
                   label="Age"
@@ -161,6 +181,23 @@ const InputScreen: React.FC = ({ navigation }) => {
                   keyboardType="numeric"
                   variant="filled"
                 />
+
+                {/* User Preference Label */}
+                <Text fontSize="lg" fontWeight="bold" color="white" mt={4}>
+                  User Preference
+                </Text>
+
+                <CustomSelect
+                  label="Outfit Preference"
+                  value={preference} // Bind state value
+                  onChange={(value) => setPreference(value)} // Update state
+                >
+                  <Select.Item label="All Random" value="All Random" />
+                  <Select.Item label="Casual" value="Casual" />
+                  <Select.Item label="Smart Casual" value="Smart Casual" />
+                  <Select.Item label="Formal" value="Formal" />
+                </CustomSelect>
+
                 {/* Generate Button */}
                 <DefaultButton my={10} title="GENERATE" onPress={handleGenerate} />
               </VStack>
