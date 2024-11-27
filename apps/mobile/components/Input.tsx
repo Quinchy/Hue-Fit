@@ -14,32 +14,32 @@ const CustomInput: React.FC<CustomInputProps> = ({ isPassword = false, label, ..
   return (
     <VStack space={1}>
       {label ? ( // Ensure label is rendered within a <Text> component
-        <Text fontSize="md" fontWeight={600} color="gray.400">
+        <Text fontSize="md" fontWeight={600} color="#C0C0C0">
           {label}
         </Text>
       ) : null}
       <Input
         {...props}
         type={isPassword && !showPassword ? "password" : "text"}
-        bg="gray.800"
+        bg="#2E2E2E"
         color="white"
-        placeholderTextColor="gray.600"
+        placeholderTextColor="#c0c0c035"
         width={"100%"}
         fontSize="md"
         height={50}
         borderRadius="md"
         borderWidth={isFocused ? 2 : 0}
         borderColor="transparent"
-        selectionColor="gray.500"
+        selectionColor="#c0c0c0"
         _focus={
           isFocused
           ? {
-              bg: "gray.800",
-              selectionColor: 'gray.500',
+              bg: "#272727",
+              selectionColor: '#c0c0c035',
             }
           : {}
         }
-        focusOutlineColor="gray.500"
+        focusOutlineColor="#c0c0c035"
         py={3}
         px={5}
         onFocus={() => setIsFocused(true)}

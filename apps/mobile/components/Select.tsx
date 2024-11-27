@@ -17,35 +17,36 @@ const CustomSelect: React.FC<CustomSelectProps> = ({
   }) => {
     return (
       <Box>
-        <Text fontSize="md" fontWeight={600} color="gray.400" mb={1}>
+        <Text fontSize="md" fontWeight={600} color="#C0C0C0" mb={1}>
           {label}
         </Text>
         <Select
           selectedValue={value}
           minWidth="200"
+          
           accessibilityLabel={`Choose your ${label}`}
           placeholder={`Choose your ${label}`}
           onValueChange={(itemValue) => onChange(itemValue)}
           _selectedItem={{
-            bg: "gray.700",
+            bg: "#c0c0c035",
             borderRadius: "md",
             endIcon: <CheckIcon size="5" />,
           }}
           _actionSheetContent={{
-            backgroundColor: "gray.800",
+            backgroundColor: "#2E2E2E",
             borderRadius: "lg",
           }}
           _actionSheetBody={{
-            backgroundColor: "gray.800",
+            backgroundColor: "#2E2E2E",
           }}
           _item={{
-            bg: "gray.800",
+            bg: "#2E2E2E",
             my: 0.5,
             _text: {
               color: "white",
             },
             _pressed: {
-              bg: "gray.700",
+              bg: "#c0c0c035",
               borderRadius: "md",
             },
           }}
@@ -53,9 +54,9 @@ const CustomSelect: React.FC<CustomSelectProps> = ({
           px={5}
           height={50}
           borderRadius="md"
-          bg="gray.800"
+          bg="#2E2E2E"
           borderColor="transparent"
-          placeholderTextColor="gray.600"
+          placeholderTextColor="#c0c0c035"
           fontSize="md"
           color="white"
           {...props}

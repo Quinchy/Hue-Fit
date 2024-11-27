@@ -1,11 +1,11 @@
 import React, { useState } from 'react';
 import { ScrollView, Image, View } from 'react-native';
-import { VStack, Text, Box, IconButton } from 'native-base';
+import { VStack, HStack, Text, Box, IconButton } from 'native-base';
 import BackgroundProvider from '../../providers/BackgroundProvider';
 import StylizedButton from '../../components/StylizedButton';
 import GeneratedOutfitCards from '../../components/GeneratedOutfitCards';
 import DrawerMenu from '../../components/DrawerMenu';
-import { Bell, Menu } from 'lucide-react-native';
+import { Bell, Menu, ShoppingCart } from 'lucide-react-native';
 import OpenAiLogoDark from '../../assets/icons/OpenAiLogoDark.svg';
 import AsyncStorage from '@react-native-async-storage/async-storage'; // Import AsyncStorage
 import { PanGestureHandler } from 'react-native-gesture-handler';
@@ -36,24 +36,32 @@ const HomeScreen: React.FC<HomeScreenProps> = ({ navigation }) => {
           <ScrollView contentContainerStyle={{ flexGrow: 1, paddingHorizontal: 16 }}>
             <VStack space={4} alignItems="center" mt={8}>
               {/* Header with Bell and Menu icons */}
-              <Box width="100%" flexDirection="row" justifyContent="space-between" alignItems="center">
-                <IconButton
-                  icon={<Bell size={30} color="white" />}
-                  onPress={() => navigation.navigate('Notification')}
-                  _pressed={{ bg: 'gray.800' }}
-                  borderRadius="full"
-                />
+              <Box width="100%" mt={5} flexDirection="row" justifyContent="space-between" alignItems="center">
                 <Image
                   source={require('../../assets/icons/hue-fit-logo.png')}
                   style={{ width: 60, height: 60 }}
                   resizeMode="contain"
                 />
-                <IconButton 
-                  icon={<Menu size={30} color="white" />} 
-                  onPress={toggleMenu} 
-                  _pressed={{ bg: 'gray.800' }}
-                  borderRadius="full"
-                />
+                <HStack>
+                  <IconButton
+                    icon={<Bell size={25} color="white" />}
+                    onPress={() => navigation.navigate('Notification')}
+                    _pressed={{ bg: 'gray.800' }}
+                    borderRadius="full"
+                  />
+                  <IconButton
+                    icon={<ShoppingCart size={25} color="white" />}
+                    onPress={() => navigation.navigate('Notification')}
+                    _pressed={{ bg: 'gray.800' }}
+                    borderRadius="full"
+                  />
+                  <IconButton 
+                    icon={<Menu size={25} color="white" />} 
+                    onPress={toggleMenu} 
+                    _pressed={{ bg: 'gray.800' }}
+                    borderRadius="full"
+                  />
+                </HStack>
               </Box>
 
               {/* Generate Outfit Button */}
@@ -73,7 +81,7 @@ const HomeScreen: React.FC<HomeScreenProps> = ({ navigation }) => {
 
               {/* Current Outfit Section */}
               <Box width="100%" mt={5}>
-                <Text color="gray.400" fontSize="md" fontWeight="bold" mb={2}>
+                <Text color="#C0C0C0" fontSize="md" fontWeight="bold" mb={2}>
                   Recently Generated Outfit:
                 </Text>
                 <GeneratedOutfitCards

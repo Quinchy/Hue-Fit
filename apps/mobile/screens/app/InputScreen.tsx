@@ -1,109 +1,122 @@
-import React, { useState } from 'react';
-import { ScrollView, Image } from 'react-native';
-import { SafeAreaView } from 'react-native-safe-area-context';
-import { VStack, Text, HStack, Center, IconButton, Select } from 'native-base';
-import { ArrowLeft } from 'lucide-react-native';
-import BackgroundProvider from '../../providers/BackgroundProvider';
-import CustomInput from '../../components/Input';
-import CustomSelect from '../../components/Select';
-import DefaultButton from '../../components/Button';
-import GradientCard from '../../components/GradientCard';
-import LoadingSpinner from '../../components/Loading'; // For loading animation
+import React, { useState } from "react";
+import { ScrollView, Image } from "react-native";
+import { SafeAreaView } from "react-native-safe-area-context";
+import { VStack, Text, HStack, Center, IconButton, Select } from "native-base";
+import { ArrowLeft } from "lucide-react-native";
+import BackgroundProvider from "../../providers/BackgroundProvider";
+import CustomInput from "../../components/Input";
+import CustomSelect from "../../components/Select";
+import DefaultButton from "../../components/Button";
+import GradientCard from "../../components/GradientCard";
+import LoadingSpinner from "../../components/Loading"; // For loading animation
+import * as NavigationBar from 'expo-navigation-bar';
 
 const InputScreen: React.FC = ({ navigation }) => {
-  const [outfitName, setOutfitName] = useState('');
-  const [height, setHeight] = useState('');
-  const [weight, setWeight] = useState('');
-  const [skinTone, setSkinTone] = useState('');
-  const [bodyShape, setBodyShape] = useState('');
-  const [age, setAge] = useState('');
-  const [preference, setPreference] = useState('All Random'); // User preference
+  const [outfitName, setOutfitName] = useState("");
+  const [height, setHeight] = useState("");
+  const [weight, setWeight] = useState("");
+  const [skinTone, setSkinTone] = useState("");
+  const [bodyShape, setBodyShape] = useState("");
+  const [age, setAge] = useState("");
+  const [preference, setPreference] = useState("All Random"); // User preference
   const [loading, setLoading] = useState(false);
 
   const handleGenerate = async () => {
     setLoading(true);
-  
+
     try {
       const userFeatures = {
         height: parseFloat(height),
         weight: parseFloat(weight),
         age: parseInt(age, 10),
-        skintone: skinTone,      // Match "skintone"
-        bodyshape: bodyShape,    // Match "bodyshape"
-        category: preference,    // Match "category"
+        skintone: skinTone, // Match "skintone"
+        bodyshape: bodyShape, // Match "bodyshape"
+        category: preference, // Match "category"
         outfit_name: outfitName, // Match "outfit_name"
       };
-  
+
       console.log(userFeatures);
-  
+
       const response = await fetch(
-        `http://127.0.0.1:8000/generate-outfit?unique=${Date.now()}`,
+        `http://192.168.254.105:8000/generate-outfit?unique=${Date.now()}`,
         {
-          method: 'POST',
+          method: "POST",
           headers: {
-            'Content-Type': 'application/json',
-            Connection: 'close',
+            "Content-Type": "application/json",
+            Connection: "close",
           },
           body: JSON.stringify(userFeatures),
         }
       );
-  
+
       if (response.ok) {
         const data = await response.json();
         setLoading(false);
-  
-        // Extract only the necessary data for navigation
+
+        // Extract necessary data for navigation
         const { outfit_name, best_combination } = data;
         const { upper_wear, lower_wear, footwear, outerwear } = best_combination;
-  
+
+        // Build the color palette from the hexcodes
+        const color_palette = [
+          { name: "Upperwear", hexcode: upper_wear?.hexcode },
+          { name: "Lowerwear", hexcode: lower_wear?.hexcode },
+          { name: "Footwear", hexcode: footwear?.hexcode },
+          ...(outerwear ? [{ name: "Outerwear", hexcode: outerwear?.hexcode }] : []),
+        ].filter((color) => color.hexcode); // Filter out undefined hexcodes
+
         const passedData = {
           outfit_name,
           upper_wear,
           lower_wear,
           footwear,
           ...(outerwear && { outerwear }), // Include outerwear if available
+          color_palette, // Pass the built color palette
+          user_inputs: userFeatures, // Pass the user inputs
         };
-  
+
         // Navigate to the Playground screen and pass the data
-        navigation.navigate('Playground', passedData);
+        navigation.navigate("Playground", passedData);
       } else {
-        console.error('Error generating outfit:', response.statusText);
+        console.error("Error generating outfit:", response.statusText);
         setLoading(false);
       }
     } catch (error) {
-      console.error('Error generating outfit:', error);
+      console.error("Error generating outfit:", error);
       setLoading(false);
     }
-  };  
+  };
 
   if (loading) {
-    return <LoadingSpinner
-      size={200}
-      messages={[
-        'Matching multiple clothing items...',
-        'Creating a personalized color palette...',
-        'Browsing curated styles...',
-        'Finalizing the best outfit for you...',
-      ]}
-      visible={true}
-    />
-    ; // Keep showing the loading spinner until data is fetched
+    return (
+      <LoadingSpinner
+        size={200}
+        messages={[
+          "Matching multiple clothing items...",
+          "Creating a personalized color palette...",
+          "Browsing curated styles...",
+          "Finalizing the best outfit for you...",
+        ]}
+        visible={true}
+      />
+    ); // Keep showing the loading spinner until data is fetched
   }
-
+  NavigationBar.setPositionAsync("absolute");
+  NavigationBar.setBackgroundColorAsync('#191919')
   return (
     <BackgroundProvider>
-      <SafeAreaView style={{ flex: 1 }} edges={['top', 'bottom']}>
+      <SafeAreaView style={{ flex: 1 }} edges={["top", "bottom"]}>
         <ScrollView contentContainerStyle={{ flexGrow: 1 }}>
           {/* Header with Back Button and Logo */}
           <HStack justifyContent="space-between" alignItems="center" mt={10} px={4}>
             <IconButton
               icon={<ArrowLeft size={24} color="white" />}
               onPress={() => navigation.goBack()}
-              _pressed={{ bg: 'gray.700' }}
+              _pressed={{ bg: "gray.700" }}
               borderRadius={"full"}
             />
             <Image
-              source={require('../../assets/icons/hue-fit-logo.png')}
+              source={require("../../assets/icons/hue-fit-logo.png")}
               style={{ width: 60, height: 60 }}
               resizeMode="contain"
             />
@@ -113,27 +126,26 @@ const InputScreen: React.FC = ({ navigation }) => {
             <GradientCard>
               <Center mb={6}>
                 <Text fontSize="2xl" fontWeight="bold" color="white">
-                  GENERATE AN OUTFIT
+                  CAN'T PICK AN OUTFIT?
                 </Text>
-                <Text fontSize="md" color="gray.400" fontWeight="light" textAlign="center">
-                  Please fill the form to generate a tailored outfit.
+                <Text fontSize="md" color="#C0C0C0" fontWeight="light" textAlign="center">
+                  Fill-up the form below and let Hue-Fit AI find an outfit that suits you.
                 </Text>
               </Center>
 
               {/* Input Form */}
               <VStack space={4}>
-                {/* User Features Label */}
-                <Text fontSize="lg" fontWeight="bold" color="white" mt={2}>
-                  User Features
-                </Text>
-
                 <CustomInput
                   label="Outfit Name"
-                  placeholder="Type an Outfit Name"
+                  placeholder="Give this outfit a name"
                   value={outfitName}
                   onChangeText={setOutfitName}
                   variant="filled"
                 />
+                {/* User Features Label */}
+                <Text fontSize="lg" fontWeight="bold" color="white" mt={2}>
+                  Your Physical Data
+                </Text>
                 <CustomInput
                   label="Height"
                   placeholder="Type your Height (in cm)"
@@ -184,11 +196,11 @@ const InputScreen: React.FC = ({ navigation }) => {
 
                 {/* User Preference Label */}
                 <Text fontSize="lg" fontWeight="bold" color="white" mt={4}>
-                  User Preference
+                  Your Outfit Preference
                 </Text>
 
                 <CustomSelect
-                  label="Outfit Preference"
+                  label="Fashion Style"
                   value={preference} // Bind state value
                   onChange={(value) => setPreference(value)} // Update state
                 >

@@ -73,9 +73,9 @@ export default function RegisterScreen({ navigation }) {
           <Image
             source={require('../../assets/icons/hue-fit-logo.png')}
             style={{
-              width: 75,
-              height: 75,
-              marginTop: 200,
+              width: 60,
+              height: 60,
+              marginTop: 250,
               marginBottom: 50,
             }}
             resizeMode="contain"

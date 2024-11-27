@@ -15,7 +15,7 @@ const NotificationScreen: React.FC<NotificationScreenProps> = ({ navigation }) =
     <BackgroundProvider>
       <VStack flex={1}>
         {/* Header with Back Button and Title */}
-        <HStack alignItems="center" justifyContent="space-between" padding={4}>
+        <HStack alignItems="center" mt={10} justifyContent="space-between" padding={4}>
           <IconButton
             icon={<Icon as={ArrowLeft} color="white" size={24} />}
             onPress={() => navigation.goBack()}

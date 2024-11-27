@@ -10,7 +10,7 @@ type GradientCardProps = {
 const GradientCard: React.FC<GradientCardProps> = ({ children }) => {
   return (
     <Box
-      bg="gray.900"
+      bg="#191919"
       borderRadius="2xl"
       p={6}
       width="100%"

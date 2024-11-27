@@ -70,7 +70,13 @@ export async function uploadFileToSupabase(file, filepath, originalFilename, uni
   }
 
   // Extract the file extension
-  const fileExt = originalFilename.split('.').pop();
+  const fileExt = originalFilename.split('.').pop().toLowerCase();
+
+  // Determine the MIME type based on the file extension
+  let mimeType = 'text/plain'; // Default
+  if (fileExt === 'png') mimeType = 'image/png';
+  else if (fileExt === 'jpg' || fileExt === 'jpeg') mimeType = 'image/jpeg';
+  else if (fileExt === 'pdf') mimeType = 'application/pdf';
 
   // Remove the extension from the original filename for more customization options
   const bucketPathName = bucketPath.replace(/\//g, '-');
@@ -88,6 +94,7 @@ export async function uploadFileToSupabase(file, filepath, originalFilename, uni
       .from(bucketPath)
       .upload(fileName, fileContent, {
         cacheControl: '3600',
+        contentType: mimeType, // Explicitly set the content type
         upsert: false, // Prevents overwriting files with the same name
       });
 

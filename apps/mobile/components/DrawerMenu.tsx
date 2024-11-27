@@ -102,7 +102,7 @@ const DrawerMenu: React.FC<DrawerMenuProps> = ({ isOpen, onClose, navigation }) 
           animatedStyle,
         ]}
       >
-        <Box position="absolute" top={10} right={10}>
+        <Box position="absolute" top={16} right={10}>
           <IconButton 
             icon={<X size={24} 
             color="white" />} 
@@ -111,7 +111,7 @@ const DrawerMenu: React.FC<DrawerMenuProps> = ({ isOpen, onClose, navigation }) 
             borderRadius="full"
           />
         </Box>
-        <VStack space={8} alignItems="center" mt={8} mx={16}>
+        <VStack space={8} alignItems="center" mt={20} mx={16}>
           {['Home', 'Wardrobe', 'Cart', 'ProfileSettings', 'ShopLocation', 'Settings'].map((screen) => (
             <TouchableOpacity
               key={screen}

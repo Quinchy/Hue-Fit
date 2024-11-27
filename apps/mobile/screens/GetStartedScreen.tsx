@@ -23,9 +23,9 @@ export default function GetStartedScreen() {
         <Image
           source={require('../assets/icons/hue-fit-logo.png')}
           style={{
-            width: 75,
-            height: 75,
-            marginTop: 20,
+            width: 60,
+            height: 60,
+            marginTop: 50,
           }}
           resizeMode="contain"
         />

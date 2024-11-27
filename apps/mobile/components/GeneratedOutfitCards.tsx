@@ -15,7 +15,7 @@ const GeneratedOutfitCards: React.FC<GeneratedOutfitCardsProps> = ({ outfitName,
   return (
     <Pressable onPress={onPress}>
       <Box
-        bg="gray.800"
+        bg="#2E2E2E"
         rounded="md"
         p={3}
         flexDirection="row"
