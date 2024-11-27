@@ -11,6 +11,8 @@ import GradientCard from "../../components/GradientCard";
 import LoadingSpinner from "../../components/Loading"; // For loading animation
 import * as NavigationBar from 'expo-navigation-bar';
 import AsyncStorage from '@react-native-async-storage/async-storage';
+import { EXPO_PUBLIC_API_URL } from '@env';
+import { RENDER_API_URL } from '@env';
 
 const InputScreen: React.FC = ({ navigation }) => {
   const [outfitName, setOutfitName] = useState("");
@@ -60,9 +62,9 @@ const InputScreen: React.FC = ({ navigation }) => {
       };
 
       console.log(userFeatures);
-
+      console.log(`${RENDER_API_URL}/generate-outfit?unique=${Date.now()}`)
       const response = await fetch(
-        `https://hue-fit-ai.onrender.com/generate-outfit?unique=${Date.now()}`,
+        `${RENDER_API_URL}/generate-outfit?unique=${Date.now()}`,
         {
           method: "POST",
           headers: {
@@ -99,7 +101,7 @@ const InputScreen: React.FC = ({ navigation }) => {
         };
         console.log("User ID:", userId);
         // Send data to the new API
-        await fetch(`http://192.168.254.105:3000/api/mobile/generate/create-wardrobe`, {
+        await fetch(`${EXPO_PUBLIC_API_URL}/api/mobile/generate/create-wardrobe`, {
           method: "POST",
           headers: {
             "Content-Type": "application/json",

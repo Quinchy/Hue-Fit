@@ -20,6 +20,8 @@ import Animated, {
 } from "react-native-reanimated";
 import CustomSelect from "../../components/Select";
 import { LinearGradient } from "expo-linear-gradient";
+import { EXPO_PUBLIC_API_URL } from '@env';
+import { RENDER_API_URL } from '@env';
 
 const PlaygroundScreen: React.FC = ({ route, navigation }) => {
   const { outfit_name, upper_wear, lower_wear, footwear, outerwear, color_palette = [], user_inputs,  wardrobeId } =
@@ -31,7 +33,7 @@ const PlaygroundScreen: React.FC = ({ route, navigation }) => {
         setIsFetching(true);
     
         try {
-          const response = await fetch('http://192.168.254.105:3000/api/mobile/generate/get-wardrobe-details', {
+          const response = await fetch(`${EXPO_PUBLIC_API_URL}/api/mobile/generate/get-wardrobe-details`, {
             method: 'POST',
             headers: {
               'Content-Type': 'application/json',
@@ -172,7 +174,7 @@ const PlaygroundScreen: React.FC = ({ route, navigation }) => {
     };
 
     try {
-      const response = await fetch(`https://hue-fit-ai.onrender.com/generate-outfit?unique=${Date.now()}`, {
+      const response = await fetch(`${RENDER_API_URL}/generate-outfit?unique=${Date.now()}`, {
         method: "POST",
         headers: {
           "Content-Type": "application/json",

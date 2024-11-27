@@ -9,6 +9,8 @@ import DrawerMenu from '../../components/DrawerMenu';
 import { Bell, Menu, ShoppingCart } from 'lucide-react-native';
 import OpenAiLogoDark from '../../assets/icons/OpenAiLogoDark.svg';
 import { PanGestureHandler } from 'react-native-gesture-handler';
+import { EXPO_PUBLIC_API_URL } from '@env';
+import { RENDER_API_URL } from '@env';
 
 type HomeScreenProps = {
   navigation: any; // Replace `any` with the specific navigation type if known
@@ -31,7 +33,7 @@ const HomeScreen: React.FC<HomeScreenProps> = ({ navigation }) => {
         return;
       }
 
-      const response = await fetch('http://192.168.254.105:3000/api/mobile/home/get-latest-wardrobe', {
+      const response = await fetch(`${EXPO_PUBLIC_API_URL}/api/mobile/home/get-latest-wardrobe`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
