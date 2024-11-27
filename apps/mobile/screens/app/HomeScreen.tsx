@@ -1,13 +1,13 @@
-import React, { useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import { ScrollView, Image, View } from 'react-native';
 import { VStack, HStack, Text, Box, IconButton } from 'native-base';
+import AsyncStorage from '@react-native-async-storage/async-storage';
 import BackgroundProvider from '../../providers/BackgroundProvider';
 import StylizedButton from '../../components/StylizedButton';
 import GeneratedOutfitCards from '../../components/GeneratedOutfitCards';
 import DrawerMenu from '../../components/DrawerMenu';
 import { Bell, Menu, ShoppingCart } from 'lucide-react-native';
 import OpenAiLogoDark from '../../assets/icons/OpenAiLogoDark.svg';
-import AsyncStorage from '@react-native-async-storage/async-storage'; // Import AsyncStorage
 import { PanGestureHandler } from 'react-native-gesture-handler';
 
 type HomeScreenProps = {
@@ -16,9 +16,45 @@ type HomeScreenProps = {
 
 const HomeScreen: React.FC<HomeScreenProps> = ({ navigation }) => {
   const [isMenuOpen, setIsMenuOpen] = useState(false);
+  const [outfitName, setOutfitName] = useState<string | null>(null);
+  const [wardrobeId, setWardrobeId] = useState<number | null>(null);
 
   const toggleMenu = () => setIsMenuOpen((prev) => !prev);
   const closeMenu = () => setIsMenuOpen(false);
+
+  // Fetch the latest wardrobe data
+  const fetchLatestWardrobe = async () => {
+    try {
+      const userId = await AsyncStorage.getItem('user').then((user) => user && JSON.parse(user).id);
+      if (!userId) {
+        console.warn('User ID not found in AsyncStorage');
+        return;
+      }
+
+      const response = await fetch('http://192.168.254.105:3000/api/mobile/home/get-latest-wardrobe', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ userId }),
+      });
+
+      if (!response.ok) {
+        console.error('Failed to fetch wardrobe:', response.statusText);
+        return;
+      }
+
+      const data = await response.json();
+      if (data && data.wardrobe) {
+        setOutfitName(data.wardrobe.outfitName || 'Default Outfit Name');
+        setWardrobeId(data.wardrobe.id || null); // Save the wardrobe ID
+      } else {
+        console.warn('No wardrobe data found');
+      }
+    } catch (error) {
+      console.error('Error fetching wardrobe:', error);
+    }
+  };
 
   // Gesture handler for swiping
   const handleGesture = (event: any) => {
@@ -28,6 +64,10 @@ const HomeScreen: React.FC<HomeScreenProps> = ({ navigation }) => {
       setIsMenuOpen(true); // Trigger drawer menu opening
     }
   };
+
+  useEffect(() => {
+    fetchLatestWardrobe(); // Fetch the wardrobe on component mount
+  }, []);
 
   return (
     <PanGestureHandler onGestureEvent={handleGesture}>
@@ -85,9 +125,9 @@ const HomeScreen: React.FC<HomeScreenProps> = ({ navigation }) => {
                   Recently Generated Outfit:
                 </Text>
                 <GeneratedOutfitCards
-                  outfitName="Outfit 1"
-                  onPress={() => console.log('View My 2024 Outfit Drip')}
-                  onFavoritePress={() => console.log('Favorite My 2024 Outfit Drip')}
+                  outfitName={outfitName || 'Loading...'}
+                  onPress={() => navigation.navigate('Playground', { wardrobeId })} // Pass wardrobeId
+                  onFavoritePress={() => console.log('Favorite My Outfit')}
                 />
               </Box>
             </VStack>

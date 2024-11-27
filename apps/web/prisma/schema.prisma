@@ -24,6 +24,8 @@ model Users {
   OwnedShop       Shops?            @relation("ShopOwner") // Reference to Shops as owner
 
   partnershipRequests PartnershipRequests[]
+  customerFeatures    CustomerFeatures[]
+  wardrobes           Wardrobe[]
 
   @@unique([username, roleId])
 }
@@ -265,6 +267,11 @@ model ProductVariants {
   ProductVariantSizes        ProductVariantSizes[]
   ProductVariantMeasurements ProductVariantMeasurements[]
   ProductVariantImages       ProductVariantImages[]
+
+  WardrobeUpperWear Wardrobe[] @relation("WardrobeUpperWear")
+  WardrobeLowerWear Wardrobe[] @relation("WardrobeLowerWear")
+  WardrobeFootwear  Wardrobe[] @relation("WardrobeFootwear")
+  WardrobeOuterwear Wardrobe[] @relation("WardrobeOuterwear")
 }
 
 model ProductVariantImages {
@@ -367,4 +374,53 @@ model TypeMeasurements {
   Shop        Shops        @relation(fields: [shopNo], references: [shopNo])
 
   @@unique([typeId, measurementId]) // Ensures each type-measurement pair is unique
+}
+
+model CustomerFeatures {
+  id         Int      @id @default(autoincrement())
+  height     Float
+  weight     Float
+  age        Int
+  skintone   String
+  bodyShape  String
+  userId     Int
+  created_at DateTime @default(now())
+  updated_at DateTime @updatedAt
+
+  user Users @relation(fields: [userId], references: [id])
+}
+
+model WardrobeCustomerFeatures {
+  id         Int      @id @default(autoincrement())
+  height     Float
+  weight     Float
+  age        Int
+  skintone   String
+  bodyShape  String
+  created_at DateTime @default(now())
+  updated_at DateTime @updatedAt
+
+  wardrobe   Wardrobe? @relation("WardrobeFeatures") // Removed `fields` and `references`
+}
+
+model Wardrobe {
+  id                         Int      @id @default(autoincrement())
+  outfitName                 String
+  outfitStyle                String
+  upper_wear_id              String
+  lower_wear_id              String
+  footwear_id                String
+  outerwear_id               String? // nullable
+  wardrobeCustomerFeaturesId Int      @unique
+  userId                     Int
+  created_at                 DateTime @default(now())
+  updated_at                 DateTime @default(now())
+
+  user                     Users                     @relation(fields: [userId], references: [id])
+  wardrobeCustomerFeatures WardrobeCustomerFeatures? @relation("WardrobeFeatures", fields: [wardrobeCustomerFeaturesId], references: [id]) // Defining relation here
+
+  upper_wear ProductVariants  @relation("WardrobeUpperWear", fields: [upper_wear_id], references: [productVariantNo])
+  lower_wear ProductVariants  @relation("WardrobeLowerWear", fields: [lower_wear_id], references: [productVariantNo])
+  footwear   ProductVariants  @relation("WardrobeFootwear", fields: [footwear_id], references: [productVariantNo])
+  outerwear  ProductVariants? @relation("WardrobeOuterwear", fields: [outerwear_id], references: [productVariantNo])
 }

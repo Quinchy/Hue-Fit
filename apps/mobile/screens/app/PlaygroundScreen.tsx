@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import { ScrollView, Image, View, StatusBar } from "react-native";
 import { VStack, Text, Box, HStack, IconButton, Spinner, Skeleton, Select, Center } from "native-base";
 import { House, Menu, ChevronRight } from "lucide-react-native";
@@ -22,19 +22,120 @@ import CustomSelect from "../../components/Select";
 import { LinearGradient } from "expo-linear-gradient";
 
 const PlaygroundScreen: React.FC = ({ route, navigation }) => {
-  const { outfit_name, upper_wear, lower_wear, footwear, outerwear, color_palette = [], user_inputs } =
+  const { outfit_name, upper_wear, lower_wear, footwear, outerwear, color_palette = [], user_inputs,  wardrobeId } =
     route.params || {};
+    useEffect(() => {
+      const fetchWardrobeDetails = async () => {
+        if (!wardrobeId) return;
+    
+        setIsFetching(true);
+    
+        try {
+          const response = await fetch('http://192.168.254.105:3000/api/mobile/generate/get-wardrobe-details', {
+            method: 'POST',
+            headers: {
+              'Content-Type': 'application/json',
+            },
+            body: JSON.stringify({ wardrobeId }),
+          });
+    
+          if (!response.ok) {
+            console.error('Error fetching wardrobe details:', response.statusText);
+            return;
+          }
+    
+          const data = await response.json();
+    
+          if (data && data.wardrobe) {
+            const {
+              outfitName,
+              outfitStyle,
+              wardrobeCustomerFeatures,
+              outfitDetails: { upper_wear, lower_wear, footwear, outerwear, color_palette },
+            } = data.wardrobe;
+    
+            setOutfitName(outfitName || "Unnamed Outfit");
+            setPreference(outfitStyle || "");
+            setHeight(wardrobeCustomerFeatures?.height?.toString() || "");
+            setWeight(wardrobeCustomerFeatures?.weight?.toString() || "");
+            setSkinTone(wardrobeCustomerFeatures?.skintone || "");
+            setAge(wardrobeCustomerFeatures?.age?.toString() || "");
+            setBodyShape(wardrobeCustomerFeatures?.bodyShape || "");
+    
+            const colorPalette = [
+              ...(upper_wear?.color ? [{ name: "Upperwear", hexcode: upper_wear.color.hexcode }] : []),
+              ...(lower_wear?.color ? [{ name: "Lowerwear", hexcode: lower_wear.color.hexcode }] : []),
+              ...(footwear?.color ? [{ name: "Footwear", hexcode: footwear.color.hexcode }] : []),
+              ...(outerwear?.color ? [{ name: "Outerwear", hexcode: outerwear.color.hexcode }] : []),
+            ];
+    
+            setOutfitData({
+              outfit_name: outfitName,
+              upper_wear: {
+                ...upper_wear,
+                price: parseFloat(upper_wear?.price || 0),
+                name: `${upper_wear.color?.name || ""} ${upper_wear.name}`,
+              },
+              lower_wear: {
+                ...lower_wear,
+                price: parseFloat(lower_wear?.price || 0),
+                name: `${lower_wear.color?.name || ""} ${lower_wear.name}`,
+              },
+              footwear: {
+                ...footwear,
+                price: parseFloat(footwear?.price || 0),
+                name: `${footwear.color?.name || ""} ${footwear.name}`,
+              },
+              outerwear: outerwear
+                ? {
+                    ...outerwear,
+                    price: parseFloat(outerwear?.price || 0),
+                    name: `${outerwear.color?.name || ""} ${outerwear.name}`,
+                  }
+                : null,
+              color_palette: colorPalette,
+            });            
+          }
+        } catch (error) {
+          console.error('Error fetching wardrobe details:', error);
+        } finally {
+          setIsFetching(false);
+        }
+      };
+    
+      fetchWardrobeDetails();
+    }, [wardrobeId]);
+    
+  // Ensure default values for user_inputs
+  const defaultUserInputs = {
+    height: "",
+    weight: "",
+    skintone: "",
+    age: "",
+    bodyshape: "",
+    category: "",
+  };
+  
   const [menuOpen, setMenuOpen] = useState(false);
   const [loading, setLoading] = useState(false);
   const [isFetching, setIsFetching] = useState(false);
   const [outfitData, setOutfitData] = useState({
-    outfit_name,
-    upper_wear,
-    lower_wear,
-    footwear,
-    outerwear,
-    color_palette,
+    outfit_name: outfit_name || "Unnamed Outfit",
+    upper_wear: upper_wear || null,
+    lower_wear: lower_wear || null,
+    footwear: footwear || null,
+    outerwear: outerwear || null,
+    color_palette: color_palette || [],
   });
+
+  const [outfitName, setOutfitName] = useState(outfitData.outfit_name || "Unnamed Outfit");
+  const [height, setHeight] = useState(user_inputs?.height?.toString() || defaultUserInputs.height);
+  const [weight, setWeight] = useState(user_inputs?.weight?.toString() || defaultUserInputs.weight);
+  const [skinTone, setSkinTone] = useState(user_inputs?.skintone || defaultUserInputs.skintone);
+  const [age, setAge] = useState(user_inputs?.age?.toString() || defaultUserInputs.age);
+  const [bodyShape, setBodyShape] = useState(user_inputs?.bodyshape || defaultUserInputs.bodyshape);
+  const [preference, setPreference] = useState(user_inputs?.category || defaultUserInputs.category);
+
   const translateX = useSharedValue(300);
   NavigationBar.setPositionAsync("absolute");
   NavigationBar.setBackgroundColorAsync("#ffffff01");
@@ -56,14 +157,22 @@ const PlaygroundScreen: React.FC = ({ route, navigation }) => {
     );
   };
 
-  const handleRegenerate = async (inputs) => {
+  const handleRegenerate = async () => {
     setLoading(true);
     setIsFetching(true);
 
-    const userInputs = inputs || user_inputs;
+    const userInputs = {
+      outfit_name: outfitName,
+      height: parseFloat(height) || 0,
+      weight: parseFloat(weight) || 0,
+      age: parseInt(age, 10) || 0,
+      skintone: skinTone,
+      bodyshape: bodyShape,
+      category: preference,
+    };
 
     try {
-      const response = await fetch(`http://192.168.254.105:8000/generate-outfit?unique=${Date.now()}`, {
+      const response = await fetch(`https://hue-fit-ai.onrender.com/generate-outfit?unique=${Date.now()}`, {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
@@ -103,6 +212,13 @@ const PlaygroundScreen: React.FC = ({ route, navigation }) => {
       if (menuOpen) closeMenu();
     }
   };
+
+  useEffect(() => {
+    if (wardrobeId) {
+      // Fetch wardrobe data using the wardrobeId here
+      console.log("Fetching wardrobe details for ID:", wardrobeId);
+    }
+  }, [wardrobeId]);
 
   const totalPrice =
     (outfitData.upper_wear?.price || 0) +
@@ -326,89 +442,61 @@ const PlaygroundScreen: React.FC = ({ route, navigation }) => {
                     <CustomInput
                       label="Outfit Name"
                       placeholder="Type an Outfit Name"
-                      value={outfitData.outfit_name}
-                      onChangeText={(text) =>
-                        setOutfitData((prev) => ({ ...prev, outfit_name: text }))
-                      }
+                      value={outfitName}
+                      onChangeText={setOutfitName}
                       variant="filled"
                     />
                     <CustomInput
                       label="Height (in cm)"
                       placeholder="Type your Height"
-                      value={user_inputs.height?.toString() || ""}
-                      onChangeText={(text) =>
-                        setOutfitData((prev) => ({
-                          ...prev,
-                          user_inputs: { ...prev.user_inputs, height: parseFloat(text) },
-                        }))
-                      }
+                      value={height}
+                      onChangeText={setHeight}
                       keyboardType="numeric"
                       variant="filled"
                     />
                     <CustomInput
                       label="Weight (in kg)"
                       placeholder="Type your Weight"
-                      value={user_inputs.weight?.toString() || ""}
-                      onChangeText={(text) =>
-                        setOutfitData((prev) => ({
-                          ...prev,
-                          user_inputs: { ...prev.user_inputs, weight: parseFloat(text) },
-                        }))
-                      }
+                      value={weight}
+                      onChangeText={setWeight}
                       keyboardType="numeric"
                       variant="filled"
                     />
-                    <CustomInput
+                    <CustomSelect
                       label="Skin Tone"
-                      placeholder="Select your Skin Tone"
-                      value={user_inputs.skintone || ""}
-                      onChangeText={(text) =>
-                        setOutfitData((prev) => ({
-                          ...prev,
-                          user_inputs: { ...prev.user_inputs, skintone: text },
-                        }))
-                      }
-                      variant="filled"
-                    />
+                      value={skinTone}
+                      onChange={(value) => setSkinTone(value)}
+                    >
+                      <Select.Item label="Fair" value="Fair" />
+                      <Select.Item label="Light" value="Light" />
+                      <Select.Item label="Medium" value="Medium" />
+                      <Select.Item label="Dark" value="Dark" />
+                      <Select.Item label="Deep" value="Deep" />
+                    </CustomSelect>
                     <CustomInput
                       label="Age"
                       placeholder="Type your Age"
-                      value={user_inputs.age?.toString() || ""}
-                      onChangeText={(text) =>
-                        setOutfitData((prev) => ({
-                          ...prev,
-                          user_inputs: { ...prev.user_inputs, age: parseInt(text, 10) },
-                        }))
-                      }
+                      value={age}
+                      onChangeText={setAge}
                       keyboardType="numeric"
                       variant="filled"
                     />
                     <CustomSelect
                       label="Body Shape"
-                      value={user_inputs.bodyshape || outfitData.user_inputs.bodyshape }
-                      onChange={(value) =>
-                        setOutfitData((prev) => ({
-                          ...prev,
-                          user_inputs: { ...prev.user_inputs, bodyshape: value },
-                        }))
-                      }
+                      value={bodyShape}
+                      onChange={(value) => setBodyShape(value)}
                     >
                       <Select.Item label="Bulky" value="Bulky" />
                       <Select.Item label="Athletic" value="Athletic" />
                       <Select.Item label="Skinny" value="Skinny" />
-                      <Select.Item label="Pear" value="Pear" />
                       <Select.Item label="Fit" value="Fit" />
+                      <Select.Item label="Skinny Fat" value="Skinny Fat" />
                       <Select.Item label="Chubby" value="Chubby" />
                     </CustomSelect>
                     <CustomSelect
                       label="Style"
-                      value={user_inputs.category || outfitData.user_inputs.category}
-                      onChange={(value) =>
-                        setOutfitData((prev) => ({
-                          ...prev,
-                          user_inputs: { ...prev.user_inputs, category: value },
-                        }))
-                      }
+                      value={preference}
+                      onChange={(value) => setPreference(value)}
                     >
                       <Select.Item label="All Random" value="All Random" />
                       <Select.Item label="Casual" value="Casual" />
@@ -420,7 +508,7 @@ const PlaygroundScreen: React.FC = ({ route, navigation }) => {
                       isDisabled={loading}
                       leftIcon={loading ? <Spinner color="white" size="sm" /> : undefined}
                       my={6}
-                      onPress={() => handleRegenerate()}
+                      onPress={handleRegenerate}
                     />
                   </VStack>
                 </GestureScrollView>

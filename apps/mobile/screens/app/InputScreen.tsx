@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import { ScrollView, Image } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { VStack, Text, HStack, Center, IconButton, Select } from "native-base";
@@ -10,6 +10,7 @@ import DefaultButton from "../../components/Button";
 import GradientCard from "../../components/GradientCard";
 import LoadingSpinner from "../../components/Loading"; // For loading animation
 import * as NavigationBar from 'expo-navigation-bar';
+import AsyncStorage from '@react-native-async-storage/async-storage';
 
 const InputScreen: React.FC = ({ navigation }) => {
   const [outfitName, setOutfitName] = useState("");
@@ -20,6 +21,29 @@ const InputScreen: React.FC = ({ navigation }) => {
   const [age, setAge] = useState("");
   const [preference, setPreference] = useState("All Random"); // User preference
   const [loading, setLoading] = useState(false);
+  const [userId, setUserId] = useState<number | null>(null);
+  const [loadingUser, setLoadingUser] = useState(true);
+
+  useEffect(() => {
+    const getUser = async () => {
+      try {
+        const userData = await AsyncStorage.getItem('user').then((user) => user && JSON.parse(user).id);;
+        if (userData) {
+          setUserId(userData);
+        } else {
+          console.warn('No user data found in AsyncStorage');
+          // Optionally, navigate to login screen
+          navigation.navigate("Login");
+        }
+      } catch (error) {
+        console.error('Error retrieving user data:', error);
+      } finally {
+        setLoadingUser(false);
+      }
+    };
+
+    getUser();
+  }, [navigation]);
 
   const handleGenerate = async () => {
     setLoading(true);
@@ -38,7 +62,7 @@ const InputScreen: React.FC = ({ navigation }) => {
       console.log(userFeatures);
 
       const response = await fetch(
-        `http://192.168.254.105:8000/generate-outfit?unique=${Date.now()}`,
+        `https://hue-fit-ai.onrender.com/generate-outfit?unique=${Date.now()}`,
         {
           method: "POST",
           headers: {
@@ -51,7 +75,6 @@ const InputScreen: React.FC = ({ navigation }) => {
 
       if (response.ok) {
         const data = await response.json();
-        setLoading(false);
 
         // Extract necessary data for navigation
         const { outfit_name, best_combination } = data;
@@ -74,7 +97,20 @@ const InputScreen: React.FC = ({ navigation }) => {
           color_palette, // Pass the built color palette
           user_inputs: userFeatures, // Pass the user inputs
         };
-
+        console.log("User ID:", userId);
+        // Send data to the new API
+        await fetch(`http://192.168.254.105:3000/api/mobile/generate/create-wardrobe`, {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify({
+            generate_outfit_response: data,
+            user_inputs: userFeatures,
+            userId: userId,
+          }),
+        });
+        setLoading(false);
         // Navigate to the Playground screen and pass the data
         navigation.navigate("Playground", passedData);
       } else {
