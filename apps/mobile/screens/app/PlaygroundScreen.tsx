@@ -174,7 +174,7 @@ const PlaygroundScreen: React.FC = ({ route, navigation }) => {
     };
 
     try {
-      const response = await fetch(`${RENDER_API_URL}/generate-outfit?unique=${Date.now()}`, {
+      const response = await fetch(`https://hue-fit-ai.onrender.com/generate-outfit?unique=${Date.now()}`, {
         method: "POST",
         headers: {
           "Content-Type": "application/json",

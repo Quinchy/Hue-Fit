@@ -64,7 +64,7 @@ const InputScreen: React.FC = ({ navigation }) => {
       console.log(userFeatures);
       console.log(`${RENDER_API_URL}/generate-outfit?unique=${Date.now()}`)
       const response = await fetch(
-        `${RENDER_API_URL}/generate-outfit?unique=${Date.now()}`,
+        `https://hue-fit-ai.onrender.com/generate-outfit?unique=${Date.now()}`,
         {
           method: "POST",
           headers: {
