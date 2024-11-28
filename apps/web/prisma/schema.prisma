@@ -378,8 +378,6 @@ model TypeMeasurements {
   Type        Type         @relation(fields: [typeId], references: [id])
   Measurement Measurements @relation(fields: [measurementId], references: [id])
   Shop        Shops        @relation(fields: [shopNo], references: [shopNo])
-
-  @@unique([typeId, measurementId]) // Ensures each type-measurement pair is unique
 }
 
 model CustomerFeatures {
