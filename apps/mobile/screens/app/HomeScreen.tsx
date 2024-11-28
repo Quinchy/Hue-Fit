@@ -136,7 +136,7 @@ const HomeScreen = ({ navigation }) => {
                 />
                 <IconButton
                   icon={<ShoppingCart size={25} color="white" />}
-                  onPress={() => navigation.navigate('Notification')}
+                  onPress={() => navigation.navigate('Cart')}
                   _pressed={{ bg: 'gray.800' }}
                   borderRadius="full"
                 />

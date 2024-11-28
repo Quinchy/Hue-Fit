@@ -449,7 +449,7 @@ model Orders {
   ProductVariant   ProductVariants  @relation(fields: [productVariantNo], references: [productVariantNo])
   Size             Sizes            @relation(fields: [sizeId], references: [id])
 
-  rderHistories    OrderHistories[]
+  OrderHistories    OrderHistories[]
 }
 
 model OrderHistories {
