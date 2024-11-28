@@ -60,11 +60,11 @@ export default async function handler(req, res) {
     if (!wardrobe) {
       return res.status(404).json({ message: 'Wardrobe not found' });
     }
-
     // Format the response
     const formatOutfitItem = (item) =>
       item
         ? {
+            productVariantNo: item.productVariantNo, // Ensure productVariantNo is included
             name: item.Product.name,
             price: item.price,
             color: {
@@ -73,7 +73,7 @@ export default async function handler(req, res) {
             },
             thumbnail: item.ProductVariantImages[0]?.imageUrl || null, // Use the first image as the thumbnail
           }
-        : null;
+        : null;    
 
     const response = {
       outfitName: wardrobe.outfitName,
