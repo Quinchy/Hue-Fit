@@ -12,7 +12,6 @@ import LoadingSpinner from "../../components/Loading"; // For loading animation
 import * as NavigationBar from 'expo-navigation-bar';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { EXPO_PUBLIC_API_URL } from '@env';
-import { RENDER_API_URL } from '@env';
 
 const InputScreen: React.FC = ({ navigation }) => {
   const [outfitName, setOutfitName] = useState("");
@@ -60,9 +59,6 @@ const InputScreen: React.FC = ({ navigation }) => {
         category: preference, // Match "category"
         outfit_name: outfitName, // Match "outfit_name"
       };
-
-      console.log(userFeatures);
-      console.log(`${RENDER_API_URL}/generate-outfit?unique=${Date.now()}`)
       const response = await fetch(
         `https://hue-fit-ai.onrender.com/generate-outfit?unique=${Date.now()}`,
         {

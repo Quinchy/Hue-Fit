@@ -47,7 +47,7 @@ const PlaygroundScreen: React.FC = ({ route, navigation }) => {
           }
     
           const data = await response.json();
-    
+          console.log('Wardrobe Details:', data);
           if (data && data.wardrobe) {
             const {
               outfitName,
@@ -228,60 +228,70 @@ const PlaygroundScreen: React.FC = ({ route, navigation }) => {
     (outfitData.footwear?.price || 0) +
     (outfitData.outerwear?.price || 0);
 
-  const renderOutfitItem = (icon: JSX.Element, item: any, fallback: string) => {
-    if (isFetching) {
+    const renderOutfitItem = (icon: JSX.Element, item: any, fallback: string) => {
+      if (isFetching) {
+        return (
+          <HStack mb={2} space={2} alignItems="center">
+            <Skeleton w="20%" h={115} borderRadius="md" />
+            <Skeleton.Text flex={1} px={2} lines={3} />
+          </HStack>
+        );
+      }
+    
+      if (!item) {
+        return (
+          <HStack alignItems="center" mb={2} space={2}>
+            <Box bg="gray.800" p={3} borderRadius="md" justifyContent="center" alignItems="center">
+              {icon}
+            </Box>
+            <Box bg="gray.800" flex={1} p={4} borderRadius="md" justifyContent="center">
+              <Text color="white" fontSize="md" fontWeight="light" textAlign="center">
+                {fallback}
+              </Text>
+            </Box>
+          </HStack>
+        );
+      }
+    
       return (
-        <HStack mb={2} space={2} alignItems="center">
-          <Skeleton w="20%" h={115} borderRadius="md" />
-          <Skeleton.Text flex={1} px={2} lines={3} />
-        </HStack>
-      );
-    }
-
-    if (!item) {
-      return (
-        <HStack alignItems="center" mb={2} space={2}>
-          <Box bg="gray.800" p={3} borderRadius="md" justifyContent="center" alignItems="center">
-            {icon}
+        <HStack bg="#2E2E2E" borderRadius="md" alignItems="center" mb={2} space={1}>
+          <Box paddingLeft={3} py={3} justifyContent="center" alignItems="center">
+            <Image source={{ uri: item.thumbnail }} style={{ width: 115, height: 115, borderRadius: 5 }} />
           </Box>
-          <Box bg="gray.800" flex={1} p={4} borderRadius="md" justifyContent="center">
-            <Text color="white" fontSize="md" fontWeight="light" textAlign="center">
-              {fallback}
-            </Text>
-          </Box>
-        </HStack>
-      );
-    }
-
-    return (
-      <HStack bg="#2E2E2E" borderRadius="md" alignItems="center" mb={2} space={1}>
-        <Box paddingLeft={3} py={3} justifyContent="center" alignItems="center">
-          <Image source={{ uri: item.thumbnail }} style={{ width: 115, height: 115, borderRadius: 5 }} />
-        </Box>
-        <VStack flex={1} p={2} justifyContent="space-between">
-          <VStack flexGrow={1}>
-            <Text color="white" fontSize={13} fontWeight="light">
-              {item.name.length > 87 ? `${item.name.substring(0, 87)}...` : item.name}
-            </Text>
-            <Text fontWeight="light" fontSize={12} color="gray.400">
-              ₱{item.price}
-            </Text>
+          <VStack flex={1} p={2} justifyContent="space-between">
+            <VStack flexGrow={1}>
+              <Text color="white" fontSize={13} fontWeight="light">
+                {item.name.length > 87 ? `${item.name.substring(0, 87)}...` : item.name}
+              </Text>
+              <Text fontWeight="light" fontSize={12} color="gray.400">
+                ₱{item.price}
+              </Text>
+            </VStack>
+    
+            <OutlineButton
+              title="VIEW PRODUCT"
+              width="fit-content"
+              height={30}
+              fontWeight="light"
+              fontSize={11}
+              py={1}
+              onPress={() => {
+                if (item.productVariantNo) {
+                  console.log(`View product variant: ${item.productVariantNo}`);
+                  navigation.navigate("ProductView", { productVariantNo: item.productVariantNo });
+                } else {
+                  console.error("No productVariantNo available for this item.");
+                }
+              }}
+            />
           </VStack>
-
-          <OutlineButton
-            title="VIEW PRODUCT"
-            width="fit-content"
-            height={30}
-            fontWeight="light"
-            fontSize={11}
-            py={1}
-            onPress={() => console.log(`View product: ${item.productVariantNo}`)}
-          />
-        </VStack>
-      </HStack>
-    );
-  };
-
+        </HStack>
+      );
+    };    
+    useEffect(() => {
+      console.log("Outfit Data:", outfitData);
+    }, [outfitData]);
+    
   return (
     <View style={{ flex: 1 }}>
       <BackgroundProvider>

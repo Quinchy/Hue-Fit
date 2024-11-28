@@ -5,6 +5,7 @@ import { HStack } from 'native-base';
 import DefaultButton from "../../components/Button";
 import { TextInput } from 'react-native-gesture-handler';
 import AsyncStorage from '@react-native-async-storage/async-storage';
+import { EXPO_PUBLIC_API_URL } from '@env';
 
 const ProductViewScreen = ({ route }) => {
   const { productVariantNo } = route.params;
@@ -38,7 +39,7 @@ const ProductViewScreen = ({ route }) => {
       };
       console.log('Order payload:', payload);
       // Make the POST request to the API
-      const response = await fetch('http://192.168.254.105:3000/api/mobile/orders/create-order', {
+      const response = await fetch(`${EXPO_PUBLIC_API_URL}/api/mobile/orders/create-order`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -63,7 +64,7 @@ const ProductViewScreen = ({ route }) => {
     setLoading(true);
     try {
       const response = await fetch(
-        `http://192.168.254.105:3000/api/mobile/products/get-product-details`,
+        `${EXPO_PUBLIC_API_URL}/api/mobile/products/get-product-details`,
         {
           method: 'POST',
           headers: {
@@ -90,7 +91,7 @@ const ProductViewScreen = ({ route }) => {
         data.allVariants.map(async (variant) => {
           if (!variantCache[variant.productVariantNo].details) {
             const response = await fetch(
-              `http://192.168.254.105:3000/api/mobile/products/get-product-details`,
+              `${EXPO_PUBLIC_API_URL}/api/mobile/products/get-product-details`,
               {
                 method: 'POST',
                 headers: {

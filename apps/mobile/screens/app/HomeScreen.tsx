@@ -58,7 +58,7 @@ const HomeScreen = ({ navigation }) => {
     setLoading(true);
     try {
       const response = await fetch(
-        `http://192.168.254.105:3000/api/mobile/home/get-products?limit=10&page=${pageNumber}`
+        `${EXPO_PUBLIC_API_URL}/api/mobile/home/get-products?limit=10&page=${pageNumber}`
       );
       if (!response.ok) return;
 
