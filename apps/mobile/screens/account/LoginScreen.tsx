@@ -44,12 +44,11 @@ export default function LoginScreen() {
         const data = await response.json();
   
         console.log('Response JSON:', data); // Log the JSON response
-        
+  
         if (response.ok) {
           // Store the user data for session persistence
           await AsyncStorage.setItem('user', JSON.stringify(data));
           navigation.navigate('Home'); // Redirect to home screen
-          setLoading(false);
         } else {
           Alert.alert('Login failed', data.message || 'Invalid credentials');
         }
@@ -61,10 +60,12 @@ export default function LoginScreen() {
       }
     } catch (error) {
       console.error('Login error:', error);
-      setLoading(false);
       Alert.alert('Login error', 'An error occurred. Please try again.');
+    } finally {
+      setLoading(false); // Ensure loading is reset regardless of outcome
     }
   };
+  
   if (loading) {
     return <LoadingSpinner size={150} />; // Use your LoadingSpinner component here
   }
