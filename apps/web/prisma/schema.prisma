@@ -22,6 +22,7 @@ model Users {
   CustomerProfile CustomerProfiles?
   VendorProfiles  VendorProfile?
   OwnedShop       Shops?            @relation("ShopOwner") // Reference to Shops as owner
+  Orders          Orders[]  // Relation to Orders
 
   partnershipRequests PartnershipRequests[]
   customerFeatures    CustomerFeatures[]
@@ -153,6 +154,7 @@ model Shops {
   Units               Units[]
   Measurements        Measurements[]
   TypeMeasurements    TypeMeasurements[]
+  Orders              Orders[]
 }
 
 model Addresses {
@@ -267,6 +269,7 @@ model ProductVariants {
   ProductVariantSizes        ProductVariantSizes[]
   ProductVariantMeasurements ProductVariantMeasurements[]
   ProductVariantImages       ProductVariantImages[]
+  Orders                     Orders[]
 
   WardrobeUpperWear Wardrobe[] @relation("WardrobeUpperWear")
   WardrobeLowerWear Wardrobe[] @relation("WardrobeLowerWear")
@@ -307,6 +310,7 @@ model Sizes {
 
   Shop                Shops                 @relation(fields: [shopNo], references: [shopNo])
   ProductVariantSizes ProductVariantSizes[]
+  Orders              Orders[]
 }
 
 model ProductVariantSizes {
@@ -321,6 +325,8 @@ model ProductVariantSizes {
   ProductVariant             ProductVariants              @relation(fields: [productVariantNo], references: [productVariantNo])
   Size                       Sizes                        @relation(fields: [sizeId], references: [id])
   ProductVariantMeasurements ProductVariantMeasurements[]
+
+  @@index([productVariantNo, sizeId])
 }
 
 model Units {
@@ -423,4 +429,35 @@ model Wardrobe {
   lower_wear ProductVariants  @relation("WardrobeLowerWear", fields: [lower_wear_id], references: [productVariantNo])
   footwear   ProductVariants  @relation("WardrobeFootwear", fields: [footwear_id], references: [productVariantNo])
   outerwear  ProductVariants? @relation("WardrobeOuterwear", fields: [outerwear_id], references: [productVariantNo])
+}
+
+model Orders {
+  id                Int       @id @default(autoincrement())
+  orderNo           String    @unique(map: "Unique_OrderNo") // Ensure uniqueness and give a custom name to avoid conflicts
+  userId            Int       // Foreign key to Users table
+  shopNo            String       // Foreign key to Shops table
+  productVariantNo  String       // Foreign key to ProductVariants table
+  sizeId            Int       // Foreign key to Sizes table
+  status            String    @default("PROCESSING") // PROCESSING, PREPARING, PACKAGING, DELIVERING
+  quantity          Int       // Number of items ordered
+  created_at        DateTime  @default(now())
+  updated_at        DateTime  @updatedAt
+
+  // Relations
+  User             Users            @relation(fields: [userId], references: [id])
+  Shop             Shops            @relation(fields: [shopNo], references: [shopNo])
+  ProductVariant   ProductVariants  @relation(fields: [productVariantNo], references: [productVariantNo])
+  Size             Sizes            @relation(fields: [sizeId], references: [id])
+
+  rderHistories    OrderHistories[]
+}
+
+model OrderHistories {
+  id         Int      @id @default(autoincrement())
+  orderId    Int      // Foreign key to Orders table
+  status     String   // E.g., PENDING -> CONFIRMED, etc.
+  changed_at DateTime @default(now())
+
+  // Relations
+  Order Orders @relation(fields: [orderId], references: [id])
 }

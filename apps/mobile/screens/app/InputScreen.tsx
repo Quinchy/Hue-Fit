@@ -29,7 +29,7 @@ const InputScreen: React.FC = ({ navigation }) => {
   useEffect(() => {
     const getUser = async () => {
       try {
-        const userData = await AsyncStorage.getItem('user').then((user) => user && JSON.parse(user).id);;
+        const userData = await AsyncStorage.getItem('user').then((user) => user && JSON.parse(user).id);
         if (userData) {
           setUserId(userData);
         } else {

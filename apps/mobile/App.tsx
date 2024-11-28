@@ -18,6 +18,7 @@ import CartScreen from "./screens/app/CartScreen";
 import InputScreen from "./screens/app/InputScreen";
 import NotificationScreen from "./screens/app/NotificationScreen";
 import PlaygroundScreen from "./screens/app/PlaygroundScreen";
+import ProductViewScreen from "./screens/app/ProductViewScreen";
 import ProfileSettingsScreen from "./screens/app/ProfileSettingsScreen";
 import ShopLocationScreen from "./screens/app/ShopLocationScreen";
 import WardrobeScreen from "./screens/app/WardrobeScreen";
@@ -119,6 +120,7 @@ export default function App() {
                   <Stack.Screen name="Notification" component={NotificationScreen} options={{ unmountOnBlur: true }} />
                   <Stack.Screen name="Input" component={InputScreen} options={{ unmountOnBlur: true }} />
                   <Stack.Screen name="Playground" component={PlaygroundScreen} options={{ unmountOnBlur: true }} />
+                  <Stack.Screen name="ProductView" component={ProductViewScreen} options={{ unmountOnBlur: true }} />
                 </Stack.Navigator>
               </NavigationContainer>
             </View>
