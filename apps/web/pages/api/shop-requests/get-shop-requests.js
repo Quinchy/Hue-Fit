@@ -5,7 +5,7 @@ export default async function handler(req, res) {
 
   try {
     // Step 1: Calculate total requests matching the status
-    const totalRequests = await prisma.partnershipRequests.count({
+    const totalRequests = await prisma.partnershipRequest.count({
       where: { status },
     });
 
@@ -16,7 +16,7 @@ export default async function handler(req, res) {
     const currentPage = Math.max(1, Math.min(page, totalPages)); // Clamp page to valid range
 
     // Step 4: Fetch the requests with pagination and related data
-    const requests = await prisma.partnershipRequests.findMany({
+    const requests = await prisma.partnershipRequest.findMany({
       skip: (currentPage - 1) * perPage, // Pagination offset
       take: perPage, // Pagination limit
       where: { status },
@@ -27,7 +27,7 @@ export default async function handler(req, res) {
             name: true,
             contactNo: true,
             addressId: true, // Fetch the related addressId
-            Address: {
+            ShopAddress: {
               select: {
                 buildingNo: true,
                 street: true,
@@ -43,8 +43,8 @@ export default async function handler(req, res) {
 
     // Step 5: Format the data for the response
     const formattedRequests = requests.map((request) => {
-      const address = request.Shop?.Address
-        ? `${request.Shop.Address.buildingNo || ''} ${request.Shop.Address.street || ''}, ${request.Shop.Address.barangay || ''}, ${request.Shop.Address.municipality || ''}, ${request.Shop.Address.province || ''}`
+      const address = request.Shop?.ShopAddress
+        ? `${request.Shop.ShopAddress.buildingNo || ''} ${request.Shop.ShopAddress.street || ''}, ${request.Shop.ShopAddress.barangay || ''}, ${request.Shop.ShopAddress.municipality || ''}, ${request.Shop.ShopAddress.province || ''}`
         : "No Address Provided";
 
       return {

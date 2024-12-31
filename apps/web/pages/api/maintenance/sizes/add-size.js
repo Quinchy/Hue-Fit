@@ -1,5 +1,5 @@
 // pages/api/maintenance/sizes/add-size.js
-import prisma, { getSessionShopNo } from "@/utils/helpers";
+import prisma, { getSessionShopId } from "@/utils/helpers";
 
 export default async function handler(req, res) {
   if (req.method !== "POST") {
@@ -7,9 +7,9 @@ export default async function handler(req, res) {
   }
 
   try {
-    const shopNo = await getSessionShopNo(req, res);
+    const shopId = await getSessionShopId(req, res);
 
-    if (!shopNo) {
+    if (!shopId) {
       return res.status(401).json({ error: "Unauthorized" });
     }
 
@@ -20,10 +20,10 @@ export default async function handler(req, res) {
       return res.status(400).json({ error: "Name and Abbreviation are required fields." });
     }
 
-    const existingSize = await prisma.sizes.findFirst({
+    const existingSize = await prisma.size.findFirst({
       where: {
         abbreviation,
-        shopNo,
+        shopId,
       },
     });
 
@@ -31,9 +31,9 @@ export default async function handler(req, res) {
       return res.status(400).json({ error: "Size with this abbreviation already exists." });
     }
 
-    const newSize = await prisma.sizes.create({
+    const newSize = await prisma.size.create({
       data: {
-        shopNo,
+        shopId,
         name,
         abbreviation,
         nextId: null,
@@ -41,10 +41,10 @@ export default async function handler(req, res) {
     });
 
     if (nextTo) {
-      const nextSize = await prisma.sizes.findFirst({
+      const nextSize = await prisma.size.findFirst({
         where: {
           id: parseInt(nextTo),
-          shopNo,
+          shopId,
         },
       });
 
@@ -52,7 +52,7 @@ export default async function handler(req, res) {
         return res.status(400).json({ error: "Next size not found." });
       }
 
-      await prisma.sizes.update({
+      await prisma.size.update({
         where: {
           id: newSize.id,
         },
@@ -61,9 +61,9 @@ export default async function handler(req, res) {
         },
       });
     } else {
-      const currentLargestSize = await prisma.sizes.findFirst({
+      const currentLargestSize = await prisma.size.findFirst({
         where: {
-          shopNo,
+          shopId,
           nextId: null,
           id: {
             not: newSize.id,
@@ -72,7 +72,7 @@ export default async function handler(req, res) {
       });
 
       if (currentLargestSize) {
-        await prisma.sizes.update({
+        await prisma.size.update({
           where: {
             id: currentLargestSize.id,
           },

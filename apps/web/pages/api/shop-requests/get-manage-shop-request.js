@@ -5,7 +5,7 @@ export default async function handler(req, res) {
 
   try {
     // Fetch the partnership request with related shop, address, google map data, business licenses, and shop owner (via Users)
-    const request = await prisma.partnershipRequests.findUnique({
+    const request = await prisma.partnershipRequest.findUnique({
       where: { requestNo },
       include: {
         Shop: {
@@ -15,7 +15,7 @@ export default async function handler(req, res) {
             contactNo: true,
             status: true,
             addressId: true,
-            Address: {
+            ShopAddress: {
               select: {
                 buildingNo: true,
                 street: true,
@@ -28,20 +28,20 @@ export default async function handler(req, res) {
                   select: {
                     latitude: true,
                     longitude: true,
-                    placeName: true,
+                    name: true,
                   },
                 },
               },
             },
-            BusinessLicenses: {
+            BusinessLicense: {
               select: {
-                licenseUrl: true, // Select the license URLs associated with the shop
+                licenseUrl: true,
               },
             },
-            Owner: {  // Fetch the owner from Users
+            Owner: {
               select: {
-                id: true, // Get the userId to query VendorProfile
-                userNo: true,  // Use the userNo to link the shop with the owner
+                id: true,
+                userNo: true,
                 username: true,
               },
             },
@@ -51,7 +51,7 @@ export default async function handler(req, res) {
     });
     // Fetch the VendorProfile details using the userId from the Owner relation
     const ownerProfile = request.Shop.Owner ? await prisma.vendorProfile.findUnique({
-      where: { userId: request.Shop.Owner.id }, // Use the userId from Shop's Owner to query VendorProfile
+      where: { userId: request.Shop.Owner.id },
       select: {
         firstName: true,
         lastName: true,
@@ -67,17 +67,17 @@ export default async function handler(req, res) {
       shopName: request.Shop.name,
       shopContactNo: request.Shop.contactNo,
       shopStatus: request.Shop.status,
-      buildingNo: request.Shop.Address.buildingNo,
-      street: request.Shop.Address.street,
-      barangay: request.Shop.Address.barangay,
-      municipality: request.Shop.Address.municipality,
-      province: request.Shop.Address.province,
-      postalNumber: request.Shop.Address.postalCode,
-      latitude: request.Shop.Address.GoogleMapLocation ? request.Shop.Address.GoogleMapLocation.latitude : 'N/A',
-      longitude: request.Shop.Address.GoogleMapLocation ? request.Shop.Address.GoogleMapLocation.longitude : 'N/A',
-      googleMapPlaceName: request.Shop.Address.GoogleMapLocation ? request.Shop.Address.GoogleMapLocation.placeName : 'N/A',
+      buildingNo: request.Shop.ShopAddress.buildingNo,
+      street: request.Shop.ShopAddress.street,
+      barangay: request.Shop.ShopAddress.barangay,
+      municipality: request.Shop.ShopAddress.municipality,
+      province: request.Shop.ShopAddress.province,
+      postalNumber: request.Shop.ShopAddress.postalCode,
+      latitude: request.Shop.ShopAddress.GoogleMapLocation ? request.Shop.ShopAddress.GoogleMapLocation.latitude : 'N/A',
+      longitude: request.Shop.ShopAddress.GoogleMapLocation ? request.Shop.ShopAddress.GoogleMapLocation.longitude : 'N/A',
+      googleMapPlaceName: request.Shop.ShopAddress.GoogleMapLocation ? request.Shop.ShopAddress.GoogleMapLocation.placeName : 'N/A',
       // Include business licenses as an array of URLs
-      businessLicense: request.Shop.BusinessLicenses ? request.Shop.BusinessLicenses.map((license) => license.licenseUrl) : [],
+      businessLicense: request.Shop.BusinessLicense ? request.Shop.BusinessLicense.map((license) => license.licenseUrl) : [],
       // Add owner details from VendorProfile
       contactPerson: ownerProfile ? {
         firstName: ownerProfile.firstName,

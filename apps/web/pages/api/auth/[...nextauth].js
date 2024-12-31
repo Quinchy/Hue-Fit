@@ -14,17 +14,28 @@ export const authOptions = {
       },
       authorize: async (credentials) => {
         try {
-          const user = await prisma.users.findFirst({
+          // Find the user by username
+          const user = await prisma.user.findFirst({
             where: { username: credentials.username },
             include: { Role: true },
           });
-
-          if (!user) throw new Error("Invalid credentials.");
-          if (user.Role.name === "Customer") throw new Error("Unauthorized access.");
-
+  
+          // Check if user exists
+          if (!user) {
+            throw new Error("Username not found. Please check your credentials.");
+          }
+  
+          // Check if the user is allowed to access
+          if (user.Role.name === "CUSTOMER") {
+            throw new Error("Unauthorized access. Customer accounts are not allowed.");
+          }
+  
+          // Validate the password
           const isPasswordValid = await bcrypt.compare(credentials.password, user.password);
-          if (!isPasswordValid) throw new Error("Invalid credentials.");
-
+          if (!isPasswordValid) {
+            throw new Error("Incorrect password. Please try again.");
+          }
+  
           const sessionUser = {
             id: user.id,
             name: user.username,
@@ -32,27 +43,30 @@ export const authOptions = {
             roleId: user.roleId,
             userNo: user.userNo,
           };
-
+  
           if (user.Role.name === "VENDOR") {
             const vendorProfile = await prisma.vendorProfile.findUnique({
               where: { userId: user.id },
               select: {
                 Shop: {
-                  select: { shopNo: true },
+                  select: { id: true },
                 },
               },
             });
-            sessionUser.shopNo = vendorProfile?.Shop?.shopNo || null;
+            sessionUser.shopId = vendorProfile?.Shop?.id || null;
           }
-
+  
           return sessionUser;
+        } 
+        catch (error) {
+          throw new Error(error.message);
         } 
         finally {
           await disconnectPrisma();
         }
       },
     }),
-  ],
+  ],  
   session: { strategy: "jwt" },
   jwt: { secret: process.env.NEXTAUTH_SECRET },
   callbacks: {
@@ -63,7 +77,7 @@ export const authOptions = {
         roleId: token.roleId,
         userNo: token.userNo,
         permissions: token.permissions,
-        shopNo: token.shopNo,
+        shopId: token.shopId,
       };
       return session;
     },
@@ -74,7 +88,7 @@ export const authOptions = {
         token.roleId = user.roleId;
         token.userNo = user.userNo;
         token.permissions = await fetchPermissions(user.roleId);
-        if (user.role === "VENDOR") token.shopNo = user.shopNo;
+        if (user.role === "VENDOR") token.shopId = user.shopId;
       }
       if (trigger === "update" || session?.triggerUpdate) {
         token.permissions = await fetchPermissions(token.roleId);

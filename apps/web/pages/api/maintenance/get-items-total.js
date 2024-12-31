@@ -1,5 +1,5 @@
 // pages/api/maintenance/get-items-total.js
-import prisma, { getSessionShopNo } from "@/utils/helpers";
+import prisma, { getSessionShopId } from "@/utils/helpers";
 
 export default async function handler(req, res) {
   if (req.method !== "GET") {
@@ -8,19 +8,18 @@ export default async function handler(req, res) {
   }
 
   try {
-    const shopNo = await getSessionShopNo(req, res);
-    if (!shopNo) {
+    const shopId = await getSessionShopId(req, res);
+    if (!shopId) {
       res.status(401).json({ message: "Unauthorized" });
       return;
     }
 
-    const types = await prisma.type.count({ where: { shopNo } });
-    const categories = await prisma.category.count({ where: { shopNo } });
-    const tags = await prisma.tags.count({ where: { shopNo } });
-    const colors = await prisma.colors.count({ where: { shopNo } });
-    const sizes = await prisma.sizes.count({ where: { shopNo } });
-    const measurements = await prisma.measurements.count({ where: { shopNo } });
-    const units = await prisma.units.count({ where: { shopNo } });
+    const types = await prisma.type.count({ where: { shopId } });
+    const categories = await prisma.category.count({ where: { shopId } });
+    const tags = await prisma.tag.count({ where: { shopId } });
+    const colors = await prisma.color.count({ where: { shopId } });
+    const sizes = await prisma.size.count({ where: { shopId } });
+    const measurements = await prisma.measurement.count({ where: { shopId } });
 
     res.status(200).json({
       types,
@@ -29,7 +28,6 @@ export default async function handler(req, res) {
       colors,
       sizes,
       measurements,
-      units,
     });
   } catch (error) {
     console.error("Error fetching totals:", error);

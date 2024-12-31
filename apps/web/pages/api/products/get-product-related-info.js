@@ -9,19 +9,18 @@ export default async function handler(req, res) {
         try {
             // Retrieve the session using getServerSession
             const session = await getServerSession(req, res, authOptions);
-            const shopNo = session?.user?.shopNo;
+            const shopId = session?.user?.shopId;
 
-            if (!shopNo) {
-                return res.status(401).json({ error: 'Unauthorized: No shopNo found in session.' });
+            if (!shopId) {
+                return res.status(401).json({ error: 'Unauthorized: No shopId found in session.' });
             }
 
-            // Fetch product-related information filtered by shopNo
-            const productTypes = await prisma.type.findMany({ where: { shopNo } });
-            const productCategories = await prisma.category.findMany({ where: { shopNo } });
-            const tags = await prisma.tags.findMany({ where: { shopNo } });
-            const colors = await prisma.colors.findMany({ where: { shopNo } });
-            const sizes = await prisma.sizes.findMany({ where: { shopNo } });
-            const units = await prisma.units.findMany({ where: { shopNo } });            
+            // Fetch product-related information filtered by shopId
+            const productTypes = await prisma.type.findMany({ where: { shopId } });
+            const productCategories = await prisma.category.findMany({ where: { shopId } });
+            const tags = await prisma.tag.findMany({ where: { shopId } });
+            const colors = await prisma.color.findMany({ where: { shopId } });
+            const sizes = await prisma.size.findMany({ where: { shopId } });       
 
             return res.status(200).json({
                 types: productTypes,
@@ -29,7 +28,6 @@ export default async function handler(req, res) {
                 tags: tags,
                 colors: colors,
                 sizes: sizes,
-                units: units
             });
         } 
         catch (error) {

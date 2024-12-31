@@ -1,6 +1,9 @@
 import { Button } from "@/components/ui/button";
 import { Gloock } from "next/font/google";
-import { ArrowUpRight } from "lucide-react";
+import { ArrowUpRight, Download } from "lucide-react";
+import Link from "next/link";
+import { buttonVariants } from "@/components/ui/button"
+import routes from '@/routes';
 
 const gloock = Gloock({ 
   style: ['normal'],
@@ -18,13 +21,25 @@ export default function Home() {
           YOUR STYLE
           </p>
         </h1>
-        <p className="uppercase font-thin text-lg w-[49%] text-[1.25rem] text-primary text-center">
-          Hue-fit is a mobile app that uses Artificial intelligence to recommend outfits, 
-          from upper wear to footwear tailored to your unique features, helping your look and feel your best.
+        <p className="uppercase font-thin text-lg w-[100%] text-[1.25rem] text-primary text-center">
+          {"Hue-fit is a modern men's apparel online shopping platform that leverage Artificial Intelligence to"}
+          <br />
+          {"help find the best outfit for you based on your physical features, and Augmented Reality technology"}
+          <br />
+          {"for vistual fitting, to ensure that you already know the outfit matches your looks."}
         </p>
-        <Button className="text-base flex flex-row pl-[4rem] pr-[3.5rem] py-7 border-muted/30 border-2 rounded-lg shadow-primary/25 shadow-md mb-20 mt-16" > Try Hue-Fit <ArrowUpRight className="scale-150 mb-[2px]" width={30} height={30} /></Button>
-        
-        <div className="h-[20rem] w-[119rem] bg-gradient-to-t from-card to-transparent"></div>
+        <div className="flex flex-row items-center gap-5">
+          <Button className="text-base font-medium flex flex-row pl-[4rem] pr-[3.5rem] py-7 border-muted/30 border-2 rounded-lg shadow-primary/25 shadow-md mb-20 mt-16 min-w-[20rem]" > 
+            <p className="uppercase tracking-widest">Try Hue-Fit</p> <Download className="scale-115 mb-[2px]" width={30} height={30} />
+          </Button>
+          <Link
+            className={`${buttonVariants({ variant: "outline" })} !text-base !font-medium flex flex-row pl-[4rem] pr-[3.5rem] py-7 shadow-primary/25 shadow-md mb-20 mt-16 min-w-[20rem]`}
+            href={routes.partnership}
+          >
+            <p className="uppercase tracking-widest">Partner With Us</p>
+            <ArrowUpRight className="scale-125 mb-[2px]" width={30} height={30} />
+          </Link>
+        </div>
       </div>
     </div>
   );

@@ -85,6 +85,16 @@
   body {
     @apply bg-background text-foreground;
   }
+
+  input:-webkit-autofill {
+    -webkit-box-shadow: 0 0 0 50px hsl(var(--accent)) inset;
+  }
+  input:-webkit-autofill:focus {
+    -webkit-box-shadow: 0 0 0 50px hsl(var(--accent)) inset;
+    border: 2px solid hsl(var(--primary));
+  }
+
+
   ::-webkit-scrollbar {
     width: 14px;
   }
@@ -94,7 +104,7 @@
   }
   
   ::-webkit-scrollbar-thumb {
-    background: hsl(var(--muted));; /* Darker thumb background */
+    background: hsl(var(--muted)); /* Darker thumb background */
     border-radius: 10px;
   }
   
@@ -102,4 +112,18 @@
     background: hsl(var(--border)); /* Slightly lighter on hover */
   }
 
+}
+
+.gm-style-iw {
+  color: #000 !important;
+  background-color: #ffffff !important;
+}
+
+.gm-style-iw-c {
+  box-shadow: 0px 2px 10px rgba(0, 0, 0, 0.75) !important;
+  border-radius: 15px !important;
+}
+
+.gm-style-iw div {
+  font-family: 'Geist' !important;
 }

@@ -9,10 +9,10 @@ export default async function handler(req, res) {
 
   try {
     // Fetch the shop's details based on shopNo, including address, owner, and licenses
-    const shop = await prisma.shops.findUnique({
+    const shop = await prisma.shop.findUnique({
       where: { shopNo },
       include: {
-        Address: {
+        ShopAddress: {
           select: {
             buildingNo: true,
             street: true,
@@ -29,7 +29,7 @@ export default async function handler(req, res) {
             },
           },
         },
-        BusinessLicenses: {
+        BusinessLicense: {
           select: {
             licenseUrl: true,
           },
@@ -38,7 +38,7 @@ export default async function handler(req, res) {
           select: {
             userNo: true,
             username: true,
-            VendorProfiles: {
+            VendorProfile: {
               select: {
                 firstName: true,
                 lastName: true,
@@ -63,20 +63,20 @@ export default async function handler(req, res) {
       contactNo: shop.contactNo,
       status: shop.status,
       description: shop.description,
-      address: shop.Address
-        ? `${shop.Address.buildingNo || ''} ${shop.Address.street || ''}, ${shop.Address.barangay || ''}, ${shop.Address.municipality || ''}, ${shop.Address.province || ''}, ${shop.Address.postalCode || ''}`
+      address: shop.ShopAddress
+        ? `${shop.ShopAddress.buildingNo || ''} ${shop.ShopAddress.street || ''}, ${shop.ShopAddress.barangay || ''}, ${shop.ShopAddress.municipality || ''}, ${shop.ShopAddress.province || ''}, ${shop.ShopAddress.postalCode || ''}`
         : "No Address Provided",
-      latitude: shop.Address?.GoogleMapLocation?.latitude || 'N/A',
-      longitude: shop.Address?.GoogleMapLocation?.longitude || 'N/A',
-      googleMapPlaceName: shop.Address?.GoogleMapLocation?.placeName || 'N/A',
-      businessLicenses: shop.BusinessLicenses.map((license) => license.licenseUrl),
-      contactPerson: shop.Owner?.VendorProfiles
+      latitude: shop.ShopAddress?.GoogleMapLocation?.latitude || 'N/A',
+      longitude: shop.ShopAddress?.GoogleMapLocation?.longitude || 'N/A',
+      googleMapPlaceName: shop.ShopAddress?.GoogleMapLocation?.placeName || 'N/A',
+      businessLicense: shop.BusinessLicense.map((license) => license.licenseUrl),
+      contactPerson: shop.Owner?.VendorProfile
         ? {
-            firstName: shop.Owner.VendorProfiles.firstName,
-            lastName: shop.Owner.VendorProfiles.lastName,
-            contactNo: shop.Owner.VendorProfiles.contactNo,
-            email: shop.Owner.VendorProfiles.email,
-            position: shop.Owner.VendorProfiles.position,
+            firstName: shop.Owner.VendorProfile.firstName,
+            lastName: shop.Owner.VendorProfile.lastName,
+            contactNo: shop.Owner.VendorProfile.contactNo,
+            email: shop.Owner.VendorProfile.email,
+            position: shop.Owner.VendorProfile.position,
           }
         : null,
     };

@@ -1,5 +1,5 @@
 // pages/api/maintenance/types/get-types.js
-import prisma, { getSessionShopNo } from "@/utils/helpers";
+import prisma, { getSessionShopId } from "@/utils/helpers";
 
 export default async function handler(req, res) {
   if (req.method !== "GET") {
@@ -7,9 +7,9 @@ export default async function handler(req, res) {
   }
 
   try {
-    const shopNo = await getSessionShopNo(req, res);
+    const shopId = await getSessionShopId(req, res);
 
-    if (!shopNo) {
+    if (!shopId) {
       return res.status(401).json({ error: "Unauthorized" });
     }
 
@@ -17,13 +17,13 @@ export default async function handler(req, res) {
     const pageNumber = parseInt(page);
 
     const types = await prisma.type.findMany({
-      where: { shopNo },
+      where: { shopId },
       select: { id: true, name: true },
       skip: (pageNumber - 1) * 8,
       take: 8,
     });
 
-    const totalTypes = await prisma.type.count({ where: { shopNo } });
+    const totalTypes = await prisma.type.count({ where: { shopId } });
     const totalPages = Math.ceil(totalTypes / 8);
 
     return res.status(200).json({

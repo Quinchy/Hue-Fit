@@ -1,6 +1,6 @@
 // pages/api/products/get-measurement-by-type.js
 
-import prisma , { getSessionShopNo } from '@/utils/helpers';
+import prisma , { getSessionShopId } from '@/utils/helpers';
 
 export default async function handler(req, res) {
     if (req.method === 'GET') {
@@ -8,20 +8,20 @@ export default async function handler(req, res) {
 
         try {
             // Retrieve the session using getServerSession
-            const shopNo = await getSessionShopNo(req, res);
+            const shopId = await getSessionShopId(req, res);
 
-            if (!shopNo) {
-                return res.status(401).json({ error: 'Unauthorized: No shopNo found in session.' });
+            if (!shopId) {
+                return res.status(401).json({ error: 'Unauthorized: No shopId found in session.' });
             }
 
             if (!productType) {
                 return res.status(400).json({ error: 'Invalid request: productType is required' });
             }
 
-            // Step 1: Get the typeId from the Type table based on productType and shopNo
+            // Step 1: Get the typeId from the Type table based on productType and shopId
             const type = await prisma.type.findFirst({
                 where: {
-                    shopNo: shopNo,
+                    shopId: shopId,
                     name: productType,
                 },
                 select: { id: true }
@@ -34,19 +34,11 @@ export default async function handler(req, res) {
 
             const typeId = type.id;
 
-            // Step 2: Use typeId and shopNo to get measurementIds from TypeMeasurements
-            const typeMeasurements = await prisma.typeMeasurements.findMany({
-                where: { shopNo, typeId },
-                select: { measurementId: true }
-            });
-
-            const measurementIds = typeMeasurements.map(tm => tm.measurementId);
-
             // Step 3: Fetch measurements from the Measurements table using the measurementIds
-            const measurements = await prisma.measurements.findMany({
+            const measurements = await prisma.measurement.findMany({
                 where: {
-                    id: { in: measurementIds },
-                    shopNo
+                    typeId, 
+                    shopId
                 },
                 select: { id: true, name: true }
             });

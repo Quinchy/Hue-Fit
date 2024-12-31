@@ -7,7 +7,7 @@ import { buttonVariants } from "@/components/ui/button"
 
 const NavbarMain = () => {
   return (
-    <div className='w-full flex flex-row items-center text-sm justify-between px-24 bg-oneOpacityWhite h-[100px] border-b-2 border-border backdrop-blur-[1px] fixed z-50'>
+    <div className='w-full flex flex-row items-center text-sm justify-between px-24 bg-oneOpacityWhite h-[100px] border-b-2 border-border backdrop-blur-[5px] fixed z-50'>
       <Link href={routes.home}>
         <HueFitLogo 
           height={50}
@@ -29,11 +29,10 @@ const NavbarMain = () => {
         </div>
         <div className='flex flex-row items-center gap-5'>
           <Link
-            className={buttonVariants({ variant: "outline" })}
-            href={routes.partnership}
+            className={`${buttonVariants({ variant: "default" })} !text-base !font-bold pl-[2.25rem] pr-[1.75rem] py-2 border-muted/30 border-2 shadow-primary/25 shadow-md`}
+            href={routes.login}
           >
-            <p className="uppercase tracking-widest">Partner With Us</p>
-            <ArrowUpRight width={20} height={20} />
+            <p className="uppercase tracking-widest">Dashboard</p>
           </Link>
           <ModeToggle/>
         </div>

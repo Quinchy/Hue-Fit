@@ -115,7 +115,7 @@ export default function Shop() {
                     <TableCell className="max-w-[1rem] font-medium">{shop.shopNo}</TableCell>
                     <TableCell className="max-w-[3rem] overflow-hidden whitespace-nowrap text-ellipsis">{shop.name}</TableCell>
                     <TableCell className="max-w-[4rem] overflow-hidden whitespace-nowrap text-ellipsis">
-                      {`${shop.Address.buildingNo}, ${shop.Address.street}, ${shop.Address.barangay}, ${shop.Address.municipality}, ${shop.Address.province}, ${shop.Address.postalCode}`}
+                      {`${shop.ShopAddress.buildingNo}, ${shop.ShopAddress.street}, ${shop.ShopAddress.barangay}, ${shop.ShopAddress.municipality}, ${shop.ShopAddress.province}, ${shop.ShopAddress.postalCode}`}
                     </TableCell>
                     <TableCell className="max-w-[1rem] text-center">
                       <p className={`py-1 w-full rounded font-bold text-card ${shop.status === "ACTIVE" ? "bg-green-500" : "bg-red-500"} uppercase`}>

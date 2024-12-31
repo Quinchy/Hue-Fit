@@ -1,7 +1,5 @@
 import { v4 as uuidv4 } from 'uuid';
 import prisma from '@/utils/helpers';
-import { supabase } from '@/supabaseClient';
-import formidable from 'formidable';
 import bcrypt from 'bcrypt';
 import { parseFormData } from '@/utils/helpers';
 import { uploadFileToSupabase } from '@/utils/helpers';
@@ -19,9 +17,9 @@ export default async function handler(req, res) {
 
     try {
       const { fields, files } = await parseFormData(req);
+      console.log(fields);
       const requestNo = uuidv4().slice(0, 8);
       const businessLicenseFiles = Object.keys(files).filter(key => key.startsWith('businessLicense['));
-
       const businessLicensesURL = [];
       
       for (const key of businessLicenseFiles) {
@@ -46,22 +44,26 @@ export default async function handler(req, res) {
       const position = fields.position[0];
       const shopName = fields.shopName[0];
       const shopContactNo = fields.shopContactNo[0];
+      const shopEmail = fields.shopEmail[0];
       const buildingNo = fields.buildingNo[0];
       const street = fields.street[0];
       const barangay = fields.barangay[0];
       const municipality = fields.municipality[0];
       const province = fields.province[0];
       const postalNumber = fields.postalNumber[0];
+      const openingTime = fields.openingTime[0];
+      const closingTime = fields.closingTime[0];
+      const shopLogo = fields.shopLogo[0];
       const googleMapPlaceName = fields.googleMapPlaceName[0];
       const latitude = parseFloat(fields.latitude[0]);
       const longitude = parseFloat(fields.longitude[0]);      
       const username = fields.username[0];
       const password = fields.password[0];
-      
+      console.log(username);
       await prisma.$transaction(async (prisma) => {
         const hashedPassword = password ? await bcrypt.hash(password, 10) : null;
         const userNo = uuidv4().slice(0, 8);
-        const newUser = await prisma.users.create({
+        const newUser = await prisma.user.create({
           data: {
             userNo,
             username,
@@ -71,15 +73,15 @@ export default async function handler(req, res) {
           },
         });
         console.log("Successfully created user");
-        const newGoogleMapLocation = await prisma.googleMapLocations.create({
+        const newGoogleMapLocation = await prisma.googleMapLocation.create({
           data: {
-            placeName: googleMapPlaceName,
+            name: googleMapPlaceName,
             latitude,
             longitude,
           },
         });
         console.log("Successfully created Google Map Location");
-        const newAddress = await prisma.addresses.create({
+        const newAddress = await prisma.shopAddress.create({
           data: {
             buildingNo,
             street,
@@ -91,18 +93,21 @@ export default async function handler(req, res) {
           },
         });
         console.log("Successfully created address");
-        const newShop = await prisma.shops.create({
+        const newShop = await prisma.shop.create({
           data: {
             shopNo: uuidv4().slice(0, 8),
             name: shopName,
             contactNo: shopContactNo,
+            email: shopEmail,
             status: "PENDING",
-            ownerUserNo: newUser.userNo,
+            ownerUserId: newUser.id,
             addressId: newAddress.id,
+            openingTime,
+            closingTime,
           },
         });
         console.log("Successfully created shop");
-        await prisma.partnershipRequests.create({
+        await prisma.partnershipRequest.create({
           data: {
             requestNo,
             userId: newUser.id,
@@ -124,7 +129,7 @@ export default async function handler(req, res) {
         });
         console.log("Successfully created vendor profile");
         for (const url of businessLicensesURL) {
-          await prisma.shopBusinessLicenses.create({
+          await prisma.shopBusinessLicense.create({
             data: {
               shopId: newShop.id,
               licenseUrl: url,

@@ -16,28 +16,30 @@ export async function getSessionUser(req, res) {
   return session?.user || null;
 }
 
-export async function getSessionShopNo(req, res) {
+export async function getSessionShopId(req, res) {
   try {
     const session = await getServerSession(req, res, authOptions);
-    return session?.user?.shopNo || null;
-  } catch (error) {
+    return session?.user?.shopId || null;
+  } 
+  catch (error) {
     console.error("Error retrieving shopNo from session:", error);
     return null;
   }
 }
 
 // Helper to get userNo by session user ID
-export async function getUserNoFromSession(req, res) {
+export async function getUserIdFromSession(req, res) {
   try {
     const user = await getSessionUser(req, res);
     if (!user?.id) return null;
 
-    const userRecord = await prisma.users.findUnique({
+    const userRecord = await prisma.user.findUnique({
       where: { id: user.id },
       select: { userNo: true },
     });
     return userRecord?.userNo || null;
-  } catch (error) {
+  } 
+  catch (error) {
     console.error("Error fetching userNo:", error);
     return null;
   }
@@ -46,11 +48,12 @@ export async function getUserNoFromSession(req, res) {
 // Helper to fetch permissions based on roleId
 export async function fetchPermissions(roleId) {
   try {
-    return await prisma.permissions.findMany({
+    return await prisma.permission.findMany({
       where: { roleId },
-      select: { pageId: true, can_view: true, can_edit: true, can_add: true, can_delete: true },
+      select: { pageId: true, can_view: true },
     });
-  } catch (error) {
+  } 
+  catch (error) {
     console.error("Error fetching permissions:", error);
     return [];
   }

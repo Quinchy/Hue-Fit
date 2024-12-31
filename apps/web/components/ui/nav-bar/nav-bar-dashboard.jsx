@@ -5,16 +5,14 @@ import routes from '@/routes';
 import HueFitLogo from '@/public/images/HueFitLogo';
 import Link from 'next/link';
 import { useEffect, useState } from 'react';
-import { House, Store, Shirt, Tag, User, Settings, LogOut, MessageSquareMore, Wrench } from 'lucide-react';
+import { House, Store, Shirt, Tag, User, Settings, LogOut, MessageSquareMore, Wrench, Camera } from 'lucide-react';
 import { ModeToggle } from "@/components/ui/mode-toggle";
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuLabel, DropdownMenuSeparator, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
 import Image from "next/image";
 import { Skeleton } from "@/components/ui/skeleton";
-import { usePermissions } from "@/providers/permission-provider";
 
 const NavbarDashboard = () => {
   const { data: session } = useSession();
-  const { permissions, loading: permissionsLoading, refetchPermissions } = usePermissions();
   const [userInfo, setUserInfo] = useState({
     firstName: "",
     lastName: "",
@@ -22,28 +20,17 @@ const NavbarDashboard = () => {
     profilePicture: "/images/profile-picture.png",
   });
   const [loading, setLoading] = useState(false);
-  const [cachedPermissions, setCachedPermissions] = useState([]);
-
-  // Mapping from page label to pageId
-  const pageIdMapping = {
-    shop: 1,
-    inquiry: 2,
-    user: 3,
-    settings: 4,
-    product: 5,
-    order: 6,
-    maintenance: 7,
-  };
 
   const links = [
-    { route: routes.dashboard, icon: <House />, label: "Dashboard", pageId: "dashboard" },
-    { route: routes.shop, icon: <Store />, label: "Shops", pageId: "shop" },
-    { route: routes.product, icon: <Shirt />, label: "Products", pageId: "product" },
-    { route: routes.order, icon: <Tag />, label: "Orders", pageId: "order" },
-    { route: routes.user, icon: <User />, label: "Users", pageId: "user" },
-    { route: routes.inquiry, icon: <MessageSquareMore />, label: "Inquiries", pageId: "inquiry" },
-    { route: routes.settings, icon: <Settings />, label: "Settings", pageId: "settings" },
-    { route: routes.maintenance, icon: <Wrench />, label: "Maintenance", pageId: "maintenance" },
+    { route: routes.dashboard, icon: <House />, label: "Dashboard", roles: ["VENDOR", "ADMIN"] },
+    { route: routes.shop, icon: <Store />, label: "Shops", roles: ["ADMIN"] },
+    { route: routes.user, icon: <User />, label: "Users", roles: ["ADMIN"] },
+    { route: routes.inquiry, icon: <MessageSquareMore />, label: "Inquiries", roles: ["ADMIN"] },
+    { route: routes.settings, icon: <Settings />, label: "Settings", roles: ["ADMIN"] },
+    { route: routes.product, icon: <Shirt />, label: "Products", roles: ["VENDOR"] },
+    { route: routes.order, icon: <Tag />, label: "Orders", roles: ["VENDOR"] },
+    { route: routes.maintenance, icon: <Wrench />, label: "Maintenance", roles: ["VENDOR"] },
+    { route: routes.virtualFitting, icon: <Camera />, label: "Virtual Fitting", roles: ["VENDOR"] },
   ];
 
   useEffect(() => {
@@ -56,59 +43,27 @@ const NavbarDashboard = () => {
         if (cachedUserInfo) {
           setUserInfo(JSON.parse(cachedUserInfo));
           setLoading(false);
-        } 
-        else {
+        } else {
           setLoading(true);
-          const response = await fetch(`/api/users/view/${session.user.userNo}`);
-          if (response.ok) {
-            const data = await response.json();
-            const userData = {
-              firstName: data.firstName,
-              lastName: data.lastName,
-              role: data.role,
-              profilePicture: data.profilePicture || "/images/profile-picture.png",
-            };
-            setUserInfo(userData);
-            setLoading(false);
-            // Cache user data in localStorage
-            localStorage.setItem(`userInfo-${session.user.userNo}`, JSON.stringify(userData));
-          } else {
-            console.error("Failed to fetch user data");
-          }
+          const userData = {
+            firstName: session.user.firstName || "First",
+            lastName: session.user.lastName || "Last",
+            role: session.user.role || "VENDOR",
+            profilePicture: session.user.profilePicture || "/images/profile-picture.png",
+          };
+          setUserInfo(userData);
+          setLoading(false);
+
+          // Cache user data in localStorage
+          localStorage.setItem(`userInfo-${session.user.userNo}`, JSON.stringify(userData));
         }
       } catch (error) {
-        console.error("An error occurred while fetching user data:", error);
+        console.error("Error fetching user info:", error);
       }
     };
 
     fetchUserInfo();
   }, [session?.user?.userNo]);
-
-  useEffect(() => {
-    const fetchPermissions = async () => {
-      try {
-        // Check if permissions are cached
-        const cached = localStorage.getItem("permissions");
-        if (cached) {
-          setCachedPermissions(JSON.parse(cached));
-        } else if (!permissionsLoading && permissions) {
-          // Cache new permissions when loaded
-          localStorage.setItem("permissions", JSON.stringify(permissions));
-          setCachedPermissions(permissions);
-        }
-      } catch (error) {
-        console.error("Failed to fetch or cache permissions:", error);
-      }
-    };
-
-    fetchPermissions();
-  }, [permissions, permissionsLoading]);
-
-  // Check if the user has the required permission for a specific page
-  const hasPermission = (pageId) => {
-    const pageIntegerId = pageIdMapping[pageId]; // Convert to integer pageId
-    return cachedPermissions?.some(perm => perm.pageId === pageIntegerId && perm.can_view);
-  };
 
   return (
     <div className="fixed flex flex-col justify-between items-center min-w-[20rem] border-r-[1px] border-border bg-card text-white h-full z-10 pt-5">
@@ -122,25 +77,27 @@ const NavbarDashboard = () => {
         </div>
 
         <div className="flex flex-col w-full items-center">
-          {(loading || permissionsLoading) ? (
-            // Display skeleton placeholders for links if loading
+          {loading ? (
             Array.from({ length: links.length }).map((_, index) => (
               <div key={index} className="flex flex-row justify-start items-center gap-3 py-3 w-full">
                 <Skeleton className="ml-10 w-[180px] h-6" />
               </div>
             ))
           ) : (
-            // Render actual links when loading is complete
-            links.map(({ route, icon, label, pageId }) => (
-              (pageId === "dashboard" || hasPermission(pageId)) && (
-                <Link key={route} href={route} className="flex flex-row justify-start items-center gap-3 py-3 w-full hover:bg-accent duration-300 ease-in-out">
+            links
+              .filter(link => link.roles.includes(userInfo.role))
+              .map(({ route, icon, label }) => (
+                <Link
+                  key={route}
+                  href={route}
+                  className="flex flex-row justify-start items-center gap-3 py-3 w-full hover:bg-accent duration-300 ease-in-out"
+                >
                   <div className="pl-10 flex flex-row items-center gap-3 text-primary uppercase">
                     {icon}
                     {label}
                   </div>
                 </Link>
-              )
-            ))
+              ))
           )}
         </div>
       </div>
@@ -149,8 +106,7 @@ const NavbarDashboard = () => {
       <DropdownMenu className="mt-auto">
         <DropdownMenuTrigger className="w-full focus-visible:outline-none">
           <div className="flex flex-row justify-start items-center gap-3 py-7 w-full hover:bg-accent duration-300 ease-in-out">
-            {loading || permissionsLoading ? (
-              // Show skeleton if loading
+            {loading ? (
               <div className="flex flex-row pl-10 items-center gap-3">
                 <Skeleton className="rounded-full w-12 h-12" />
                 <div className="flex flex-col items-start gap-1 text-primary">
@@ -159,9 +115,14 @@ const NavbarDashboard = () => {
                 </div>
               </div>
             ) : (
-              // Show actual data when loading is complete
               <div className="flex flex-row pl-10 items-center gap-3">
-                <Image src={userInfo.profilePicture} width={50} height={50} className="rounded-full border-2 border-background/75" alt="Profile Picture" />
+                <Image
+                  src={userInfo.profilePicture}
+                  width={50}
+                  height={50}
+                  className="rounded-full border-2 border-background/75"
+                  alt="Profile Picture"
+                />
                 <div className="flex flex-col items-start gap-0 text-primary">
                   <p className="font-semibold">{userInfo.firstName} {userInfo.lastName}</p>
                   <p className="font-light">{userInfo.role}</p>
@@ -181,11 +142,8 @@ const NavbarDashboard = () => {
           <DropdownMenuItem>
             <button
               onClick={() => {
-                // Clear localStorage and sessionStorage
                 localStorage.clear();
                 sessionStorage.clear();
-
-                // Trigger signOut and redirect to the home page
                 signOut({ callbackUrl: '/' });
               }}
               className="flex items-center gap-1 justify-start shadow-none text-red-500 font-semibold py-2 px-4 rounded w-full uppercase"

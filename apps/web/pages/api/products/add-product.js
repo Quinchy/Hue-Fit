@@ -1,5 +1,11 @@
-import prisma, { getSessionShopNo, uploadFileToSupabase, parseFormData } from '@/utils/helpers';
+// /api/products/add-product
+import prisma, {
+  getSessionShopId,
+  uploadFileToSupabase,
+  parseFormData
+} from '@/utils/helpers';
 import { v4 as uuidv4 } from 'uuid';
+import { Prisma } from '@prisma/client';
 
 export const config = {
   api: {
@@ -11,325 +17,241 @@ export default async function handler(req, res) {
   if (req.method !== 'POST') {
     return res.status(405).json({ error: 'Method not allowed' });
   }
+
   try {
-    console.log('1. POST request received');
-    // Setups
-    const shopNo = await getSessionShopNo(req, res);
-    const productNo = uuidv4();
-    console.log('2. ProductNo: ', productNo);
-    // Parse form data to be used in the multiple datas of tables
-    const { fields, files } = await parseFormData(req);
+    await prisma.$transaction(async (tx) => {
+      const shopId = await getSessionShopId(req, res);
+      const productNo = uuidv4();
+      const { fields, files } = await parseFormData(req);
 
-    // Start of Database Logic of Adding Product and its variants
-    // Part 1: Insert Product Data
-    const name = fields.name[0];
-    const description = fields.description[0];
-    const typeId = parseInt(fields.type[0], 10);
-    const category = fields.category[0];
-    const tagId = parseInt(fields.tags[0], 10);
-    const categoryId = await getCategoryIdByName(category, shopNo);
-    const thumbnailURL = await uploadFileToSupabase(
-      files.thumbnail[0],
-      files.thumbnail[0].filepath,
-      files.thumbnail[0].originalFilename,
-      productNo,
-      'products/product-thumbnails'
-    );
-    const totalQuantity = null;
-    // Insert product data into the database
-    await prisma.products.create({
-      data: {
+      const name = fields.name?.[0] || '';
+      const description = fields.description?.[0] || '';
+      const typeId = parseInt(fields.type?.[0] || '0', 10);
+      const categoryName = fields.category?.[0] || '';
+      const tagId = parseInt(fields.tags?.[0] || '0', 10);
+
+      const categoryId = await getCategoryIdByName(tx, categoryName, shopId);
+
+      const thumbnailURL = await uploadFileToSupabase(
+        files.thumbnail?.[0],
+        files.thumbnail?.[0]?.filepath,
+        files.thumbnail?.[0]?.originalFilename,
         productNo,
-        name,
-        description,
-        typeId,
-        categoryId,
-        tagId,
-        thumbnailURL,
-        totalQuantity,
-        shopNo,
-      },
-    });
-    console.log('Product inserted successfully...');
-
-    // Part 2: Insert Product Variants, Sizes, Specific Measurement and Images
-    const variantCount = countVariants(fields);
-    // Arrays to hold bulk insert data
-    const productVariantsData = [];
-    const productVariantSizesData = [];
-    const productVariantMeasurementsData = [];
-    const productVariantImagesData = [];
-    const imageUploadPromises = [];
-
-    for (let i = 0; i < variantCount; i++) {
-      const productVariantNo = uuidv4();
-      console.log('ProductVariantNo:', productVariantNo);
-      const colorName = fields[`variants[${i}][color]`]?.[0];
-      const price = Number(parseFloat(fields[`variants[${i}][price]`]).toFixed(2));
-      let totalVariantQuantity = 0;
-
-      // Get all sizes and quantities for the current variant
-      const sizeKeys = Object.keys(fields).filter((key) =>
-        key.startsWith(`variants[${i}][sizes]`)
-      );
-      const quantityKeys = Object.keys(fields).filter((key) =>
-        key.startsWith(`variants[${i}][quantities]`)
+        'products/product-thumbnails'
       );
 
-      const colorId = await getColorIdByName(colorName, shopNo);
-      console.log('ColorId:', colorId);
+      const product = await tx.product.create({
+        data: {
+          productNo,
+          name,
+          description,
+          thumbnailURL,
+          totalQuantity: 0,
+          shopId,
+          typeId,
+          categoryId,
+          tagId,
+        },
+      });
 
-      // Prepare productVariants data
-      const productVariant = {
-        productVariantNo,
-        productNo,
-        colorId,
-        price,
-        totalQuantity: 0, // Will update later
-      };
+      const measurementsData = JSON.parse(fields.measurements?.[0] || '[]');
+      const uniqueSizes = [...new Set(measurementsData.map((m) => m.size))];
+      const uniqueMeasurementNames = [
+        ...new Set(measurementsData.map((m) => m.measurementName)),
+      ];
 
-      // Process sizes and quantities
-      for (let index = 0; index < sizeKeys.length; index++) {
-        const sizeKey = sizeKeys[index];
-        const sizeAbbreviation = String(fields[sizeKey][0]); // Example: "S"
-        const sizeId = await getSizeIdByAbbreviation(sizeAbbreviation, shopNo);
-        const quantityKey = quantityKeys[index];
-        const quantity = parseInt(fields[quantityKey], 10);
-        const productVariantSizesNo = uuidv4();
+      const sizesFromDB = await tx.size.findMany({
+        where: { shopId, abbreviation: { in: uniqueSizes } },
+        select: { id: true, abbreviation: true },
+      });
 
-        totalVariantQuantity += quantity;
+      const measurementsFromDB = await tx.measurement.findMany({
+        where: { shopId, name: { in: uniqueMeasurementNames } },
+        select: { id: true, name: true },
+      });
 
-        console.log('SizeId:', sizeId, 'Quantity:', quantity, 'SizeAbbreviation:', sizeAbbreviation);
+      const sizeMap = {};
+      sizesFromDB.forEach((s) => {
+        sizeMap[s.abbreviation] = s.id;
+      });
 
-        // Prepare productVariantSizes data
-        productVariantSizesData.push({
-          productVariantSizesNo,
-          productVariantNo,
-          sizeId,
-          quantity,
+      const measurementMap = {};
+      measurementsFromDB.forEach((m) => {
+        measurementMap[m.name] = m.id;
+      });
+
+      const productMeasurements = measurementsData.map((m) => ({
+        productId: product.id,
+        sizeId: sizeMap[m.size],
+        measurementId: measurementMap[m.measurementName],
+        value: Number(m.value),
+        unit: 'CM',
+      }));
+
+      if (productMeasurements.length > 0) {
+        await tx.productMeasurement.createMany({
+          data: productMeasurements,
         });
+      }
 
-        // Insert specific measurements for the product variant
+      const variantEntries = Object.keys(fields).filter((key) =>
+        key.startsWith('variants[')
+      );
+      const variants = {};
+      const variantQuantities = {};
+
+      variantEntries.forEach((key) => {
+        const quantityMatch = key.match(/^variants\[(\d+)\]\[quantities\]\[(.+)\]$/);
+        if (quantityMatch) {
+          const index = parseInt(quantityMatch[1], 10);
+          const sizeAbbr = quantityMatch[2];
+          if (!variantQuantities[index]) {
+            variantQuantities[index] = {};
+          }
+          variantQuantities[index][sizeAbbr] = parseInt(fields[key][0] || '0', 10);
+        } else {
+          const match = key.match(/^variants\[(\d+)\]\[(.+)\]$/);
+          if (match) {
+            const index = parseInt(match[1], 10);
+            const property = match[2];
+            if (!variants[index]) {
+              variants[index] = {};
+            }
+            variants[index][property] = fields[key][0];
+          }
+        }
+      });
+
+      let totalProductQuantity = 0;
+
+      for (const idx of Object.keys(variants)) {
         try {
-          // Parse measurementsBySize JSON string (if not already parsed)
-          const parsedMeasurements = fields.measurementsBySize && Array.isArray(fields.measurementsBySize)
-            ? JSON.parse(fields.measurementsBySize[0])
-            : {};
+          const colorName = variants[idx].color || '';
+          const priceVal = variants[idx].price || '0';
+          const productVariantNo = uuidv4();
+          const colorId = await getColorIdByName(tx, shopId, colorName);
 
-          const measurementsForSize = parsedMeasurements[sizeAbbreviation]; // Access "S" or "M"
+          const productVariant = await tx.productVariant.create({
+            data: {
+              productVariantNo,
+              productId: product.id,
+              colorId,
+              price: new Prisma.Decimal(priceVal),
+              totalQuantity: 0,
+              isTryOnAvailable: false,
+            },
+          });
 
-          if (measurementsForSize && measurementsForSize.measurements) {
-            for (const measurement of measurementsForSize.measurements) {
-              const { measurementName, value, unitName } = measurement;
-              console.log('MeasurementName:', measurementName, 'Value:', value, 'UnitName:', unitName);
+          let variantTotalQty = 0;
 
-              const measurementId = await getMeasurementIdByName(measurementName, shopNo);
-              const unitId = await getUnitIdByName(unitName, shopNo);
-              console.log('MeasurementId:', measurementId);
-
-              // Prepare productVariantMeasurements data
-              productVariantMeasurementsData.push({
-                productVariantNo,
-                productVariantSizesNo,
-                measurementId,
-                value: parseFloat(value),
-                unitId,
+          if (variantQuantities[idx]) {
+            for (const abbr of Object.keys(variantQuantities[idx])) {
+              const qty = variantQuantities[idx][abbr];
+              variantTotalQty += qty;
+              const sizeId = await getSizeIdByAbbreviation(tx, shopId, abbr);
+              await tx.productVariantSize.create({
+                data: {
+                  productVariantId: productVariant.id,
+                  sizeId,
+                  quantity: qty,
+                },
               });
             }
-            console.log('Specific measurements prepared...');
-          } else {
-            console.log(`No measurements found for size: ${sizeAbbreviation}`);
           }
-        } catch (error) {
-          console.error(`Error processing measurements for size: ${sizeAbbreviation}`, error);
+
+          await tx.productVariant.update({
+            where: { id: productVariant.id },
+            data: { totalQuantity: variantTotalQty },
+          });
+
+          totalProductQuantity += variantTotalQty;
+
+          const variantImages = files[`productVariant[${idx}][images]`];
+          if (Array.isArray(variantImages) && variantImages.length > 0) {
+            for (const fileObj of variantImages) {
+              try {
+                const imageURL = await uploadFileToSupabase(
+                  fileObj,
+                  fileObj.filepath,
+                  fileObj.originalFilename,
+                  productVariantNo,
+                  'products/product-variant-pictures'
+                );
+                if (imageURL) {
+                  await tx.productVariantImage.create({
+                    data: {
+                      productVariantId: productVariant.id,
+                      imageURL,
+                    },
+                  });
+                }
+              } catch (imgError) {
+                console.error('Error uploading product variant image:', imgError);
+                throw imgError;
+              }
+            }
+          }
+        } catch (variantError) {
+          console.error('Error creating product variant:', variantError);
+          throw variantError;
         }
       }
 
-      // Update totalVariantQuantity in productVariant
-      productVariant.totalQuantity = totalVariantQuantity;
-
-      // Add to productVariantsData array
-      productVariantsData.push(productVariant);
-
-      console.log('Sizes and quantities + specific measurements prepared...');
-
-      // Process images for the product variant
-      const imageKeys = Object.keys(files).filter((key) =>
-        key.startsWith(`variants[${i}][images]`)
-      );
-      for (const imageKey of imageKeys) {
-        const imageFile = files[imageKey][0];
-        const uploadPromise = uploadFileToSupabase(
-          imageFile,
-          imageFile.filepath,
-          imageFile.originalFilename,
-          productVariantNo,
-          'products/product-variant-thumbnails'
-        ).then((imageUrl) => {
-          if (imageUrl) {
-            productVariantImagesData.push({
-              productVariantNo,
-              imageUrl,
-            });
-            console.log('Product variant image prepared...');
-          }
-        });
-        imageUploadPromises.push(uploadPromise);
-      }
-    }
-
-    // Wait for all image uploads to finish
-    await Promise.all(imageUploadPromises);
-    console.log('All images uploaded successfully...');
-
-    // Bulk insert productVariants
-    await prisma.productVariants.createMany({
-      data: productVariantsData,
-    });
-    console.log('Product variants inserted successfully...');
-
-    // Bulk insert productVariantSizes
-    await prisma.productVariantSizes.createMany({
-      data: productVariantSizesData,
-    });
-    console.log('Product variant sizes inserted successfully...');
-
-    // Bulk insert productVariantMeasurements
-    if (productVariantMeasurementsData.length > 0) {
-      await prisma.productVariantMeasurements.createMany({
-        data: productVariantMeasurementsData,
+      await tx.product.update({
+        where: { id: product.id },
+        data: { totalQuantity: totalProductQuantity },
       });
-      console.log('Product variant measurements inserted successfully...');
-    }
-
-    // Bulk insert productVariantImages
-    if (productVariantImagesData.length > 0) {
-      await prisma.productVariantImages.createMany({
-        data: productVariantImagesData,
-      });
-      console.log('Product variant images inserted successfully...');
-    }
-
-    // Update the total quantity of the product
-    // Calculate total quantity
-    const productTotalQuantity = productVariantsData.reduce(
-      (sum, variant) => sum + variant.totalQuantity,
-      0
-    );
-    // Update the product's total quantity
-    await prisma.products.update({
-      where: { productNo },
-      data: { totalQuantity: productTotalQuantity },
     });
-    console.log('Product total quantity updated successfully...');
-    console.log('Done. Product and its variants inserted successfully...');
+
     res.status(200).json({ message: 'Product inserted successfully.' });
-  } catch (error) {
-    console.error('Error inserting product:', error);
+  } catch (err) {
+    console.error('Error inserting product:', err);
     res.status(500).json({ error: 'Error inserting product' });
   }
 }
 
-// Helper functions remain the same
-
-// Helper function to get the type ID by type name
-async function getTypeIdByName(typeName, shopNo) {
+async function getCategoryIdByName(tx, categoryName, shopId) {
   try {
-    const typeRecord = await prisma.type.findFirst({
-      where: {
-        name: typeName,
-        shopNo: shopNo,
-      },
+    const categoryRecord = await tx.category.findFirst({
+      where: { name: categoryName, shopId },
+      select: { id: true },
     });
-
-    return typeRecord?.id || null;
-  } catch (error) {
-    console.error(`Error fetching type ID for type: ${typeName}, shopNo: ${shopNo}`, error);
-    return null;
-  }
-}
-
-// Helper function to get the category ID by category name
-async function getCategoryIdByName(categoryName, shopNo) {
-  try {
-    const categoryRecord = await prisma.category.findFirst({
-      where: {
-        name: categoryName,
-        shopNo: shopNo,
-      },
-    });
-
     return categoryRecord?.id || null;
   } catch (error) {
-    console.error(`Error fetching category ID for category: ${categoryName}, shopNo: ${shopNo}`, error);
+    console.error('Error getting category ID:', error);
     return null;
   }
 }
 
-// Helper function to get the tag ID by tag name
-async function getTagIdByName(tagName, shopNo) {
+async function getColorIdByName(tx, shopId, colorName) {
   try {
-    const tagRecord = await prisma.tags.findFirst({
-      where: {
-        name: tagName,
-        shopNo: shopNo,
-      },
+    if (!colorName) return null;
+    const color = await tx.color.findFirst({
+      where: { name: colorName, shopId },
+      select: { id: true },
     });
-
-    return tagRecord?.id || null;
-  } catch (error) {
-    console.error(`Error fetching tag ID for tag: ${tagName}, shopNo: ${shopNo}`, error);
-    return null;
-  }
-}
-
-// Helper function to count the number of variants in the parse form data
-function countVariants(fields) {
-  let maxVariantIndex = -1;
-
-  for (const key in fields) {
-    const match = key.match(/^variants\[(\d+)\]/);
-    if (match) {
-      const index = parseInt(match[1], 10);
-      if (index > maxVariantIndex) {
-        maxVariantIndex = index;
-      }
+    if (!color) {
+      throw new Error(`Color not found for shopId: ${shopId}, colorName: ${colorName}`);
     }
+    return color.id;
+  } catch (error) {
+    console.error('Error getting color ID:', error);
+    throw error;
   }
-
-  return maxVariantIndex + 1;
 }
 
-// Helper function to get the color ID by color name
-async function getColorIdByName(colorName, shopNo) {
-  const color = await prisma.colors.findFirst({
-    where: { name: colorName, shopNo },
-    select: { id: true },
-  });
-  return color?.id || null;
-}
-
-// Helper function to get the size ID by size abbreviation
-async function getSizeIdByAbbreviation(abbreviation, shopNo) {
-  const size = await prisma.sizes.findFirst({
-    where: { abbreviation, shopNo },
-    select: { id: true },
-  });
-  return size?.id || null;
-}
-
-async function getMeasurementIdByName(measurementName, shopNo) {
-  const measurement = await prisma.measurements.findFirst({
-    where: { name: measurementName, shopNo },
-    select: { id: true },
-  });
-  return measurement?.id || null;
-}
-
-async function getUnitIdByName(unitName, shopNo) {
-  const unit = await prisma.units.findFirst({
-    where: { name: unitName, shopNo },
-    select: { id: true },
-  });
-  return unit?.id || null;
+async function getSizeIdByAbbreviation(tx, shopId, sizeAbbreviation) {
+  try {
+    const sizeRecord = await tx.size.findFirst({
+      where: { abbreviation: sizeAbbreviation, shopId },
+      select: { id: true },
+    });
+    if (!sizeRecord) {
+      throw new Error(`Size not found for shopId: ${shopId}, abbreviation: ${sizeAbbreviation}`);
+    }
+    return sizeRecord.id;
+  } catch (error) {
+    console.error('Error getting size ID:', error);
+    throw error;
+  }
 }

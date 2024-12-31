@@ -1,6 +1,5 @@
 // pages/api/products/get-product-details.js
-
-import prisma from '@/utils/helpers'; // Adjust this import based on your Prisma setup
+import prisma from '@/utils/helpers';
 
 export default async function handler(req, res) {
   try {
@@ -10,30 +9,30 @@ export default async function handler(req, res) {
       return res.status(400).json({ message: "Product number is required" });
     }
 
-    const product = await prisma.products.findUnique({
+    const product = await prisma.product.findUnique({
       where: { productNo },
       include: {
         Type: true,
         Category: true,
-        Tags: true,
-        ProductVariants: {
+        Tag: true,
+        ProductMeasurement: {
           include: {
-            ProductVariantImages: true,
-            ProductVariantSizes: {
+            Measurement: true,
+            Size: true,
+          },
+        },
+        ProductVariant: {
+          include: {
+            ProductVariantImage: true,
+            Color: true,
+            ProductVariantSize: {
               include: {
                 Size: true,
-                ProductVariantMeasurements: {
-                  include: {
-                    Measurement: true,
-                    Unit: true
-                  }
-                }
-              }
+              },
             },
-            Color: true
-          }
-        }
-      }
+          },
+        },
+      },
     });
 
     if (!product) {

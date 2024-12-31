@@ -1,0 +1,461 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+model Users {
+  id         Int      @id @default(autoincrement())
+  userNo     String   @unique // Make userNo unique
+  username   String
+  password   String
+  status     String
+  roleId     Int
+  created_at DateTime @default(now())
+  updated_at DateTime @updatedAt
+
+  Role            Roles             @relation(fields: [roleId], references: [id])
+  AdminProfile    AdminProfiles?
+  CustomerProfile CustomerProfiles?
+  VendorProfiles  VendorProfile?
+  OwnedShop       Shops?            @relation("ShopOwner") // Reference to Shops as owner
+  Orders          Orders[]  // Relation to Orders
+
+  partnershipRequests PartnershipRequests[]
+  customerFeatures    CustomerFeatures[]
+  wardrobes           Wardrobe[]
+
+  @@unique([username, roleId])
+}
+
+model Roles {
+  id          Int      @id @default(autoincrement())
+  name        String
+  description String
+  created_at  DateTime @default(now())
+  updated_at  DateTime @updatedAt
+
+  Users       Users[]
+  Permissions Permissions[]
+}
+
+model Pages {
+  id          Int      @id @default(autoincrement())
+  name        String   @unique
+  description String
+  created_at  DateTime @default(now())
+  updated_at  DateTime @updatedAt
+
+  Permissions Permissions[]
+}
+
+model Permissions {
+  id         Int     @id @default(autoincrement())
+  can_view   Boolean @default(false)
+  can_edit   Boolean @default(false)
+  can_delete Boolean @default(false)
+  can_add    Boolean @default(false)
+  roleId     Int
+  pageId     Int
+
+  created_at DateTime @default(now())
+  updated_at DateTime @updatedAt
+
+  Role Roles @relation(fields: [roleId], references: [id])
+  Page Pages @relation(fields: [pageId], references: [id])
+
+  @@unique([roleId, pageId])
+}
+
+model AdminProfiles {
+  id             Int      @id @default(autoincrement())
+  userId         Int      @unique // Ensures one-to-one relation with Users
+  profilePicture String?
+  firstName      String
+  lastName       String
+  created_at     DateTime @default(now())
+  updated_at     DateTime @updatedAt
+
+  User Users @relation(fields: [userId], references: [id]) // Relation to Users
+}
+
+model CustomerProfiles {
+  id                 Int      @id @default(autoincrement())
+  userId             Int      @unique
+  customerFeaturesId Int?
+  email              String? // Nullable field for email
+  firstName          String
+  lastName           String
+  created_at         DateTime @default(now())
+  updated_at         DateTime @updatedAt
+
+  // Assuming relation to Users
+  User Users @relation(fields: [userId], references: [id])
+}
+
+model PartnershipRequests {
+  id         Int      @id @default(autoincrement())
+  requestNo  String   @unique
+  userId     Int // Foreign key for Users
+  shopId     Int // Foreign key for Shops
+  status     String   @default("PENDING")
+  created_at DateTime @default(now())
+  updated_at DateTime @updatedAt
+
+  // Relations
+  User Users @relation(fields: [userId], references: [id])
+  Shop Shops @relation(fields: [shopId], references: [id])
+}
+
+model VendorProfile {
+  id             Int      @id @default(autoincrement())
+  userId         Int      @unique
+  shopId         Int
+  profilePicture String?
+  firstName      String
+  lastName       String
+  contactNo      String
+  email          String
+  position       String
+  created_at     DateTime @default(now())
+  updated_at     DateTime @updatedAt
+
+  User Users @relation(fields: [userId], references: [id])
+  Shop Shops @relation("ShopEmployees", fields: [shopId], references: [id])
+}
+
+model Shops {
+  id          Int      @id @default(autoincrement())
+  shopNo      String   @unique
+  logo        String?
+  name        String
+  description String?
+  status      String
+  contactNo   String
+  ownerUserNo String   @unique // Now using userNo from Users
+  addressId   Int      @unique
+  created_at  DateTime @default(now())
+  updated_at  DateTime @updatedAt
+
+  Owner               Users                  @relation("ShopOwner", fields: [ownerUserNo], references: [userNo])
+  Address             Addresses              @relation("ShopAddress", fields: [addressId], references: [id])
+  Employees           VendorProfile[]        @relation("ShopEmployees")
+  partnershipRequests PartnershipRequests[]
+  BusinessLicenses    ShopBusinessLicenses[] // New relation for multiple business licenses
+  Products            Products[]
+  Tags                Tags[]
+  Type                Type[]
+  Category            Category[]
+  Colors              Colors[]
+  Sizes               Sizes[]
+  Units               Units[]
+  Measurements        Measurements[]
+  TypeMeasurements    TypeMeasurements[]
+  Orders              Orders[]
+}
+
+model Addresses {
+  id           Int      @id @default(autoincrement())
+  buildingNo   String?
+  street       String?
+  barangay     String
+  municipality String
+  province     String
+  postalCode   String
+  googleMapId  Int      @unique // Ensures one-to-one relationship with GoogleMapLocations
+  created_at   DateTime @default(now())
+  updated_at   DateTime @updatedAt
+
+  GoogleMapLocation GoogleMapLocations @relation(fields: [googleMapId], references: [id])
+  Shop              Shops?             @relation("ShopAddress")
+}
+
+model GoogleMapLocations {
+  id         Int      @id @default(autoincrement())
+  placeName  String?
+  latitude   Float
+  longitude  Float
+  created_at DateTime @default(now())
+  updated_at DateTime @updatedAt
+
+  Address Addresses? // Back relation, no need to specify @relation attributes here
+}
+
+model ShopBusinessLicenses {
+  id         Int      @id @default(autoincrement())
+  shopId     Int // Foreign key for Shops
+  licenseUrl String // URL for each uploaded business license file
+  created_at DateTime @default(now())
+
+  Shop Shops @relation(fields: [shopId], references: [id])
+}
+
+model Products {
+  id            Int      @id @default(autoincrement())
+  productNo     String   @unique
+  shopNo        String
+  typeId        Int
+  categoryId    Int
+  tagId         Int
+  name          String
+  description   String?
+  thumbnailURL  String?
+  totalQuantity Int?
+  created_at    DateTime @default(now())
+  updated_at    DateTime @updatedAt
+
+  Shop            Shops             @relation(fields: [shopNo], references: [shopNo])
+  Type            Type              @relation(fields: [typeId], references: [id])
+  Category        Category          @relation(fields: [categoryId], references: [id])
+  Tags            Tags              @relation(fields: [tagId], references: [id])
+  ProductVariants ProductVariants[]
+}
+
+model Type {
+  id          Int      @id @default(autoincrement())
+  shopNo      String
+  name        String
+  description String?
+  created_at  DateTime @default(now())
+  updated_at  DateTime @updatedAt
+
+  Shop             Shops              @relation(fields: [shopNo], references: [shopNo])
+  Products         Products[]
+  Tags             Tags[]
+  TypeMeasurements TypeMeasurements[]
+}
+
+model Tags {
+  id          Int      @id @default(autoincrement())
+  shopNo      String
+  typeId      Int
+  name        String
+  description String?  @default("")
+  created_at  DateTime @default(now())
+  updated_at  DateTime @updatedAt
+
+  Shop     Shops      @relation(fields: [shopNo], references: [shopNo])
+  Type     Type       @relation(fields: [typeId], references: [id])
+  Products Products[]
+}
+
+model Category {
+  id          Int      @id @default(autoincrement())
+  shopNo      String
+  name        String
+  description String?
+  created_at  DateTime @default(now())
+  updated_at  DateTime @updatedAt
+
+  Shop     Shops      @relation(fields: [shopNo], references: [shopNo])
+  Products Products[]
+}
+
+model ProductVariants {
+  id               Int      @id @default(autoincrement())
+  productVariantNo String   @unique
+  productNo        String
+  colorId          Int
+  price            Decimal
+  totalQuantity    Int
+  created_at       DateTime @default(now())
+  updated_at       DateTime @updatedAt
+
+  Product                    Products                     @relation(fields: [productNo], references: [productNo])
+  Color                      Colors                       @relation(fields: [colorId], references: [id])
+  ProductVariantSizes        ProductVariantSizes[]
+  ProductVariantMeasurements ProductVariantMeasurements[]
+  ProductVariantImages       ProductVariantImages[]
+  Orders                     Orders[]
+
+  WardrobeUpperWear Wardrobe[] @relation("WardrobeUpperWear")
+  WardrobeLowerWear Wardrobe[] @relation("WardrobeLowerWear")
+  WardrobeFootwear  Wardrobe[] @relation("WardrobeFootwear")
+  WardrobeOuterwear Wardrobe[] @relation("WardrobeOuterwear")
+}
+
+model ProductVariantImages {
+  id               Int      @id @default(autoincrement())
+  productVariantNo String // Reference to ProductVariants.productVariantNo
+  imageUrl         String // URL of the image
+  created_at       DateTime @default(now())
+  updated_at       DateTime @updatedAt
+
+  ProductVariant ProductVariants @relation(fields: [productVariantNo], references: [productVariantNo])
+}
+
+model Colors {
+  id         Int      @id @default(autoincrement())
+  shopNo     String
+  name       String
+  hexcode    String
+  created_at DateTime @default(now())
+  updated_at DateTime @updatedAt
+
+  Shop            Shops             @relation(fields: [shopNo], references: [shopNo])
+  ProductVariants ProductVariants[]
+}
+
+model Sizes {
+  id           Int      @id @default(autoincrement())
+  shopNo       String
+  name         String
+  abbreviation String
+  nextId       Int?
+  created_at   DateTime @default(now())
+  updated_at   DateTime @updatedAt
+
+  Shop                Shops                 @relation(fields: [shopNo], references: [shopNo])
+  ProductVariantSizes ProductVariantSizes[]
+  Orders              Orders[]
+}
+
+model ProductVariantSizes {
+  id                    Int      @id @default(autoincrement())
+  productVariantSizesNo String   @unique // Unique identifier for ProductVariantSizes
+  productVariantNo      String // Reference to ProductVariants.productVariantNo
+  sizeId                Int
+  quantity              Int
+  created_at            DateTime @default(now())
+  updated_at            DateTime @updatedAt
+
+  ProductVariant             ProductVariants              @relation(fields: [productVariantNo], references: [productVariantNo])
+  Size                       Sizes                        @relation(fields: [sizeId], references: [id])
+  ProductVariantMeasurements ProductVariantMeasurements[]
+
+  @@index([productVariantNo, sizeId])
+}
+
+model Units {
+  id           Int      @id @default(autoincrement())
+  shopNo       String
+  name         String
+  abbreviation String
+  created_at   DateTime @default(now())
+  updated_at   DateTime @updatedAt
+
+  Shop                       Shops                        @relation(fields: [shopNo], references: [shopNo])
+  ProductVariantMeasurements ProductVariantMeasurements[]
+}
+
+model Measurements {
+  id         Int      @id @default(autoincrement())
+  shopNo     String
+  name       String
+  created_at DateTime @default(now())
+  updated_at DateTime @updatedAt
+
+  Shop                       Shops                        @relation(fields: [shopNo], references: [shopNo])
+  ProductVariantMeasurements ProductVariantMeasurements[]
+  TypeMeasurements           TypeMeasurements[]
+}
+
+model ProductVariantMeasurements {
+  id                    Int      @id @default(autoincrement())
+  productVariantNo      String // Reference to ProductVariants.productVariantNo
+  productVariantSizesNo String // Reference to ProductVariantSizes.productVariantSizesNo
+  measurementId         Int
+  value                 Decimal
+  unitId                Int
+  created_at            DateTime @default(now())
+  updated_at            DateTime @updatedAt
+
+  ProductVariant     ProductVariants     @relation(fields: [productVariantNo], references: [productVariantNo])
+  ProductVariantSize ProductVariantSizes @relation(fields: [productVariantSizesNo], references: [productVariantSizesNo])
+  Measurement        Measurements        @relation(fields: [measurementId], references: [id])
+  Unit               Units               @relation(fields: [unitId], references: [id])
+}
+
+model TypeMeasurements {
+  id            Int    @id @default(autoincrement())
+  shopNo        String
+  typeId        Int
+  measurementId Int
+
+  Type        Type         @relation(fields: [typeId], references: [id])
+  Measurement Measurements @relation(fields: [measurementId], references: [id])
+  Shop        Shops        @relation(fields: [shopNo], references: [shopNo])
+}
+
+model CustomerFeatures {
+  id         Int      @id @default(autoincrement())
+  height     Float
+  weight     Float
+  age        Int
+  skintone   String
+  bodyShape  String
+  userId     Int
+  created_at DateTime @default(now())
+  updated_at DateTime @updatedAt
+
+  user Users @relation(fields: [userId], references: [id])
+}
+
+model WardrobeCustomerFeatures {
+  id         Int      @id @default(autoincrement())
+  height     Float
+  weight     Float
+  age        Int
+  skintone   String
+  bodyShape  String
+  created_at DateTime @default(now())
+  updated_at DateTime @updatedAt
+
+  wardrobe   Wardrobe? @relation("WardrobeFeatures") // Removed `fields` and `references`
+}
+
+model Wardrobe {
+  id                         Int      @id @default(autoincrement())
+  outfitName                 String
+  outfitStyle                String
+  upper_wear_id              String
+  lower_wear_id              String
+  footwear_id                String
+  outerwear_id               String? // nullable
+  wardrobeCustomerFeaturesId Int      @unique
+  userId                     Int
+  created_at                 DateTime @default(now())
+  updated_at                 DateTime @default(now())
+
+  user                     Users                     @relation(fields: [userId], references: [id])
+  wardrobeCustomerFeatures WardrobeCustomerFeatures? @relation("WardrobeFeatures", fields: [wardrobeCustomerFeaturesId], references: [id]) // Defining relation here
+
+  upper_wear ProductVariants  @relation("WardrobeUpperWear", fields: [upper_wear_id], references: [productVariantNo])
+  lower_wear ProductVariants  @relation("WardrobeLowerWear", fields: [lower_wear_id], references: [productVariantNo])
+  footwear   ProductVariants  @relation("WardrobeFootwear", fields: [footwear_id], references: [productVariantNo])
+  outerwear  ProductVariants? @relation("WardrobeOuterwear", fields: [outerwear_id], references: [productVariantNo])
+}
+
+model Orders {
+  id                Int       @id @default(autoincrement())
+  orderNo           String    @unique(map: "Unique_OrderNo") // Ensure uniqueness and give a custom name to avoid conflicts
+  userId            Int       // Foreign key to Users table
+  shopNo            String       // Foreign key to Shops table
+  productVariantNo  String       // Foreign key to ProductVariants table
+  sizeId            Int       // Foreign key to Sizes table
+  status            String    @default("PROCESSING") // PROCESSING, PREPARING, PACKAGING, DELIVERING
+  quantity          Int       // Number of items ordered
+  created_at        DateTime  @default(now())
+  updated_at        DateTime  @updatedAt
+
+  // Relations
+  User             Users            @relation(fields: [userId], references: [id])
+  Shop             Shops            @relation(fields: [shopNo], references: [shopNo])
+  ProductVariant   ProductVariants  @relation(fields: [productVariantNo], references: [productVariantNo])
+  Size             Sizes            @relation(fields: [sizeId], references: [id])
+
+  OrderHistories    OrderHistories[]
+}
+
+model OrderHistories {
+  id         Int      @id @default(autoincrement())
+  orderId    Int      // Foreign key to Orders table
+  status     String   // E.g., PENDING -> CONFIRMED, etc.
+  changed_at DateTime @default(now())
+
+  // Relations
+  Order Orders @relation(fields: [orderId], references: [id])
+}

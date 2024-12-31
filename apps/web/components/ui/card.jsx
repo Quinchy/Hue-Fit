@@ -1,10 +1,12 @@
 import * as React from "react"
 
 import { cn } from "@/lib/utils"
-import { Playfair } from "next/font/google"
+import { Gloock } from "next/font/google"
 
-const playfair = Playfair({ 
-  subsets: ['latin'] 
+const gloock = Gloock({ 
+  style: ['normal'],
+  weight: ['400'],
+  subsets: ['latin'],
 });
 
 const Card = React.forwardRef(({ className, ...props }, ref) => (
@@ -26,7 +28,7 @@ CardHeader.displayName = "CardHeader"
 const CardTitle = React.forwardRef(({ className, ...props }, ref) => (
   <h3
     ref={ref}
-    className={cn("uppercase text-primary font-bold leading-none tracking-tight", playfair.className, className)}
+    className={cn("uppercase text-primary font-bold leading-none tracking-normal", gloock.className, className)}
     {...props} />
 ))
 CardTitle.displayName = "CardTitle"

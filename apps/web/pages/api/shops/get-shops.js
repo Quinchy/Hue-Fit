@@ -6,14 +6,14 @@ export default async function handler(req, res) {
 
   try {
     const offset = (page - 1) * limit;
-    const activeShops = await prisma.shops.findMany({
+    const activeShops = await prisma.shop.findMany({
       where: { status: "ACTIVE" },
       skip: offset,
       take: parseInt(limit),
       select: {
         shopNo: true,
         name: true,
-        Address: {
+        ShopAddress: {
           select: {
             buildingNo: true,
             street: true,
@@ -28,7 +28,7 @@ export default async function handler(req, res) {
       orderBy: { created_at: "desc" },
     });
 
-    const totalShops = await prisma.shops.count({
+    const totalShops = await prisma.shop.count({
       where: { status: "ACTIVE" },
     });
 
@@ -37,10 +37,12 @@ export default async function handler(req, res) {
       totalPages: Math.ceil(totalShops / limit),
       currentPage: parseInt(page),
     });
-  } catch (error) {
+  } 
+  catch (error) {
     console.error("Error fetching active shops:", error);
     res.status(500).json({ error: "Failed to fetch active shops" });
-  } finally {
+  } 
+  finally {
     await disconnectPrisma();
   }
 }

@@ -1,20 +1,7 @@
 import { Checkbox } from "@/components/ui/checkbox";
 import { Card, CardTitle } from "@/components/ui/card";
-import {
-  Table,
-  TableBody,
-  TableCell,
-  TableHead,
-  TableHeader,
-  TableRow,
-} from "@/components/ui/table";
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select";
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Label } from "@radix-ui/react-dropdown-menu";
 import DashboardLayoutWrapper from "@/components/ui/dashboard-layout";
 import { Skeleton } from "@/components/ui/skeleton";
@@ -54,9 +41,6 @@ export default function Settings() {
           page: page.name,
           pageId: page.id,
           canView: perm.can_view || false,
-          canEdit: perm.can_edit || false,
-          canAdd: perm.can_add || false,
-          canDelete: perm.can_delete || false,
         };
       });
 
@@ -68,7 +52,8 @@ export default function Settings() {
         },
       });
       setLoading(false);
-    } catch (error) {
+    } 
+    catch (error) {
       setErrorMessage("Failed to load permissions. Please try again.");
     }
   }, []);
@@ -91,9 +76,6 @@ export default function Settings() {
           page: page.name,
           pageId: page.id,
           canView: perm.can_view || false,
-          canEdit: perm.can_edit || false,
-          canAdd: perm.can_add || false,
-          canDelete: perm.can_delete || false,
         };
       });
 
@@ -118,9 +100,6 @@ export default function Settings() {
       const permissions = values.permissions.map((perm) => ({
         pageId: perm.pageId,
         can_view: perm.canView,
-        can_edit: perm.canEdit,
-        can_add: perm.canAdd,
-        can_delete: perm.canDelete,
       }));
 
       await axios.post(`/api/settings/set-user-permissions`, {
@@ -129,9 +108,11 @@ export default function Settings() {
       });
 
       setSuccessMessage("Permissions updated successfully.");
-    } catch (error) {
+    } 
+    catch (error) {
       setErrorMessage("Failed to update permissions. Please try again.");
-    } finally {
+    } 
+    finally {
       setSubmitting(false);
     }
   };
@@ -176,11 +157,8 @@ export default function Settings() {
                 <Table>
                   <TableHeader>
                     <TableRow>
-                      <TableHead className="w-[100px]">Page</TableHead>
+                      <TableHead className="w-[300px]">Page</TableHead>
                       <TableHead>Can View</TableHead>
-                      <TableHead>Can Edit</TableHead>
-                      <TableHead>Can Add</TableHead>
-                      <TableHead>Can Delete</TableHead>
                     </TableRow>
                   </TableHeader>
                   <TableBody>
@@ -193,15 +171,6 @@ export default function Settings() {
                             <TableCell className="text-center">
                               <Skeleton className="h-6 w-6" />
                             </TableCell>
-                            <TableCell className="text-center">
-                              <Skeleton className="h-6 w-6" />
-                            </TableCell>
-                            <TableCell className="text-center">
-                              <Skeleton className="h-6 w-6" />
-                            </TableCell>
-                            <TableCell className="text-center">
-                              <Skeleton className="h-6 w-6" />
-                            </TableCell>
                           </TableRow>
                         ))
                       : values.permissions.map((perm, index) => (
@@ -209,7 +178,7 @@ export default function Settings() {
                             <TableCell className="font-medium">
                               {perm.page}
                             </TableCell>
-                            {["canView", "canEdit", "canAdd", "canDelete"].map(
+                            {["canView"].map(
                               (permType) => (
                                 <TableCell className="text-left" key={permType}>
                                   <Checkbox

@@ -1,5 +1,5 @@
 // pages/api/maintenance/categories/get-categories.js
-import prisma, { getSessionShopNo } from "@/utils/helpers";
+import prisma, { getSessionShopId } from "@/utils/helpers";
 
 export default async function handler(req, res) {
   if (req.method !== "GET") {
@@ -7,9 +7,9 @@ export default async function handler(req, res) {
   }
 
   try {
-    const shopNo = await getSessionShopNo(req, res);
+    const shopId = await getSessionShopId(req, res);
 
-    if (!shopNo) {
+    if (!shopId) {
       return res.status(401).json({ error: "Unauthorized" });
     }
 
@@ -18,14 +18,14 @@ export default async function handler(req, res) {
 
     // Fetch categories with pagination (8 records per page)
     const categories = await prisma.category.findMany({
-      where: { shopNo },
+      where: { shopId },
       select: { id: true, name: true },
       skip: (pageNumber - 1) * 8,
       take: 8,
       orderBy: { id: "asc" },
     });
 
-    const totalCategories = await prisma.category.count({ where: { shopNo } });
+    const totalCategories = await prisma.category.count({ where: { shopId } });
     const totalPages = Math.ceil(totalCategories / 8);
 
     return res.status(200).json({

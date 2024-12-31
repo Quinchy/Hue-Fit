@@ -1,8 +1,8 @@
-import prisma, { getSessionShopNo } from "@/utils/helpers";
+import prisma from "@/utils/helpers";
 import nodemailer from "nodemailer";
 
 export default async function handler(req, res) {
-  console.log('Request Body:', req.body); // Debugging purposes
+  console.log("Request Body:", req.body);
   let { requestNo, status, email, message } = req.body;
 
   if (status === "ACCEPTED") {
@@ -10,194 +10,199 @@ export default async function handler(req, res) {
   }
 
   try {
-    console.log('Request No:', requestNo); // Debugging purposes
-    const partnershipRequest = await prisma.partnershipRequests.findUnique({
-      where: { requestNo },
-      select: {
-        userId: true,
-        shopId: true,
-        status: true,
-      },
-    });
-    console.log('Partnership Request:', partnershipRequest); // Debugging purposes
+    console.log("Request No:", requestNo);
 
-    let shopNo = await prisma.shops.findUnique({
-      where: { id: partnershipRequest.shopId },
-      select: { shopNo: true },
-    });
-    console.log('Shop No:', shopNo.shopNo);
-    shopNo = shopNo.shopNo;
-    if (status === "ACTIVE") {
-      await prisma.users.update({
-        where: { id: partnershipRequest.userId },
-        data: { status },
-      });
-      await prisma.shops.update({
-        where: { id: partnershipRequest.shopId },
-        data: { status },
-      });
-      await prisma.partnershipRequests.update({
+    // Wrap all database operations in a transaction
+    await prisma.$transaction(async (transaction) => {
+      // Fetch partnership request details
+      const partnershipRequest = await transaction.partnershipRequest.findUnique({
         where: { requestNo },
-        data: { status: "DONE" },
+        select: { userId: true, shopId: true, status: true },
       });
-      const typesTest = await prisma.type.createMany({
-        data: [
-          {shopNo,name: 'OUTERWEAR' },
-          {shopNo,name: 'UPPERWEAR' },
-          {shopNo,name: 'LOWERWEAR' },
-          {shopNo,name: 'FOOTWEAR' },
-        ],
-      });
-      console.log('Predefined values added successfully', typesTest);
-      const categoryTest = await prisma.category.createMany({
-        data: [
-          {shopNo,name: 'CASUAL' },
-          {shopNo,name: 'SMART CASUAL' },
-          {shopNo,name: 'FORMAL' },
-        ],
-      });
-      console.log('Predefined values added successfully', categoryTest);
-      const types = await prisma.type.findMany({
-        where: { shopNo },
-        select: { id: true },
-      });
-      console.log('Types:', types);
-      const typeIds = types.map((type) => type.id);
-      console.log('Type IDs:', typeIds);
-      const tagsTest = await prisma.tags.createMany({
-        data: [
-          {typeId: typeIds[0], shopNo,name: 'BLAZERS' },
-          {typeId: typeIds[0], shopNo,name: 'COATS' },
-          {typeId: typeIds[0], shopNo,name: 'CARDIGANS' },
-          {typeId: typeIds[0], shopNo,name: 'VESTS' },
-          {typeId: typeIds[1], shopNo,name: 'HENLEY SHIRT' },
-          {typeId: typeIds[1], shopNo,name: 'T-SHIRTS' },
-          {typeId: typeIds[1], shopNo,name: 'POLO SHIRT' },
-          {typeId: typeIds[1], shopNo,name: 'SHORT SLEEVES' },
-          {typeId: typeIds[2], shopNo,name: 'SHORTS' },
-          {typeId: typeIds[2], shopNo,name: 'JEANS' },
-          {typeId: typeIds[2], shopNo,name: 'CHINOS' },
-          {typeId: typeIds[2], shopNo,name: 'TROUSERS' },
-          {typeId: typeIds[2], shopNo,name: 'SLACKS' },
-          {typeId: typeIds[3], shopNo,name: 'SANDALS' },
-          {typeId: typeIds[3], shopNo,name: 'LOAFERS' },
-          {typeId: typeIds[3], shopNo,name: 'BOOTS' },
-          {typeId: typeIds[3], shopNo,name: 'SNEAKERS' },
-          {typeId: typeIds[3], shopNo,name: 'OXFORD' },
-        ],
-      });
-      console.log('Predefined values added successfully', tagsTest);
-      const colorsTest = await prisma.colors.createMany({
-        data: [
-          {shopNo,name: 'BLACK',hexcode: '#000000' },
-          {shopNo,name: 'WHITE',hexcode: '#FFFFFF' },
-          {shopNo,name: 'GRAY',hexcode: '#4B4D4B' },
-          {shopNo,name: 'RED',hexcode: '#B11F23' },
-          {shopNo,name: 'BLUE',hexcode: '#2463B4' },
-          {shopNo,name: 'GREEN',hexcode: '#27684C' },
-          {shopNo,name: 'YELLOW',hexcode: '#E1A940' },
-          {shopNo,name: 'PURPLE',hexcode: '#B19CC3' },
-          {shopNo,name: 'ORANGE',hexcode: '#E56222' },
-          {shopNo,name: 'PINK',hexcode: '#FFC0CB' },
-          {shopNo,name: 'BROWN',hexcode: '#71462D' },
-        ],
-      });
-      console.log('Predefined values added successfully', colorsTest);
-      const sizesTest = await prisma.sizes.createMany({
-        data: [
-          {shopNo,name: 'SMALL', abbreviation: 'S', nextId: null },
-          {shopNo,name: 'MEDIUM', abbreviation: 'M', nextId: null },
-          {shopNo,name: 'LARGE', abbreviation: 'L', nextId: null },
-        ],
-      });
-      const insertedSizes = await prisma.sizes.findMany({
-        where: { shopNo },
-        select: { id: true, name: true},
-      });
-      console.log('Sizes:', insertedSizes);
-      const sizeIds = insertedSizes.map((size) => size.id);
-      await prisma.sizes.updateMany({
-        where: {
-          id: sizeIds[0],
-        },
-        data: {
-          nextId: sizeIds[1],
-        },
-      });
-      await prisma.sizes.updateMany({
-        where: {
-          id: sizeIds[1],
-        },
-        data: {
-          nextId: sizeIds[2],
-        },
-      });
-      console.log('Predefined values added successfully', sizesTest);
-      const measurementTest = await prisma.measurements.createMany({
-        data: [
-          {shopNo,name: 'WIDTH'},
-          {shopNo,name: 'LENGTH'},
-        ]
-      });
-      console.log('Predefined values added successfully', measurementTest);
-      const measurementIds = await prisma.measurements.findMany({
-        where: { shopNo },
-        select: { id: true, },
-      });
-      console.log('Measurements:', measurementIds);
-      const measurementId = measurementIds.map((measurement) => measurement.id);
-      console.log('Measurement IDs:', measurementId);
-      const typeMeasurementTest = await prisma.typeMeasurements.createMany({
-        data: [
-          {shopNo,typeId: typeIds[0], measurementId: measurementId[0]},
-          {shopNo,typeId: typeIds[0], measurementId: measurementId[1]},
-          {shopNo,typeId: typeIds[1], measurementId: measurementId[1]},
-          {shopNo,typeId: typeIds[1], measurementId: measurementId[1]},
-          {shopNo,typeId: typeIds[2], measurementId: measurementId[0]},
-          {shopNo,typeId: typeIds[2], measurementId: measurementId[1]},
-          {shopNo,typeId: typeIds[3], measurementId: measurementId[0]},
-          {shopNo,typeId: typeIds[3], measurementId: measurementId[1]},
-        ]
-      });
-      console.log('Predefined values added successfully', typeMeasurementTest);
-      const unitTest = await prisma.units.createMany({
-        data: [
-          {shopNo,name: 'INCHES', abbreviation: 'INCH'},
-          {shopNo,name: 'CENTIMETERS', abbreviation: 'CM'},
-        ]
-      });
-      console.log('Predefined values added successfully', unitTest);
-    }
+      console.log("Partnership Request:", partnershipRequest);
 
-    let defaultMessage;
-    if (status === "ACTIVE") {
-      defaultMessage = `Congratulations! Your partnership request has been approved, and your vendor account has been activated. You can now access the vendor dashboard by logging in at https://hue-fit-web.vercel.app/account/login.`;
-    } 
-    else if (status === "REJECTED") {
-      defaultMessage = `We regret to inform you that your partnership request has not been approved. Thank you for your interest in HueFit.`;
-    }
+      const shopId = partnershipRequest.shopId;
+      console.log("Shop Id:", shopId);
 
-    const transporter = nodemailer.createTransport({
-      service: "gmail",
-      auth: {
-        user: process.env.NOREPLY_EMAIL,
-        pass: process.env.NOREPLY_PASSWORD,
-      },
+      if (status === "ACTIVE") {
+        // Update user, shop, and partnership request statuses
+        await transaction.user.update({
+          where: { id: partnershipRequest.userId },
+          data: { status },
+        });
+
+        await transaction.shop.update({
+          where: { id: partnershipRequest.shopId },
+          data: { status },
+        });
+
+        await transaction.partnershipRequest.update({
+          where: { requestNo },
+          data: { status: "DONE" },
+        });
+
+        // Add predefined values
+        await addPredefinedValues(shopId, transaction);
+      }
     });
 
-    await transporter.sendMail({
-      from: `"HueFit" <${process.env.NOREPLY_EMAIL}>`,
-      to: email,
-      subject: `Partnership Request Update - ${status}`,
-      text: message || defaultMessage,
-    });
+    // Send notification email
+    await sendNotificationEmail(email, status, message);
 
-    res.status(200).json({ message: "Request status successfully updated and predefined values added." });
-  } 
-  catch (error) {
+    res.status(200).json({
+      message: "Request status successfully updated and predefined values added.",
+    });
+  } catch (error) {
+    console.error("Error:", error.message);
     res.status(500).json({
       error: "An error occurred while updating the request status",
       details: error.message,
     });
   }
+}
+
+// Function to add predefined values
+async function addPredefinedValues(shopId) {
+  console.log("Adding predefined values...");
+
+  // Add types
+  await prisma.type.createMany({
+    data: [
+      { shopId, name: "OUTERWEAR" },
+      { shopId, name: "UPPERWEAR" },
+      { shopId, name: "LOWERWEAR" },
+      { shopId, name: "FOOTWEAR" },
+    ],
+  });
+
+  // Add categories
+  await prisma.category.createMany({
+    data: [
+      { shopId, name: "CASUAL" },
+      { shopId, name: "SMART CASUAL" },
+      { shopId, name: "FORMAL" },
+    ],
+  });
+
+  // Add tags
+  const types = await prisma.type.findMany({
+    where: { shopId },
+    select: { id: true },
+  });
+
+  const tagsData = generateTagsData(types, shopId);
+  await prisma.tag.createMany({ data: tagsData });
+
+  // Add colors
+  await prisma.color.createMany({
+    data: [
+      { shopId, name: "BLACK", hexcode: "#000000" },
+      { shopId, name: "WHITE", hexcode: "#FFFFFF" },
+      { shopId, name: "GRAY", hexcode: "#4B4D4B" },
+      { shopId, name: "RED", hexcode: "#B11F23" },
+      { shopId, name: "BLUE", hexcode: "#2463B4" },
+      { shopId, name: "GREEN", hexcode: "#27684C" },
+      { shopId, name: "YELLOW", hexcode: "#E1A940" },
+      { shopId, name: "PURPLE", hexcode: "#a67bcc" },
+      { shopId, name: "ORANGE", hexcode: "#E56222" },
+      { shopId, name: "PINK", hexcode: "#ffa8b6" },
+      { shopId, name: "BROWN", hexcode: "#71462D" },
+    ],
+  });
+
+  // Add sizes
+  await addSizes(shopId);
+
+  // Add measurements
+  const measurementData = generateMeasurementData(types, shopId);
+  await prisma.measurement.createMany({ data: measurementData });
+}
+
+function generateTagsData(types, shopId) {
+  const typeIds = types.map((type) => type.id);
+  return [
+    {typeId: typeIds[0], shopId,name: 'BLAZERS' },
+    {typeId: typeIds[0], shopId,name: 'COATS' },
+    {typeId: typeIds[0], shopId,name: 'CARDIGANS' },
+    {typeId: typeIds[0], shopId,name: 'VESTS' },
+    {typeId: typeIds[1], shopId,name: 'HENLEY SHIRT' },
+    {typeId: typeIds[1], shopId,name: 'T-SHIRTS' },
+    {typeId: typeIds[1], shopId,name: 'POLO SHIRT' },
+    {typeId: typeIds[1], shopId,name: 'SHORT SLEEVES' },
+    {typeId: typeIds[2], shopId,name: 'SHORTS' },
+    {typeId: typeIds[2], shopId,name: 'JEANS' },
+    {typeId: typeIds[2], shopId,name: 'CHINOS' },
+    {typeId: typeIds[2], shopId,name: 'TROUSERS' },
+    {typeId: typeIds[2], shopId,name: 'SLACKS' },
+    {typeId: typeIds[3], shopId,name: 'SANDALS' },
+    {typeId: typeIds[3], shopId,name: 'LOAFERS' },
+    {typeId: typeIds[3], shopId,name: 'BOOTS' },
+    {typeId: typeIds[3], shopId,name: 'SNEAKERS' },
+    {typeId: typeIds[3], shopId,name: 'OXFORD' },
+    // Add more tags as needed...
+  ];
+}
+
+async function addSizes(shopId) {
+  const sizesData = [
+    { shopId, name: "SMALL", abbreviation: "S", nextId: null },
+    { shopId, name: "MEDIUM", abbreviation: "M", nextId: null },
+    { shopId, name: "LARGE", abbreviation: "L", nextId: null },
+  ];
+
+  await prisma.size.createMany({ data: sizesData });
+
+  const sizes = await prisma.size.findMany({
+    where: { shopId },
+    select: { id: true },
+  });
+
+  // Link sizes to each other
+  await prisma.size.updateMany({
+    where: { id: sizes[0].id },
+    data: { nextId: sizes[1].id },
+  });
+
+  await prisma.size.updateMany({
+    where: { id: sizes[1].id },
+    data: { nextId: sizes[2].id },
+  });
+}
+
+function generateMeasurementData(types, shopId) {
+  const typeIds = types.map((type) => type.id);
+
+  return [
+    { shopId, typeId: typeIds[0], name: "WIDTH" },
+    { shopId, typeId: typeIds[0], name: "LENGTH" },
+    { shopId, typeId: typeIds[1], name: "WIDTH" },
+    { shopId, typeId: typeIds[1], name: "LENGTH" },
+    { shopId, typeId: typeIds[2], name: "WIDTH" },
+    { shopId, typeId: typeIds[2], name: "LENGTH" },
+    { shopId, typeId: typeIds[3], name: "WIDTH" },
+    { shopId, typeId: typeIds[3], name: "LENGTH" },
+  ];
+}
+
+// Function to send notification email
+async function sendNotificationEmail(email, status, message) {
+  const defaultMessage =
+    status === "ACTIVE"
+      ? `Congratulations! Your partnership request has been approved. You can now access the vendor dashboard at https://hue-fit-web.vercel.app/account/login.`
+      : `We regret to inform you that your partnership request has not been approved.`;
+
+  const transporter = nodemailer.createTransport({
+    service: "gmail",
+    auth: {
+      user: process.env.NOREPLY_EMAIL,
+      pass: process.env.NOREPLY_PASSWORD,
+    },
+  });
+
+  await transporter.sendMail({
+    from: `"HueFit" <${process.env.NOREPLY_EMAIL}>`,
+    to: email,
+    subject: `Partnership Request Update - ${status}`,
+    text: message || defaultMessage,
+  });
 }

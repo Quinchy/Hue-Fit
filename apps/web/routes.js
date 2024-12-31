@@ -53,6 +53,8 @@ const routes = {
   unitsAdd: '/dashboard/maintenance/units/add/[unitNo]',
   sizes: '/dashboard/maintenance/sizes',
   sizesAdd: '/dashboard/maintenance/sizes/add/[unitNo]',
+  virtualFitting: '/dashboard/virtual-fitting',
+  addVirtualFitting: '/dashboard/virtual-fitting/add',
 };
 
 export default routes;

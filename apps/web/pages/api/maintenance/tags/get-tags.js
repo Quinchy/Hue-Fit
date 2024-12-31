@@ -1,5 +1,5 @@
 // pages/api/maintenance/tags/get-tags.js
-import prisma, { getSessionShopNo } from "@/utils/helpers";
+import prisma, { getSessionShopId } from "@/utils/helpers";
 
 export default async function handler(req, res) {
   if (req.method !== "GET") {
@@ -7,16 +7,16 @@ export default async function handler(req, res) {
   }
 
   try {
-    const shopNo = await getSessionShopNo(req, res);
-    if (!shopNo) {
+    const shopId = await getSessionShopId(req, res);
+    if (!shopId) {
       return res.status(401).json({ error: "Unauthorized" });
     }
 
     const { page = 1 } = req.query; // Default to page 1 if no query param
     const PAGE_SIZE = 8;
 
-    const tags = await prisma.tags.findMany({
-      where: { shopNo },
+    const tags = await prisma.tag.findMany({
+      where: { shopId },
       skip: (page - 1) * PAGE_SIZE,
       take: PAGE_SIZE,
       select: {
@@ -34,7 +34,7 @@ export default async function handler(req, res) {
       typeName: tag.Type ? tag.Type.name : "Unassigned", // Resolve the type name
     }));
 
-    const totalCount = await prisma.tags.count({ where: { shopNo } });
+    const totalCount = await prisma.tag.count({ where: { shopId } });
     const totalPages = Math.ceil(totalCount / PAGE_SIZE);
 
     return res.status(200).json({ success: true, tags: formattedTags, totalPages });

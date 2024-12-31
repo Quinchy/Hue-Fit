@@ -1,4 +1,4 @@
-import prisma, { getSessionShopNo } from '@/utils/helpers';
+import prisma, { getSessionShopId } from '@/utils/helpers';
 
 export default async function handler(req, res) {
   if (req.method !== 'GET') {
@@ -6,9 +6,9 @@ export default async function handler(req, res) {
   }
 
   try {
-    const shopNo = await getSessionShopNo(req, res);
+    const shopId = await getSessionShopId(req, res);
 
-    if (!shopNo) {
+    if (!shopId) {
       return res.status(400).json({ error: "Shop number is missing in the session." });
     }
 
@@ -16,14 +16,14 @@ export default async function handler(req, res) {
     const pageNumber = parseInt(page);
 
     // Fetch sizes with pagination and ordering by nextId
-    const sizes = await prisma.sizes.findMany({
-      where: { shopNo },
+    const sizes = await prisma.size.findMany({
+      where: { shopId },
       select: { id: true, name: true, abbreviation: true, nextId: true },
       skip: (pageNumber - 1) * 8,
       take: 8,
     });
 
-    const totalSizes = await prisma.sizes.count({ where: { shopNo } });
+    const totalSizes = await prisma.size.count({ where: { shopId } });
     const totalPages = Math.ceil(totalSizes / 8);
 
     // Apply ordering by nextId
@@ -36,7 +36,7 @@ export default async function handler(req, res) {
       totalSizes,
     });
   } catch (error) {
-    console.error("Error fetching sizes by shopNo:", error);
+    console.error("Error fetching sizes by shopId:", error);
     return res.status(500).json({ success: false, error: "Internal Server Error" });
   } finally {
     await prisma.$disconnect();

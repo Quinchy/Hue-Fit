@@ -17,7 +17,7 @@ const NavbarAccount = () => {
       <div className='flex flex-row items-center gap-5'>
         <Link
           className={buttonVariants({ variant: "outline" })}
-          href={routes.partnership}
+          href={routes.home}
         >
           <p className="tracking-widest">Visit Hue-Fit Website</p>
           <ArrowUpRight width={20} height={20}/>

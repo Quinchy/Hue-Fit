@@ -12,7 +12,7 @@ export default function SuccessPage() {
   return (
     <WebsiteLayoutWrapper>
       <Card className="flex flex-col items-center p-12 text-center max-w-[50rem] gap-14">
-        <CardTitle className="flex flex-row items-center text-4xl font-bold gap-3"><Send className="stroke-[2.5px]" /> Partnership Request Has Been Sent</CardTitle>
+        <CardTitle className="flex flex-row items-center text-2xl font-bold gap-3"><Send className="stroke-[2.5px]" /> Partnership Request Has Been Sent</CardTitle>
         <div className="flex flex-col gap-4 p-5">
           <p className="text-lg font-thin">
             {"Thank you for submitting your partnership request! We're thrilled at the opportunity to work together and help bring your vision to life. "}

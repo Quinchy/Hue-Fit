@@ -1,0 +1,476 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+model Role {
+  id          Int      @id @default(autoincrement())
+  name        String   @unique // ADMIN, CUSTOMER, VENDOR
+  created_at  DateTime @default(now())
+  updated_at  DateTime @updatedAt
+
+  User        User[]
+  Permission  Permission[]
+}
+
+model Page {
+  id          Int      @id @default(autoincrement())
+  name        String   @unique
+  created_at  DateTime @default(now())
+  updated_at  DateTime @updatedAt
+
+  Permission  Permission[]
+}
+
+model Permission {
+  id         Int     @id @default(autoincrement())
+  roleId     Int
+  pageId     Int
+  can_view   Boolean  @default(false)
+  created_at DateTime @default(now())
+  updated_at DateTime @updatedAt
+
+  Role Role @relation(fields: [roleId], references: [id])
+  Page Page @relation(fields: [pageId], references: [id])
+
+  @@unique([roleId, pageId])
+}
+
+model User {
+  id         Int      @id @default(autoincrement())
+  userNo     String   @unique
+  roleId     Int
+  username   String   @unique
+  password   String
+  status     String
+  created_at DateTime @default(now())
+  updated_at DateTime @updatedAt
+
+  Role            Role             @relation(fields: [roleId], references: [id])
+  AdminProfile    AdminProfile?
+  CustomerProfile CustomerProfile?
+  VendorProfile   VendorProfile?
+  OwnedShop       Shop?           @relation("ShopOwner")
+  
+  Order               Order[]
+  PartnershipRequest  PartnershipRequest[]
+  CustomerFeature     CustomerFeature[]
+  Wardrobe            Wardrobe[]
+
+  @@unique([username, roleId])
+}
+
+model AdminProfile {
+  id             Int      @id @default(autoincrement())
+  userId         Int   
+  profilePicture String?
+  firstName      String
+  lastName       String
+  created_at     DateTime @default(now())
+  updated_at     DateTime @updatedAt
+
+  User User @relation(fields: [userId], references: [id])
+}
+
+model CustomerProfile {
+  id                 Int      @id @default(autoincrement())
+  userId             Int   
+  customerFeaturesId Int?
+  profilePicture     String?
+  email              String?  
+  firstName          String
+  lastName           String
+  created_at         DateTime @default(now())
+  updated_at         DateTime @updatedAt
+
+  User User @relation(fields: [userId], references: [id])
+}
+
+model CustomerFeature {
+  id         Int      @id @default(autoincrement())
+  userId     Int   
+  height     Float
+  weight     Float
+  age        Int
+  skintone   String
+  bodyShape  String
+  created_at DateTime @default(now())
+  updated_at DateTime @updatedAt
+
+  User User @relation(fields: [userId], references: [id])
+}
+
+model VendorProfile {
+  id             Int      @id @default(autoincrement())
+  userId         Int   
+  shopId         Int   
+  profilePicture String?
+  firstName      String
+  lastName       String
+  contactNo      String
+  email          String
+  position       String
+  created_at     DateTime @default(now())
+  updated_at     DateTime @updatedAt
+
+  User User  @relation(fields: [userId], references: [id])
+  Shop Shop  @relation("ShopEmployees", fields: [shopId], references: [id])
+}
+
+model PartnershipRequest {
+  id         Int      @id @default(autoincrement())
+  requestNo  String   @unique
+  userId     Int   
+  shopId     Int     
+  status     String   @default("PENDING")
+  created_at DateTime @default(now())
+  updated_at DateTime @updatedAt
+
+  User User @relation(fields: [userId], references: [id])
+  Shop Shop @relation(fields: [shopId], references: [id])
+}
+
+model Shop {
+  id          Int      @id @default(autoincrement())
+  shopNo      String   @unique
+  addressId   Int      
+  logo        String?
+  name        String
+  description String?
+  contactNo   String
+  email       String
+  ownerUserId Int
+  status      String   @default("PENDING")
+  openingTime String
+  closingTime String
+  created_at  DateTime @default(now())
+  updated_at  DateTime @updatedAt
+
+  Owner               User                   @relation("ShopOwner", fields: [ownerUserId], references: [id])
+  ShopAddress         ShopAddress            @relation("ShopAddress", fields: [addressId], references: [id])
+  Employee            VendorProfile[]        @relation("ShopEmployees")
+  PartnershipRequest  PartnershipRequest[]
+  BusinessLicense     ShopBusinessLicense[]
+  Product             Product[]
+  Tag                 Tag[]
+  Type                Type[]
+  Category            Category[]
+  Color               Color[]
+  Size                Size[]
+  Measurement         Measurement[]
+  Order               Order[]
+}
+
+model ShopAddress {
+  id           Int      @id @default(autoincrement())
+  buildingNo   String?
+  street       String?
+  barangay     String
+  municipality String
+  province     String
+  postalCode   String
+  googleMapId  Int      @unique
+  created_at   DateTime @default(now())
+  updated_at   DateTime @updatedAt
+
+  GoogleMapLocation GoogleMapLocation @relation(fields: [googleMapId], references: [id])
+  Shop              Shop?             @relation("ShopAddress")
+}
+
+model GoogleMapLocation {
+  id         Int      @id @default(autoincrement())
+  name       String?
+  latitude   Float
+  longitude  Float
+  created_at DateTime @default(now())
+  updated_at DateTime @updatedAt
+
+  ShopAddress ShopAddress?
+}
+
+model ShopBusinessLicense {
+  id         Int      @id @default(autoincrement())
+  shopId     Int
+  licenseUrl String
+  created_at DateTime @default(now())
+  updated_at DateTime @updatedAt
+
+  Shop Shop @relation(fields: [shopId], references: [id])
+}
+
+model Product {
+  id            Int      @id @default(autoincrement())
+  productNo     String   @unique
+  shopId        Int
+  typeId        Int
+  categoryId    Int
+  tagId         Int
+  name          String
+  description   String?
+  thumbnailURL  String
+  totalQuantity Int      @default(0)
+  created_at    DateTime @default(now())
+  updated_at    DateTime @updatedAt
+
+  Shop            Shop              @relation(fields: [shopId], references: [id])
+  Type            Type              @relation(fields: [typeId], references: [id])
+  Category        Category          @relation(fields: [categoryId], references: [id])
+  Tag             Tag               @relation(fields: [tagId], references: [id])
+  ProductVariant  ProductVariant[]
+}
+
+model ProductSize {
+  id                    Int      @id @default(autoincrement())
+  productId             Int
+  sizeId                Int
+  measurementId         Int
+  quantity              Int
+  created_at            DateTime @default(now())
+  updated_at            DateTime @updatedAt
+
+  ProductVariant             ProductVariant              @relation(fields: [productId], references: [id])
+  Size                       Size                        @relation(fields: [sizeId], references: [id])
+  Measurement                Measurement                 @relation(fields: [measurementId], references: [id])
+}
+
+model ProductMeasurement {
+  id               Int      @id @default(autoincrement())
+  productId        Int
+  sizeId           Int
+  measurementId    Int
+  value            Float
+  unit             String
+  created_at       DateTime @default(now())
+  updated_at       DateTime @updatedAt
+
+  ProductVariant ProductVariant @relation(fields: [productId], references: [id])
+  Measurement    Measurement    @relation(fields: [measurementId], references: [id])
+  Size           Size    @relation(fields: [sizeId], references: [id])
+}
+
+model Type {
+  id          Int      @id @default(autoincrement())
+  shopNo      String
+  name        String   @unique
+  created_at  DateTime @default(now())
+  updated_at  DateTime @updatedAt
+
+  Shop             Shop             @relation(fields: [shopNo], references: [shopNo])
+  Products         Product[]
+  Tags             Tag[]
+}
+
+model Category {
+  id          Int      @id @default(autoincrement())
+  shopNo      String
+  name        String   @unique
+  created_at  DateTime @default(now())
+  updated_at  DateTime @updatedAt
+
+  Shop     Shop        @relation(fields: [shopNo], references: [shopNo])
+  Products Product[]
+}
+
+model Tag {
+  id          Int      @id @default(autoincrement())
+  shopNo      String
+  typeId      Int
+  name        String   @unique
+  created_at  DateTime @default(now())
+  updated_at  DateTime @updatedAt
+
+  Shop     Shop       @relation(fields: [shopNo], references: [shopNo])
+  Type     Type       @relation(fields: [typeId], references: [id])
+  Products Product[]
+}
+
+model ProductVariant {
+  id               Int      @id @default(autoincrement())
+  productId        Int
+  productVariantNo String   @unique
+  colorId          Int
+  price            Decimal  @db.Decimal(10, 2)
+  totalQuantity    Int      @default(0)
+  created_at       DateTime @default(now())
+  updated_at       DateTime @updatedAt
+
+  Product                    Product                      @relation(fields: [productId], references: [id])
+  Color                      Color                        @relation(fields: [colorId], references: [id])
+  ProductVariantImage        ProductVariantImage[]
+  Order                      Order[]
+
+  WardrobeUpperWear Wardrobe[] @relation("WardrobeUpperWear")
+  WardrobeLowerWear Wardrobe[] @relation("WardrobeLowerWear")
+  WardrobeFootwear  Wardrobe[] @relation("WardrobeFootwear")
+  WardrobeOuterwear Wardrobe[] @relation("WardrobeOuterwear")
+}
+
+model ProductVariantImage {
+  id               Int      @id @default(autoincrement())
+  productVariantNo String
+  image            String
+  isPrimary        Boolean  @default(false)
+  created_at       DateTime @default(now())
+  updated_at       DateTime @updatedAt
+
+  ProductVariant ProductVariant @relation(fields: [productVariantNo], references: [productVariantNo])
+}
+
+model Color {
+  id         Int      @id @default(autoincrement())
+  shopNo     String
+  name       String   @unique
+  hexcode    String   @unique
+  created_at DateTime @default(now())
+  updated_at DateTime @updatedAt
+
+  Shop            Shop              @relation(fields: [shopNo], references: [shopNo])
+  ProductVariant  ProductVariant[]
+}
+
+model Size {
+  id           Int      @id @default(autoincrement())
+  shopNo       String
+  name         String
+  abbreviation String
+  nextId       Int?     
+  created_at   DateTime @default(now())
+  updated_at   DateTime @updatedAt
+
+  Shop                Shop                  @relation(fields: [shopNo], references: [shopNo])
+  ProductVariantSize  ProductVariantSize[]
+}
+
+model Measurement {
+  id         Int      @id @default(autoincrement())
+  shopNo     String
+  typeId     Int
+  name       String
+  created_at DateTime @default(now())
+  updated_at DateTime @updatedAt
+
+  Shop                Shop                   @relation(fields: [shopNo], references: [shopNo])
+  Type                Type                   @relation(fields: [typeId], references: [id])
+}
+
+model Wardrobe {
+  id                         Int      @id @default(autoincrement())
+  userId                     Int
+  wardrobeCustomerFeaturesId Int      @unique
+  name                       String
+  outfitStyle                String
+  outerwear_id               String? 
+  upper_wear_id              String
+  lower_wear_id              String
+  footwear_id                String
+  created_at                 DateTime @default(now())
+  updated_at                 DateTime @default(now())
+
+  User                     User                      @relation(fields: [userId], references: [id])
+  WardrobeCustomerFeatures WardrobeCustomerFeatures? @relation("WardrobeFeatures", fields: [wardrobeCustomerFeaturesId], references: [id])
+
+  Outerwear  ProductVariant? @relation("WardrobeOuterwear", fields: [outerwear_id], references: [id])
+  Upperwear  ProductVariant  @relation("WardrobeUpperWear", fields: [upper_wear_id], references: [id])
+  Lowerwear  ProductVariant  @relation("WardrobeLowerWear", fields: [lower_wear_id], references: [id])
+  Footwear   ProductVariant  @relation("WardrobeFootwear", fields: [footwear_id], references: [id])
+}
+
+model WardrobeCustomerFeatures {
+  id         Int      @id @default(autoincrement())
+  height     Float
+  weight     Float
+  age        Int
+  skintone   String
+  bodyShape  String
+  created_at DateTime @default(now())
+  updated_at DateTime @updatedAt
+
+  wardrobe   Wardrobe? @relation("WardrobeFeatures")
+}
+
+model Order {
+  id                Int       @id @default(autoincrement())
+  orderNo           String    @unique(map: "Unique_OrderNo")
+  userId            Int       
+  shopId            Int           
+  status            String    @default("PROCESSING") // PROCESSING, PREPARING, PACKAGING, DELIVERING
+  quantity          Int       
+  created_at        DateTime  @default(now())
+  updated_at        DateTime  @updatedAt
+
+  User             User            @relation(fields: [userId], references: [id])
+  Shop             Shop            @relation(fields: [shopId], references: [id])
+
+  OrderItems        OrderItem[]
+}
+
+model OrderItem {
+  id                Int      @id @default(autoincrement())
+  orderId           Int      // Links to Order
+  productVariantId  Int      // Product variant purchased
+  sizeId            Int      // Size purchased
+  quantity          Int      // Quantity of this item
+  price             Decimal  @db.Decimal(10, 2) // Price at the time of purchase
+  created_at        DateTime @default(now())
+  updated_at        DateTime @default(now())
+
+  Order               Order          @relation(fields: [orderId], references: [id])
+  ProductVariant      ProductVariant @relation(fields: [productVariantId], references: [id])
+  Size                Size           @relation(fields: [sizeId], references: [id])
+  OrderItemHistory    OrderItemHistory[]
+}
+
+model OrderItemHistory {
+  id          Int      @id @default(autoincrement())
+  orderItemId Int
+  status      String   
+  description String?      
+  changed_at  DateTime @default(now())
+
+  Order OrderItem @relation(fields: [orderItemId], references: [id])
+}
+
+model Cart {
+  id         Int      @id @default(autoincrement())
+  userId     Int      
+  created_at DateTime @default(now())
+  updated_at DateTime @updatedAt
+
+  User       User     @relation(fields: [userId], references: [id])
+  CartItems  CartItem[]
+}
+
+model CartItem {
+  id                Int      @id @default(autoincrement())
+  cartId            Int      
+  shopId            Int      
+  productVariantId  Int      
+  sizeId            Int      
+  quantity          Int      @default(1)
+  created_at        DateTime @default(now())
+  updated_at        DateTime @updatedAt
+
+  Cart             Cart            @relation(fields: [cartId], references: [id])
+  Shop             Shop            @relation(fields: [shopId], references: [id])
+  ProductVariant   ProductVariant  @relation(fields: [productVariantId], references: [id])
+  Size             Size            @relation(fields: [sizeId], references: [id])
+
+  @@unique([cartId, productVariantId, sizeId], map: "Unique_Cart_Item")
+}
+
+model Notification {
+  id          Int      @id @default(autoincrement())
+  title       String   
+  content     String   
+  type        String   
+  userId      Int      
+  read        Boolean  @default(false)
+  created_at  DateTime @default(now())
+  updated_at  DateTime @updatedAt
+
+  User User @relation(fields: [userId], references: [id])
+}

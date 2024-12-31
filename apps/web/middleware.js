@@ -7,9 +7,7 @@ export async function middleware(req) {
   const url = req.nextUrl.clone();
   const stepPaths = [
     "/partnership/1",
-    "/partnership/2",
-    "/partnership/3",
-    "/partnership/4",
+    "/partnership/2",,
     "/partnership/success"
   ];
 

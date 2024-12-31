@@ -1,4 +1,4 @@
-import prisma, { getSessionShopNo } from "@/utils/helpers";
+import prisma, { getSessionShopId } from "@/utils/helpers";
 
 export default async function handler(req, res) {
   if (req.method !== "GET") {
@@ -6,9 +6,9 @@ export default async function handler(req, res) {
   }
 
   try {
-    const shopNo = await getSessionShopNo(req, res);
+    const shopId = await getSessionShopId(req, res);
 
-    if (!shopNo) {
+    if (!shopId) {
       return res.status(400).json({ error: "Shop number is missing in the session." });
     }
 
@@ -16,8 +16,8 @@ export default async function handler(req, res) {
     const pageNumber = parseInt(page, 10);
 
     // Fetch measurements with pagination, including the "Assign To" data
-    const measurements = await prisma.measurements.findMany({
-      where: { shopNo },
+    const measurements = await prisma.measurement.findMany({
+      where: { shopId },
       select: {
         id: true,
         name: true,
@@ -47,7 +47,7 @@ export default async function handler(req, res) {
           : null,
     }));
 
-    const totalMeasurements = await prisma.measurements.count({ where: { shopNo } });
+    const totalMeasurements = await prisma.measurement.count({ where: { shopId } });
     const totalPages = Math.ceil(totalMeasurements / 8);
 
     return res.status(200).json({

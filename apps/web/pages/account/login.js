@@ -71,7 +71,7 @@ export default function Login() {
   return (
     <Card className="mt-40 rounded-se-none rounded-es-none w-[650px] flex flex-col gap-7">
       <CardHeader className="flex flex-col items-center">
-        <CardTitle className="text-4xl">Login to Hue-Fit</CardTitle>
+        <CardTitle className="text-4xl">Login to Hue-Fit Vendor</CardTitle>
         <CardDescription>
           Enter your username and password to access Hue-Fit Dashboard.
         </CardDescription>

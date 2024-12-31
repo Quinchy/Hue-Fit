@@ -1,25 +1,73 @@
-// pages/dashboard/product/index.jsx
-import { useState, useEffect, useRef } from "react";
+// index.js
+import { useState, useRef, useEffect } from "react";
 import { useRouter } from "next/router";
-import useSWR from 'swr';
+import useSWR from "swr";
 import DashboardLayoutWrapper from "@/components/ui/dashboard-layout";
 import { CardTitle, Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { Plus, MoveLeft, Trash2, Asterisk, Loader } from "lucide-react";
-import { Select, SelectContent, SelectGroup, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { Plus, MoveLeft, Asterisk, Loader } from "lucide-react";
+import {
+  Select,
+  SelectContent,
+  SelectGroup,
+  SelectItem,
+  SelectTrigger,
+  SelectValue
+} from "@/components/ui/select";
 import Image from "next/image";
 import { Label } from "@/components/ui/label";
-import { useFormik, FormikProvider, FieldArray, setNestedObjectValues } from "formik";
+import { useFormik, FormikProvider, FieldArray } from "formik";
 import { productSchema } from "@/utils/validation-schema";
-import { ErrorMessage, InputErrorMessage, InputErrorStyle } from "@/components/ui/error-message";
-import dynamic from 'next/dynamic';
+import {
+  ErrorMessage,
+  InputErrorMessage,
+  InputErrorStyle
+} from "@/components/ui/error-message";
 import { LoadingMessage } from "@/components/ui/loading-message";
-
-const ProductVariantCard = dynamic(() => import('./product-variant-card'), { ssr: false });
-const SpecificMeasurements = dynamic(() => import('./specific-measurements'), { ssr: false });
+import { ToggleGroup, ToggleGroupItem } from "@/components/ui/toggle-group";
+import SpecificMeasurements from "./specific-measurements";
+import ProductVariantCard from "./product-variant-card";
 
 const fetcher = (url) => fetch(url).then((res) => res.json());
+
+function orderSizes(sizes) {
+  if (!Array.isArray(sizes)) return [];
+  const sizeMap = new Map();
+  const nextIds = new Set();
+  sizes.forEach((size) => {
+    sizeMap.set(size.id, size);
+    if (size.nextId !== null) {
+      nextIds.add(size.nextId);
+    }
+  });
+  const startIds = sizes
+    .map((size) => size.id)
+    .filter((id) => !nextIds.has(id));
+  const orderedSizes = [];
+  startIds.forEach((startId) => {
+    let currentSize = sizeMap.get(startId);
+    const visited = new Set();
+    while (currentSize && !visited.has(currentSize.id)) {
+      orderedSizes.push(currentSize);
+      visited.add(currentSize.id);
+      currentSize = sizeMap.get(currentSize.nextId);
+    }
+  });
+  return orderedSizes;
+}
+
+function touchAllFields(errors) {
+  if (typeof errors !== "object" || errors === null) return true;
+  if (Array.isArray(errors)) {
+    return errors.map((e) => touchAllFields(e));
+  }
+  const newTouched = {};
+  for (const key in errors) {
+    newTouched[key] = touchAllFields(errors[key]);
+  }
+  return newTouched;
+}
 
 export default function AddProduct() {
   const router = useRouter();
@@ -28,7 +76,7 @@ export default function AddProduct() {
   const [submitting, setSubmitting] = useState(false);
 
   const { data: productData, error: productError, isLoading } = useSWR(
-    '/api/products/get-product-related-info',
+    "/api/products/get-product-related-info",
     fetcher
   );
 
@@ -40,90 +88,191 @@ export default function AddProduct() {
       type: "",
       category: "",
       tags: "",
+      sizes: [],
       variants: [],
-      measurementsBySize: {},
+      measurements: []
     },
     validationSchema: productSchema,
-    onSubmit: async (values) => {
+    onSubmit: async (values, { setTouched }) => {
       setSubmitting(true);
-      console.log("Form Values:", JSON.stringify(values, null, 2));
+      const allErrors = await formik.validateForm();
+    
+      if (Object.keys(allErrors).length > 0) {
+        setTouched(touchAllFields(allErrors));
+        setSubmitting(false);
+        return;
+      }
+    
       const formData = new FormData();
-      formData.append('thumbnail', values.thumbnail.file);
-      formData.append('name', values.name);
-      formData.append('description', values.description);
-      formData.append('type', values.type);
-      formData.append('category', values.category);
-      formData.append('tags', values.tags);
-
-      values.variants.forEach((variant, variantIndex) => {
-        formData.append(`variants[${variantIndex}][price]`, variant.price);
-        formData.append(`variants[${variantIndex}][color]`, variant.color);
-        variant.sizes.forEach((size, sizeIndex) => {
-          formData.append(`variants[${variantIndex}][sizes][${sizeIndex}]`, size);
-          formData.append(`variants[${variantIndex}][quantities][${sizeIndex}]`, variant.quantities[size]);
-        });
-        variant.images.forEach((image, imageIndex) => {
-          formData.append(`variants[${variantIndex}][images][${imageIndex}]`, image.file);
-        });
-      });
-
-      formData.append('measurementsBySize', JSON.stringify(values.measurementsBySize));
-
+      const timeout = (ms) =>
+        new Promise((_, reject) =>
+          setTimeout(() => reject(new Error("Image appending timeout exceeded")), ms)
+        );
+    
       try {
-        const response = await fetch('/api/products/add-product', {
-          method: 'POST',
-          body: formData,
+        if (values.thumbnail && values.thumbnail.file) {
+          formData.append("thumbnail", values.thumbnail.file);
+        }
+        formData.append("name", values.name);
+        formData.append("description", values.description);
+        formData.append("type", values.type);
+        formData.append("category", values.category);
+        if (values.tags) {
+          formData.append("tags", values.tags);
+        }
+        if (values.sizes.length > 0) {
+          formData.append("sizes", values.sizes.join(","));
+        }
+    
+        await Promise.race([
+          new Promise((resolve) => {
+            values.variants.forEach((variant, variantIndex) => {
+              formData.append(`variants[${variantIndex}][price]`, variant.price);
+              formData.append(`variants[${variantIndex}][color]`, variant.color);
+    
+              if (Array.isArray(variant.quantities)) {
+                const quantities = {};
+                variant.quantities.forEach((q) => {
+                  quantities[q.size] = q.quantity;
+                });
+                Object.entries(quantities).forEach(([size, quantity]) => {
+                  formData.append(
+                    `variants[${variantIndex}][quantities][${size}]`,
+                    quantity
+                  );
+                });
+              }
+    
+              // Updated to handle multiple images
+              if (Array.isArray(variant.images)) {
+                variant.images.forEach((imageObj) => {
+                  formData.append(
+                    `productVariant[${variantIndex}][images]`,
+                    imageObj.file
+                  );
+                });
+              }
+            });
+            resolve();
+          }),
+          timeout(5000)
+        ]);
+    
+        if (Array.isArray(values.measurements)) {
+          const transformedMeasurements = [];
+          values.measurements.forEach((measurement) => {
+            measurement.values.forEach((val) => {
+              transformedMeasurements.push({
+                size: val.size,
+                measurementName: measurement.measurementName,
+                value: val.value
+              });
+            });
+          });
+          formData.append("measurements", JSON.stringify(transformedMeasurements));
+        }
+    
+        const response = await fetch("/api/products/add-product", {
+          method: "POST",
+          body: formData
         });
         const result = await response.json();
-        console.log('Server response:', result);
+    
         if (response.ok) {
-          router.push('/dashboard/product?success=true');
+          router.push("/dashboard/product?success=true");
         } else {
-          // Handle server errors here
-          console.error('Server error:', result.message);
+          console.error("Server error:", result.message);
         }
-      } 
-      catch (error) {
-        console.error('Error submitting form:', error);
-      }
-      finally {
+      } catch (error) {
+        console.error("Error during submission:", error.message);
+      } finally {
         setSubmitting(false);
       }
     },
+    
     validateOnMount: true,
     validateOnBlur: true,
     validateOnChange: true,
+    validateOnSubmit: true
   });
+
+  const { values, errors, touched, setFieldValue, handleBlur, handleChange } =
+    formik;
 
   if (productError) return <div>Failed to load product information</div>;
 
-  const { types = [], categories = [], tags = [] } = productData || {};
+  const { types = [], categories = [], tags = [], sizes = [], colors = [] } =
+    productData || {};
 
   const getTypeNameById = (id) => {
     const type = types.find((t) => t.id === parseInt(id));
-    return type ? type.name : '';
+    return type ? type.name : "";
   };
 
   const getTagNameById = (id) => {
     const tag = tags.find((t) => t.id === parseInt(id));
-    return tag ? tag.name : '';
+    return tag ? tag.name : "";
   };
 
-  const filteredTags = tags.filter(tag => tag.typeId === parseInt(formik.values.type));
+  const filteredTags = tags.filter((tag) => tag.typeId === parseInt(values.type));
+  const orderedSizes = orderSizes(sizes);
+  const typeName = getTypeNameById(values.type);
 
-  const isCoreProductValid = () => {
-    return (
-      formik.values.thumbnail &&
-      formik.values.name &&
-      formik.values.type &&
-      formik.values.category &&
-      formik.values.tags &&
-      !formik.errors.thumbnail &&
-      !formik.errors.name &&
-      !formik.errors.type &&
-      !formik.errors.category &&
-      !formik.errors.tags
+  const { data: measurementsData, error: measurementsError, isLoading: measurementsLoading } =
+    useSWR(
+      typeName ? `/api/products/get-measurement-by-type?productType=${typeName}` : null,
+      fetcher
     );
+
+  const addSize = (sizeAbbreviation) => {
+    const newSizes = [...values.sizes, sizeAbbreviation];
+    setFieldValue("sizes", newSizes);
+    if (values.measurements.length === 0) {
+      const initialMeasurementValues = [{ size: sizeAbbreviation, value: "" }];
+      setFieldValue("measurements", [
+        { measurementName: "", values: initialMeasurementValues }
+      ]);
+    } else {
+      const updatedMeasurements = values.measurements.map((m) => {
+        const existing = m.values.find((v) => v.size === sizeAbbreviation);
+        if (!existing) {
+          return {
+            ...m,
+            values: [...m.values, { size: sizeAbbreviation, value: "" }]
+          };
+        }
+        return m;
+      });
+      setFieldValue("measurements", updatedMeasurements);
+    }
+
+    values.variants.forEach((variant, index) => {
+      const existing = variant.quantities?.find((q) => q.size === sizeAbbreviation);
+      if (!existing) {
+        const newQuantities = variant.quantities
+          ? [...variant.quantities, { size: sizeAbbreviation, quantity: "" }]
+          : [{ size: sizeAbbreviation, quantity: "" }];
+        setFieldValue(`variants.${index}.quantities`, newQuantities);
+      }
+    });
+  };
+
+  const removeSize = (sizeAbbreviation) => {
+    const updatedSizes = values.sizes.filter((s) => s !== sizeAbbreviation);
+    setFieldValue("sizes", updatedSizes);
+
+    const updatedMeasurements = values.measurements.map((m) => {
+      const filteredValues = m.values.filter((v) => v.size !== sizeAbbreviation);
+      return { ...m, values: filteredValues };
+    });
+    setFieldValue("measurements", updatedMeasurements);
+
+    values.variants.forEach((variant, index) => {
+      const filteredQuantities = (variant.quantities || []).filter(
+        (q) => q.size !== sizeAbbreviation
+      );
+      setFieldValue(`variants.${index}.quantities`, filteredQuantities);
+    });
   };
 
   const handleImageChange = (e) => {
@@ -133,7 +282,7 @@ export default function AddProduct() {
       const uniqueId = `${file.name}-${Date.now()}`;
       const thumbnail = { file, url: imageUrl, id: uniqueId };
       setPreviewImage(imageUrl);
-      formik.setFieldValue("thumbnail", thumbnail);
+      setFieldValue("thumbnail", thumbnail);
     }
   };
 
@@ -143,182 +292,321 @@ export default function AddProduct() {
     }
   };
 
-  const markAllFieldsTouched = (values) => {
-    const touched = {};
-    const recursivelySetTouched = (obj, base = touched) => {
-      Object.keys(obj).forEach((key) => {
-        if (typeof obj[key] === 'object' && obj[key] !== null && !Array.isArray(obj[key])) {
-          base[key] = {};
-          recursivelySetTouched(obj[key], base[key]);
-        } else if (Array.isArray(obj[key])) {
-          base[key] = obj[key].map((item) =>
-            typeof item === 'object' && item !== null ? markAllFieldsTouched(item) : true
-          );
-        } else {
-          base[key] = true;
-        }
-      });
-    };
-    recursivelySetTouched(values);
-    return touched;
+  const isCoreProductValid = () => {
+    return (
+      values.thumbnail &&
+      values.name &&
+      values.type &&
+      values.category &&
+      values.tags &&
+      !errors.thumbnail &&
+      !errors.name &&
+      !errors.type &&
+      !errors.category &&
+      !errors.tags
+    );
   };
+
+  if (measurementsError) return <div>Failed to load measurements information</div>;
 
   return (
     <DashboardLayoutWrapper>
       <div className="flex justify-between items-center mb-5">
         <CardTitle className="text-4xl">Add Product</CardTitle>
-        <Button variant="outline" onClick={() => router.push('/dashboard/product')}>
+        <Button variant="outline" onClick={() => router.push("/dashboard/product")}>
           <MoveLeft className="scale-125" />
           Back to Products
         </Button>
       </div>
-      <form onSubmit={formik.handleSubmit}>
-        <div className="flex gap-5 mb-10">
-          <div className="flex flex-col items-start gap-3">
-            <Label className="font-bold flex flex-row items-center">Product Thumbnail <Asterisk className="w-4"/></Label>
-            <div className="bg-accent rounded border-8 border-border w-80 h-[420px] overflow-hidden">
-              <Image
-                src={previewImage}
-                alt="Product Preview"
-                width={320}
-                height={420}
-                className="object-cover w-full h-full"
-                priority
-              />
+      <FormikProvider value={formik}>
+        <form onSubmit={formik.handleSubmit}>
+          <div className="flex flex-col gap-3 mb-10">
+            <div className="flex flex-row items-center gap-5">
+              <CardTitle className="text-2xl min-w-[7rem]">Product</CardTitle>
+              <div className="h-[1px] w-full bg-primary/25"></div>
             </div>
-            <input
-              type="file"
-              accept="image/*"
-              ref={fileInputRef}
-              className="hidden"
-              onChange={(e) => handleImageChange(e)}
-            />
-            <Button variant="outline" type="button" className="w-full" onClick={openFilePicker}>
-              <Plus className="scale-110 stroke-[3px] mr-2" />
-              Upload Image
-            </Button>
-            <InputErrorMessage error={formik.errors.thumbnail} touched={formik.touched.thumbnail} />
+            <Card className="flex flex-row p-5 gap-5">
+              <div className="flex flex-col items-start gap-1">
+                <Label className="font-bold flex flex-row items-center">
+                  Thumbnail <Asterisk className="w-4" />
+                </Label>
+                <div
+                  className={`${InputErrorStyle(
+                    errors.thumbnail,
+                    touched.thumbnail
+                  )} bg-accent rounded border-4 border-dashed border-border w-80 h-[420px] overflow-hidden`}
+                >
+                  <Image
+                    src={previewImage}
+                    alt="Product Preview"
+                    width={320}
+                    height={420}
+                    className="object-cover w-full h-full"
+                    priority
+                  />
+                </div>
+                <Input
+                  type="file"
+                  accept="image/*"
+                  ref={fileInputRef}
+                  className="hidden"
+                  onChange={handleImageChange}
+                />
+                <InputErrorMessage
+                  error={errors.thumbnail}
+                  touched={touched.thumbnail}
+                />
+                <Button
+                  variant="outline"
+                  type="button"
+                  className="w-full mt-2"
+                  onClick={openFilePicker}
+                >
+                  <Plus className="scale-110 stroke-[3px] mr-2" /> Upload Image
+                </Button>
+              </div>
+              <div className="flex flex-1 flex-col gap-3">
+                <div className="flex flex-col gap-1">
+                  <Label className="font-bold flex flex-row items-center">
+                    Name <Asterisk className="w-4" />
+                  </Label>
+                  <Input
+                    placeholder="Enter the name of the product"
+                    name="name"
+                    value={values.name}
+                    onChange={handleChange}
+                    onBlur={handleBlur}
+                    className={InputErrorStyle(errors.name, touched.name)}
+                  />
+                  <InputErrorMessage error={errors.name} touched={touched.name} />
+                </div>
+                <div className="flex flex-col gap-2">
+                  <Label className="font-bold">Description</Label>
+                  <Input
+                    variant="textarea"
+                    placeholder="Place a description for the product"
+                    name="description"
+                    value={values.description}
+                    onChange={handleChange}
+                    onBlur={handleBlur}
+                  />
+                </div>
+                <div className="flex flex-row justify-between gap-3">
+                  <div className="flex flex-col gap-1 w-full">
+                    <Label className="font-bold flex flex-row items-center">
+                      Type <Asterisk className="w-4" />
+                    </Label>
+                    <Select
+                      onValueChange={(value) => {
+                        setFieldValue("type", value);
+                        setFieldValue("tags", "");
+                        setFieldValue("sizes", []);
+                        setFieldValue("measurements", []);
+                      }}
+                      disabled={isLoading}
+                    >
+                      <SelectTrigger
+                        className={`${InputErrorStyle(errors.type, touched.type)}`}
+                      >
+                        <SelectValue
+                          placeholder={
+                            isLoading ? (
+                              <span className="flex items-center gap-2">
+                                <Loader className="animate-spin" /> Loading clothing types...
+                              </span>
+                            ) : (
+                              "Select a type of clothing for the product"
+                            )
+                          }
+                        >
+                          {values.type
+                            ? getTypeNameById(values.type)
+                            : "Select a type of clothing product"}
+                        </SelectValue>
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectGroup>
+                          {types.map((type) => (
+                            <SelectItem key={type.id} value={type.id.toString()}>
+                              {type.name}
+                            </SelectItem>
+                          ))}
+                        </SelectGroup>
+                      </SelectContent>
+                    </Select>
+                    <InputErrorMessage error={errors.type} touched={touched.type} />
+                  </div>
+                  <div className="flex flex-col gap-1 w-full">
+                    <Label className="font-bold flex flex-row items-center">
+                      Category <Asterisk className="w-4" />
+                    </Label>
+                    <Select
+                      onValueChange={(value) => setFieldValue("category", value)}
+                      disabled={isLoading}
+                    >
+                      <SelectTrigger
+                        className={`${InputErrorStyle(
+                          errors.category,
+                          touched.category
+                        )}`}
+                      >
+                        <SelectValue
+                          placeholder={
+                            isLoading ? (
+                              <span className="flex items-center gap-2">
+                                <Loader className="animate-spin" /> Loading categories...
+                              </span>
+                            ) : (
+                              "Select a category for the product"
+                            )
+                          }
+                        >
+                          {values.category || "Select a category of clothing product"}
+                        </SelectValue>
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectGroup>
+                          {categories.map((category) => (
+                            <SelectItem key={category.id} value={category.name}>
+                              {category.name}
+                            </SelectItem>
+                          ))}
+                        </SelectGroup>
+                      </SelectContent>
+                    </Select>
+                    <InputErrorMessage
+                      error={errors.category}
+                      touched={touched.category}
+                    />
+                  </div>
+                  <div className="flex flex-col gap-1 w-full">
+                    <Label className="font-bold flex flex-row items-center">
+                      Tag <Asterisk className="w-4" />
+                    </Label>
+                    <Select
+                      onValueChange={(value) => {
+                        setFieldValue("tags", value);
+                      }}
+                      disabled={!values.type || isLoading}
+                    >
+                      <SelectTrigger
+                        className={`${InputErrorStyle(errors.tags, touched.tags)}`}
+                      >
+                        <SelectValue
+                          placeholder={
+                            isLoading ? (
+                              <span className="flex items-center gap-2">
+                                <Loader className="animate-spin" /> Loading tags...
+                              </span>
+                            ) : (
+                              "Select a tag for the product"
+                            )
+                          }
+                        >
+                          {values.tags ? getTagNameById(values.tags) : "Select tags"}
+                        </SelectValue>
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectGroup>
+                          {filteredTags.map((tag) => (
+                            <SelectItem key={tag.id} value={tag.id.toString()}>
+                              {tag.name}
+                            </SelectItem>
+                          ))}
+                        </SelectGroup>
+                      </SelectContent>
+                    </Select>
+                    <InputErrorMessage error={errors.tags} touched={touched.tags} />
+                  </div>
+                </div>
+                <div className="mb-4 flex flex-col gap-1">
+                  <Label className="font-bold flex flex-row items-center">
+                    Size <Asterisk className="w-4" />
+                  </Label>
+                  <ToggleGroup
+                    key={values.type}
+                    type="multiple"
+                    className={`flex justify-start gap-2 ${
+                      !values.type ? "pointer-events-none opacity-50 cursor-not-allowed" : ""
+                    }`}
+                  >
+                    {orderedSizes.map((size) => {
+                      const selected = values.sizes.includes(size.abbreviation);
+                      return (
+                        <ToggleGroupItem
+                          key={size.id}
+                          value={size.abbreviation}
+                          variant="outline"
+                          selected={selected}
+                          onClick={() => {
+                            if (!values.type) return;
+                            if (selected) {
+                              removeSize(size.abbreviation);
+                            } else {
+                              addSize(size.abbreviation);
+                            }
+                          }}
+                          className="min-w-14 min-h-14 border-2"
+                        >
+                          {size.abbreviation}
+                        </ToggleGroupItem>
+                      );
+                    })}
+                  </ToggleGroup>
+                  <InputErrorMessage
+                    error={errors.sizes}
+                    touched={touched.sizes}
+                    condition={touched.sizes && errors.sizes}
+                  />
+                </div>
+              </div>
+            </Card>
           </div>
-          <Card className="flex flex-1 flex-col p-5 gap-5">
-            <CardTitle className="text-2xl">Product Information</CardTitle>
-            <div className="flex flex-col gap-3">
-              <Label className="font-bold flex flex-row items-center">Name <Asterisk className="w-4"/></Label>
-              <Input
-                placeholder="Enter the product name"
-                name="name"
-                value={formik.values.name}
-                onChange={formik.handleChange}
-                onBlur={formik.handleBlur}
-                className={InputErrorStyle(formik.errors.name, formik.touched.name)}
+          <div className="mb-5 mt-10 flex flex-row items-center gap-5">
+            <CardTitle className="text-2xl min-w-[20rem]">Specific Measurements</CardTitle>
+            <div className="h-[1px] w-full bg-primary/25"></div>
+          </div>
+          {measurementsLoading ? (
+            <div className="flex justify-center items-center">
+              <Loader className="animate-spin" />
+              <span className="ml-2">Loading measurements...</span>
+            </div>
+          ) : (
+            measurementsData &&
+            values.sizes.length > 0 && (
+              <SpecificMeasurements
+                measurementsData={measurementsData}
+                selectedSizes={values.sizes}
+                measurements={values.measurements}
+                errors={errors.measurements}
+                touched={touched.measurements}
+                setFieldValue={setFieldValue}
+                handleBlur={handleBlur}
+                handleChange={handleChange}
+                sizes={orderedSizes}
               />
-              <InputErrorMessage error={formik.errors.name} touched={formik.touched.name} />
-            </div>
-            <div className="flex flex-col gap-3">
-              <Label className="font-bold">Description</Label>
-              <Input
-                variant="textarea"
-                placeholder="Enter a product description"
-                name="description"
-                value={formik.values.description}
-                onChange={formik.handleChange}
-              />
-            </div>
-            <div className="flex flex-col gap-3">
-              <Label className="font-bold flex flex-row items-center">Type <Asterisk className="w-4"/></Label>
-              <Select 
-                onValueChange={(value) => {
-                  formik.setFieldValue("type", value);
-                  formik.setFieldValue("tags", "");
-                }} 
-                disabled={isLoading}
-              >
-                <SelectTrigger className={`w-1/2 ${InputErrorStyle(formik.errors.type, formik.touched.type)}`}>
-                  <SelectValue placeholder={isLoading ? 
-                    <span className="flex items-center gap-2"><Loader className="animate-spin" /> Loading clothing types...</span> 
-                    : "Select a type of clothing"}>
-                    {formik.values.type ? getTypeNameById(formik.values.type) : 'Select a type of clothing product'}
-                  </SelectValue>
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectGroup>
-                    {types.map((type) => (
-                      <SelectItem key={type.id} value={type.id.toString()}>
-                        {type.name}
-                      </SelectItem>
-                    ))}
-                  </SelectGroup>
-                </SelectContent>
-              </Select>
-              <InputErrorMessage error={formik.errors.type} touched={formik.touched.type} />
-            </div>
-            <div className="flex flex-col gap-3">
-              <Label className="font-bold flex flex-row items-center">Category <Asterisk className="w-4"/></Label>
-              <Select 
-                onValueChange={(value) => formik.setFieldValue("category", value)}
-                disabled={isLoading}
-              >
-                <SelectTrigger className={`w-1/2 ${InputErrorStyle(formik.errors.category, formik.touched.category)}`}>
-                  <SelectValue placeholder={isLoading ? 
-                    <span className="flex items-center gap-2"><Loader className="animate-spin" /> Loading clothing categories...</span> 
-                    : "Select a category of clothing"}>
-                    {formik.values.category || 'Select a category of clothing product'}
-                  </SelectValue>
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectGroup>
-                    {categories.map((category) => (
-                      <SelectItem key={category.id} value={category.name}>
-                        {category.name}
-                      </SelectItem>
-                    ))}
-                  </SelectGroup>
-                </SelectContent>
-              </Select>
-              <InputErrorMessage error={formik.errors.category} touched={formik.touched.category} />
-            </div>
-            <div className="flex flex-col gap-3">
-              <Label className="font-bold flex flex-row items-center">Tags <Asterisk className="w-4"/></Label>
-              <Select 
-                onValueChange={(value) => formik.setFieldValue("tags", value)}
-                disabled={!formik.values.type || isLoading}
-              >
-                <SelectTrigger className={`w-1/2 ${InputErrorStyle(formik.errors.tags, formik.touched.tags)}`}>
-                  <SelectValue placeholder={isLoading ? 
-                    <span className="flex items-center gap-2"><Loader className="animate-spin" /> Loading clothing tags...</span> 
-                    : "Select a tag of clothing"}>
-                    {formik.values.tags ? getTagNameById(formik.values.tags) : 'Select tags'}
-                  </SelectValue>
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectGroup>
-                    {filteredTags.map((tag) => (
-                      <SelectItem key={tag.id} value={tag.id.toString()}>
-                        {tag.name}
-                      </SelectItem>
-                    ))}
-                  </SelectGroup>
-                </SelectContent>
-              </Select>
-              <InputErrorMessage error={formik.errors.tags} touched={formik.touched.tags} />
-            </div>
-          </Card>
-        </div>
-        <FormikProvider value={formik}>
+            )
+          )}
           <FieldArray name="variants">
             {({ push, remove }) => (
               <>
-                <div className="mb-5 flex flex-row items-center gap-5">
-                  <CardTitle className="text-2xl min-w-[14rem]">Product Variants</CardTitle>
+                <div className="mb-5 mt-10 flex flex-row items-center gap-5">
+                  <CardTitle className="text-2xl min-w-[16rem]">Product Variants</CardTitle>
                   <div className="h-[1px] w-full bg-primary/25"></div>
                 </div>
                 <div className="flex flex-col gap-5">
-                  {formik.values.variants.map((variant, index) => (
+                  {values.variants.map((variant, index) => (
                     <ProductVariantCard
                       key={index}
                       variant={variant}
-                      productType={formik.values.type}
-                      onRemove={() => remove(index)}
+                      productType={values.type}
+                      onRemove={() => {
+                        remove(index);
+                      }}
                       variantIndex={index}
+                      colors={colors}
+                      sizes={sizes}
+                      selectedSizes={values.sizes}
                     />
                   ))}
                 </div>
@@ -326,39 +614,44 @@ export default function AddProduct() {
                   variant="outline"
                   className="w-full mt-4 mb-4"
                   type="button"
-                  onClick={() => push({ price: '', color: '', sizes: [], quantities: {}, images: [] })}
+                  onClick={() => {
+                    const newVariant = {
+                      price: "",
+                      color: "",
+                      sizes: [...values.sizes],
+                      images: [],
+                      quantities: []
+                    };
+                    values.sizes.forEach((sizeAbbr) => {
+                      newVariant.quantities.push({ size: sizeAbbr, quantity: "" });
+                    });
+                    push(newVariant);
+                  }}
                   disabled={!isCoreProductValid()}
                 >
-                  <Plus className="scale-110 stroke-[3px]" />
+                  <Plus className="scale-110 stroke-[3px] mr-2" />
                   Add Product Variant
                 </Button>
-                <ErrorMessage
-                  message={formik.errors.variants}
-                  condition={formik.errors.variants && typeof formik.errors.variants === 'string'}
-                  className="mt-2"
-                />
-                <ErrorMessage
-                  message="Please create at least one product variant."
-                  condition={formik.values.variants.length === 0 && !formik.errors.variants}
-                  className="mt-2"
-                />
+                <div className="flex flex-col items-center">
+                  <ErrorMessage
+                    message={errors.variants}
+                    condition={errors.variants && typeof errors.variants === "string"}
+                    className="mt-2"
+                  />
+                  <ErrorMessage
+                    message="Please create at least one product variant."
+                    condition={values.variants.length === 0 && !errors.variants}
+                    className="mt-2"
+                  />
+                </div>
               </>
             )}
           </FieldArray>
-          <div className="mb-5 mt-10 flex flex-row items-center gap-5">
-            <CardTitle className="text-2xl min-w-[19rem]">Specific Measurements</CardTitle>
-            <div className="h-[1px] w-full bg-primary/25"></div>
-          </div>
-          <SpecificMeasurements formik={formik} productType={formik.values.type} />
-        </FormikProvider>
-        <Button
-          type="submit"
-          variant="default"
-          className="w-full mt-10 mb-20"
-        >
-          {submitting ? <LoadingMessage message="Submitting..." /> : "Submit"}
-        </Button>
-      </form>
+          <Button type="submit" variant="default" className="w-full mt-10 mb-20">
+            {submitting ? <LoadingMessage message="Submitting..." /> : "Submit"}
+          </Button>
+        </form>
+      </FormikProvider>
     </DashboardLayoutWrapper>
   );
-} 
+}

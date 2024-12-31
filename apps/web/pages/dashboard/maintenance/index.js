@@ -17,7 +17,6 @@ import AddTagDialog from "./tags/components/add-tag";
 import AddColorDialog from "./colors/components/add-color";
 import AddSizeDialog from "./sizes/components/add-size";
 import AddMeasurementDialog from "./measurements/components/add-measurement";
-import AddUnitDialog from "./units/components/add-unit";
 import { Skeleton } from "@/components/ui/skeleton";
 import useSWR from "swr";
 
@@ -135,22 +134,6 @@ export default function Maintenance() {
                     View Records
                   </Link>
                   <AddMeasurementDialog
-                    buttonClassName="bg-neutral-600 hover:bg-neutral-500 align-middle text-card"
-                    buttonName="Add More"
-                  />
-                </TableCell>
-              </TableRow>
-              <TableRow>
-                <TableCell>Units</TableCell>
-                <TableCell>{renderSkeletonOrTotal(totals?.units)}</TableCell>
-                <TableCell className="text-end">
-                  <Link
-                    className={`${buttonVariants({ variant: "default" })} mr-3 align-middle`}
-                    href={routes.units}
-                  >
-                    View Records
-                  </Link>
-                  <AddUnitDialog
                     buttonClassName="bg-neutral-600 hover:bg-neutral-500 align-middle text-card"
                     buttonName="Add More"
                   />

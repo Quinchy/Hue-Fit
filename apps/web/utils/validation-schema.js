@@ -19,41 +19,64 @@ export const permissionSchema = Yup.object({
 });
 
 export const contactInfoSchema = Yup.object({
-  firstName: Yup.string().required("First name is required."),
-  lastName: Yup.string().required("Last name is required."),
-  contactNo: Yup.string().required("Contact number is required."),
-  email: Yup.string().email("Invalid email format.").required("Email is required."),
-  position: Yup.string().required("Position is required."),
+  firstName: Yup.string().required("The First name field is required."),
+  lastName: Yup.string().required("The Last name field is required."),
+  position: Yup.string().required("The Position field is required."),
+  contactNo: Yup.string().required("The Contact Number field is required.")
+  .matches( /^(\+?\d{1,4})?\d{7,12}$/, "The phone number format is invalid." )
+  .test( "valid-length", "The phone number format is invalid.",
+    (value) => {
+      if (!value) return true;
+      const digits = value.replace(/\D/g, "");
+      if (value.startsWith("09")) {
+        return digits.length === 11;
+      }
+      if (value.startsWith("+")) {
+        return digits.length >= 10 && digits.length <= 12;
+      }
+      return false; 
+    }
+  ).test("starts-with", "The phone number format is invalid.", (value) => !value || value.startsWith("09") || value.startsWith("+") ),
+  email: Yup.string().email("The email format is invalid.").required("The Email field is required."),
+  username: Yup.string().required("The Username field is required."),
+  password: Yup.string()
+    .required("The Password field is required.")
+    .min(8, "Password must be at least 8 characters long."),
+  confirmPassword: Yup.string()
+    .required("The Confirm Password field is required.")
+    .oneOf([Yup.ref("password"), null], "Passwords must match."),
 });
 
-export const shopInfoSchema = Yup.object({
+export const shopInfoSchema = Yup.object().shape({
+  shopLogo: Yup.array().nullable(),
   businessLicense: Yup.array()
-  .test(
-    "fileCount",
-    "You can upload a maximum of 5 files.",
-    (value) => value && value.length <= 5
-  )
-  .test(
-    "atLeastOneFile",
-    "At least one business license is required.",
-    (value) => value && value.length >= 1
-  ),
-  shopName: Yup.string().required("Shop name is required."),
-  shopContactNo: Yup.string().required("Shop contact number is required."),
+  .test( "fileCount", "You can upload a maximum of 5 files.", (value) => value && value.length <= 5 )
+  .test( "atLeastOneFile", "At least one business license is required.", (value) => value && value.length >= 1 ),
+  shopName: Yup.string().required("The Shop name field is required."),
+  shopContactNo: Yup.string().nullable()
+  .matches( /^(\+?\d{1,4})?\d{7,12}$/, "The phone number format is invalid." )
+  .test( "valid-length", "The phone number format is invalid.",
+    (value) => {
+      if (!value) return true;
+      const digits = value.replace(/\D/g, "");
+      if (value.startsWith("09")) {
+        return digits.length === 11;
+      }
+      if (value.startsWith("+")) {
+        return digits.length >= 10 && digits.length <= 12;
+      }
+      return false; 
+    }
+  ).test( "starts-with", "Invalid phone number format.", (value) => !value || value.startsWith("09") || value.startsWith("+") ),
+  shopEmail: Yup.string().nullable().email("The email format is invalid."),
+  openingTime: Yup.string().required("The Opening time field is required."),
+  closingTime: Yup.string().required("The Closing time field is required."),
   buildingNo: Yup.string().nullable(),
   street: Yup.string().nullable(),
-  barangay: Yup.string().required("Barangay is required."),
-  municipality: Yup.string().required("Municipality is required."),
-  province: Yup.string().required("Province is required."),
-  postalNumber: Yup.string().required("Postal number is required."),
-});
-
-export const accountInfoSchema = Yup.object({
-  username: Yup.string().required("Username is required."),
-  password: Yup.string().required("Password is required."),
-});
-
-export const locationInfoSchema = Yup.object().shape({
+  barangay: Yup.string().required("The Barangay field is required."),
+  municipality: Yup.string().required("The Municipality field is required."),
+  province: Yup.string().required("The Province field is required."),
+  postalNumber: Yup.string().required("The Postal number field is required."),
   googleMapPlaceName: Yup.string().nullable(),
   latitude: Yup.number().required("Latitude is required."),
   longitude: Yup.number().required("Longitude is required."),
@@ -89,97 +112,68 @@ Yup.addMethod(Yup.array, 'unique', function (field, message) {
   });
 });
 
-export const coreProductSchema = Yup.object({
-  thumbnail: Yup.mixed().required("Product image thumbnail is required."),
-  name: Yup.string().required("Product name is required."),
-  description: Yup.string().nullable(),
-  type: Yup.string().required("Product type is required."),
-  category: Yup.string().required("Product category is required."),
-});
-
-const measurementSchema = Yup.object().shape({
-  measurementName: Yup.string().required('Measurement is required'),
+const measurementValueSchema = Yup.object().shape({
+  size: Yup.string().required(),
   value: Yup.number()
-    .typeError('Value must be a number')
-    .positive('Value must be greater than 0.')
-    .required('Value is required'),
-  unitName: Yup.string().required('Unit is required'),
+    .transform((val, origVal) => origVal.trim() === '' ? undefined : val)
+    .typeError("Measurement value must be a number.")
+    .positive("Measurement value must be greater than 0.")
+    .required("Measurement value is required."),
 });
 
-const measurementsBySizeSchema = Yup.lazy((obj) =>
-  Yup.object(
-    Object.keys(obj || {}).reduce((acc, size) => {
-      acc[size] = Yup.object().shape({
-        measurements: Yup.array()
-          .of(measurementSchema)
-          .min(1, 'At least one measurement is required.'),
-      });
-      return acc;
-    }, {})
-  )
-);
+const measurementsSchema = Yup.array().of(
+  Yup.object().shape({
+    measurementName: Yup.string().required("Measurement name is required."),
+    values: Yup.array().of(measurementValueSchema)
+      .min(1, "At least one measurement value is required.")
+  })
+).min(1, "At least one measurement is required.");
 
-export const productVariantSchema = Yup.object().shape({
-  price: Yup.number()
-    .typeError("Price must be a number.")
-    .positive("Price must be a positive number.")
-    .required("Price is required."),
-  color: Yup.string().required("Color is required."),
-  sizes: Yup.array().of(Yup.string()).min(1, "At least one size is required."),
-  quantities: Yup.lazy((value) => 
-    Yup.object().shape(
-      Object.keys(value || {}).reduce((acc, size) => {
-        acc[size] = Yup.number()
-          .typeError('Quantity must be a number')
-          .integer('Quantity must be a whole number.')
-          .positive('Quantity must be greater than 0.')
-          .required('Quantity is required.');
-        return acc;
-      }, {})
-    )
-  ),
-  images: Yup.array()
-    .of(Yup.object().shape({
-      id: Yup.string().required(),
-      file: Yup.mixed().required('Image file is required'),
-      url: Yup.string().required(),
-    }))
-    .min(1, 'At least one image is required.')
-    .required('Product images are required.'),
+const quantitySchema = Yup.object().shape({
+  size: Yup.string().required(),
+  quantity: Yup.number()
+    .transform((val, origVal) => origVal.trim() === '' ? undefined : val)
+    .typeError("Quantity must be a number")
+    .integer("Quantity must be a whole number.")
+    .positive("Quantity must be greater than 0.")
+    .required("Quantity is required.")
 });
 
-export const productSchema = Yup.object({
-  thumbnail: Yup.object()
-    .shape({
-      file: Yup.mixed()
-        .required("Product image thumbnail is required.")
-        .test(
-          "fileType",
-          "Unsupported file format",
-          (value) =>
-            value &&
-            ["image/jpeg", "image/png", "image/jpg"].includes(value.type)
-        )
-        .test(
-          "fileSize",
-          "File size is too large (max 5MB).",
-          (value) => value && value.size <= 5 * 1024 * 1024
-        ),
-      url: Yup.string().required("Thumbnail preview URL is required."),
-      id: Yup.string().required("Thumbnail unique ID is required."),
-    })
-    .required("Thumbnail object is required."),
-  name: Yup.string().required("Product name is required."),
+const variantsSchema = Yup.array().of(
+  Yup.object().shape({
+    price: Yup.number()
+      .transform((value, originalValue) => originalValue === '' ? undefined : value)
+      .typeError("Price must be a number.")
+      .positive("Price must be a positive number.")
+      .required("Price is required."),
+    color: Yup.string().required("Color is required."),
+    sizes: Yup.array().of(Yup.string().required()).min(1, "At least one size is required."),
+    images: Yup.array()
+      .of(
+        Yup.object().shape({
+          file: Yup.mixed().required("Image file is required."),
+          url: Yup.string().required("Image url is required.")
+        })
+      )
+      .min(1, "At least one image is required."),
+    quantities: Yup.array().of(quantitySchema)
+      .min(1, "At least one quantity is required."),
+  })
+).min(1, "At least one variant of the product is added.");
+
+export const productSchema = Yup.object().shape({
+  thumbnail: Yup.object().shape({
+    file: Yup.mixed().required("Thumbnail is required.")
+  }).required("Thumbnail is required."),
+  name: Yup.string().required("Name is required."),
   description: Yup.string().nullable(),
-  type: Yup.string().required("Product type is required."),
-  category: Yup.string().required("Product category is required."),
-  tags: Yup.string().required("Product tags is required."),
-  variants: Yup.array()
-    .of(productVariantSchema)
-    .min(1, "At least one product variant is required."),
-  measurementsBySize: measurementsBySizeSchema,
+  type: Yup.string().required("Type is required."),
+  category: Yup.string().required("Category is required."),
+  tags: Yup.string().required("Tag is required."),
+  sizes: Yup.array().of(Yup.string().required()).min(1, "At least one size for the product is added."),
+  measurements: measurementsSchema,
+  variants: variantsSchema
 });
-
 export const addSizeSchema = Yup.object({
   name: Yup.string().required("The Size Name field is required."),
   abbreviation: Yup.string().required("The Abbreviation field is required."),

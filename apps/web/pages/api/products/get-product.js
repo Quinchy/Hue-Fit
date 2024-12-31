@@ -1,31 +1,53 @@
 // pages/api/products/get-product.js
-import { getSessionShopNo } from "/utils/helpers";
-import prisma from "/utils/helpers";
+import { getSessionShopId } from '@/utils/helpers';
+import prisma from '@/utils/helpers';
 
 export default async function handler(req, res) {
   try {
-    const shopNo = await getSessionShopNo(req, res);
-    if (!shopNo) {
-      return res.status(401).json({ message: "Unauthorized" });
+    const shopId = await getSessionShopId(req, res);
+    if (!shopId) {
+      return res.status(401).json({ message: 'Unauthorized' });
     }
 
-    const { page = 1, search = "", type = "" } = req.query;
-    const pageNumber = parseInt(page);
+    const { page = 1, search = '', type = '' } = req.query;
+    const pageNumber = parseInt(page, 10);
+    const ITEMS_PER_PAGE = 9;
 
-    // Fetch products for this shopNo with pagination, search filter, and type filter
-    const products = await prisma.products.findMany({
-      where: {
-        shopNo: shopNo,
-        name: {
-          contains: search,
-          mode: 'insensitive',
-        },
-        ...(type && { Type: { name: type } }),
-      },
-      skip: (pageNumber - 1) * 8,
-      take: 8,
+    const baseWhere = {
+      shopId: shopId,
+      ...(type && { Type: { name: type } }),
+    };
+
+    const searchWhere = search
+      ? {
+          OR: [
+            {
+              name: {
+                contains: search,
+                mode: 'insensitive',
+              },
+            },
+            {
+              productNo: {
+                contains: search,
+                mode: 'insensitive',
+              },
+            },
+          ],
+        }
+      : {};
+
+    const combinedWhere = {
+      ...baseWhere,
+      ...searchWhere,
+    };
+
+    const products = await prisma.product.findMany({
+      where: combinedWhere,
+      skip: (pageNumber - 1) * ITEMS_PER_PAGE,
+      take: ITEMS_PER_PAGE,
       orderBy: {
-        created_at: "desc",
+        created_at: 'desc',
       },
       include: {
         Type: true,
@@ -33,29 +55,20 @@ export default async function handler(req, res) {
       },
     });
 
-    // Fetch total product count for pagination
-    const totalCount = await prisma.products.count({
-      where: {
-        shopNo: shopNo,
-        name: {
-          contains: search,
-          mode: 'insensitive',
-        },
-        ...(type && { Type: { name: type } }),
-      },
+    const totalCount = await prisma.product.count({
+      where: combinedWhere,
     });
 
-    // Fetch all types for the dropdown
     const types = await prisma.type.findMany({
       where: {
-        shopNo: shopNo,
+        shopId: shopId,
       },
       select: {
         name: true,
       },
     });
 
-    const totalPages = Math.ceil(totalCount / 8);
+    const totalPages = Math.ceil(totalCount / ITEMS_PER_PAGE);
 
     return res.status(200).json({
       products,
@@ -65,7 +78,7 @@ export default async function handler(req, res) {
       types,
     });
   } catch (error) {
-    console.error("Error fetching products:", error);
-    return res.status(500).json({ message: "Internal Server Error" });
+    console.error('Error fetching products:', error);
+    return res.status(500).json({ message: 'Internal Server Error' });
   }
 }

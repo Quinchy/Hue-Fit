@@ -1,4 +1,4 @@
-// components/product-variant-pictures.jsx
+// product-variant-pictures.jsx
 import { useState } from 'react';
 import Image from 'next/image';
 import { Plus, Trash2, Asterisk } from 'lucide-react';
@@ -7,7 +7,6 @@ import { useFormikContext } from 'formik';
 
 export default function ProductVariantPictures({ variantIndex }) {
   const { values, setFieldValue } = useFormikContext() || {};
-
   const images = values?.variants?.[variantIndex]?.images || [];
 
   const handleImageUpload = (event) => {
@@ -27,13 +26,24 @@ export default function ProductVariantPictures({ variantIndex }) {
   };
 
   return (
-    <div className="flex flex-col w-full gap-5">
-      <Label className="font-bold flex flex-row items-center">Product Variant Pictures <Asterisk className="w-4"/></Label>
+    <div className="flex flex-col w-full gap-2">
+      <Label className="font-bold flex flex-row items-center">
+        Product Variant Pictures <Asterisk className="w-4"/>
+      </Label>
       <div className="overflow-x-auto">
-        <div className="flex gap-5 w-max">
+        <div className="flex gap-3 w-max">
           {images.map((image, index) => (
-            <div key={image.id} className="relative bg-accent rounded border-8 border-border w-[320px] h-[320px] overflow-hidden mb-5">
-              <Image src={image.url} alt={`Product Image ${index + 1}`} width={320} height={320} className="object-contain w-full h-full" />
+            <div
+              key={image.id}
+              className="relative bg-accent rounded border-8 border-border w-[320px] h-[320px] overflow-hidden mb-5"
+            >
+              <Image
+                src={image.url}
+                alt={`Product Image ${index + 1}`}
+                width={320}
+                height={320}
+                className="object-contain w-full h-full"
+              />
               <button
                 type="button"
                 onClick={() => handleRemoveImage(image.id)}
