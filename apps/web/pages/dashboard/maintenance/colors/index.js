@@ -1,3 +1,4 @@
+// pages/colors/index.js
 import { Card, CardTitle } from "@/components/ui/card";
 import DashboardLayoutWrapper from "@/components/ui/dashboard-layout";
 import { Button } from "@/components/ui/button";
@@ -5,30 +6,11 @@ import { MoveLeft } from "lucide-react";
 import { useRouter } from "next/router";
 import routes from "@/routes";
 import AddColorDialog from "./components/add-color";
-import {
-  Table,
-  TableHead,
-  TableHeader,
-  TableBody,
-  TableCell,
-  TableRow,
-} from "@/components/ui/table";
-import {
-  DropdownMenu,
-  DropdownMenuContent,
-  DropdownMenuItem,
-  DropdownMenuTrigger,
-  DropdownMenuGroup,
-} from "@/components/ui/dropdown-menu";
+import { Table, TableHead, TableHeader, TableBody, TableCell, TableRow } from "@/components/ui/table";
+import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger, DropdownMenuGroup } from "@/components/ui/dropdown-menu";
 import { ChevronDown, Pencil, Trash2 } from "lucide-react";
-import {
-  Pagination,
-  PaginationPrevious,
-  PaginationContent,
-  PaginationItem,
-  PaginationNext,
-  PaginationLink,
-} from "@/components/ui/pagination";
+import { Pagination, PaginationPrevious, PaginationContent, PaginationItem, PaginationNext, PaginationLink } from "@/components/ui/pagination";
+import Loading from "@/components/ui/loading";
 import { Skeleton } from "@/components/ui/skeleton";
 import { useState } from "react";
 import useSWR from "swr";
@@ -38,10 +20,18 @@ const fetcher = (url) => fetch(url).then((res) => res.json());
 export default function Colors() {
   const router = useRouter();
   const [currentPage, setCurrentPage] = useState(1);
+  const [initialLoading, setInitialLoading] = useState(true);
+  const [loadingNextPage, setLoadingNextPage] = useState(false);
 
   const { data, isLoading, mutate } = useSWR(
     `/api/maintenance/colors/get-colors?page=${currentPage}`,
-    fetcher
+    fetcher,
+    {
+      onSuccess: () => {
+        setInitialLoading(false);
+        setLoadingNextPage(false);
+      },
+    }
   );
 
   const handleEdit = (color) => {
@@ -75,8 +65,17 @@ export default function Colors() {
   const handlePageChange = (page) => {
     if (page >= 1 && page <= (data?.totalPages || 1)) {
       setCurrentPage(page);
+      setLoadingNextPage(true);
     }
   };
+
+  if (isLoading && initialLoading) {
+    return (
+      <DashboardLayoutWrapper>
+        <Loading message="Loading colors..." />
+      </DashboardLayoutWrapper>
+    );
+  }
 
   return (
     <DashboardLayoutWrapper>
@@ -101,7 +100,7 @@ export default function Colors() {
             </TableRow>
           </TableHeader>
           <TableBody>
-            {isLoading ? (
+            {loadingNextPage ? (
               Array.from({ length: 8 }).map((_, index) => (
                 <TableRow key={index}>
                   <TableCell>

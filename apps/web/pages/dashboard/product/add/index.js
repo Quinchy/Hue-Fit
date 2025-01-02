@@ -1,5 +1,8 @@
 // index.js
-import { useState, useRef, useEffect } from "react";
+
+import { useState } from "react";
+import { useRef } from "react";
+import { useEffect } from "react";
 import { useRouter } from "next/router";
 import useSWR from "swr";
 import DashboardLayoutWrapper from "@/components/ui/dashboard-layout";
@@ -35,16 +38,19 @@ function orderSizes(sizes) {
   if (!Array.isArray(sizes)) return [];
   const sizeMap = new Map();
   const nextIds = new Set();
+
   sizes.forEach((size) => {
     sizeMap.set(size.id, size);
     if (size.nextId !== null) {
       nextIds.add(size.nextId);
     }
   });
+
   const startIds = sizes
     .map((size) => size.id)
     .filter((id) => !nextIds.has(id));
   const orderedSizes = [];
+
   startIds.forEach((startId) => {
     let currentSize = sizeMap.get(startId);
     const visited = new Set();
@@ -75,11 +81,14 @@ export default function AddProduct() {
   const fileInputRef = useRef(null);
   const [submitting, setSubmitting] = useState(false);
 
-  const { data: productData, error: productError, isLoading } = useSWR(
-    "/api/products/get-product-related-info",
-    fetcher
-  );
+  // 1) Fetch global product data
+  const {
+    data: productData,
+    error: productError,
+    isLoading
+  } = useSWR("/api/products/get-product-related-info", fetcher);
 
+  // 2) Prepare form
   const formik = useFormik({
     initialValues: {
       thumbnail: null,
@@ -96,19 +105,19 @@ export default function AddProduct() {
     onSubmit: async (values, { setTouched }) => {
       setSubmitting(true);
       const allErrors = await formik.validateForm();
-    
+
       if (Object.keys(allErrors).length > 0) {
         setTouched(touchAllFields(allErrors));
         setSubmitting(false);
         return;
       }
-    
+
       const formData = new FormData();
       const timeout = (ms) =>
         new Promise((_, reject) =>
           setTimeout(() => reject(new Error("Image appending timeout exceeded")), ms)
         );
-    
+
       try {
         if (values.thumbnail && values.thumbnail.file) {
           formData.append("thumbnail", values.thumbnail.file);
@@ -123,13 +132,14 @@ export default function AddProduct() {
         if (values.sizes.length > 0) {
           formData.append("sizes", values.sizes.join(","));
         }
-    
+
+        // Building variants
         await Promise.race([
           new Promise((resolve) => {
             values.variants.forEach((variant, variantIndex) => {
               formData.append(`variants[${variantIndex}][price]`, variant.price);
               formData.append(`variants[${variantIndex}][color]`, variant.color);
-    
+
               if (Array.isArray(variant.quantities)) {
                 const quantities = {};
                 variant.quantities.forEach((q) => {
@@ -142,8 +152,8 @@ export default function AddProduct() {
                   );
                 });
               }
-    
-              // Updated to handle multiple images
+
+              // images
               if (Array.isArray(variant.images)) {
                 variant.images.forEach((imageObj) => {
                   formData.append(
@@ -157,7 +167,8 @@ export default function AddProduct() {
           }),
           timeout(5000)
         ]);
-    
+
+        // Building measurements
         if (Array.isArray(values.measurements)) {
           const transformedMeasurements = [];
           values.measurements.forEach((measurement) => {
@@ -171,13 +182,14 @@ export default function AddProduct() {
           });
           formData.append("measurements", JSON.stringify(transformedMeasurements));
         }
-    
+
+        // Send request
         const response = await fetch("/api/products/add-product", {
           method: "POST",
           body: formData
         });
         const result = await response.json();
-    
+
         if (response.ok) {
           router.push("/dashboard/product?success=true");
         } else {
@@ -189,21 +201,34 @@ export default function AddProduct() {
         setSubmitting(false);
       }
     },
-    
     validateOnMount: true,
     validateOnBlur: true,
     validateOnChange: true,
     validateOnSubmit: true
   });
 
-  const { values, errors, touched, setFieldValue, handleBlur, handleChange } =
-    formik;
+  const {
+    values,
+    errors,
+    touched,
+    setFieldValue,
+    handleBlur,
+    handleChange
+  } = formik;
 
+  // 3) If global data fails
   if (productError) return <div>Failed to load product information</div>;
 
-  const { types = [], categories = [], tags = [], sizes = [], colors = [] } =
-    productData || {};
+  // 4) Deconstruct data safely
+  const {
+    types = [],
+    categories = [],
+    tags = [],
+    sizes = [],
+    colors = []
+  } = productData || {};
 
+  // 5) helpder functions
   const getTypeNameById = (id) => {
     const type = types.find((t) => t.id === parseInt(id));
     return type ? type.name : "";
@@ -214,16 +239,25 @@ export default function AddProduct() {
     return tag ? tag.name : "";
   };
 
+  // 6) Filter tags
   const filteredTags = tags.filter((tag) => tag.typeId === parseInt(values.type));
+
+  // 7) Ordered sizes
   const orderedSizes = orderSizes(sizes);
+
+  // 8) We always call the measurement SWR at top-level
   const typeName = getTypeNameById(values.type);
+  const measurementUrl = typeName
+    ? `/api/products/get-measurement-by-type?productType=${typeName}`
+    : null;
 
-  const { data: measurementsData, error: measurementsError, isLoading: measurementsLoading } =
-    useSWR(
-      typeName ? `/api/products/get-measurement-by-type?productType=${typeName}` : null,
-      fetcher
-    );
+  const {
+    data: measurementsData,
+    error: measurementsError,
+    isLoading: measurementsLoading
+  } = useSWR(measurementUrl, fetcher);
 
+  // 9) helper add / remove sizes
   const addSize = (sizeAbbreviation) => {
     const newSizes = [...values.sizes, sizeAbbreviation];
     setFieldValue("sizes", newSizes);
@@ -307,6 +341,7 @@ export default function AddProduct() {
     );
   };
 
+  // 10) if measurement fails
   if (measurementsError) return <div>Failed to load measurements information</div>;
 
   return (
@@ -318,6 +353,7 @@ export default function AddProduct() {
           Back to Products
         </Button>
       </div>
+
       <FormikProvider value={formik}>
         <form onSubmit={formik.handleSubmit}>
           <div className="flex flex-col gap-3 mb-10">
@@ -352,10 +388,7 @@ export default function AddProduct() {
                   className="hidden"
                   onChange={handleImageChange}
                 />
-                <InputErrorMessage
-                  error={errors.thumbnail}
-                  touched={touched.thumbnail}
-                />
+                <InputErrorMessage error={errors.thumbnail} touched={touched.thumbnail} />
                 <Button
                   variant="outline"
                   type="button"
@@ -365,6 +398,7 @@ export default function AddProduct() {
                   <Plus className="scale-110 stroke-[3px] mr-2" /> Upload Image
                 </Button>
               </div>
+
               <div className="flex flex-1 flex-col gap-3">
                 <div className="flex flex-col gap-1">
                   <Label className="font-bold flex flex-row items-center">
@@ -380,6 +414,7 @@ export default function AddProduct() {
                   />
                   <InputErrorMessage error={errors.name} touched={touched.name} />
                 </div>
+
                 <div className="flex flex-col gap-2">
                   <Label className="font-bold">Description</Label>
                   <Input
@@ -391,6 +426,7 @@ export default function AddProduct() {
                     onBlur={handleBlur}
                   />
                 </div>
+
                 <div className="flex flex-row justify-between gap-3">
                   <div className="flex flex-col gap-1 w-full">
                     <Label className="font-bold flex flex-row items-center">
@@ -405,9 +441,7 @@ export default function AddProduct() {
                       }}
                       disabled={isLoading}
                     >
-                      <SelectTrigger
-                        className={`${InputErrorStyle(errors.type, touched.type)}`}
-                      >
+                      <SelectTrigger className={`${InputErrorStyle(errors.type, touched.type)}`}>
                         <SelectValue
                           placeholder={
                             isLoading ? (
@@ -419,9 +453,7 @@ export default function AddProduct() {
                             )
                           }
                         >
-                          {values.type
-                            ? getTypeNameById(values.type)
-                            : "Select a type of clothing product"}
+                          {values.type || "Select a type of clothing product"}
                         </SelectValue>
                       </SelectTrigger>
                       <SelectContent>
@@ -436,20 +468,13 @@ export default function AddProduct() {
                     </Select>
                     <InputErrorMessage error={errors.type} touched={touched.type} />
                   </div>
+
                   <div className="flex flex-col gap-1 w-full">
                     <Label className="font-bold flex flex-row items-center">
                       Category <Asterisk className="w-4" />
                     </Label>
-                    <Select
-                      onValueChange={(value) => setFieldValue("category", value)}
-                      disabled={isLoading}
-                    >
-                      <SelectTrigger
-                        className={`${InputErrorStyle(
-                          errors.category,
-                          touched.category
-                        )}`}
-                      >
+                    <Select onValueChange={(value) => setFieldValue("category", value)} disabled={isLoading}>
+                      <SelectTrigger className={InputErrorStyle(errors.category, touched.category)}>
                         <SelectValue
                           placeholder={
                             isLoading ? (
@@ -474,11 +499,9 @@ export default function AddProduct() {
                         </SelectGroup>
                       </SelectContent>
                     </Select>
-                    <InputErrorMessage
-                      error={errors.category}
-                      touched={touched.category}
-                    />
+                    <InputErrorMessage error={errors.category} touched={touched.category} />
                   </div>
+
                   <div className="flex flex-col gap-1 w-full">
                     <Label className="font-bold flex flex-row items-center">
                       Tag <Asterisk className="w-4" />
@@ -489,9 +512,7 @@ export default function AddProduct() {
                       }}
                       disabled={!values.type || isLoading}
                     >
-                      <SelectTrigger
-                        className={`${InputErrorStyle(errors.tags, touched.tags)}`}
-                      >
+                      <SelectTrigger className={InputErrorStyle(errors.tags, touched.tags)}>
                         <SelectValue
                           placeholder={
                             isLoading ? (
@@ -503,22 +524,25 @@ export default function AddProduct() {
                             )
                           }
                         >
-                          {values.tags ? getTagNameById(values.tags) : "Select tags"}
+                          {values.tags || "Select tags"}
                         </SelectValue>
                       </SelectTrigger>
                       <SelectContent>
                         <SelectGroup>
-                          {filteredTags.map((tag) => (
-                            <SelectItem key={tag.id} value={tag.id.toString()}>
-                              {tag.name}
-                            </SelectItem>
-                          ))}
+                          {(productData?.tags || [])
+                            .filter((tag) => tag.typeId === parseInt(values.type))
+                            .map((tag) => (
+                              <SelectItem key={tag.id} value={tag.id.toString()}>
+                                {tag.name}
+                              </SelectItem>
+                            ))}
                         </SelectGroup>
                       </SelectContent>
                     </Select>
                     <InputErrorMessage error={errors.tags} touched={touched.tags} />
                   </div>
                 </div>
+
                 <div className="mb-4 flex flex-col gap-1">
                   <Label className="font-bold flex flex-row items-center">
                     Size <Asterisk className="w-4" />
@@ -530,7 +554,7 @@ export default function AddProduct() {
                       !values.type ? "pointer-events-none opacity-50 cursor-not-allowed" : ""
                     }`}
                   >
-                    {orderedSizes.map((size) => {
+                    {orderSizes(sizes).map((size) => {
                       const selected = values.sizes.includes(size.abbreviation);
                       return (
                         <ToggleGroupItem
@@ -562,36 +586,69 @@ export default function AddProduct() {
               </div>
             </Card>
           </div>
-          <div className="mb-5 mt-10 flex flex-row items-center gap-5">
-            <CardTitle className="text-2xl min-w-[20rem]">Specific Measurements</CardTitle>
-            <div className="h-[1px] w-full bg-primary/25"></div>
-          </div>
-          {measurementsLoading ? (
+
+          {/* Display if loading product info */}
+          {productError ? (
+            <div>Failed to load product information</div>
+          ) : isLoading ? (
             <div className="flex justify-center items-center">
               <Loader className="animate-spin" />
-              <span className="ml-2">Loading measurements...</span>
+              <span className="ml-2">Loading product data...</span>
             </div>
-          ) : (
-            measurementsData &&
-            values.sizes.length > 0 && (
-              <SpecificMeasurements
-                measurementsData={measurementsData}
-                selectedSizes={values.sizes}
-                measurements={values.measurements}
-                errors={errors.measurements}
-                touched={touched.measurements}
-                setFieldValue={setFieldValue}
-                handleBlur={handleBlur}
-                handleChange={handleChange}
-                sizes={orderedSizes}
-              />
-            )
-          )}
+          ) : null}
+
+          <div className="mb-5 mt-10 flex flex-row items-center gap-5">
+            <CardTitle className="text-2xl min-w-[8.7rem]">Size Guide</CardTitle>
+            <div className="h-[1px] w-full bg-primary/25"></div>
+          </div>
+
+          {/* 9) We do the measurement SWR at top-level always */}
+          {(() => {
+            const typeName = types.find((t) => t.id === parseInt(values.type))?.name;
+            const measurementUrl = typeName
+              ? `/api/products/get-measurement-by-type?productType=${typeName}`
+              : null;
+
+            const {
+              data: measurementsData,
+              error: measurementsError,
+              isLoading: measurementsLoading
+            } = useSWR(measurementUrl, fetcher);
+
+            if (measurementsError) {
+              return <div>Failed to load measurements information</div>;
+            }
+            if (measurementsLoading) {
+              return (
+                <div className="flex justify-center items-center">
+                  <Loader className="animate-spin" />
+                  <span className="ml-2">Loading measurements...</span>
+                </div>
+              );
+            }
+            if (measurementsData && values.sizes.length > 0) {
+              return (
+                <SpecificMeasurements
+                  measurementsData={measurementsData}
+                  selectedSizes={values.sizes}
+                  measurements={values.measurements}
+                  errors={errors.measurements}
+                  touched={touched.measurements}
+                  setFieldValue={setFieldValue}
+                  handleBlur={handleBlur}
+                  handleChange={handleChange}
+                  sizes={orderSizes(sizes)}
+                />
+              );
+            }
+            return null;
+          })()}
+
           <FieldArray name="variants">
             {({ push, remove }) => (
               <>
                 <div className="mb-5 mt-10 flex flex-row items-center gap-5">
-                  <CardTitle className="text-2xl min-w-[16rem]">Product Variants</CardTitle>
+                  <CardTitle className="text-2xl min-w-[9rem]">Variations</CardTitle>
                   <div className="h-[1px] w-full bg-primary/25"></div>
                 </div>
                 <div className="flex flex-col gap-5">
@@ -604,8 +661,8 @@ export default function AddProduct() {
                         remove(index);
                       }}
                       variantIndex={index}
-                      colors={colors}
-                      sizes={sizes}
+                      colors={productData?.colors || []}
+                      sizes={productData?.sizes || []}
                       selectedSizes={values.sizes}
                     />
                   ))}
@@ -627,7 +684,20 @@ export default function AddProduct() {
                     });
                     push(newVariant);
                   }}
-                  disabled={!isCoreProductValid()}
+                  disabled={
+                    !(
+                      values.thumbnail &&
+                      values.name &&
+                      values.type &&
+                      values.category &&
+                      values.tags &&
+                      !errors.thumbnail &&
+                      !errors.name &&
+                      !errors.type &&
+                      !errors.category &&
+                      !errors.tags
+                    )
+                  }
                 >
                   <Plus className="scale-110 stroke-[3px] mr-2" />
                   Add Product Variant
@@ -647,6 +717,7 @@ export default function AddProduct() {
               </>
             )}
           </FieldArray>
+
           <Button type="submit" variant="default" className="w-full mt-10 mb-20">
             {submitting ? <LoadingMessage message="Submitting..." /> : "Submit"}
           </Button>

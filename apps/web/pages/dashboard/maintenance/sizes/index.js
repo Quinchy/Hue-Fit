@@ -12,16 +12,25 @@ import { Skeleton } from "@/components/ui/skeleton";
 import { Pagination, PaginationPrevious, PaginationContent, PaginationItem, PaginationNext, PaginationLink } from "@/components/ui/pagination";
 import { useState } from "react";
 import useSWR from "swr";
+import Loading from "@/components/ui/loading";
 
 const fetcher = (url) => fetch(url).then((res) => res.json());
 
 export default function Sizes() {
   const router = useRouter();
   const [currentPage, setCurrentPage] = useState(1);
+  const [initialLoading, setInitialLoading] = useState(true);
+  const [loadingNextPage, setLoadingNextPage] = useState(false);
 
   const { data, isLoading, mutate } = useSWR(
     `/api/maintenance/sizes/get-sizes?page=${currentPage}`,
-    fetcher
+    fetcher,
+    {
+      onSuccess: () => {
+        setInitialLoading(false);
+        setLoadingNextPage(false);
+      },
+    }
   );
 
   const handleEdit = (size) => {
@@ -55,8 +64,17 @@ export default function Sizes() {
   const handlePageChange = (page) => {
     if (page >= 1 && page <= (data?.totalPages || 1)) {
       setCurrentPage(page);
+      setLoadingNextPage(true);
     }
   };
+
+  if (isLoading && initialLoading) {
+    return (
+      <DashboardLayoutWrapper>
+        <Loading message="Loading sizes..." />
+      </DashboardLayoutWrapper>
+    );
+  }
 
   return (
     <DashboardLayoutWrapper>
@@ -81,7 +99,7 @@ export default function Sizes() {
             </TableRow>
           </TableHeader>
           <TableBody>
-            {isLoading ? (
+            {loadingNextPage ? (
               Array.from({ length: 8 }).map((_, index) => (
                 <TableRow key={index}>
                   <TableCell>

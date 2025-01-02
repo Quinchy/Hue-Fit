@@ -1,5 +1,7 @@
-import { useState, useEffect } from 'react';
+// EditProduct.jsx
+import { useState, useEffect, useRef } from 'react';
 import { useRouter } from 'next/router';
+import routes from '@/routes';
 import useSWR from 'swr';
 import DashboardLayoutWrapper from "@/components/ui/dashboard-layout";
 import { Card, CardTitle } from "@/components/ui/card";
@@ -7,253 +9,373 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import Image from 'next/image';
-import { Pencil, PencilLine, Save, X, MoveLeft } from 'lucide-react';
+import { Pencil, MoveLeft, Plus } from 'lucide-react';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import VariantDetails from "./edit-product-variant";
-import SpecificMeasurements from "./edit-specific-measurement";
+import { ToggleGroup, ToggleGroupItem } from "@/components/ui/toggle-group";
+import EditProductVariantCard from "./edit-product-variant-card";
+import EditSpecificMeasurements from "./edit-specific-measurements";
+import Loading from "@/components/ui/loading";
 
-// Optimized fetcher function with error handling
 const fetcher = (url) => fetch(url).then((res) => res.json());
+
+function orderSizes(sizes) {
+  if (!Array.isArray(sizes)) return [];
+  const sizeMap = new Map();
+  const nextIds = new Set();
+
+  sizes.forEach((size) => {
+    sizeMap.set(size.id, size);
+    if (size.nextId !== null) {
+      nextIds.add(size.nextId);
+    }
+  });
+
+  const startIds = sizes.map((size) => size.id).filter((id) => !nextIds.has(id));
+  const orderedSizes = [];
+
+  startIds.forEach((startId) => {
+    let currentSize = sizeMap.get(startId);
+    const visited = new Set();
+    while (currentSize && !visited.has(currentSize.id)) {
+      orderedSizes.push(currentSize);
+      visited.add(currentSize.id);
+      currentSize = sizeMap.get(currentSize.nextId);
+    }
+  });
+
+  return orderedSizes;
+}
 
 export default function EditProduct() {
   const router = useRouter();
   const { productNo } = router.query;
 
-  // SWR options to prevent unnecessary re-fetches
-  const swrOptions = { revalidateOnFocus: false };
-
   const { data: productData, isLoading: productInfoLoading } = useSWR(
     '/api/products/get-product-related-info',
-    fetcher,
-    swrOptions
+    fetcher
   );
-
   const { data, isLoading } = useSWR(
     productNo ? `/api/products/get-product-details?productNo=${productNo}` : null,
-    fetcher,
-    swrOptions
+    fetcher
   );
 
-  const product = data?.product || {};
-  const [isEditing, setIsEditing] = useState(false);
-  const [editableProduct, setEditableProduct] = useState(null);
+  const [product, setProduct] = useState(null);
+  const [orderedSizes, setOrderedSizes] = useState([]);
   const [filteredTags, setFilteredTags] = useState([]);
+  const fileInputRef = useRef(null);
+  const [isEditingProduct, setIsEditingProduct] = useState(false);
 
-  const types = productData?.types || [];
-  const categories = productData?.categories || [];
-  const tags = productData?.tags || [];
-
-  // Log productData when it's available
   useEffect(() => {
-    if (productData) {
-      console.log(productData);
+    if (data?.product) {
+      const p = data.product;
+      setProduct({
+        ...p,
+        thumbnailURL: p.thumbnailURL || "",
+        TypeId: p.Type?.id || "",
+        CategoryName: p.Category?.name || "",
+        TagName: p.Tag?.name || "",
+        sizes: p.ProductMeasurement
+          ? Array.from(
+              new Set(
+                p.ProductMeasurement.map((pm) => pm.Size?.abbreviation)
+              )
+            ).filter(Boolean)
+          : [],
+        ProductVariant: p.ProductVariant || [],
+        ProductMeasurement: p.ProductMeasurement || []
+      });
     }
-  }, [productData]);
+  }, [data]);
 
-  // Set initial product state when product and tags are available
   useEffect(() => {
-    if (product && Object.keys(product).length > 0 && tags.length > 0) {
-      setEditableProduct(product);
-      // Filter tags based on product type
-      const associatedTags = tags.filter((tag) => tag.typeId === product.Type?.id);
-      setFilteredTags(associatedTags);
+    if (productData?.tags && product?.TypeId) {
+      const relevantTags = productData.tags.filter(
+        (tag) => tag.typeId === product.TypeId
+      );
+      setFilteredTags(relevantTags);
     }
-  }, [product, tags]);
-
-  // Update filtered tags when type changes
-  useEffect(() => {
-    if (editableProduct?.Type?.id && tags.length > 0) {
-      const associatedTags = tags.filter((tag) => tag.typeId === editableProduct.Type.id);
-      setFilteredTags(associatedTags);
+    if (productData?.sizes) {
+      setOrderedSizes(orderSizes(productData.sizes));
     }
-  }, [editableProduct?.Type?.id, tags]);
+  }, [productData, product]);
 
-  if (isLoading || productInfoLoading || !editableProduct) {
+  if (isLoading || productInfoLoading || !product) {
     return (
       <DashboardLayoutWrapper>
-        <div className="text-center">Loading...</div>
+        <Loading message="Loading product..." />
       </DashboardLayoutWrapper>
     );
   }
 
-  const handleEditClick = () => setIsEditing(true);
-
-  const handleSaveClick = () => {
-    setIsEditing(false);
-    // Logic to save the updated product details can be added here
+  const handleFieldChange = (field, value) => {
+    if (!isEditingProduct) return;
+    setProduct((prev) => ({ ...prev, [field]: value }));
   };
 
-  const handleCancelClick = () => {
-    setIsEditing(false);
-    setEditableProduct(product); // Reset changes
-  };
-
-  const handleInputChange = (key, value) => {
-    setEditableProduct((prev) => ({ ...prev, [key]: value }));
+  const openFilePicker = () => {
+    if (fileInputRef.current) {
+      fileInputRef.current.click();
+    }
   };
 
   const handleThumbnailChange = (e) => {
+    if (!isEditingProduct) return;
     const file = e.target.files[0];
     if (file) {
       const imageUrl = URL.createObjectURL(file);
-      setEditableProduct((prev) => ({ ...prev, thumbnailURL: imageUrl }));
+      setProduct((prev) => ({
+        ...prev,
+        thumbnailURL: imageUrl
+      }));
     }
   };
+
+  const handleSaveProduct = () => {
+    setIsEditingProduct(false);
+  };
+
+  const handleCancelProduct = () => {
+    setIsEditingProduct(false);
+    if (data?.product) {
+      const p = data.product;
+      setProduct({
+        ...p,
+        thumbnailURL: p.thumbnailURL || "",
+        TypeId: p.Type?.id || "",
+        CategoryName: p.Category?.name || "",
+        TagName: p.Tag?.name || "",
+        sizes: p.ProductMeasurement
+          ? Array.from(
+              new Set(
+                p.ProductMeasurement.map((pm) => pm.Size?.abbreviation)
+              )
+            ).filter(Boolean)
+          : [],
+        ProductVariant: p.ProductVariant || [],
+        ProductMeasurement: p.ProductMeasurement || []
+      });
+    }
+  };
+
+  const { types = [], categories = [], colors = [] } = productData || [];
 
   return (
     <DashboardLayoutWrapper>
       <div className="flex justify-between items-center mb-5">
         <CardTitle className="text-4xl">Edit Product</CardTitle>
-        <Button variant="outline" onClick={() => router.push('/dashboard/product')}>
+        <Button variant="outline" onClick={() => router.push(routes.product)}>
           <MoveLeft className="scale-125" />
           Back to Products
         </Button>
       </div>
-      <div className="flex flex-row gap-5 min-h-[30rem]">
-        {/* Edit Thumbnail */}
-        <div className="flex flex-col items-start gap-3">
-          <Label className="font-bold">Product Thumbnail</Label>
-          <div className="relative bg-accent rounded border-8 border-border max-w-[375px] max-h-[450px] overflow-hidden">
-            <Image
-              src={editableProduct.thumbnailURL || "/images/placeholder-picture.png"}
-              alt="Product Thumbnail"
-              width={450}
-              height={450}
-              quality={75}
-              className="object-fill rounded max-w-[375px] max-h-[450px] min-w-[375px] min-h-[450px]"
-              priority
-            />
-            {isEditing && (
-              <label className="absolute inset-0 uppercase flex flex-col gap-2 items-center justify-center bg-card/75 bg-opacity-50 text-primary font-medium hover:bg-card/70 ease-in-out duration-300 cursor-pointer">
-                <PencilLine className="scale-115" />
-                Change Thumbnail
-                <input type="file" accept="image/*" className="hidden" onChange={handleThumbnailChange} />
-              </label>
-            )}
-          </div>
+      <div className="flex flex-col gap-3 mb-10">
+        <div className="flex flex-row items-center gap-5 w-full">
+          <CardTitle className="text-2xl min-w-[7rem]">Product</CardTitle>
+          <div className="h-[1px] w-full bg-primary/25"></div>
         </div>
-        {/* Edit Product Details */}
-        <Card className="flex flex-col items-end gap-5 p-5 w-full">
-          <div className="flex flex-row justify-between gap-5 w-full">
-            <div className="flex flex-row items-center gap-5 w-full">
-              <CardTitle className="text-2xl min-w-[16.5rem]">Product Information</CardTitle>
-              <div className="h-[1px] w-full bg-primary/25"></div>
+        <Card className="flex flex-col gap-5 p-5 w-full">
+          <div className="flex flex-row gap-5 w-full">
+            <div className="flex flex-col gap-3">
+              <Label className="font-bold">Thumbnail</Label>
+              <div className="relative bg-accent rounded border-4 border-dashed border-border w-80 h-[420px] overflow-hidden">
+                <Image
+                  src={product.thumbnailURL || "/images/placeholder-picture.png"}
+                  alt="Product Thumbnail"
+                  width={320}
+                  height={420}
+                  quality={75}
+                  className="object-cover w-full h-full"
+                  priority
+                />
+                {isEditingProduct && (
+                  <>
+                    <Input
+                      type="file"
+                      accept="image/*"
+                      ref={fileInputRef}
+                      onChange={handleThumbnailChange}
+                      className="hidden"
+                    />
+                    <Button
+                      variant="outline"
+                      onClick={openFilePicker}
+                      className="absolute inset-0 flex items-center justify-center h-full rounded-none bg-background/50"
+                    >
+                      <Plus className="mr-2" />
+                      Upload Image
+                    </Button>
+                  </>
+                )}
+              </div>
             </div>
-            <Button
-              variant="ghost"
-              onClick={handleEditClick}
-              className="w-14 h-14"
-              disabled={isEditing}
-            >
-              <Pencil className="scale-150" />
-            </Button>
-          </div>
-          <div className="flex flex-col gap-5 w-full">
-            <div className="flex flex-col gap-2 w-full">
-              <Label className="font-bold">Name</Label>
-              <Input
-                value={editableProduct.name || ""}
-                disabled={!isEditing}
-                onChange={(e) => handleInputChange("name", e.target.value)}
-              />
-            </div>
-            <div className="flex flex-col gap-2 w-full">
-              <Label className="font-bold">Description</Label>
-              <Input
-                value={editableProduct.description || ""}
-                disabled={!isEditing}
-                onChange={(e) => handleInputChange("description", e.target.value)}
-              />
-            </div>
-            <div className="flex flex-row justify-between gap-5">
+
+            <div className="flex flex-col gap-5 w-full">
               <div className="flex flex-col gap-2 w-full">
-                <Label className="font-bold">Type</Label>
-                <Select
-                  onValueChange={(value) => {
-                    const selectedType = types.find((type) => type.id.toString() === value);
-                    handleInputChange("Type", selectedType);
-                  }}
-                  disabled={!isEditing}
-                  defaultValue={editableProduct.Type?.id?.toString()}
-                >
-                  <SelectTrigger>
-                    <SelectValue placeholder="Select Type" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    {types.map((type) => (
-                      <SelectItem key={type.id} value={type.id.toString()}>
-                        {type.name}
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
+                <Label className="font-bold">Name</Label>
+                <Input
+                  value={product.name || ""}
+                  disabled={!isEditingProduct}
+                  onChange={(e) => handleFieldChange("name", e.target.value)}
+                />
               </div>
+
               <div className="flex flex-col gap-2 w-full">
-                <Label className="font-bold">Category</Label>
-                <Select
-                  onValueChange={(value) => handleInputChange("Category", { name: value })}
-                  disabled={!isEditing}
-                  defaultValue={editableProduct.Category?.name}
-                >
-                  <SelectTrigger>
-                    <SelectValue placeholder="Select Category" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    {categories.map((category) => (
-                      <SelectItem key={category.id} value={category.name}>
-                        {category.name}
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
+                <Label className="font-bold">Description</Label>
+                <Input
+                  value={product.description || ""}
+                  variant="textarea"
+                  disabled={!isEditingProduct}
+                  onChange={(e) => handleFieldChange("description", e.target.value)}
+                />
               </div>
-              <div className="flex flex-col gap-2 w-full">
-                <Label className="font-bold">Tags</Label>
-                <Select
-                  onValueChange={(value) => handleInputChange("Tags", { name: value })}
-                  disabled={!isEditing}
-                  defaultValue={editableProduct.Tags?.name}
-                >
-                  <SelectTrigger>
-                    <SelectValue placeholder="Select Tags" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    {filteredTags.map((tag) => (
-                      <SelectItem key={tag.id} value={tag.name}>
-                        {tag.name}
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
+
+              <div className="flex flex-row justify-between gap-5">
+                <div className="flex flex-col gap-2 w-full">
+                  <Label className="font-bold">Type</Label>
+                  <Select
+                    onValueChange={(val) => handleFieldChange("TypeId", parseInt(val))}
+                    disabled={!isEditingProduct}
+                    value={product.TypeId ? product.TypeId.toString() : ""}
+                  >
+                    <SelectTrigger>
+                      <SelectValue placeholder="Select Type" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {types.map((t) => (
+                        <SelectItem key={t.id} value={t.id.toString()}>
+                          {t.name}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </div>
+
+                <div className="flex flex-col gap-2 w-full">
+                  <Label className="font-bold">Category</Label>
+                  <Select
+                    onValueChange={(val) => handleFieldChange("CategoryName", val)}
+                    disabled={!isEditingProduct}
+                    value={product.CategoryName}
+                  >
+                    <SelectTrigger>
+                      <SelectValue placeholder="Select Category" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {categories.map((cat) => (
+                        <SelectItem key={cat.id} value={cat.name}>
+                          {cat.name}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </div>
+
+                <div className="flex flex-col gap-2 w-full">
+                  <Label className="font-bold">Tags</Label>
+                  <Select
+                    onValueChange={(val) => handleFieldChange("TagName", val)}
+                    disabled={!isEditingProduct || !product.TypeId}
+                    value={product.TagName}
+                  >
+                    <SelectTrigger>
+                      <SelectValue placeholder="Select Tags" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {filteredTags.map((tag) => (
+                        <SelectItem key={tag.id} value={tag.name}>
+                          {tag.name}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </div>
               </div>
+
+              <div className="flex flex-col gap-1">
+                <Label className="font-bold">Sizes</Label>
+                <div className="flex items-center gap-3">
+                  <ToggleGroup
+                    type="multiple"
+                    className="flex justify-start gap-2 pointer-events-none opacity-50 cursor-not-allowed"
+                  >
+                    {product.sizes.map((sizeAbbr) => {
+                      const selected = product.sizes.includes(sizeAbbr);
+                      return (
+                        <ToggleGroupItem
+                          key={sizeAbbr}
+                          value={sizeAbbr}
+                          variant="outline"
+                          selected={selected}
+                          className="min-w-14 min-h-14 border-2"
+                        >
+                          {sizeAbbr}
+                        </ToggleGroupItem>
+                      );
+                    })}
+                  </ToggleGroup>
+                  {isEditingProduct && (
+                    <Button
+                      variant="outline"
+                      className="w-fit"
+                      onClick={() => {
+                        // handle logic for adding another size
+                      }}
+                    >
+                      Add More Size
+                    </Button>
+                  )}
+                </div>
+              </div>
+
+              {isEditingProduct && (
+                <div className="flex flex-col w-full gap-3">
+                  <Button variant="default" onClick={handleSaveProduct}>
+                    Save
+                  </Button>
+                  <Button variant="outline" onClick={handleCancelProduct}>
+                    Cancel
+                  </Button>
+                </div>
+              )}
             </div>
-            {isEditing && (
-              <div className="flex flex-col gap-2">
-                <Button variant="default" onClick={handleSaveClick}>
-                  <Save className="scale-110" />
-                  Save
-                </Button>
-                <Button variant="outline" onClick={handleCancelClick}>
-                  <X className="scale-110" />
-                  Cancel
-                </Button>
-              </div>
-            )}
+
+            <div className="flex items-start">
+              <Button
+                variant="ghost"
+                onClick={() => setIsEditingProduct(true)}
+                disabled={isEditingProduct}
+                className="w-14 h-14"
+              >
+                <Pencil className="scale-125" />
+              </Button>
+            </div>
           </div>
         </Card>
       </div>
-      <div className="mb-5 flex flex-row items-center gap-5">
-        <CardTitle className="text-2xl min-w-[16.5rem]">Variant Information</CardTitle>
-        <div className="h-[1px] w-full bg-primary/25"></div>
+      <div className="flex flex-col gap-3 mb-10">
+        <div className="flex flex-row items-center gap-5">
+          <CardTitle className="text-2xl min-w-[8.7rem]">Size Guide</CardTitle>
+          <div className="h-[1px] w-full bg-primary/25"></div>
+        </div>
+        <EditSpecificMeasurements product={product} setProduct={setProduct} />
       </div>
-      {/* Variants Component */}
-      <VariantDetails product={product} />
-      <div className="mb-5 flex flex-row items-center gap-5">
-        <CardTitle className="text-2xl min-w-[27.5rem]">Specific Measurement Information</CardTitle>
-        <div className="h-[1px] w-full bg-primary/25"></div>
+      <div className="flex flex-col gap-3 mb-10">
+        <div className="flex flex-row items-center gap-5">
+          <CardTitle className="text-2xl min-w-[9rem]">Variations</CardTitle>
+          <div className="h-[1px] w-full bg-primary/25"></div>
+        </div>
+        <div className='flex flex-col gap-3'>
+          {product?.ProductVariant?.map((variant, index) => (
+            <EditProductVariantCard
+              key={index}
+              variant={variant}
+              variantIndex={index}
+              colors={colors}
+              sizes={orderedSizes}
+            />
+          ))}
+        </div>
       </div>
-      {/* Specific Measurement Component */}
-      <SpecificMeasurements />
     </DashboardLayoutWrapper>
   );
 }

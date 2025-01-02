@@ -37,8 +37,8 @@ export default function Maintenance() {
           <Table>
             <TableHeader>
               <TableRow>
-                <TableHead>Items</TableHead>
-                <TableHead>Records</TableHead>
+                <TableHead className="w-[12rem]">Items</TableHead>
+                <TableHead className="w-1/12">Records</TableHead>
                 <TableHead className="text-end">Action</TableHead>
               </TableRow>
             </TableHeader>

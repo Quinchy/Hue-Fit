@@ -14,36 +14,60 @@ export const authOptions = {
       },
       authorize: async (credentials) => {
         try {
-          // Find the user by username
           const user = await prisma.user.findFirst({
             where: { username: credentials.username },
             include: { Role: true },
           });
-  
-          // Check if user exists
+
           if (!user) {
             throw new Error("Username not found. Please check your credentials.");
           }
-  
-          // Check if the user is allowed to access
+
           if (user.Role.name === "CUSTOMER") {
             throw new Error("Unauthorized access. Customer accounts are not allowed.");
           }
-  
-          // Validate the password
+
           const isPasswordValid = await bcrypt.compare(credentials.password, user.password);
           if (!isPasswordValid) {
             throw new Error("Incorrect password. Please try again.");
           }
-  
+
+          let profile = null;
+          let firstName = "First";
+          let lastName = "Last";
+          let profilePicture = "/images/profile-picture.png";
+
+          if (user.Role.name === "ADMIN") {
+            profile = await prisma.adminProfile.findUnique({
+              where: { userId: user.id },
+            });
+            if (profile) {
+              firstName = profile.firstName;
+              lastName = profile.lastName;
+              profilePicture = profile.profilePicture || "/images/profile-picture.png";
+            }
+          } else if (user.Role.name === "VENDOR") {
+            profile = await prisma.vendorProfile.findUnique({
+              where: { userId: user.id },
+            });
+            if (profile) {
+              firstName = profile.firstName;
+              lastName = profile.lastName;
+              profilePicture = profile.profilePicture || "/images/profile-picture.png";
+            }
+          }
+
           const sessionUser = {
             id: user.id,
             name: user.username,
             role: user.Role.name,
             roleId: user.roleId,
             userNo: user.userNo,
+            firstName,
+            lastName,
+            profilePicture,
           };
-  
+
           if (user.Role.name === "VENDOR") {
             const vendorProfile = await prisma.vendorProfile.findUnique({
               where: { userId: user.id },
@@ -55,7 +79,7 @@ export const authOptions = {
             });
             sessionUser.shopId = vendorProfile?.Shop?.id || null;
           }
-  
+
           return sessionUser;
         } 
         catch (error) {
@@ -78,6 +102,9 @@ export const authOptions = {
         userNo: token.userNo,
         permissions: token.permissions,
         shopId: token.shopId,
+        firstName: token.firstName,
+        lastName: token.lastName,
+        profilePicture: token.profilePicture,
       };
       return session;
     },
@@ -87,6 +114,9 @@ export const authOptions = {
         token.role = user.role;
         token.roleId = user.roleId;
         token.userNo = user.userNo;
+        token.firstName = user.firstName;
+        token.lastName = user.lastName;
+        token.profilePicture = user.profilePicture;
         token.permissions = await fetchPermissions(user.roleId);
         if (user.role === "VENDOR") token.shopId = user.shopId;
       }
@@ -98,7 +128,6 @@ export const authOptions = {
   },
   events: {
     async signIn({ user, token }) {
-      // Store user and permissions in localStorage upon sign in
       if (typeof window !== 'undefined') {
         localStorage.setItem("userToken", JSON.stringify(token));
         localStorage.setItem("userPermissions", JSON.stringify(token.permissions));

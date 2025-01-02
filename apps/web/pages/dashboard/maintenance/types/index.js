@@ -5,43 +5,32 @@ import { MoveLeft } from "lucide-react";
 import { useRouter } from "next/router";
 import routes from "@/routes";
 import AddTypeDialog from "./components/add-type";
-import {
-  Table,
-  TableHead,
-  TableHeader,
-  TableBody,
-  TableCell,
-  TableRow,
-} from "@/components/ui/table";
-import {
-  DropdownMenu,
-  DropdownMenuContent,
-  DropdownMenuItem,
-  DropdownMenuTrigger,
-  DropdownMenuGroup,
-} from "@/components/ui/dropdown-menu";
+import { Table, TableHead, TableHeader, TableBody, TableCell, TableRow } from "@/components/ui/table";
+import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger, DropdownMenuGroup } from "@/components/ui/dropdown-menu";
 import { ChevronDown, Pencil, Trash2 } from "lucide-react";
 import { Skeleton } from "@/components/ui/skeleton";
-import {
-  Pagination,
-  PaginationPrevious,
-  PaginationContent,
-  PaginationItem,
-  PaginationNext,
-  PaginationLink,
-} from "@/components/ui/pagination";
+import { Pagination, PaginationPrevious, PaginationContent, PaginationItem, PaginationNext, PaginationLink } from "@/components/ui/pagination";
 import useSWR from "swr";
 import { useState } from "react";
+import Loading from "@/components/ui/loading";
 
 const fetcher = (url) => fetch(url).then((res) => res.json());
 
 export default function Types() {
   const router = useRouter();
   const [currentPage, setCurrentPage] = useState(1);
+  const [initialLoading, setInitialLoading] = useState(true);
+  const [loadingNextPage, setLoadingNextPage] = useState(false);
 
   const { data, isLoading, mutate } = useSWR(
     `/api/maintenance/types/get-types?page=${currentPage}`,
-    fetcher
+    fetcher,
+    {
+      onSuccess: () => {
+        setInitialLoading(false);
+        setLoadingNextPage(false);
+      },
+    }
   );
 
   const handleAddType = async () => {
@@ -75,8 +64,17 @@ export default function Types() {
   const handlePageChange = (page) => {
     if (page >= 1 && page <= (data?.totalPages || 1)) {
       setCurrentPage(page);
+      setLoadingNextPage(true);
     }
   };
+
+  if (isLoading && initialLoading) {
+    return (
+      <DashboardLayoutWrapper>
+        <Loading message="Loading types..." />
+      </DashboardLayoutWrapper>
+    );
+  }
 
   return (
     <DashboardLayoutWrapper>
@@ -100,7 +98,7 @@ export default function Types() {
             </TableRow>
           </TableHeader>
           <TableBody>
-            {isLoading ? (
+            {loadingNextPage ? (
               Array.from({ length: 8 }).map((_, index) => (
                 <TableRow key={index}>
                   <TableCell>

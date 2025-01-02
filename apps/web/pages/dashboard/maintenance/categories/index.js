@@ -1,3 +1,4 @@
+// pages/categories/index.js
 import { Card, CardTitle } from "@/components/ui/card";
 import DashboardLayoutWrapper from "@/components/ui/dashboard-layout";
 import { Button } from "@/components/ui/button";
@@ -8,27 +9,29 @@ import AddCategoryDialog from "./components/add-category";
 import { Table, TableHead, TableHeader, TableBody, TableCell, TableRow } from "@/components/ui/table";
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger, DropdownMenuGroup } from "@/components/ui/dropdown-menu";
 import { ChevronDown, Pencil, Trash2 } from "lucide-react";
-import { Skeleton } from "@/components/ui/skeleton";
-import {
-  Pagination,
-  PaginationPrevious,
-  PaginationContent,
-  PaginationItem,
-  PaginationNext,
-  PaginationLink,
-} from "@/components/ui/pagination";
+import { Pagination, PaginationPrevious, PaginationContent, PaginationItem, PaginationNext, PaginationLink } from "@/components/ui/pagination";
 import { useState } from "react";
 import useSWR from "swr";
+import Loading from "@/components/ui/loading";
+import { Skeleton } from "@/components/ui/skeleton";
 
 const fetcher = (url) => fetch(url).then((res) => res.json());
 
 export default function Categories() {
   const router = useRouter();
   const [currentPage, setCurrentPage] = useState(1);
+  const [initialLoading, setInitialLoading] = useState(true);
+  const [loadingNextPage, setLoadingNextPage] = useState(false);
 
   const { data, isLoading, mutate } = useSWR(
     `/api/maintenance/categories/get-categories?page=${currentPage}`,
-    fetcher
+    fetcher,
+    {
+      onSuccess: () => {
+        setInitialLoading(false);
+        setLoadingNextPage(false);
+      },
+    }
   );
 
   const handleAddCategory = async () => {
@@ -38,18 +41,24 @@ export default function Categories() {
   const handlePageChange = (page) => {
     if (page >= 1 && page <= (data?.totalPages || 1)) {
       setCurrentPage(page);
+      setLoadingNextPage(true);
     }
   };
+
+  if (isLoading && initialLoading) {
+    return (
+      <DashboardLayoutWrapper>
+        <Loading message="Loading categories..." />
+      </DashboardLayoutWrapper>
+    );
+  }
 
   return (
     <DashboardLayoutWrapper>
       <div className="flex justify-between items-center">
         <CardTitle className="text-4xl">Categories</CardTitle>
         <div className="flex gap-3">
-          <Button
-            variant="outline"
-            onClick={() => router.push(routes.maintenance)}
-          >
+          <Button variant="outline" onClick={() => router.push(routes.maintenance)}>
             <MoveLeft className="scale-125" />
             Back to Maintenance
           </Button>
@@ -66,7 +75,7 @@ export default function Categories() {
             </TableRow>
           </TableHeader>
           <TableBody>
-            {isLoading ? (
+            {loadingNextPage ? (
               Array.from({ length: 8 }).map((_, index) => (
                 <TableRow key={index}>
                   <TableCell>

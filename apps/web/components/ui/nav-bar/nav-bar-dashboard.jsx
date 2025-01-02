@@ -1,13 +1,31 @@
-// nav-bar-dashboard.js
+// nav-bar-dashboard.jsx
 
 import { signOut, useSession } from "next-auth/react";
-import routes from '@/routes';
-import HueFitLogo from '@/public/images/HueFitLogo';
-import Link from 'next/link';
-import { useEffect, useState } from 'react';
-import { House, Store, Shirt, Tag, User, Settings, LogOut, MessageSquareMore, Wrench, Camera } from 'lucide-react';
+import routes from "@/routes";
+import HueFitLogo from "@/public/images/HueFitLogo";
+import Link from "next/link";
+import { useEffect, useState } from "react";
+import {
+  House,
+  Store,
+  Shirt,
+  Tag,
+  User,
+  Settings,
+  LogOut,
+  MessageSquareMore,
+  Wrench,
+  Camera
+} from "lucide-react";
 import { ModeToggle } from "@/components/ui/mode-toggle";
-import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuLabel, DropdownMenuSeparator, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuLabel,
+  DropdownMenuSeparator,
+  DropdownMenuTrigger
+} from "@/components/ui/dropdown-menu";
 import Image from "next/image";
 import { Skeleton } from "@/components/ui/skeleton";
 
@@ -17,7 +35,7 @@ const NavbarDashboard = () => {
     firstName: "",
     lastName: "",
     role: "",
-    profilePicture: "/images/profile-picture.png",
+    profilePicture: "/images/profile-picture.png"
   });
   const [loading, setLoading] = useState(false);
 
@@ -30,7 +48,7 @@ const NavbarDashboard = () => {
     { route: routes.product, icon: <Shirt />, label: "Products", roles: ["VENDOR"] },
     { route: routes.order, icon: <Tag />, label: "Orders", roles: ["VENDOR"] },
     { route: routes.maintenance, icon: <Wrench />, label: "Maintenance", roles: ["VENDOR"] },
-    { route: routes.virtualFitting, icon: <Camera />, label: "Virtual Fitting", roles: ["VENDOR"] },
+    { route: routes.virtualFitting, icon: <Camera />, label: "Virtual Fitting", roles: ["VENDOR"] }
   ];
 
   useEffect(() => {
@@ -38,7 +56,6 @@ const NavbarDashboard = () => {
       try {
         if (!session?.user?.userNo) return;
 
-        // Check if user data is in localStorage
         const cachedUserInfo = localStorage.getItem(`userInfo-${session.user.userNo}`);
         if (cachedUserInfo) {
           setUserInfo(JSON.parse(cachedUserInfo));
@@ -46,15 +63,14 @@ const NavbarDashboard = () => {
         } else {
           setLoading(true);
           const userData = {
-            firstName: session.user.firstName || "First",
-            lastName: session.user.lastName || "Last",
-            role: session.user.role || "VENDOR",
-            profilePicture: session.user.profilePicture || "/images/profile-picture.png",
+            firstName: session?.user?.firstName || "First",
+            lastName: session?.user?.lastName || "Last",
+            role: session?.user?.role || "VENDOR",
+            profilePicture: session?.user?.profilePicture || "/images/profile-picture.png"
           };
           setUserInfo(userData);
           setLoading(false);
 
-          // Cache user data in localStorage
           localStorage.setItem(`userInfo-${session.user.userNo}`, JSON.stringify(userData));
         }
       } catch (error) {
@@ -63,11 +79,16 @@ const NavbarDashboard = () => {
     };
 
     fetchUserInfo();
-  }, [session?.user?.userNo]);
+  }, [
+    session?.user?.userNo,
+    session?.user?.firstName,
+    session?.user?.lastName,
+    session?.user?.profilePicture,
+    session?.user?.role
+  ]);
 
   return (
     <div className="fixed flex flex-col justify-between items-center min-w-[20rem] border-r-[1px] border-border bg-card text-white h-full z-10 pt-5">
-      {/* Group Logo and Links */}
       <div className="flex flex-col items-center w-full space-y-5">
         <div className="flex flex-row justify-between w-full px-9">
           <Link href={routes.dashboard} className="mb-3">
@@ -79,13 +100,16 @@ const NavbarDashboard = () => {
         <div className="flex flex-col w-full items-center">
           {loading ? (
             Array.from({ length: links.length }).map((_, index) => (
-              <div key={index} className="flex flex-row justify-start items-center gap-3 py-3 w-full">
+              <div
+                key={index}
+                className="flex flex-row justify-start items-center gap-3 py-3 w-full"
+              >
                 <Skeleton className="ml-10 w-[180px] h-6" />
               </div>
             ))
           ) : (
             links
-              .filter(link => link.roles.includes(userInfo.role))
+              .filter((link) => link.roles.includes(userInfo.role))
               .map(({ route, icon, label }) => (
                 <Link
                   key={route}
@@ -102,7 +126,6 @@ const NavbarDashboard = () => {
         </div>
       </div>
 
-      {/* Profile and Logout Section */}
       <DropdownMenu className="mt-auto">
         <DropdownMenuTrigger className="w-full focus-visible:outline-none">
           <div className="flex flex-row justify-start items-center gap-3 py-7 w-full hover:bg-accent duration-300 ease-in-out">
@@ -124,7 +147,9 @@ const NavbarDashboard = () => {
                   alt="Profile Picture"
                 />
                 <div className="flex flex-col items-start gap-0 text-primary">
-                  <p className="font-semibold">{userInfo.firstName} {userInfo.lastName}</p>
+                  <p className="font-semibold">
+                    {userInfo.firstName} {userInfo.lastName}
+                  </p>
                   <p className="font-light">{userInfo.role}</p>
                 </div>
               </div>
@@ -135,7 +160,10 @@ const NavbarDashboard = () => {
           <DropdownMenuLabel className="uppercase">Account</DropdownMenuLabel>
           <DropdownMenuSeparator />
           <DropdownMenuItem>
-            <Link href={routes.userView} className="flex justify-start items-center gap-1 font-semibold py-2 px-4 rounded w-full uppercase">
+            <Link
+              href={routes.userView}
+              className="flex justify-start items-center gap-1 font-semibold py-2 px-4 rounded w-full uppercase"
+            >
               <User className="stroke-primary" /> Profile
             </Link>
           </DropdownMenuItem>
@@ -144,7 +172,7 @@ const NavbarDashboard = () => {
               onClick={() => {
                 localStorage.clear();
                 sessionStorage.clear();
-                signOut({ callbackUrl: '/' });
+                signOut({ callbackUrl: "/" });
               }}
               className="flex items-center gap-1 justify-start shadow-none text-red-500 font-semibold py-2 px-4 rounded w-full uppercase"
             >
