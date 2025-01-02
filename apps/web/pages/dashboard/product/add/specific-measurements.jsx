@@ -25,6 +25,11 @@ import {
   TableCell
 } from "@/components/ui/table";
 
+/*
+  We ensure that if `measurementsData` or `measurementsData.measurements` is undefined,
+  we safely return null to avoid SSR prerender errors.
+*/
+
 export default function SpecificMeasurements({
   measurementsData,
   selectedSizes,
@@ -36,10 +41,18 @@ export default function SpecificMeasurements({
   handleChange,
   sizes
 }) {
-  const measurementLimit = measurementsData.count;
-  const selectedOrderedSizes = sizes.filter((size) =>
-    selectedSizes.includes(size.abbreviation)
-  );
+  // If there's no data or no array of measurements, safely return null
+  if (!measurementsData || !measurementsData.measurements) {
+    return null;
+  }
+
+  const measurementLimit = measurementsData?.count || 10;
+  const availableMeasurements = measurementsData.measurements;
+
+  // Safely handle the sizes array
+  const selectedOrderedSizes = Array.isArray(sizes)
+    ? sizes.filter((size) => Array.isArray(selectedSizes) && selectedSizes.includes(size.abbreviation))
+    : [];
 
   return (
     <Card className="flex flex-col p-5">
@@ -68,92 +81,103 @@ export default function SpecificMeasurements({
                   <TableHead className="min-w-14 max-w-14 border"></TableHead>
                 </TableRow>
               </TableHeader>
+
               <TableBody>
-                {measurements.map((measurement, index) => (
-                  <TableRow key={index}>
-                    <TableCell className="border px-4 py-2">
-                      <Select
-                        onValueChange={(value) =>
-                          setFieldValue(`measurements.${index}.measurementName`, value)
-                        }
-                        value={measurement.measurementName || ""}
-                      >
-                        <SelectTrigger
-                          className={`w-full ${InputErrorStyle(
-                            errors?.[index]?.measurementName,
-                            touched?.[index]?.measurementName
-                          )}`}
+                {measurements.map((measurement, index) => {
+                  const rowError = errors?.[index];
+                  const rowTouched = touched?.[index];
+
+                  return (
+                    <TableRow key={index}>
+                      {/* Measurement Name */}
+                      <TableCell className="border px-4 py-2">
+                        <Select
+                          onValueChange={(val) =>
+                            setFieldValue(`measurements.${index}.measurementName`, val)
+                          }
+                          value={measurement.measurementName || ""}
                         >
-                          <SelectValue placeholder="Select measurement" />
-                        </SelectTrigger>
-                        <SelectContent>
-                          <SelectGroup>
-                            {measurementsData.measurements.map((option) => (
-                              <SelectItem
-                                key={option.name}
-                                value={option.name}
-                                disabled={measurements.some(
-                                  (m, idx) =>
-                                    idx !== index && m.measurementName === option.name
-                                )}
-                              >
-                                {option.name}
-                              </SelectItem>
-                            ))}
-                          </SelectGroup>
-                        </SelectContent>
-                      </Select>
-                      <InputErrorMessage
-                        error={errors?.[index]?.measurementName}
-                        touched={touched?.[index]?.measurementName}
-                      />
-                    </TableCell>
-                    {measurement.values.map((valObj, valIndex) => {
-                      const currentSize = valObj.size;
-                      return (
-                        <TableCell
-                          key={currentSize}
-                          className="border px-4 py-2"
+                          <SelectTrigger
+                            className={`w-full ${InputErrorStyle(
+                              rowError?.measurementName,
+                              rowTouched?.measurementName
+                            )}`}
+                          >
+                            <SelectValue placeholder="Select measurement" />
+                          </SelectTrigger>
+                          <SelectContent>
+                            <SelectGroup>
+                              {availableMeasurements.map((option) => (
+                                <SelectItem
+                                  key={option.name}
+                                  value={option.name}
+                                  disabled={measurements.some(
+                                    (m, idx2) =>
+                                      idx2 !== index &&
+                                      m.measurementName === option.name
+                                  )}
+                                >
+                                  {option.name}
+                                </SelectItem>
+                              ))}
+                            </SelectGroup>
+                          </SelectContent>
+                        </Select>
+                        <InputErrorMessage
+                          error={rowError?.measurementName}
+                          touched={rowTouched?.measurementName}
+                        />
+                      </TableCell>
+
+                      {/* Measurement Values Per Size */}
+                      {measurement.values.map((valObj, valIndex) => {
+                        const valError = rowError?.values?.[valIndex]?.value;
+                        const valTouched = rowTouched?.values?.[valIndex]?.value;
+
+                        return (
+                          <TableCell
+                            key={valObj.size}
+                            className="border px-4 py-2"
+                          >
+                            <Input
+                              placeholder="Value in CM"
+                              name={`measurements.${index}.values.${valIndex}.value`}
+                              value={valObj.value}
+                              onChange={handleChange}
+                              onBlur={handleBlur}
+                              className={InputErrorStyle(valError, valTouched)}
+                            />
+                            <InputErrorMessage error={valError} touched={valTouched} />
+                          </TableCell>
+                        );
+                      })}
+
+                      {/* Remove Row Button */}
+                      <TableCell className="border min-w-14 max-w-14 text-center">
+                        <Button
+                          variant="ghost"
+                          type="button"
+                          className="text-red-500 hover:bg-red-500 w-10"
+                          onClick={() => remove(index)}
                         >
-                          <Input
-                            placeholder="Value in CM"
-                            name={`measurements.${index}.values.${valIndex}.value`}
-                            value={valObj.value}
-                            onChange={handleChange}
-                            onBlur={handleBlur}
-                            className={InputErrorStyle(
-                              errors?.[index]?.values?.[valIndex]?.value,
-                              touched?.[index]?.values?.[valIndex]?.value
-                            )}
-                          />
-                          <InputErrorMessage
-                            error={errors?.[index]?.values?.[valIndex]?.value}
-                            touched={touched?.[index]?.values?.[valIndex]?.value}
-                          />
-                        </TableCell>
-                      );
-                    })}
-                    <TableCell className="border min-w-14 max-w-14 text-center">
-                      <Button
-                        variant="ghost"
-                        type="button"
-                        className="text-red-500 hover:bg-red-500 w-10"
-                        onClick={() => remove(index)}
-                      >
-                        <Trash2 className="scale-110 stroke-[2px]" />
-                      </Button>
-                    </TableCell>
-                  </TableRow>
-                ))}
+                          <Trash2 className="scale-110 stroke-[2px]" />
+                        </Button>
+                      </TableCell>
+                    </TableRow>
+                  );
+                })}
               </TableBody>
             </Table>
+
+            {/* Add Measurement Button */}
             <Button
               variant="outline"
               type="button"
               onClick={() => {
+                // Safely build initialValues based on the selectedOrderedSizes
                 const initialValues = selectedOrderedSizes.map((sz) => ({
                   size: sz.abbreviation,
-                  value: ""
+                  value: "",
                 }));
                 push({ measurementName: "", values: initialValues });
               }}

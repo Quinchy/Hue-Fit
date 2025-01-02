@@ -2,7 +2,6 @@
 
 import { useState, useRef, useEffect } from "react";
 import { useRouter } from "next/router";
-import useSWR from "swr";
 import DashboardLayoutWrapper from "@/components/ui/dashboard-layout";
 import { CardTitle, Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -30,25 +29,20 @@ import { ToggleGroup, ToggleGroupItem } from "@/components/ui/toggle-group";
 import SpecificMeasurements from "./specific-measurements";
 import ProductVariantCard from "./product-variant-card";
 
-const fetcher = (url) => fetch(url).then((res) => res.json());
-
 function orderSizes(sizes) {
   if (!Array.isArray(sizes)) return [];
   const sizeMap = new Map();
   const nextIds = new Set();
-
   sizes.forEach((size) => {
     sizeMap.set(size.id, size);
     if (size.nextId !== null) {
       nextIds.add(size.nextId);
     }
   });
-
   const startIds = sizes
     .map((size) => size.id)
     .filter((id) => !nextIds.has(id));
   const orderedSizes = [];
-
   startIds.forEach((startId) => {
     let currentSize = sizeMap.get(startId);
     const visited = new Set();
@@ -75,19 +69,40 @@ function touchAllFields(errors) {
 
 export default function AddProduct() {
   const router = useRouter();
-
-  // Local state for thumbnail preview
   const [previewImage, setPreviewImage] = useState("/images/placeholder-picture.png");
   const fileInputRef = useRef(null);
   const [submitting, setSubmitting] = useState(false);
 
-  // Fetch global product data at top-level
-  const { data: productData, error: productError, isLoading } = useSWR(
-    "/api/products/get-product-related-info",
-    fetcher
-  );
+  // States for product info fetch
+  const [productData, setProductData] = useState(null);
+  const [productLoading, setProductLoading] = useState(true);
+  const [productError, setProductError] = useState(false);
 
-  // Set up the form
+  // States for measurement fetch
+  const [measurementData, setMeasurementData] = useState(null);
+  const [measurementLoading, setMeasurementLoading] = useState(false);
+  const [measurementError, setMeasurementError] = useState(false);
+
+  // Fetch product-related info on mount
+  useEffect(() => {
+    async function fetchProductRelatedInfo() {
+      try {
+        setProductLoading(true);
+        setProductError(false);
+        const res = await fetch("/api/products/get-product-related-info");
+        if (!res.ok) throw new Error("Failed to fetch product info");
+        const data = await res.json();
+        setProductData(data);
+      } catch (err) {
+        setProductError(true);
+      } finally {
+        setProductLoading(false);
+      }
+    }
+    fetchProductRelatedInfo();
+  }, []);
+
+  // Formik setup
   const formik = useFormik({
     initialValues: {
       thumbnail: null,
@@ -104,7 +119,6 @@ export default function AddProduct() {
     onSubmit: async (values, { setTouched }) => {
       setSubmitting(true);
       const allErrors = await formik.validateForm();
-
       if (Object.keys(allErrors).length > 0) {
         setTouched(touchAllFields(allErrors));
         setSubmitting(false);
@@ -118,20 +132,17 @@ export default function AddProduct() {
         );
 
       try {
-        // Thumbnail
+        // Append thumbnail
         if (values.thumbnail && values.thumbnail.file) {
           formData.append("thumbnail", values.thumbnail.file);
         }
-        // Basic fields
         formData.append("name", values.name);
         formData.append("description", values.description);
         formData.append("type", values.type);
         formData.append("category", values.category);
-
         if (values.tags) {
           formData.append("tags", values.tags);
         }
-
         if (values.sizes.length > 0) {
           formData.append("sizes", values.sizes.join(","));
         }
@@ -142,20 +153,18 @@ export default function AddProduct() {
             values.variants.forEach((variant, variantIndex) => {
               formData.append(`variants[${variantIndex}][price]`, variant.price);
               formData.append(`variants[${variantIndex}][color]`, variant.color);
-
               if (Array.isArray(variant.quantities)) {
                 const quantities = {};
                 variant.quantities.forEach((q) => {
                   quantities[q.size] = q.quantity;
                 });
-                Object.entries(quantities).forEach(([size, quantity]) => {
+                Object.entries(quantities).forEach(([sz, quantity]) => {
                   formData.append(
-                    `variants[${variantIndex}][quantities][${size}]`,
+                    `variants[${variantIndex}][quantities][${sz}]`,
                     quantity
                   );
                 });
               }
-
               if (Array.isArray(variant.images)) {
                 variant.images.forEach((imageObj) => {
                   formData.append(
@@ -185,7 +194,7 @@ export default function AddProduct() {
           formData.append("measurements", JSON.stringify(transformedMeasurements));
         }
 
-        // Send request
+        // Final submission
         const response = await fetch("/api/products/add-product", {
           method: "POST",
           body: formData
@@ -209,54 +218,72 @@ export default function AddProduct() {
     validateOnSubmit: true
   });
 
-  const { values, errors, touched, setFieldValue, handleBlur, handleChange } = formik;
-
-  // If product data fails, we still don't return early before calling measurement SWR
-  // We'll show an error element, but not return to skip the measurement SWR
-
-  // Destructure product data
   const {
-    types = [],
-    categories = [],
-    tags = [],
-    sizes = [],
-    colors = []
-  } = productData || {};
+    values,
+    errors,
+    touched,
+    setFieldValue,
+    handleBlur,
+    handleChange
+  } = formik;
 
-  // Filter tags based on type
+  // Derived from productData
+  const types = productData?.types || [];
+  const categories = productData?.categories || [];
+  const tags = productData?.tags || [];
+  const sizeList = productData?.sizes || [];
+  const colors = productData?.colors || [];
+
+  // Filter tags by selected type
   const filteredTags = tags.filter((tag) => tag.typeId === parseInt(values.type));
-
   // Order sizes
-  const orderedSizes = orderSizes(sizes);
+  const orderedSizes = orderSizes(sizeList);
 
-  // For measurements, we call it at top-level no matter what
+  // Helper to get type's name
   const getTypeNameById = (id) => {
-    const type = types.find((t) => t.id === parseInt(id));
-    return type ? type.name : "";
+    const found = types.find((t) => t.id === parseInt(id));
+    return found ? found.name : "";
   };
+
+  // Once user selects a type, we fetch measurements
   const typeName = getTypeNameById(values.type);
+  useEffect(() => {
+    async function fetchMeasurements() {
+      if (!typeName) {
+        setMeasurementData(null);
+        return;
+      }
+      try {
+        setMeasurementLoading(true);
+        setMeasurementError(false);
+        const res = await fetch(
+          `/api/products/get-measurement-by-type?productType=${typeName}`
+        );
+        if (!res.ok) throw new Error("Failed to fetch measurements");
+        const data = await res.json();
+        setMeasurementData(data);
+      } catch (err) {
+        setMeasurementError(true);
+      } finally {
+        setMeasurementLoading(false);
+      }
+    }
+    fetchMeasurements();
+  }, [typeName]);
 
-  const measurementUrl = typeName
-    ? `/api/products/get-measurement-by-type?productType=${typeName}`
-    : null;
-
-  // Now call measurement SWR
-  const {
-    data: measurementsData,
-    error: measurementsError,
-    isLoading: measurementsLoading
-  } = useSWR(measurementUrl, fetcher);
-
+  // Size add / remove
   const addSize = (sizeAbbreviation) => {
     const newSizes = [...values.sizes, sizeAbbreviation];
     setFieldValue("sizes", newSizes);
 
+    // if no measurements yet, create initial
     if (values.measurements.length === 0) {
       const initialMeasurementValues = [{ size: sizeAbbreviation, value: "" }];
       setFieldValue("measurements", [
         { measurementName: "", values: initialMeasurementValues }
       ]);
     } else {
+      // update existing measurements
       const updatedMeasurements = values.measurements.map((m) => {
         const existing = m.values.find((v) => v.size === sizeAbbreviation);
         if (!existing) {
@@ -270,6 +297,7 @@ export default function AddProduct() {
       setFieldValue("measurements", updatedMeasurements);
     }
 
+    // also update variant quantities
     values.variants.forEach((variant, index) => {
       const existing = variant.quantities?.find((q) => q.size === sizeAbbreviation);
       if (!existing) {
@@ -333,14 +361,14 @@ export default function AddProduct() {
 
   return (
     <DashboardLayoutWrapper>
-      {/* Even if there's an error in productData or measurement, we still have called the hooks at top-level */}
+      {/* Display product info error */}
       {productError && (
         <div className="mb-3 bg-red-600 text-white p-3 rounded">
           Failed to load product information
         </div>
       )}
-
-      {measurementsError && (
+      {/* Display measurement error */}
+      {measurementError && (
         <div className="mb-3 bg-red-600 text-white p-3 rounded">
           Failed to load measurements information
         </div>
@@ -433,20 +461,20 @@ export default function AddProduct() {
                       Type <Asterisk className="w-4" />
                     </Label>
                     <Select
-                      onValueChange={(value) => {
-                        setFieldValue("type", value);
+                      onValueChange={(val) => {
+                        setFieldValue("type", val);
                         setFieldValue("tags", "");
                         setFieldValue("sizes", []);
                         setFieldValue("measurements", []);
                       }}
-                      disabled={isLoading}
+                      disabled={productLoading}
                     >
                       <SelectTrigger
                         className={`${InputErrorStyle(errors.type, touched.type)}`}
                       >
                         <SelectValue
                           placeholder={
-                            isLoading ? (
+                            productLoading ? (
                               <span className="flex items-center gap-2">
                                 <Loader className="animate-spin" /> Loading clothing types...
                               </span>
@@ -455,14 +483,18 @@ export default function AddProduct() {
                             )
                           }
                         >
-                          {values.type || "Select a type of clothing product"}
+                          {values.type
+                            ? productData?.types?.find(
+                                (t) => t.id === parseInt(values.type)
+                              )?.name
+                            : "Select a type of clothing product"}
                         </SelectValue>
                       </SelectTrigger>
                       <SelectContent>
                         <SelectGroup>
-                          {(productData?.types || []).map((type) => (
-                            <SelectItem key={type.id} value={type.id.toString()}>
-                              {type.name}
+                          {(productData?.types || []).map((t) => (
+                            <SelectItem key={t.id} value={t.id.toString()}>
+                              {t.name}
                             </SelectItem>
                           ))}
                         </SelectGroup>
@@ -476,15 +508,15 @@ export default function AddProduct() {
                       Category <Asterisk className="w-4" />
                     </Label>
                     <Select
-                      onValueChange={(value) => setFieldValue("category", value)}
-                      disabled={isLoading}
+                      onValueChange={(val) => setFieldValue("category", val)}
+                      disabled={productLoading}
                     >
                       <SelectTrigger
                         className={InputErrorStyle(errors.category, touched.category)}
                       >
                         <SelectValue
                           placeholder={
-                            isLoading ? (
+                            productLoading ? (
                               <span className="flex items-center gap-2">
                                 <Loader className="animate-spin" /> Loading categories...
                               </span>
@@ -506,7 +538,10 @@ export default function AddProduct() {
                         </SelectGroup>
                       </SelectContent>
                     </Select>
-                    <InputErrorMessage error={errors.category} touched={touched.category} />
+                    <InputErrorMessage
+                      error={errors.category}
+                      touched={touched.category}
+                    />
                   </div>
 
                   <div className="flex flex-col gap-1 w-full">
@@ -514,17 +549,15 @@ export default function AddProduct() {
                       Tag <Asterisk className="w-4" />
                     </Label>
                     <Select
-                      onValueChange={(value) => {
-                        setFieldValue("tags", value);
-                      }}
-                      disabled={!values.type || isLoading}
+                      onValueChange={(val) => setFieldValue("tags", val)}
+                      disabled={!values.type || productLoading}
                     >
                       <SelectTrigger
-                        className={InputErrorStyle(errors.tags, touched.tags)}
+                        className={`${InputErrorStyle(errors.tags, touched.tags)}`}
                       >
                         <SelectValue
                           placeholder={
-                            isLoading ? (
+                            productLoading ? (
                               <span className="flex items-center gap-2">
                                 <Loader className="animate-spin" /> Loading tags...
                               </span>
@@ -533,16 +566,20 @@ export default function AddProduct() {
                             )
                           }
                         >
-                          {values.tags || "Select tags"}
+                          {values.tags
+                            ? productData?.tags?.find(
+                                (tg) => tg.id === parseInt(values.tags)
+                              )?.name
+                            : "Select tags"}
                         </SelectValue>
                       </SelectTrigger>
                       <SelectContent>
                         <SelectGroup>
                           {(productData?.tags || [])
-                            .filter((tag) => tag.typeId === parseInt(values.type))
-                            .map((tag) => (
-                              <SelectItem key={tag.id} value={tag.id.toString()}>
-                                {tag.name}
+                            .filter((tg) => tg.typeId === parseInt(values.type))
+                            .map((tg) => (
+                              <SelectItem key={tg.id} value={tg.id.toString()}>
+                                {tg.name}
                               </SelectItem>
                             ))}
                         </SelectGroup>
@@ -563,25 +600,25 @@ export default function AddProduct() {
                       !values.type ? "pointer-events-none opacity-50 cursor-not-allowed" : ""
                     }`}
                   >
-                    {orderSizes(sizes).map((size) => {
-                      const selected = values.sizes.includes(size.abbreviation);
+                    {orderSizes(productData?.sizes || []).map((sz) => {
+                      const selected = values.sizes.includes(sz.abbreviation);
                       return (
                         <ToggleGroupItem
-                          key={size.id}
-                          value={size.abbreviation}
+                          key={sz.id}
+                          value={sz.abbreviation}
                           variant="outline"
                           selected={selected}
                           onClick={() => {
                             if (!values.type) return;
                             if (selected) {
-                              removeSize(size.abbreviation);
+                              removeSize(sz.abbreviation);
                             } else {
-                              addSize(size.abbreviation);
+                              addSize(sz.abbreviation);
                             }
                           }}
                           className="min-w-14 min-h-14 border-2"
                         >
-                          {size.abbreviation}
+                          {sz.abbreviation}
                         </ToggleGroupItem>
                       );
                     })}
@@ -596,8 +633,7 @@ export default function AddProduct() {
             </Card>
           </div>
 
-          {/* Display if loading product info */}
-          {isLoading && (
+          {productLoading && (
             <div className="flex justify-center items-center">
               <Loader className="animate-spin" />
               <span className="ml-2">Loading product data...</span>
@@ -609,17 +645,16 @@ export default function AddProduct() {
             <div className="h-[1px] w-full bg-primary/25"></div>
           </div>
 
-          {/* 9) Measurement fetching always at top-level, no conditional early-return */}
-          {measurementsLoading && (
+          {/* For measurement data */}
+          {measurementLoading && (
             <div className="flex justify-center items-center">
               <Loader className="animate-spin" />
               <span className="ml-2">Loading measurements...</span>
             </div>
           )}
-
-          {measurementsData && values.sizes.length > 0 && (
+          {!measurementLoading && measurementData && values.sizes.length > 0 && (
             <SpecificMeasurements
-              measurementsData={measurementsData}
+              measurementsData={measurementData}
               selectedSizes={values.sizes}
               measurements={values.measurements}
               errors={errors.measurements}
@@ -627,7 +662,7 @@ export default function AddProduct() {
               setFieldValue={setFieldValue}
               handleBlur={handleBlur}
               handleChange={handleChange}
-              sizes={orderSizes(sizes)}
+              sizes={orderSizes(productData?.sizes || [])}
             />
           )}
 
@@ -644,9 +679,7 @@ export default function AddProduct() {
                       key={index}
                       variant={variant}
                       productType={values.type}
-                      onRemove={() => {
-                        remove(index);
-                      }}
+                      onRemove={() => remove(index)}
                       variantIndex={index}
                       colors={productData?.colors || []}
                       sizes={productData?.sizes || []}
