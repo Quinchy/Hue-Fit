@@ -1,5 +1,5 @@
 // pages/api/maintenance/types/add-type.js
-import prisma, { getSessionShopNo } from "@/utils/helpers";
+import prisma, { getSessionShopId } from "@/utils/helpers";
 
 export default async function handler(req, res) {
   if (req.method !== "POST") {
@@ -7,9 +7,9 @@ export default async function handler(req, res) {
   }
 
   try {
-    const shopNo = await getSessionShopNo(req, res);
+    const shopId = await getSessionShopId(req, res);
 
-    if (!shopNo) {
+    if (!shopId) {
       return res.status(401).json({ error: "Unauthorized" });
     }
 
@@ -25,7 +25,7 @@ export default async function handler(req, res) {
     const existingType = await prisma.type.findFirst({
       where: {
         name,
-        shopNo,
+        shopId,
       },
     });
 
@@ -35,7 +35,7 @@ export default async function handler(req, res) {
 
     const newType = await prisma.type.create({
       data: {
-        shopNo,
+        shopId,
         name,
       },
     });

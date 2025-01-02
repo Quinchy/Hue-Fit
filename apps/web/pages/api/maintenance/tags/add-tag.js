@@ -1,4 +1,4 @@
-import prisma, { getSessionShopNo } from "@/utils/helpers";
+import prisma, { getSessionShopId } from "@/utils/helpers";
 
 export default async function handler(req, res) {
   if (req.method !== "POST") {
@@ -6,8 +6,8 @@ export default async function handler(req, res) {
   }
 
   try {
-    const shopNo = await getSessionShopNo(req, res);
-    if (!shopNo) {
+    const shopId = await getSessionShopId(req, res);
+    if (!shopId) {
       return res.status(401).json({ error: "Unauthorized" });
     }
 
@@ -21,11 +21,11 @@ export default async function handler(req, res) {
       return res.status(400).json({ error: "Type Name is required." });
     }
     name = name.toUpperCase();
-    // Find the type ID using typeName and shopNo
+    // Find the type ID using typeName and shopId
     const type = await prisma.type.findFirst({
       where: {
         name: typeName,
-        shopNo,
+        shopId,
       },
     });
 
@@ -36,8 +36,8 @@ export default async function handler(req, res) {
     const typeId = type.id;
 
     // Check if the tag already exists
-    const existingTag = await prisma.tags.findFirst({
-      where: { name, shopNo },
+    const existingTag = await prisma.tag.findFirst({
+      where: { name, shopId },
     });
 
     if (existingTag) {
@@ -45,9 +45,9 @@ export default async function handler(req, res) {
     }
 
     // Create the new tag
-    const newTag = await prisma.tags.create({
+    const newTag = await prisma.tag.create({
       data: {
-        shopNo,
+        shopId,
         name,
         typeId,
       },

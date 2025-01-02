@@ -1,11 +1,11 @@
-import { getSessionShopNo } from "/utils/helpers";
+import { getSessionShopId } from "@/utils/helpers";
 import prisma from "/utils/helpers";
 
 export default async function handler(req, res) {
   try {
     // Retrieve the shop number from the session
-    const shopNo = await getSessionShopNo(req, res);
-    if (!shopNo) {
+    const shopId = await getSessionShopId(req, res);
+    if (!shopId) {
       return res.status(401).json({ message: "Unauthorized" });
     }
 
@@ -17,7 +17,7 @@ export default async function handler(req, res) {
 
     // Define filters based on search and status
     const whereConditions = {
-      shopNo: shopNo,
+      shopId: shopId,
       ...(search && {
         orderNo: {
           contains: search,

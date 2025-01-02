@@ -1,8 +1,6 @@
 // index.js
 
-import { useState } from "react";
-import { useRef } from "react";
-import { useEffect } from "react";
+import { useState, useRef, useEffect } from "react";
 import { useRouter } from "next/router";
 import useSWR from "swr";
 import DashboardLayoutWrapper from "@/components/ui/dashboard-layout";
@@ -77,18 +75,19 @@ function touchAllFields(errors) {
 
 export default function AddProduct() {
   const router = useRouter();
+
+  // Local state for thumbnail preview
   const [previewImage, setPreviewImage] = useState("/images/placeholder-picture.png");
   const fileInputRef = useRef(null);
   const [submitting, setSubmitting] = useState(false);
 
-  // 1) Fetch global product data
-  const {
-    data: productData,
-    error: productError,
-    isLoading
-  } = useSWR("/api/products/get-product-related-info", fetcher);
+  // Fetch global product data at top-level
+  const { data: productData, error: productError, isLoading } = useSWR(
+    "/api/products/get-product-related-info",
+    fetcher
+  );
 
-  // 2) Prepare form
+  // Set up the form
   const formik = useFormik({
     initialValues: {
       thumbnail: null,
@@ -119,21 +118,25 @@ export default function AddProduct() {
         );
 
       try {
+        // Thumbnail
         if (values.thumbnail && values.thumbnail.file) {
           formData.append("thumbnail", values.thumbnail.file);
         }
+        // Basic fields
         formData.append("name", values.name);
         formData.append("description", values.description);
         formData.append("type", values.type);
         formData.append("category", values.category);
+
         if (values.tags) {
           formData.append("tags", values.tags);
         }
+
         if (values.sizes.length > 0) {
           formData.append("sizes", values.sizes.join(","));
         }
 
-        // Building variants
+        // Build variants
         await Promise.race([
           new Promise((resolve) => {
             values.variants.forEach((variant, variantIndex) => {
@@ -153,7 +156,6 @@ export default function AddProduct() {
                 });
               }
 
-              // images
               if (Array.isArray(variant.images)) {
                 variant.images.forEach((imageObj) => {
                   formData.append(
@@ -168,7 +170,7 @@ export default function AddProduct() {
           timeout(5000)
         ]);
 
-        // Building measurements
+        // Build measurements
         if (Array.isArray(values.measurements)) {
           const transformedMeasurements = [];
           values.measurements.forEach((measurement) => {
@@ -207,19 +209,12 @@ export default function AddProduct() {
     validateOnSubmit: true
   });
 
-  const {
-    values,
-    errors,
-    touched,
-    setFieldValue,
-    handleBlur,
-    handleChange
-  } = formik;
+  const { values, errors, touched, setFieldValue, handleBlur, handleChange } = formik;
 
-  // 3) If global data fails
-  if (productError) return <div>Failed to load product information</div>;
+  // If product data fails, we still don't return early before calling measurement SWR
+  // We'll show an error element, but not return to skip the measurement SWR
 
-  // 4) Deconstruct data safely
+  // Destructure product data
   const {
     types = [],
     categories = [],
@@ -228,39 +223,34 @@ export default function AddProduct() {
     colors = []
   } = productData || {};
 
-  // 5) helpder functions
+  // Filter tags based on type
+  const filteredTags = tags.filter((tag) => tag.typeId === parseInt(values.type));
+
+  // Order sizes
+  const orderedSizes = orderSizes(sizes);
+
+  // For measurements, we call it at top-level no matter what
   const getTypeNameById = (id) => {
     const type = types.find((t) => t.id === parseInt(id));
     return type ? type.name : "";
   };
-
-  const getTagNameById = (id) => {
-    const tag = tags.find((t) => t.id === parseInt(id));
-    return tag ? tag.name : "";
-  };
-
-  // 6) Filter tags
-  const filteredTags = tags.filter((tag) => tag.typeId === parseInt(values.type));
-
-  // 7) Ordered sizes
-  const orderedSizes = orderSizes(sizes);
-
-  // 8) We always call the measurement SWR at top-level
   const typeName = getTypeNameById(values.type);
+
   const measurementUrl = typeName
     ? `/api/products/get-measurement-by-type?productType=${typeName}`
     : null;
 
+  // Now call measurement SWR
   const {
     data: measurementsData,
     error: measurementsError,
     isLoading: measurementsLoading
   } = useSWR(measurementUrl, fetcher);
 
-  // 9) helper add / remove sizes
   const addSize = (sizeAbbreviation) => {
     const newSizes = [...values.sizes, sizeAbbreviation];
     setFieldValue("sizes", newSizes);
+
     if (values.measurements.length === 0) {
       const initialMeasurementValues = [{ size: sizeAbbreviation, value: "" }];
       setFieldValue("measurements", [
@@ -341,11 +331,21 @@ export default function AddProduct() {
     );
   };
 
-  // 10) if measurement fails
-  if (measurementsError) return <div>Failed to load measurements information</div>;
-
   return (
     <DashboardLayoutWrapper>
+      {/* Even if there's an error in productData or measurement, we still have called the hooks at top-level */}
+      {productError && (
+        <div className="mb-3 bg-red-600 text-white p-3 rounded">
+          Failed to load product information
+        </div>
+      )}
+
+      {measurementsError && (
+        <div className="mb-3 bg-red-600 text-white p-3 rounded">
+          Failed to load measurements information
+        </div>
+      )}
+
       <div className="flex justify-between items-center mb-5">
         <CardTitle className="text-4xl">Add Product</CardTitle>
         <Button variant="outline" onClick={() => router.push("/dashboard/product")}>
@@ -441,7 +441,9 @@ export default function AddProduct() {
                       }}
                       disabled={isLoading}
                     >
-                      <SelectTrigger className={`${InputErrorStyle(errors.type, touched.type)}`}>
+                      <SelectTrigger
+                        className={`${InputErrorStyle(errors.type, touched.type)}`}
+                      >
                         <SelectValue
                           placeholder={
                             isLoading ? (
@@ -458,7 +460,7 @@ export default function AddProduct() {
                       </SelectTrigger>
                       <SelectContent>
                         <SelectGroup>
-                          {types.map((type) => (
+                          {(productData?.types || []).map((type) => (
                             <SelectItem key={type.id} value={type.id.toString()}>
                               {type.name}
                             </SelectItem>
@@ -473,8 +475,13 @@ export default function AddProduct() {
                     <Label className="font-bold flex flex-row items-center">
                       Category <Asterisk className="w-4" />
                     </Label>
-                    <Select onValueChange={(value) => setFieldValue("category", value)} disabled={isLoading}>
-                      <SelectTrigger className={InputErrorStyle(errors.category, touched.category)}>
+                    <Select
+                      onValueChange={(value) => setFieldValue("category", value)}
+                      disabled={isLoading}
+                    >
+                      <SelectTrigger
+                        className={InputErrorStyle(errors.category, touched.category)}
+                      >
                         <SelectValue
                           placeholder={
                             isLoading ? (
@@ -491,9 +498,9 @@ export default function AddProduct() {
                       </SelectTrigger>
                       <SelectContent>
                         <SelectGroup>
-                          {categories.map((category) => (
-                            <SelectItem key={category.id} value={category.name}>
-                              {category.name}
+                          {(productData?.categories || []).map((cat) => (
+                            <SelectItem key={cat.id} value={cat.name}>
+                              {cat.name}
                             </SelectItem>
                           ))}
                         </SelectGroup>
@@ -512,7 +519,9 @@ export default function AddProduct() {
                       }}
                       disabled={!values.type || isLoading}
                     >
-                      <SelectTrigger className={InputErrorStyle(errors.tags, touched.tags)}>
+                      <SelectTrigger
+                        className={InputErrorStyle(errors.tags, touched.tags)}
+                      >
                         <SelectValue
                           placeholder={
                             isLoading ? (
@@ -588,61 +597,39 @@ export default function AddProduct() {
           </div>
 
           {/* Display if loading product info */}
-          {productError ? (
-            <div>Failed to load product information</div>
-          ) : isLoading ? (
+          {isLoading && (
             <div className="flex justify-center items-center">
               <Loader className="animate-spin" />
               <span className="ml-2">Loading product data...</span>
             </div>
-          ) : null}
+          )}
 
           <div className="mb-5 mt-10 flex flex-row items-center gap-5">
             <CardTitle className="text-2xl min-w-[8.7rem]">Size Guide</CardTitle>
             <div className="h-[1px] w-full bg-primary/25"></div>
           </div>
 
-          {/* 9) We do the measurement SWR at top-level always */}
-          {(() => {
-            const typeName = types.find((t) => t.id === parseInt(values.type))?.name;
-            const measurementUrl = typeName
-              ? `/api/products/get-measurement-by-type?productType=${typeName}`
-              : null;
+          {/* 9) Measurement fetching always at top-level, no conditional early-return */}
+          {measurementsLoading && (
+            <div className="flex justify-center items-center">
+              <Loader className="animate-spin" />
+              <span className="ml-2">Loading measurements...</span>
+            </div>
+          )}
 
-            const {
-              data: measurementsData,
-              error: measurementsError,
-              isLoading: measurementsLoading
-            } = useSWR(measurementUrl, fetcher);
-
-            if (measurementsError) {
-              return <div>Failed to load measurements information</div>;
-            }
-            if (measurementsLoading) {
-              return (
-                <div className="flex justify-center items-center">
-                  <Loader className="animate-spin" />
-                  <span className="ml-2">Loading measurements...</span>
-                </div>
-              );
-            }
-            if (measurementsData && values.sizes.length > 0) {
-              return (
-                <SpecificMeasurements
-                  measurementsData={measurementsData}
-                  selectedSizes={values.sizes}
-                  measurements={values.measurements}
-                  errors={errors.measurements}
-                  touched={touched.measurements}
-                  setFieldValue={setFieldValue}
-                  handleBlur={handleBlur}
-                  handleChange={handleChange}
-                  sizes={orderSizes(sizes)}
-                />
-              );
-            }
-            return null;
-          })()}
+          {measurementsData && values.sizes.length > 0 && (
+            <SpecificMeasurements
+              measurementsData={measurementsData}
+              selectedSizes={values.sizes}
+              measurements={values.measurements}
+              errors={errors.measurements}
+              touched={touched.measurements}
+              setFieldValue={setFieldValue}
+              handleBlur={handleBlur}
+              handleChange={handleChange}
+              sizes={orderSizes(sizes)}
+            />
+          )}
 
           <FieldArray name="variants">
             {({ push, remove }) => (

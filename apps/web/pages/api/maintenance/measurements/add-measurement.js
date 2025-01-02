@@ -1,5 +1,5 @@
 // pages/api/maintenance/measurements/add-measurement.js
-import prisma, { getSessionShopNo } from "@/utils/helpers";
+import prisma, { getSessionShopId } from "@/utils/helpers";
 
 export default async function handler(req, res) {
   if (req.method !== "POST") {
@@ -7,9 +7,9 @@ export default async function handler(req, res) {
   }
 
   try {
-    const shopNo = await getSessionShopNo(req, res);
+    const shopId = await getSessionShopId(req, res);
 
-    if (!shopNo) {
+    if (!shopId) {
       return res.status(401).json({ error: "Unauthorized" });
     }
 
@@ -28,7 +28,7 @@ export default async function handler(req, res) {
     const type = await prisma.type.findFirst({
       where: {
         name: assignTo,
-        shopNo,
+        shopId,
       },
     });
     console.log("type", type);
@@ -38,20 +38,13 @@ export default async function handler(req, res) {
 
     const typeId = type.id;
     
-    const newMeasurement = await prisma.measurements.create({
+    const newMeasurement = await prisma.measurement.create({
       data: {
-        shopNo,
+        shopId,
         name,
       },
     });
     console.log("newMeasurement", newMeasurement);
-    await prisma.typeMeasurements.create({
-      data: {
-        shopNo,
-        typeId: typeId,
-        measurementId: newMeasurement.id,
-      },
-    });
     return res.status(201).json({ success: true, measurement: newMeasurement });
   } catch (error) {
     console.error("Error adding measurement:", error);

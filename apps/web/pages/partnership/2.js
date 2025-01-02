@@ -1,6 +1,6 @@
 // 2.js
 
-import { useState, useEffect, useContext, useRef, useCallback } from "react"
+import { useState, useEffect, useContext, useRef, useCallback, useMemo } from "react"
 import { useRouter } from "next/router"
 import { useFormik } from "formik"
 import { shopInfoSchema } from "@/utils/validation-schema"
@@ -43,61 +43,36 @@ export default function ShopInformationStep() {
   const [loading, setLoading] = useState(false)
   const [errorMessage, setErrorMessage] = useState("")
 
-  const timeOptions = [
-    "6:00 AM",
-    "6:30 AM",
-    "7:00 AM",
-    "7:30 AM",
-    "8:00 AM",
-    "8:30 AM",
-    "9:00 AM",
-    "9:30 AM",
-    "10:00 AM",
-    "10:30 AM",
-    "11:00 AM",
-    "11:30 AM",
-    "12:00 PM",
-    "12:30 PM",
-    "1:00 PM",
-    "1:30 PM",
-    "2:00 PM",
-    "2:30 PM",
-    "3:00 PM",
-    "3:30 PM",
-    "4:00 PM",
-    "4:30 PM",
-    "5:00 PM",
-    "5:30 PM",
-    "6:00 PM",
-    "6:30 PM",
-    "7:00 PM",
-    "7:30 PM",
-    "8:00 PM",
-    "8:30 PM",
-    "9:00 PM",
-    "9:30 PM",
-    "10:00 PM"
-  ]
+  const timeOptions = useMemo(
+    () => [
+      "6:00 AM","6:30 AM","7:00 AM","7:30 AM","8:00 AM","8:30 AM","9:00 AM","9:30 AM","10:00 AM","10:30 AM","11:00 AM","11:30 AM",
+      "12:00 PM","12:30 PM","1:00 PM","1:30 PM","2:00 PM","2:30 PM","3:00 PM","3:30 PM","4:00 PM","4:30 PM","5:00 PM","5:30 PM",
+      "6:00 PM","6:30 PM","7:00 PM","7:30 PM","8:00 PM","8:30 PM","9:00 PM","9:30 PM","10:00 PM"
+    ],
+    []
+  )
 
-  const fieldOrder = [
-    "shopLogo",
-    "shopName",
-    "shopContactNo",
-    "shopEmail",
-    "businessLicense",
-    "buildingNo",
-    "street",
-    "province",
-    "municipality",
-    "barangay",
-    "openingTime",
-    "closingTime",
-    "postalNumber",
-    "latitude",
-    "longitude"
-  ]
+  const fieldOrder = useMemo(
+    () => [
+      "shopLogo",
+      "shopName",
+      "shopContactNo",
+      "shopEmail",
+      "businessLicense",
+      "buildingNo",
+      "street",
+      "province",
+      "municipality",
+      "barangay",
+      "openingTime",
+      "closingTime",
+      "postalNumber",
+      "latitude",
+      "longitude"
+    ],
+    []
+  )
 
-  // Create the refs at top-level
   const fieldRefs = useRef(
     fieldOrder.reduce((acc, field) => {
       acc[field] = null
@@ -731,7 +706,10 @@ export default function ShopInformationStep() {
                     (coords, placeName) => {
                       formik.setFieldValue("latitude", coords.lat)
                       formik.setFieldValue("longitude", coords.lng)
-                      formik.setFieldValue("googleMapPlaceName", placeName || "None")
+                      formik.setFieldValue(
+                        "googleMapPlaceName",
+                        placeName || "None"
+                      )
                     },
                     [formik]
                   )}

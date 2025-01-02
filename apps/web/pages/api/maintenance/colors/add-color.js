@@ -1,4 +1,4 @@
-import prisma, { getSessionShopNo } from "@/utils/helpers";
+import prisma, { getSessionShopId } from "@/utils/helpers";
 
 export default async function handler(req, res) {
   if (req.method !== "POST") {
@@ -6,9 +6,9 @@ export default async function handler(req, res) {
   }
 
   try {
-    const shopNo = await getSessionShopNo(req, res);
+    const shopId = await getSessionShopId(req, res);
 
-    if (!shopNo) {
+    if (!shopId) {
       return res.status(401).json({ error: "Unauthorized" });
     }
 
@@ -20,10 +20,10 @@ export default async function handler(req, res) {
       return res.status(400).json({ error: "Name and Hex Code are required fields." });
     }
 
-    const existingColor = await prisma.colors.findFirst({
+    const existingColor = await prisma.color.findFirst({
       where: {
         hexcode: hexCode,
-        shopNo,
+        shopId,
       },
     });
 
@@ -31,9 +31,9 @@ export default async function handler(req, res) {
       return res.status(400).json({ error: "Color with this hex code already exists." });
     }
 
-    const newColor = await prisma.colors.create({
+    const newColor = await prisma.color.create({
       data: {
-        shopNo,
+        shopId,
         name,
         hexcode: hexCode,
       },
