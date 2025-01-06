@@ -2,18 +2,33 @@
 import { Card, CardTitle } from "@/components/ui/card";
 import DashboardLayoutWrapper from "@/components/ui/dashboard-layout";
 import { Button } from "@/components/ui/button";
-import { MoveLeft } from "lucide-react";
 import { useRouter } from "next/router";
 import routes from "@/routes";
 import AddCategoryDialog from "./components/add-category";
+import EditCategoryDialog from "./components/edit-category"; // Import the EditCategoryDialog
 import { Table, TableHead, TableHeader, TableBody, TableCell, TableRow } from "@/components/ui/table";
-import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger, DropdownMenuGroup } from "@/components/ui/dropdown-menu";
-import { ChevronDown, Pencil, Trash2 } from "lucide-react";
-import { Pagination, PaginationPrevious, PaginationContent, PaginationItem, PaginationNext, PaginationLink } from "@/components/ui/pagination";
-import { useState } from "react";
-import useSWR from "swr";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+  DropdownMenuGroup,
+} from "@/components/ui/dropdown-menu";
+import { MoveLeft, ChevronDown, Pencil, Search, X, CircleCheck, CircleAlert } from "lucide-react";
+import {
+  Pagination,
+  PaginationPrevious,
+  PaginationContent,
+  PaginationItem,
+  PaginationNext,
+  PaginationLink,
+} from "@/components/ui/pagination";
 import Loading from "@/components/ui/loading";
 import { Skeleton } from "@/components/ui/skeleton";
+import { useState, useEffect } from "react";
+import useSWR from "swr";
+import { Input } from "@/components/ui/input";
+import { Alert, AlertTitle, AlertDescription } from "@/components/ui/alert";
 
 const fetcher = (url) => fetch(url).then((res) => res.json());
 
@@ -22,9 +37,28 @@ export default function Categories() {
   const [currentPage, setCurrentPage] = useState(1);
   const [initialLoading, setInitialLoading] = useState(true);
   const [loadingNextPage, setLoadingNextPage] = useState(false);
+  const [isEditDialogOpen, setIsEditDialogOpen] = useState(false);
+  const [selectedCategory, setSelectedCategory] = useState(null);
+  const [searchTerm, setSearchTerm] = useState("");
+  const [debouncedSearchTerm, setDebouncedSearchTerm] = useState("");
+  const [alert, setAlert] = useState({ message: "", type: "", title: "" });
+
+  // Debounce search term
+  useEffect(() => {
+    const handler = setTimeout(() => {
+      setDebouncedSearchTerm(searchTerm);
+      setCurrentPage(1); // Reset to first page on search
+    }, 500);
+
+    return () => {
+      clearTimeout(handler);
+    };
+  }, [searchTerm]);
 
   const { data, isLoading, mutate } = useSWR(
-    `/api/maintenance/categories/get-categories?page=${currentPage}`,
+    `/api/maintenance/categories/get-categories?page=${currentPage}&search=${encodeURIComponent(
+      debouncedSearchTerm
+    )}`,
     fetcher,
     {
       onSuccess: () => {
@@ -34,7 +68,23 @@ export default function Categories() {
     }
   );
 
-  const handleAddCategory = async () => {
+  const handleEdit = (category) => {
+    setSelectedCategory(category);
+    setIsEditDialogOpen(true);
+  };
+
+  const handleAlert = (message, type, title) => {
+    setAlert({ message, type, title });
+    setTimeout(() => setAlert({ message: "", type: "", title: "" }), 5000);
+  };
+
+  const handleAddCategory = (message, type) => {
+    handleAlert(message, type, type === "success" ? "Success" : "Failed");
+    mutate();
+  };
+
+  const handleCategoryUpdated = (message, type) => {
+    handleAlert(message, type, type === "success" ? "Success" : "Failed");
     mutate();
   };
 
@@ -55,23 +105,65 @@ export default function Categories() {
 
   return (
     <DashboardLayoutWrapper>
+      {alert.message && (
+        <Alert
+          className={`fixed z-50 w-[30rem] right-14 bottom-12 flex flex-row items-center shadow-lg rounded-lg p-4`}
+        >
+          {alert.type === "success" ? (
+            <CircleCheck className="ml-4 scale-[200%] h-[60%] stroke-green-500" />
+          ) : (
+            <CircleAlert className="ml-4 scale-[200%] h-[60%] stroke-red-500" />
+          )}
+          <div className="flex flex-col justify-center ml-10">
+            <AlertTitle
+              className={`text-lg font-bold ${
+                alert.type === "success" ? "text-green-500" : "text-red-500"
+              }`}
+            >
+              {alert.title}
+            </AlertTitle>
+            <AlertDescription
+              className={`tracking-wide font-light ${
+                alert.type === "success" ? "text-green-300" : "text-red-300"
+              }`}
+            >
+              {alert.message}
+            </AlertDescription>
+          </div>
+          <Button
+            variant="ghost"
+            className="ml-auto p-2"
+            onClick={() => setAlert({ message: "", type: "", title: "" })}
+          >
+            <X className="scale-150 stroke-primary/50 -translate-x-2" />
+          </Button>
+        </Alert>
+      )}
       <div className="flex justify-between items-center">
         <CardTitle className="text-4xl">Categories</CardTitle>
-        <div className="flex gap-3">
+        <div className="flex gap-3 items-center">
           <Button variant="outline" onClick={() => router.push(routes.maintenance)}>
             <MoveLeft className="scale-125" />
             Back to Maintenance
           </Button>
+          <Input
+            type="text"
+            className="min-w-[20rem]"
+            placeholder="Search a category"
+            variant="icon"
+            icon={Search}
+            value={searchTerm}
+            onChange={(e) => setSearchTerm(e.target.value)}
+          />
           <AddCategoryDialog onAdd={handleAddCategory} />
         </div>
       </div>
-      <Card className="flex flex-col gap-5 justify-between min-h-[49.1rem]">
+      <Card className="flex flex-col p-5 gap-5 justify-between min-h-[49.1rem]">
         <Table>
           <TableHeader>
             <TableRow>
-              <TableHead className="text-left w-[10%]">Category ID</TableHead>
-              <TableHead className="text-left w-[80%]">Category Name</TableHead>
-              <TableHead className="text-left w-[20%]">Action</TableHead>
+              <TableHead className="w-full">Name</TableHead>
+              <TableHead>Action</TableHead>
             </TableRow>
           </TableHeader>
           <TableBody>
@@ -79,27 +171,25 @@ export default function Categories() {
               Array.from({ length: 8 }).map((_, index) => (
                 <TableRow key={index}>
                   <TableCell>
-                    <Skeleton className="h-14 w-12" />
+                    <Skeleton className="h-[3.25rem] w-[10rem]" />
                   </TableCell>
                   <TableCell>
-                    <Skeleton className="h-14 w-[70rem]" />
-                  </TableCell>
-                  <TableCell>
-                    <Skeleton className="h-14 w-24" />
+                    <Skeleton className="h-[3.25rem] w-[10rem]" />
                   </TableCell>
                 </TableRow>
               ))
             ) : data?.categories?.length > 0 ? (
               data.categories.map((category) => (
                 <TableRow key={category.id}>
-                  <TableCell className="text-left">{category.id}</TableCell>
-                  <TableCell className="text-left">{category.name}</TableCell>
-                  <TableCell className="text-left">
+                  <TableCell>{category.name}</TableCell>
+                  <TableCell>
                     <DropdownMenu>
                       <DropdownMenuTrigger asChild>
-                        <Button variant="outline" className="font-normal">
-                          Action
-                          <ChevronDown className="scale-125" />
+                        <Button
+                          variant="outline"
+                          className="font-normal flex items-center gap-1"
+                        >
+                          Action <ChevronDown className="scale-125" />
                         </Button>
                       </DropdownMenuTrigger>
                       <DropdownMenuContent className="w-50">
@@ -107,24 +197,11 @@ export default function Categories() {
                           <DropdownMenuItem className="justify-center">
                             <Button
                               variant="none"
-                              onClick={() =>
-                                console.log("Edit category:", category)
-                              }
+                              onClick={() => handleEdit(category)}
+                              className="flex items-center gap-2"
                             >
                               <Pencil className="scale-125" />
                               Edit
-                            </Button>
-                          </DropdownMenuItem>
-                          <DropdownMenuItem className="justify-center">
-                            <Button
-                              variant="none"
-                              className="font-bold text-red-500"
-                              onClick={() =>
-                                console.log("Delete category:", category)
-                              }
-                            >
-                              <Trash2 className="scale-125 stroke-red-500" />
-                              Delete
                             </Button>
                           </DropdownMenuItem>
                         </DropdownMenuGroup>
@@ -135,7 +212,10 @@ export default function Categories() {
               ))
             ) : (
               <TableRow>
-                <TableCell colSpan={3} className="text-center">
+                <TableCell
+                  colSpan={2}
+                  className="text-center align-middle h-[43rem] text-primary/50 text-lg font-thin tracking-wide"
+                >
                   No categories found.
                 </TableCell>
               </TableRow>
@@ -143,7 +223,7 @@ export default function Categories() {
           </TableBody>
         </Table>
         {data?.categories?.length > 0 && (
-          <Pagination className="flex justify-end">
+          <Pagination className="flex flex-col items-end">
             <PaginationContent>
               {currentPage > 1 && (
                 <PaginationPrevious onClick={() => handlePageChange(currentPage - 1)} />
@@ -160,6 +240,19 @@ export default function Categories() {
           </Pagination>
         )}
       </Card>
+      {selectedCategory && (
+        <EditCategoryDialog
+          category={selectedCategory}
+          isOpen={isEditDialogOpen}
+          onOpenChange={(open) => {
+            setIsEditDialogOpen(open);
+            if (!open) {
+              setSelectedCategory(null);
+            }
+          }}
+          onCategoryUpdated={handleCategoryUpdated}
+        />
+      )}
     </DashboardLayoutWrapper>
   );
 }

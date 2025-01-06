@@ -1,17 +1,17 @@
-import { Dialog, DialogTrigger, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog";
+// pages/colors/components/add-color.jsx
+import { Dialog, DialogTrigger, DialogContent, DialogHeader, DialogFooter } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { Plus, Asterisk, CheckCircle2 } from "lucide-react";
+import { Upload, Plus, Asterisk } from "lucide-react";
 import { Label } from "@/components/ui/label";
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useFormik } from "formik";
 import { addColorSchema } from "@/utils/validation-schema";
 import { InputErrorMessage, InputErrorStyle } from "@/components/ui/error-message";
-import { Alert, AlertTitle, AlertDescription } from "@/components/ui/alert";
 import { ImageColorPicker } from "react-image-color-picker";
+import { CardTitle } from "@/components/ui/card";
 import { LoadingMessage } from "@/components/ui/loading-message";
 
-// Utility function to convert RGB to HEX
 const rgbToHex = (rgb) => {
   const result = rgb.match(/\d+/g);
   if (!result || result.length < 3) return "#000000";
@@ -21,7 +21,6 @@ const rgbToHex = (rgb) => {
 
 export default function AddColorDialog({ buttonClassName = "", buttonName = "Add Color", onColorAdded }) {
   const [uploadedImage, setUploadedImage] = useState(null);
-  const [showAlert, setShowAlert] = useState(false);
   const [isDialogOpen, setIsDialogOpen] = useState(false);
   const [loading, setLoading] = useState(false);
 
@@ -39,18 +38,16 @@ export default function AddColorDialog({ buttonClassName = "", buttonName = "Add
 
         if (response.ok) {
           const { color } = await response.json();
-          onColorAdded && onColorAdded(color);
+          onColorAdded("Color added successfully.", "success");
           resetForm();
-          setShowAlert(true);
+          setUploadedImage(null);
           setIsDialogOpen(false);
-          setTimeout(() => {
-            setShowAlert(false);
-          }, 5000);
         } else {
-          console.error("Failed to add color");
+          const errorData = await response.json();
+          onColorAdded(errorData.error || "Failed to add color.", "error");
         }
       } catch (error) {
-        console.error("An error occurred while adding the color:", error);
+        onColorAdded("An unexpected error occurred.", "error");
       } finally {
         setLoading(false);
       }
@@ -71,114 +68,108 @@ export default function AddColorDialog({ buttonClassName = "", buttonName = "Add
     formik.setFieldValue("hexCode", hex);
   };
 
+  useEffect(() => {
+    if (!isDialogOpen) {
+      formik.resetForm();
+      setUploadedImage(null);
+    }
+  }, [isDialogOpen, formik]);
+
   return (
-    <>
-      {showAlert && (
-        <Alert className="fixed z-50 w-[25rem] right-10 bottom-10 flex items-center shadow-lg rounded-lg">
-          <CheckCircle2 className="h-10 w-10 stroke-green-500" />
-          <div className="ml-7">
-            <AlertTitle className="text-green-400 text-base font-semibold">Color Added</AlertTitle>
-            <AlertDescription className="text-green-300">
-              The color has been added successfully.
-            </AlertDescription>
-          </div>
-          <button
-            className="ml-auto mr-4 hover:text-primary/50 focus:outline-none"
-            onClick={() => setShowAlert(false)}
-          >
-            ✕
-          </button>
-        </Alert>
-      )}
-      <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
-        <DialogTrigger asChild>
-          <Button className={buttonClassName}>
-            <Plus /> {buttonName}
-          </Button>
-        </DialogTrigger>
-        <DialogContent>
-          <DialogHeader>
-            <DialogTitle>Add Color</DialogTitle>
-          </DialogHeader>
-          <form onSubmit={formik.handleSubmit}>
-            <div className="flex flex-row gap-6">
-              {/* Left Side: Inputs */}
-              <div className="flex flex-col gap-4 w-[45%]">
-                <div className="flex flex-col gap-2">
-                  <Label htmlFor="name" className="font-bold flex flex-row items-center">
-                    Color Name <Asterisk className="w-4" />
-                  </Label>
+    <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
+      <DialogTrigger asChild>
+        <Button className={buttonClassName}>
+          <Plus /> {buttonName}
+        </Button>
+      </DialogTrigger>
+      <DialogContent className="min-w-[40rem]">
+        <DialogHeader className="mb-5">
+          <CardTitle className="text-2xl">Add Color</CardTitle>
+        </DialogHeader>
+        <form onSubmit={formik.handleSubmit}>
+          <div className="flex flex-row gap-5">
+            <div className="flex flex-col gap-4 w-1/2">
+              <div className="flex flex-col gap-2">
+                <Label htmlFor="name" className="font-bold flex items-center">
+                  Name <Asterisk className="w-4 h-4 text-red-500" />
+                </Label>
+                <Input
+                  id="name"
+                  name="name"
+                  placeholder="Enter the Color name"
+                  value={formik.values.name}
+                  onChange={formik.handleChange}
+                  onBlur={formik.handleBlur}
+                  className={InputErrorStyle(formik.errors.name, formik.touched.name)}
+                />
+                <InputErrorMessage error={formik.errors.name} touched={formik.touched.name} />
+              </div>
+              <div className="flex flex-col gap-2">
+                <Label htmlFor="hexCode" className="font-bold flex items-center">
+                  Hex Code <Asterisk className="w-4 h-4 text-red-500" />
+                </Label>
+                <div className="flex gap-2">
                   <Input
-                    id="name"
-                    name="name"
-                    placeholder="Enter the Color name"
-                    value={formik.values.name}
+                    id="hexCode"
+                    type="color"
+                    name="hexCode"
+                    value={formik.values.hexCode}
+                    onChange={formik.handleChange}
+                    className="w-12 h-12 border-none bg-transparent p-0"
+                  />
+                  <Input
+                    name="hexCode"
+                    placeholder="#000000"
+                    value={formik.values.hexCode}
                     onChange={formik.handleChange}
                     onBlur={formik.handleBlur}
-                    className={InputErrorStyle(formik.errors.name, formik.touched.name)}
+                    className={`w-[15rem] ${InputErrorStyle(formik.errors.hexCode, formik.touched.hexCode)}`}
                   />
-                  <InputErrorMessage error={formik.errors.name} touched={formik.touched.name} />
                 </div>
-
-                <div className="flex flex-col gap-2">
-                  <Label htmlFor="hexCode" className="font-bold flex flex-row items-center">
-                    Hex Code <Asterisk className="w-4" />
-                  </Label>
-                  <div className="flex flex-row w-full items-center gap-2">
-                    <Input
-                      id="hexCode"
-                      type="color"
-                      name="hexCode"
-                      value={formik.values.hexCode}
-                      onChange={formik.handleChange}
-                      className="w-12 h-12 p-0"
-                    />
-                    <Input
-                      name="hexCode"
-                      placeholder="#000000"
-                      value={formik.values.hexCode}
-                      onChange={formik.handleChange}
-                      onBlur={formik.handleBlur}
-                      className={InputErrorStyle(formik.errors.hexCode, formik.touched.hexCode)}
-                    />
-                  </div>
-                  <InputErrorMessage error={formik.errors.hexCode} touched={formik.touched.hexCode} />
-                </div>
+                <InputErrorMessage error={formik.errors.hexCode} touched={formik.touched.hexCode} />
               </div>
-
-              {/* Right Side: Upload Image and Color Picker */}
-              <div className="flex flex-col gap-4 w-[55%]">
-                <div className="flex flex-col gap-2">
-                  <Label htmlFor="image">Upload Image (Pick a color)</Label>
+            </div>
+            <div className="flex flex-col gap-4 w-1/2">
+              <Label className="font-bold">Image Color Picker</Label>
+              <div className="flex flex-col items-center gap-2 border-dashed border-2 p-5 rounded-md">
+                <label htmlFor="image" className="cursor-pointer text-center">
+                  <div className="flex flex-col items-center gap-2">
+                    <Upload className="stroke-primary/50" />
+                    <span className="text-primary/50 font-thin">Click here to upload an image</span>
+                  </div>
                   <input
                     id="image"
                     type="file"
                     accept="image/*"
-                    className="bg-accent p-5 rounded-md border-2"
+                    className="hidden"
                     onChange={handleImageUpload}
                   />
-                </div>
-
-                {uploadedImage && (
-                  <div className="relative flex flex-col items-center">
-                    <ImageColorPicker
-                      onColorPick={(rgb) => handleColorPick(rgb)}
-                      imgSrc={uploadedImage}
-                      zoom={1}
-                    />
-                    <p className="mt-2 text-sm text-primary/50">Click on the image to pick a color</p>
-                  </div>
-                )}
+                </label>
               </div>
+              {uploadedImage && (
+                <div className="flex flex-col items-center">
+                  <ImageColorPicker
+                    onColorPick={(rgb) => handleColorPick(rgb)}
+                    imgSrc={uploadedImage}
+                    zoom={1}
+                  />
+                  <p className="mt-2 text-sm text-primary/50 font-thin bg-muted w-full text-center py-2 rounded-sm">
+                    Click on the image to pick a color
+                  </p>
+                </div>
+              )}
             </div>
-            <DialogFooter className="mt-10">
-              <Button type="submit" disabled={loading}>
-                {loading ? <LoadingMessage message="Adding..." /> : "Add"}
-              </Button>
-            </DialogFooter>
-          </form>
-        </DialogContent>
-      </Dialog>
-    </>
+          </div>
+          <DialogFooter className="mt-10">
+            <Button type="submit" disabled={loading} className="w-1/2">
+              {loading ? <LoadingMessage message="Saving..." /> : "Save"}
+            </Button>
+            <Button variant="outline" onClick={() => setIsDialogOpen(false)} className="w-1/2">
+              Cancel
+            </Button>
+          </DialogFooter>
+        </form>
+      </DialogContent>
+    </Dialog>
   );
 }

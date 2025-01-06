@@ -12,13 +12,30 @@ export default async function handler(req, res) {
       return res.status(401).json({ error: "Unauthorized" });
     }
 
-    const { page = 1 } = req.query; // Default to page 1 if no query param
-    const PAGE_SIZE = 8;
+    const { page = 1, search = "" } = req.query; // Add search query param
+    const PAGE_SIZE = 9;
+
+    const searchTerm = search.trim().toLowerCase();
+
+    // Build the where clause with search functionality
+    const whereClause = {
+      shopId,
+      ...(searchTerm && {
+        name: {
+          contains: searchTerm,
+          mode: "insensitive",
+        },
+      }),
+    };
+
+    // Add orderBy clause for latest updates
+    const orderByClause = { updated_at: "desc" };
 
     const tags = await prisma.tag.findMany({
-      where: { shopId },
+      where: whereClause,
       skip: (page - 1) * PAGE_SIZE,
       take: PAGE_SIZE,
+      orderBy: orderByClause,
       select: {
         id: true,
         name: true,
@@ -34,10 +51,15 @@ export default async function handler(req, res) {
       typeName: tag.Type ? tag.Type.name : "Unassigned", // Resolve the type name
     }));
 
-    const totalCount = await prisma.tag.count({ where: { shopId } });
+    const totalCount = await prisma.tag.count({ where: whereClause });
     const totalPages = Math.ceil(totalCount / PAGE_SIZE);
 
-    return res.status(200).json({ success: true, tags: formattedTags, totalPages });
+    return res.status(200).json({
+      success: true,
+      tags: formattedTags,
+      totalPages,
+      totalCount,
+    });
   } catch (error) {
     console.error("Error fetching tags:", error);
     return res.status(500).json({ error: "Internal Server Error" });

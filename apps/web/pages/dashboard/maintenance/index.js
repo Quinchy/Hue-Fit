@@ -48,13 +48,13 @@ export default function Maintenance() {
                 <TableCell>{renderSkeletonOrTotal(totals?.types)}</TableCell>
                 <TableCell className="text-end">
                   <Link
-                    className={`${buttonVariants({ variant: "default" })} mr-3 align-middle`}
+                    className={`${buttonVariants({ variant: "outline" })} mr-3 px-8 align-middle`}
                     href={routes.types}
                   >
                     View Records
                   </Link>
                   <AddTypeDialog
-                    buttonClassName="bg-neutral-600 hover:bg-neutral-500 align-middle text-card"
+                    buttonClassName="align-middle px-8"
                     buttonName="Add More"
                   />
                 </TableCell>
@@ -64,13 +64,13 @@ export default function Maintenance() {
                 <TableCell>{renderSkeletonOrTotal(totals?.categories)}</TableCell>
                 <TableCell className="text-end">
                   <Link
-                    className={`${buttonVariants({ variant: "default" })} mr-3 align-middle`}
+                    className={`${buttonVariants({ variant: "outline" })} mr-3 px-8 align-middle`}
                     href={routes.categories}
                   >
                     View Records
                   </Link>
                   <AddCategoryDialog
-                    buttonClassName="bg-neutral-600 hover:bg-neutral-500 align-middle text-card"
+                    buttonClassName="align-middle px-8"
                     buttonName="Add More"
                   />
                 </TableCell>
@@ -80,13 +80,13 @@ export default function Maintenance() {
                 <TableCell>{renderSkeletonOrTotal(totals?.tags)}</TableCell>
                 <TableCell className="text-end">
                   <Link
-                    className={`${buttonVariants({ variant: "default" })} mr-3 align-middle`}
+                    className={`${buttonVariants({ variant: "outline" })} mr-3 px-8 align-middle`}
                     href={routes.tags}
                   >
                     View Records
                   </Link>
                   <AddTagDialog
-                    buttonClassName="bg-neutral-600 hover:bg-neutral-500 align-middle text-card"
+                    buttonClassName="align-middle px-8"
                     buttonName="Add More"
                   />
                 </TableCell>
@@ -96,13 +96,13 @@ export default function Maintenance() {
                 <TableCell>{renderSkeletonOrTotal(totals?.colors)}</TableCell>
                 <TableCell className="text-end">
                   <Link
-                    className={`${buttonVariants({ variant: "default" })} mr-3 align-middle`}
+                    className={`${buttonVariants({ variant: "outline" })} mr-3 px-8 align-middle`}
                     href={routes.colors}
                   >
                     View Records
                   </Link>
                   <AddColorDialog
-                    buttonClassName="bg-neutral-600 hover:bg-neutral-500 align-middle text-card"
+                    buttonClassName="align-middle px-8"
                     buttonName="Add More"
                   />
                 </TableCell>
@@ -112,13 +112,13 @@ export default function Maintenance() {
                 <TableCell>{renderSkeletonOrTotal(totals?.sizes)}</TableCell>
                 <TableCell className="text-end">
                   <Link
-                    className={`${buttonVariants({ variant: "default" })} mr-3 align-middle`}
+                    className={`${buttonVariants({ variant: "outline" })} mr-3 px-8 align-middle`}
                     href={routes.sizes}
                   >
                     View Records
                   </Link>
                   <AddSizeDialog
-                    buttonClassName="bg-neutral-600 hover:bg-neutral-500 align-middle text-card"
+                    buttonClassName="align-middle px-8"
                     buttonName="Add More"
                   />
                 </TableCell>
@@ -128,13 +128,13 @@ export default function Maintenance() {
                 <TableCell>{renderSkeletonOrTotal(totals?.measurements)}</TableCell>
                 <TableCell className="text-end">
                   <Link
-                    className={`${buttonVariants({ variant: "default" })} mr-3 align-middle`}
+                    className={`${buttonVariants({ variant: "outline" })} mr-3 px-8 align-middle`}
                     href={routes.measurements}
                   >
                     View Records
                   </Link>
                   <AddMeasurementDialog
-                    buttonClassName="bg-neutral-600 hover:bg-neutral-500 align-middle text-card"
+                    buttonClassName="align-middle px-8"
                     buttonName="Add More"
                   />
                 </TableCell>

@@ -13,17 +13,33 @@ export default async function handler(req, res) {
       return res.status(401).json({ error: "Unauthorized" });
     }
 
-    const { page = 1 } = req.query;
-    const pageNumber = parseInt(page);
+    const { page = 1, search = "" } = req.query;
+    const pageNumber = parseInt(page, 10);
 
+    // Fetch types with pagination and search
     const types = await prisma.type.findMany({
-      where: { shopId },
+      where: {
+        shopId,
+        name: {
+          contains: search,
+          mode: "insensitive",
+        },
+      },
       select: { id: true, name: true },
       skip: (pageNumber - 1) * 8,
       take: 8,
+      orderBy: { id: "asc" },
     });
 
-    const totalTypes = await prisma.type.count({ where: { shopId } });
+    const totalTypes = await prisma.type.count({
+      where: {
+        shopId,
+        name: {
+          contains: search,
+          mode: "insensitive",
+        },
+      },
+    });
     const totalPages = Math.ceil(totalTypes / 8);
 
     return res.status(200).json({

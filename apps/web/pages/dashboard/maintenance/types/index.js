@@ -1,18 +1,41 @@
+// pages/types/index.js
 import { Card, CardTitle } from "@/components/ui/card";
 import DashboardLayoutWrapper from "@/components/ui/dashboard-layout";
 import { Button } from "@/components/ui/button";
-import { MoveLeft } from "lucide-react";
+import { MoveLeft, Search, Pencil, ChevronDown, X, CircleCheck, CircleAlert } from "lucide-react";
 import { useRouter } from "next/router";
 import routes from "@/routes";
 import AddTypeDialog from "./components/add-type";
-import { Table, TableHead, TableHeader, TableBody, TableCell, TableRow } from "@/components/ui/table";
-import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger, DropdownMenuGroup } from "@/components/ui/dropdown-menu";
-import { ChevronDown, Pencil, Trash2 } from "lucide-react";
+import EditTypeDialog from "./components/edit-type";
+import {
+  Table,
+  TableHead,
+  TableHeader,
+  TableBody,
+  TableCell,
+  TableRow,
+} from "@/components/ui/table";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+  DropdownMenuGroup,
+} from "@/components/ui/dropdown-menu";
+import {
+  Pagination,
+  PaginationPrevious,
+  PaginationContent,
+  PaginationItem,
+  PaginationNext,
+  PaginationLink,
+} from "@/components/ui/pagination";
 import { Skeleton } from "@/components/ui/skeleton";
-import { Pagination, PaginationPrevious, PaginationContent, PaginationItem, PaginationNext, PaginationLink } from "@/components/ui/pagination";
+import { Input } from "@/components/ui/input";
 import useSWR from "swr";
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import Loading from "@/components/ui/loading";
+import { Alert, AlertTitle, AlertDescription } from "@/components/ui/alert";
 
 const fetcher = (url) => fetch(url).then((res) => res.json());
 
@@ -21,9 +44,27 @@ export default function Types() {
   const [currentPage, setCurrentPage] = useState(1);
   const [initialLoading, setInitialLoading] = useState(true);
   const [loadingNextPage, setLoadingNextPage] = useState(false);
+  const [isEditDialogOpen, setIsEditDialogOpen] = useState(false);
+  const [selectedType, setSelectedType] = useState(null);
+  const [searchTerm, setSearchTerm] = useState("");
+  const [debouncedSearchTerm, setDebouncedSearchTerm] = useState("");
+  const [alert, setAlert] = useState({ message: "", type: "", title: "" });
+
+  useEffect(() => {
+    const handler = setTimeout(() => {
+      setDebouncedSearchTerm(searchTerm);
+      setCurrentPage(1);
+    }, 500);
+
+    return () => {
+      clearTimeout(handler);
+    };
+  }, [searchTerm]);
 
   const { data, isLoading, mutate } = useSWR(
-    `/api/maintenance/types/get-types?page=${currentPage}`,
+    `/api/maintenance/types/get-types?page=${currentPage}&search=${encodeURIComponent(
+      debouncedSearchTerm
+    )}`,
     fetcher,
     {
       onSuccess: () => {
@@ -33,32 +74,24 @@ export default function Types() {
     }
   );
 
-  const handleAddType = async () => {
+  const handleEdit = (type) => {
+    setSelectedType(type);
+    setIsEditDialogOpen(true);
+  };
+
+  const handleAlert = (message, type, title) => {
+    setAlert({ message, type, title });
+    setTimeout(() => setAlert({ message: "", type: "", title: "" }), 5000);
+  };
+
+  const handleAddType = (message, type) => {
+    handleAlert(message, type, type === "success" ? "Success" : "Failed");
     mutate();
   };
 
-  const handleEdit = (type) => {
-    console.log("Edit type:", type);
-  };
-
-  const handleDelete = async (typeId) => {
-    try {
-      const response = await fetch(`/api/maintenance/types/delete-type`, {
-        method: "DELETE",
-        headers: {
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify({ id: typeId }),
-      });
-
-      if (response.ok) {
-        mutate();
-      } else {
-        console.error("Failed to delete type");
-      }
-    } catch (error) {
-      console.error("An error occurred:", error);
-    }
+  const handleTypeUpdated = (message, type) => {
+    handleAlert(message, type, type === "success" ? "Success" : "Failed");
+    mutate();
   };
 
   const handlePageChange = (page) => {
@@ -78,22 +111,62 @@ export default function Types() {
 
   return (
     <DashboardLayoutWrapper>
+      {alert.message && (
+        <Alert className={`fixed z-50 w-[30rem] right-14 bottom-12 flex flex-row items-center shadow-lg rounded-lg p-4`}>
+          {alert.type === "success" ? (
+            <CircleCheck className="ml-4 scale-[200%] h-[60%] stroke-green-500" />
+          ) : (
+            <CircleAlert className="ml-4 scale-[200%] h-[60%] stroke-red-500" />
+          )}
+          <div className="flex flex-col ml-4">
+            <AlertTitle
+              className={`text-lg font-bold ${
+                alert.type === "success" ? "text-green-500" : "text-red-500"
+              }`}
+            >
+              {alert.title}
+            </AlertTitle>
+            <AlertDescription
+              className={`tracking-wide font-light ${
+                alert.type === "success" ? "text-green-400" : "text-red-400"
+              }`}
+            >
+              {alert.message}
+            </AlertDescription>
+          </div>
+          <Button
+            variant="ghost"
+            className="ml-auto p-2"
+            onClick={() => setAlert({ message: "", type: "", title: "" })}
+          >
+            <X className="scale-150 stroke-primary/50 -translate-x-2" />
+          </Button>
+        </Alert>
+      )}
       <div className="flex justify-between items-center">
         <CardTitle className="text-4xl">Types</CardTitle>
-        <div className="flex gap-3">
+        <div className="flex gap-3 items-center">
           <Button variant="outline" onClick={() => router.push(routes.maintenance)}>
             <MoveLeft className="scale-125" />
             Back to Maintenance
           </Button>
-          <AddTypeDialog onAdd={handleAddType} />
+          <Input
+            type="text"
+            className="min-w-[20rem]"
+            placeholder="Search type"
+            variant="icon"
+            icon={Search}
+            value={searchTerm}
+            onChange={(e) => setSearchTerm(e.target.value)}
+          />
+          <AddTypeDialog onAdd={(message, type) => handleAddType(message, type)} />
         </div>
       </div>
-      <Card className="flex flex-col gap-5 justify-between min-h-[49.1rem]">
+      <Card className="flex flex-col gap-5 justify-between p-5 min-h-[49.1rem]">
         <Table>
           <TableHeader>
             <TableRow>
-              <TableHead>ID</TableHead>
-              <TableHead>Name</TableHead>
+              <TableHead className="w-full">Name</TableHead>
               <TableHead>Action</TableHead>
             </TableRow>
           </TableHeader>
@@ -101,9 +174,6 @@ export default function Types() {
             {loadingNextPage ? (
               Array.from({ length: 8 }).map((_, index) => (
                 <TableRow key={index}>
-                  <TableCell>
-                    <Skeleton className="h-14 w-10" />
-                  </TableCell>
                   <TableCell>
                     <Skeleton className="h-14 w-[70rem]" />
                   </TableCell>
@@ -115,9 +185,8 @@ export default function Types() {
             ) : data?.types?.length > 0 ? (
               data.types.map((type) => (
                 <TableRow key={type.id}>
-                  <TableCell className="w-[10%]">{type.id}</TableCell>
                   <TableCell className="w-[80%]">{type.name.toUpperCase()}</TableCell>
-                  <TableCell className="w-[10%]">
+                  <TableCell className="w-[20%]">
                     <DropdownMenu>
                       <DropdownMenuTrigger asChild>
                         <Button variant="outline" className="font-normal">
@@ -128,19 +197,13 @@ export default function Types() {
                       <DropdownMenuContent className="w-50">
                         <DropdownMenuGroup>
                           <DropdownMenuItem className="justify-center">
-                            <Button variant="none" onClick={() => handleEdit(type)}>
-                              <Pencil className="scale-125" />
-                              Edit
-                            </Button>
-                          </DropdownMenuItem>
-                          <DropdownMenuItem className="justify-center">
                             <Button
                               variant="none"
-                              className="font-bold text-red-500"
-                              onClick={() => handleDelete(type.id)}
+                              onClick={() => handleEdit(type)}
+                              className="flex items-center gap-2"
                             >
-                              <Trash2 className="scale-125 stroke-red-500" />
-                              Delete
+                              <Pencil className="scale-125" />
+                              Edit
                             </Button>
                           </DropdownMenuItem>
                         </DropdownMenuGroup>
@@ -151,7 +214,7 @@ export default function Types() {
               ))
             ) : (
               <TableRow>
-                <TableCell colSpan={3} className="text-center">
+                <TableCell colSpan={2} className="text-center align-middle h-[43rem] text-primary/50 text-lg font-thin tracking-wide">
                   No types found.
                 </TableCell>
               </TableRow>
@@ -176,6 +239,19 @@ export default function Types() {
           </Pagination>
         )}
       </Card>
+      {selectedType && (
+        <EditTypeDialog
+          type={selectedType}
+          isOpen={isEditDialogOpen}
+          onOpenChange={(open) => {
+            setIsEditDialogOpen(open);
+            if (!open) {
+              setSelectedType(null);
+            }
+          }}
+          onEdit={(message, type) => handleTypeUpdated(message, type)}
+        />
+      )}
     </DashboardLayoutWrapper>
   );
 }

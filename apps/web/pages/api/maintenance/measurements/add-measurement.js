@@ -17,6 +17,7 @@ export default async function handler(req, res) {
     name = name.toUpperCase();
     console.log("name", name);
     console.log("assignTo", assignTo);
+
     if (!name) {
       return res.status(400).json({ error: "Name is a required field." });
     }
@@ -27,24 +28,27 @@ export default async function handler(req, res) {
 
     const type = await prisma.type.findFirst({
       where: {
-        name: assignTo,
+        name: assignTo.toUpperCase(),
         shopId,
       },
     });
     console.log("type", type);
+
     if (!type) {
       return res.status(400).json({ error: "Invalid type specified in Assign To." });
     }
 
     const typeId = type.id;
-    
+
     const newMeasurement = await prisma.measurement.create({
       data: {
         shopId,
+        typeId, // Added typeId to establish the relation
         name,
       },
     });
     console.log("newMeasurement", newMeasurement);
+
     return res.status(201).json({ success: true, measurement: newMeasurement });
   } catch (error) {
     console.error("Error adding measurement:", error);

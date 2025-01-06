@@ -1,3 +1,5 @@
+// pages/api/maintenance/measurements/get-measurements.js
+
 import prisma, { getSessionShopId } from "@/utils/helpers";
 
 export default async function handler(req, res) {
@@ -7,51 +9,55 @@ export default async function handler(req, res) {
 
   try {
     const shopId = await getSessionShopId(req, res);
-
     if (!shopId) {
-      return res.status(400).json({ error: "Shop number is missing in the session." });
+      return res.status(401).json({ error: "Unauthorized: Shop ID missing in session." });
     }
 
-    const { page = 1 } = req.query;
+    const { page = 1, search = "" } = req.query;
     const pageNumber = parseInt(page, 10);
+    if (isNaN(pageNumber) || pageNumber < 1) {
+      return res.status(400).json({ error: "Invalid page number." });
+    }
 
-    // Fetch measurements with pagination, including the "Assign To" data
+    // Fetch measurements with pagination and search, including the related "Type" data
     const measurements = await prisma.measurement.findMany({
-      where: { shopId },
+      where: {
+        shopId,
+        name: {
+          contains: search,
+          mode: "insensitive",
+        },
+      },
       select: {
         id: true,
         name: true,
         created_at: true,
-        TypeMeasurements: {
+        Type: {
           select: {
-            Type: {
-              select: {
-                name: true,
-              },
-            },
+            name: true,
           },
         },
       },
-      skip: (pageNumber - 1) * 8,
-      take: 8,
+      skip: (pageNumber - 1) * 9,
+      take: 9,
+      orderBy: {
+        created_at: "desc",
+      },
     });
 
-    // Map to include the assigned type name
-    const formattedMeasurements = measurements.map((measurement) => ({
-      id: measurement.id,
-      name: measurement.name,
-      createdAt: measurement.created_at,
-      assignedTo:
-        measurement.TypeMeasurements.length > 0
-          ? measurement.TypeMeasurements.map((tm) => tm.Type.name).join(", ")
-          : null,
-    }));
-
-    const totalMeasurements = await prisma.measurement.count({ where: { shopId } });
-    const totalPages = Math.ceil(totalMeasurements / 8);
+    const totalMeasurements = await prisma.measurement.count({
+      where: {
+        shopId,
+        name: {
+          contains: search,
+          mode: "insensitive",
+        },
+      },
+    });
+    const totalPages = Math.ceil(totalMeasurements / 9);
 
     return res.status(200).json({
-      measurements: formattedMeasurements,
+      measurements: measurements,
       currentPage: pageNumber,
       totalPages,
       totalMeasurements,

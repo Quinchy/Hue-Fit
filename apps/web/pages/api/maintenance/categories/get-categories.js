@@ -13,20 +13,34 @@ export default async function handler(req, res) {
       return res.status(401).json({ error: "Unauthorized" });
     }
 
-    const { page = 1 } = req.query;
+    const { page = 1, search = "" } = req.query;
     const pageNumber = parseInt(page, 10);
 
-    // Fetch categories with pagination (8 records per page)
+    // Fetch categories with pagination and search
     const categories = await prisma.category.findMany({
-      where: { shopId },
+      where: {
+        shopId,
+        name: {
+          contains: search,
+          mode: "insensitive",
+        },
+      },
       select: { id: true, name: true },
-      skip: (pageNumber - 1) * 8,
-      take: 8,
+      skip: (pageNumber - 1) * 9,
+      take: 9,
       orderBy: { id: "asc" },
     });
 
-    const totalCategories = await prisma.category.count({ where: { shopId } });
-    const totalPages = Math.ceil(totalCategories / 8);
+    const totalCategories = await prisma.category.count({
+      where: {
+        shopId,
+        name: {
+          contains: search,
+          mode: "insensitive",
+        },
+      },
+    });
+    const totalPages = Math.ceil(totalCategories / 9);
 
     return res.status(200).json({
       categories,

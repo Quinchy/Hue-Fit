@@ -175,13 +175,13 @@ export const productSchema = Yup.object().shape({
   variants: variantsSchema
 });
 export const addSizeSchema = Yup.object({
-  name: Yup.string().required("The Size Name field is required."),
-  abbreviation: Yup.string().required("The Abbreviation field is required."),
+  name: Yup.string().required("Size name is required."),
+  abbreviation: Yup.string().required("An Abbreviation is required."),
   nextTo: Yup.string().nullable(),
 });
 
 export const addTypeSchema = Yup.object({
-  name: Yup.string().required("Type Name is required"),
+  name: Yup.string().required("Type name is required"),
 });
 
 export const addCategorySchema = Yup.object({
@@ -189,7 +189,7 @@ export const addCategorySchema = Yup.object({
 });
 
 export const addTagSchema = Yup.object({
-  name: Yup.string().required("Tag Name is required"),
+  name: Yup.string().required("Tag name is required"),
   typeName: Yup.string().required("Type is required"),
 });
 

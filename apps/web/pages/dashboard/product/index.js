@@ -7,7 +7,7 @@ import DashboardLayoutWrapper from '@/components/ui/dashboard-layout';
 import { Card, CardTitle } from '@/components/ui/card';
 import Link from 'next/link';
 import Image from 'next/image';
-import { Plus, NotepadText, Search, ChevronDown, Eye, Pencil, Trash2, Copy, CheckCircle2 } from 'lucide-react';
+import { X, Plus, NotepadText, Search, ChevronDown, Eye, Pencil, Trash2, Copy, CheckCircle2 } from 'lucide-react';
 import { buttonVariants, Button } from '@/components/ui/button';
 import { Pagination, PaginationPrevious, PaginationContent, PaginationItem, PaginationNext, PaginationLink } from '@/components/ui/pagination';
 import { Table, TableHead, TableHeader, TableBody, TableCell, TableRow } from '@/components/ui/table';
@@ -76,12 +76,13 @@ export default function ProductsPage() {
               The product has been added successfully.
             </AlertDescription>
           </div>
-          <button
-            className="ml-auto mr-4 hover:text-primary/50 focus:outline-none"
+          <Button
+            variant="ghost"
+            className="ml-auto mr-4"
             onClick={() => setShowAlert(false)}
           >
-            ✕
-          </button>
+            <X />
+          </Button>
         </Alert>
       )}
       <div className="flex flex-row justify-between">

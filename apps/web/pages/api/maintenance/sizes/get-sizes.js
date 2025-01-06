@@ -1,3 +1,5 @@
+// pages/api/maintenance/sizes/get-sizes.js
+
 import prisma, { getSessionShopId } from '@/utils/helpers';
 
 export default async function handler(req, res) {
@@ -12,19 +14,38 @@ export default async function handler(req, res) {
       return res.status(400).json({ error: "Shop number is missing in the session." });
     }
 
-    const { page = 1 } = req.query;
-    const pageNumber = parseInt(page);
+    const { page = 1, search = "" } = req.query;
+    const pageNumber = parseInt(page, 10);
 
-    // Fetch sizes with pagination and ordering by nextId
+    // Validate page number
+    if (isNaN(pageNumber) || pageNumber < 1) {
+      return res.status(400).json({ error: "Invalid page number." });
+    }
+
+    // Fetch sizes with pagination and search
     const sizes = await prisma.size.findMany({
-      where: { shopId },
+      where: {
+        shopId,
+        name: {
+          contains: search,
+          mode: "insensitive",
+        },
+      },
       select: { id: true, name: true, abbreviation: true, nextId: true },
-      skip: (pageNumber - 1) * 8,
-      take: 8,
+      skip: (pageNumber - 1) * 9,
+      take: 9,
     });
 
-    const totalSizes = await prisma.size.count({ where: { shopId } });
-    const totalPages = Math.ceil(totalSizes / 8);
+    const totalSizes = await prisma.size.count({
+      where: {
+        shopId,
+        name: {
+          contains: search,
+          mode: "insensitive",
+        },
+      },
+    });
+    const totalPages = Math.ceil(totalSizes / 9);
 
     // Apply ordering by nextId
     const orderedSizes = orderSizesByNextId(sizes);
