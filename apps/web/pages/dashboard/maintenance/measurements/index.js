@@ -146,7 +146,7 @@ export default function Measurements() {
   return (
     <DashboardLayoutWrapper>
       {alert.message && (
-        <Alert className="fixed z-50 w-[30rem] right-14 bottom-12 shadow-lg rounded-lg p-4">
+        <Alert className="flex flex-row items-center fixed z-50 w-[30rem] right-14 bottom-12 shadow-lg rounded-lg p-4">
           {alert.type === "success" ? (
             <CircleCheck className="ml-4 scale-[200%] h-[60%] stroke-green-500" />
           ) : (

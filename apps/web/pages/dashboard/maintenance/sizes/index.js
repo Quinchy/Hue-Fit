@@ -2,11 +2,11 @@
 import { Card, CardTitle } from "@/components/ui/card";
 import DashboardLayoutWrapper from "@/components/ui/dashboard-layout";
 import { Button } from "@/components/ui/button";
-import { MoveLeft, ChevronDown, Pencil, Search } from "lucide-react";
+import { MoveLeft, ChevronDown, Pencil, Search, X, CircleCheck, CircleAlert } from "lucide-react";
 import { useRouter } from "next/router";
 import routes from "@/routes";
 import AddSizeDialog from "./components/add-size";
-import EditSizeDialog from "./components/edit-size"; // Import the EditSizeDialog
+import EditSizeDialog from "./components/edit-size";
 import { Table, TableHead, TableHeader, TableBody, TableCell, TableRow } from "@/components/ui/table";
 import {
   DropdownMenu,
@@ -27,6 +27,7 @@ import {
 import { useState, useEffect } from "react";
 import Loading from "@/components/ui/loading";
 import { Input } from "@/components/ui/input";
+import { Alert, AlertTitle, AlertDescription } from "@/components/ui/alert";
 
 export default function Sizes() {
   const router = useRouter();
@@ -39,6 +40,7 @@ export default function Sizes() {
   const [debouncedSearchTerm, setDebouncedSearchTerm] = useState("");
   const [isEditDialogOpen, setIsEditDialogOpen] = useState(false);
   const [selectedSize, setSelectedSize] = useState(null);
+  const [alert, setAlert] = useState({ message: "", type: "", title: "" });
 
   // Debounce search term
   useEffect(() => {
@@ -80,11 +82,18 @@ export default function Sizes() {
     setIsEditDialogOpen(true);
   };
 
-  const handleSizeAdded = () => {
+  const handleAlert = (message, type, title) => {
+    setAlert({ message, type, title });
+    setTimeout(() => setAlert({ message: "", type: "", title: "" }), 5000);
+  };
+
+  const handleSizeAdded = (message, type) => {
+    handleAlert(message, type, type === "success" ? "Success" : "Failed");
     setCurrentPage(1); // Reload data after adding a size
   };
 
-  const handleSizeUpdated = () => {
+  const handleSizeUpdated = (message, type) => {
+    handleAlert(message, type, type === "success" ? "Success" : "Failed");
     setCurrentPage(1); // Reload data after updating a size
   };
 
@@ -104,6 +113,38 @@ export default function Sizes() {
 
   return (
     <DashboardLayoutWrapper>
+      {alert.message && (
+        <Alert className="flex flex-row items-center fixed z-50 w-[30rem] right-14 bottom-12 shadow-lg rounded-lg p-4">
+          {alert.type === "success" ? (
+            <CircleCheck className="ml-4 scale-[200%] h-[60%] stroke-green-500" />
+          ) : (
+            <CircleAlert className="ml-4 scale-[200%] h-[60%] stroke-red-500" />
+          )}
+          <div className="flex flex-col justify-center ml-10">
+            <AlertTitle
+              className={`text-lg font-bold ${
+                alert.type === "success" ? "text-green-500" : "text-red-500"
+              }`}
+            >
+              {alert.title}
+            </AlertTitle>
+            <AlertDescription
+              className={`tracking-wide font-light ${
+                alert.type === "success" ? "text-green-300" : "text-red-300"
+              }`}
+            >
+              {alert.message}
+            </AlertDescription>
+          </div>
+          <Button
+            variant="ghost"
+            className="ml-auto p-2"
+            onClick={() => setAlert({ message: "", type: "", title: "" })}
+          >
+            <X className="scale-150 stroke-primary/50 -translate-x-2" />
+          </Button>
+        </Alert>
+      )}
       <div className="flex justify-between items-center">
         <CardTitle className="text-4xl">Sizes</CardTitle>
         <div className="flex gap-3 items-center">
