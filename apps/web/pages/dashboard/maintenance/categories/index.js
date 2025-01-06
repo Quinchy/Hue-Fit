@@ -5,7 +5,7 @@ import { Button } from "@/components/ui/button";
 import { useRouter } from "next/router";
 import routes from "@/routes";
 import AddCategoryDialog from "./components/add-category";
-import EditCategoryDialog from "./components/edit-category"; // Import the EditCategoryDialog
+import EditCategoryDialog from "./components/edit-category";
 import { Table, TableHead, TableHeader, TableBody, TableCell, TableRow } from "@/components/ui/table";
 import {
   DropdownMenu,
@@ -26,15 +26,14 @@ import {
 import Loading from "@/components/ui/loading";
 import { Skeleton } from "@/components/ui/skeleton";
 import { useState, useEffect } from "react";
-import useSWR from "swr";
 import { Input } from "@/components/ui/input";
 import { Alert, AlertTitle, AlertDescription } from "@/components/ui/alert";
-
-const fetcher = (url) => fetch(url).then((res) => res.json());
 
 export default function Categories() {
   const router = useRouter();
   const [currentPage, setCurrentPage] = useState(1);
+  const [categories, setCategories] = useState([]);
+  const [totalPages, setTotalPages] = useState(1);
   const [initialLoading, setInitialLoading] = useState(true);
   const [loadingNextPage, setLoadingNextPage] = useState(false);
   const [isEditDialogOpen, setIsEditDialogOpen] = useState(false);
@@ -55,18 +54,29 @@ export default function Categories() {
     };
   }, [searchTerm]);
 
-  const { data, isLoading, mutate } = useSWR(
-    `/api/maintenance/categories/get-categories?page=${currentPage}&search=${encodeURIComponent(
-      debouncedSearchTerm
-    )}`,
-    fetcher,
-    {
-      onSuccess: () => {
+  // Fetch categories data
+  useEffect(() => {
+    const fetchCategories = async () => {
+      setLoadingNextPage(true);
+      try {
+        const response = await fetch(
+          `/api/maintenance/categories/get-categories?page=${currentPage}&search=${encodeURIComponent(
+            debouncedSearchTerm
+          )}`
+        );
+        const data = await response.json();
+        setCategories(data.categories || []);
+        setTotalPages(data.totalPages || 1);
+      } catch (error) {
+        console.error("Error fetching categories:", error);
+      } finally {
         setInitialLoading(false);
         setLoadingNextPage(false);
-      },
-    }
-  );
+      }
+    };
+
+    fetchCategories();
+  }, [currentPage, debouncedSearchTerm]);
 
   const handleEdit = (category) => {
     setSelectedCategory(category);
@@ -80,22 +90,21 @@ export default function Categories() {
 
   const handleAddCategory = (message, type) => {
     handleAlert(message, type, type === "success" ? "Success" : "Failed");
-    mutate();
+    setCurrentPage(1); // Reload categories after addition
   };
 
   const handleCategoryUpdated = (message, type) => {
     handleAlert(message, type, type === "success" ? "Success" : "Failed");
-    mutate();
+    setCurrentPage(1); // Reload categories after update
   };
 
   const handlePageChange = (page) => {
-    if (page >= 1 && page <= (data?.totalPages || 1)) {
+    if (page >= 1 && page <= totalPages) {
       setCurrentPage(page);
-      setLoadingNextPage(true);
     }
   };
 
-  if (isLoading && initialLoading) {
+  if (initialLoading) {
     return (
       <DashboardLayoutWrapper>
         <Loading message="Loading categories..." />
@@ -106,9 +115,7 @@ export default function Categories() {
   return (
     <DashboardLayoutWrapper>
       {alert.message && (
-        <Alert
-          className={`fixed z-50 w-[30rem] right-14 bottom-12 flex flex-row items-center shadow-lg rounded-lg p-4`}
-        >
+        <Alert className="fixed z-50 w-[30rem] right-14 bottom-12 shadow-lg rounded-lg p-4">
           {alert.type === "success" ? (
             <CircleCheck className="ml-4 scale-[200%] h-[60%] stroke-green-500" />
           ) : (
@@ -130,11 +137,7 @@ export default function Categories() {
               {alert.message}
             </AlertDescription>
           </div>
-          <Button
-            variant="ghost"
-            className="ml-auto p-2"
-            onClick={() => setAlert({ message: "", type: "", title: "" })}
-          >
+          <Button variant="ghost" className="ml-auto p-2" onClick={() => setAlert({ message: "", type: "", title: "" })}>
             <X className="scale-150 stroke-primary/50 -translate-x-2" />
           </Button>
         </Alert>
@@ -150,8 +153,6 @@ export default function Categories() {
             type="text"
             className="min-w-[20rem]"
             placeholder="Search a category"
-            variant="icon"
-            icon={Search}
             value={searchTerm}
             onChange={(e) => setSearchTerm(e.target.value)}
           />
@@ -167,75 +168,61 @@ export default function Categories() {
             </TableRow>
           </TableHeader>
           <TableBody>
-            {loadingNextPage ? (
-              Array.from({ length: 8 }).map((_, index) => (
-                <TableRow key={index}>
-                  <TableCell>
-                    <Skeleton className="h-[3.25rem] w-[10rem]" />
-                  </TableCell>
-                  <TableCell>
-                    <Skeleton className="h-[3.25rem] w-[10rem]" />
+            {loadingNextPage
+              ? Array.from({ length: 8 }).map((_, index) => (
+                  <TableRow key={index}>
+                    <TableCell>
+                      <Skeleton className="h-[3.25rem] w-[10rem]" />
+                    </TableCell>
+                    <TableCell>
+                      <Skeleton className="h-[3.25rem] w-[10rem]" />
+                    </TableCell>
+                  </TableRow>
+                ))
+              : categories.length > 0
+              ? categories.map((category) => (
+                  <TableRow key={category.id}>
+                    <TableCell>{category.name}</TableCell>
+                    <TableCell>
+                      <DropdownMenu>
+                        <DropdownMenuTrigger asChild>
+                          <Button variant="outline" className="font-normal flex items-center gap-1">
+                            Action <ChevronDown className="scale-125" />
+                          </Button>
+                        </DropdownMenuTrigger>
+                        <DropdownMenuContent className="w-50">
+                          <DropdownMenuGroup>
+                            <DropdownMenuItem className="justify-center">
+                              <Button variant="none" onClick={() => handleEdit(category)} className="flex items-center gap-2">
+                                <Pencil className="scale-125" />
+                                Edit
+                              </Button>
+                            </DropdownMenuItem>
+                          </DropdownMenuGroup>
+                        </DropdownMenuContent>
+                      </DropdownMenu>
+                    </TableCell>
+                  </TableRow>
+                ))
+              : (
+                <TableRow>
+                  <TableCell colSpan={2} className="text-center align-middle h-[43rem] text-primary/50 text-lg font-thin tracking-wide">
+                    No categories found.
                   </TableCell>
                 </TableRow>
-              ))
-            ) : data?.categories?.length > 0 ? (
-              data.categories.map((category) => (
-                <TableRow key={category.id}>
-                  <TableCell>{category.name}</TableCell>
-                  <TableCell>
-                    <DropdownMenu>
-                      <DropdownMenuTrigger asChild>
-                        <Button
-                          variant="outline"
-                          className="font-normal flex items-center gap-1"
-                        >
-                          Action <ChevronDown className="scale-125" />
-                        </Button>
-                      </DropdownMenuTrigger>
-                      <DropdownMenuContent className="w-50">
-                        <DropdownMenuGroup>
-                          <DropdownMenuItem className="justify-center">
-                            <Button
-                              variant="none"
-                              onClick={() => handleEdit(category)}
-                              className="flex items-center gap-2"
-                            >
-                              <Pencil className="scale-125" />
-                              Edit
-                            </Button>
-                          </DropdownMenuItem>
-                        </DropdownMenuGroup>
-                      </DropdownMenuContent>
-                    </DropdownMenu>
-                  </TableCell>
-                </TableRow>
-              ))
-            ) : (
-              <TableRow>
-                <TableCell
-                  colSpan={2}
-                  className="text-center align-middle h-[43rem] text-primary/50 text-lg font-thin tracking-wide"
-                >
-                  No categories found.
-                </TableCell>
-              </TableRow>
-            )}
+              )}
           </TableBody>
         </Table>
-        {data?.categories?.length > 0 && (
+        {categories.length > 0 && (
           <Pagination className="flex flex-col items-end">
             <PaginationContent>
-              {currentPage > 1 && (
-                <PaginationPrevious onClick={() => handlePageChange(currentPage - 1)} />
-              )}
-              {Array.from({ length: data.totalPages }, (_, i) => i + 1).map((page) => (
+              {currentPage > 1 && <PaginationPrevious onClick={() => handlePageChange(currentPage - 1)} />}
+              {Array.from({ length: totalPages }, (_, i) => i + 1).map((page) => (
                 <PaginationItem key={page} active={page === currentPage}>
                   <PaginationLink onClick={() => handlePageChange(page)}>{page}</PaginationLink>
                 </PaginationItem>
               ))}
-              {currentPage < data.totalPages && (
-                <PaginationNext onClick={() => handlePageChange(currentPage + 1)} />
-              )}
+              {currentPage < totalPages && <PaginationNext onClick={() => handlePageChange(currentPage + 1)} />}
             </PaginationContent>
           </Pagination>
         )}

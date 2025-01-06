@@ -1,3 +1,4 @@
+import { useState, useEffect } from "react";
 import { Card, CardTitle } from "@/components/ui/card";
 import DashboardLayoutWrapper from "@/components/ui/dashboard-layout";
 import {
@@ -18,12 +19,28 @@ import AddColorDialog from "./colors/components/add-color";
 import AddSizeDialog from "./sizes/components/add-size";
 import AddMeasurementDialog from "./measurements/components/add-measurement";
 import { Skeleton } from "@/components/ui/skeleton";
-import useSWR from "swr";
-
-const fetcher = (url) => fetch(url).then((res) => res.json());
 
 export default function Maintenance() {
-  const { data: totals, isLoading } = useSWR("/api/maintenance/get-items-total", fetcher);
+  const [totals, setTotals] = useState(null); // Store totals data
+  const [isLoading, setIsLoading] = useState(true); // Track loading state
+
+  // Fetch data when the component mounts
+  useEffect(() => {
+    const fetchTotals = async () => {
+      try {
+        setIsLoading(true);
+        const response = await fetch("/api/maintenance/get-items-total");
+        const data = await response.json();
+        setTotals(data);
+      } catch (error) {
+        console.error("Error fetching totals:", error);
+      } finally {
+        setIsLoading(false);
+      }
+    };
+
+    fetchTotals();
+  }, []); // Empty dependency array means this runs only once
 
   const renderSkeletonOrTotal = (value) => {
     return isLoading ? <Skeleton className="h-4 w-8" /> : value;

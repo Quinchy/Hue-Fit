@@ -1,3 +1,4 @@
+// pages/sizes/index.js
 import { Card, CardTitle } from "@/components/ui/card";
 import DashboardLayoutWrapper from "@/components/ui/dashboard-layout";
 import { Button } from "@/components/ui/button";
@@ -24,16 +25,15 @@ import {
   PaginationLink,
 } from "@/components/ui/pagination";
 import { useState, useEffect } from "react";
-import useSWR from "swr";
 import Loading from "@/components/ui/loading";
 import { Input } from "@/components/ui/input";
-
-const fetcher = (url) => fetch(url).then((res) => res.json());
 
 export default function Sizes() {
   const router = useRouter();
   const [currentPage, setCurrentPage] = useState(1);
-  const [initialLoading, setInitialLoading] = useState(true);
+  const [sizes, setSizes] = useState([]);
+  const [totalPages, setTotalPages] = useState(1);
+  const [loading, setLoading] = useState(true);
   const [loadingNextPage, setLoadingNextPage] = useState(false);
   const [searchTerm, setSearchTerm] = useState("");
   const [debouncedSearchTerm, setDebouncedSearchTerm] = useState("");
@@ -44,26 +44,36 @@ export default function Sizes() {
   useEffect(() => {
     const handler = setTimeout(() => {
       setDebouncedSearchTerm(searchTerm);
-      setCurrentPage(1); // Reset to first page on search
+      setCurrentPage(1); // Reset to first page when search changes
     }, 500);
 
-    return () => {
-      clearTimeout(handler);
-    };
+    return () => clearTimeout(handler);
   }, [searchTerm]);
 
-  const { data, isLoading, mutate } = useSWR(
-    `/api/maintenance/sizes/get-sizes?page=${currentPage}&search=${encodeURIComponent(
-      debouncedSearchTerm
-    )}`,
-    fetcher,
-    {
-      onSuccess: () => {
-        setInitialLoading(false);
+  // Fetch sizes
+  useEffect(() => {
+    const fetchSizes = async () => {
+      setLoading(true);
+      setLoadingNextPage(true);
+      try {
+        const response = await fetch(
+          `/api/maintenance/sizes/get-sizes?page=${currentPage}&search=${encodeURIComponent(
+            debouncedSearchTerm
+          )}`
+        );
+        const data = await response.json();
+        setSizes(data.sizes || []);
+        setTotalPages(data.totalPages || 1);
+      } catch (error) {
+        console.error("Error fetching sizes:", error);
+      } finally {
+        setLoading(false);
         setLoadingNextPage(false);
-      },
-    }
-  );
+      }
+    };
+
+    fetchSizes();
+  }, [currentPage, debouncedSearchTerm]);
 
   const handleEdit = (size) => {
     setSelectedSize(size);
@@ -71,21 +81,20 @@ export default function Sizes() {
   };
 
   const handleSizeAdded = () => {
-    mutate();
+    setCurrentPage(1); // Reload data after adding a size
   };
 
   const handleSizeUpdated = () => {
-    mutate();
+    setCurrentPage(1); // Reload data after updating a size
   };
 
   const handlePageChange = (page) => {
-    if (page >= 1 && page <= (data?.totalPages || 1)) {
+    if (page >= 1 && page <= totalPages) {
       setCurrentPage(page);
-      setLoadingNextPage(true);
     }
   };
 
-  if (isLoading && initialLoading) {
+  if (loading) {
     return (
       <DashboardLayoutWrapper>
         <Loading message="Loading sizes..." />
@@ -106,8 +115,6 @@ export default function Sizes() {
             type="text"
             className="min-w-[20rem]"
             placeholder="Search a size"
-            variant="icon"
-            icon={Search}
             value={searchTerm}
             onChange={(e) => setSearchTerm(e.target.value)}
           />
@@ -138,18 +145,15 @@ export default function Sizes() {
                   </TableCell>
                 </TableRow>
               ))
-            ) : data?.sizes?.length > 0 ? (
-              data.sizes.map((size) => (
+            ) : sizes.length > 0 ? (
+              sizes.map((size) => (
                 <TableRow key={size.id}>
                   <TableCell>{size.name}</TableCell>
                   <TableCell>{size.abbreviation}</TableCell>
                   <TableCell>
                     <DropdownMenu>
                       <DropdownMenuTrigger asChild>
-                        <Button
-                          variant="outline"
-                          className="font-normal flex items-center gap-1"
-                        >
+                        <Button variant="outline" className="font-normal flex items-center gap-1">
                           Action <ChevronDown className="scale-125" />
                         </Button>
                       </DropdownMenuTrigger>
@@ -183,20 +187,16 @@ export default function Sizes() {
             )}
           </TableBody>
         </Table>
-        {data?.sizes?.length > 0 && (
+        {sizes.length > 0 && (
           <Pagination className="flex flex-col items-end">
             <PaginationContent>
-              {currentPage > 1 && (
-                <PaginationPrevious onClick={() => handlePageChange(currentPage - 1)} />
-              )}
-              {Array.from({ length: data.totalPages }, (_, i) => i + 1).map((page) => (
+              {currentPage > 1 && <PaginationPrevious onClick={() => handlePageChange(currentPage - 1)} />}
+              {Array.from({ length: totalPages }, (_, i) => i + 1).map((page) => (
                 <PaginationItem key={page} active={page === currentPage}>
                   <PaginationLink onClick={() => handlePageChange(page)}>{page}</PaginationLink>
                 </PaginationItem>
               ))}
-              {currentPage < data.totalPages && (
-                <PaginationNext onClick={() => handlePageChange(currentPage + 1)} />
-              )}
+              {currentPage < totalPages && <PaginationNext onClick={() => handlePageChange(currentPage + 1)} />}
             </PaginationContent>
           </Pagination>
         )}

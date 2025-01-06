@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState } from "react";
 import { useFormik } from "formik";
 import { Dialog, DialogTrigger, DialogContent, DialogHeader, DialogFooter } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
@@ -16,22 +16,15 @@ export default function AddTagDialog({ buttonClassName = "", buttonName = "Add T
   const [loading, setLoading] = useState(false);
   const [types, setTypes] = useState([]);
 
-  useEffect(() => {
-    const fetchTypes = async () => {
-      try {
-        const response = await fetch("/api/maintenance/types/get-types");
-        if (response.ok) {
-          const data = await response.json();
-          setTypes(data.types || []);
-        } else {
-          setTypes([]);
-        }
-      } catch {
-        setTypes([]);
-      }
-    };
-    fetchTypes();
-  }, []);
+  const fetchTypes = async () => {
+    try {
+      const response = await fetch("/api/maintenance/types/get-types");
+      const data = await response.json();
+      setTypes(data.types || []);
+    } catch {
+      setTypes([]);
+    }
+  };
 
   const formik = useFormik({
     initialValues: { name: "", typeName: "" },
@@ -46,7 +39,6 @@ export default function AddTagDialog({ buttonClassName = "", buttonName = "Add T
         });
 
         if (response.ok) {
-          const { tag } = await response.json();
           onTagAdded("Tag added successfully.", "success");
           resetForm();
           setIsOpen(false);
@@ -63,7 +55,7 @@ export default function AddTagDialog({ buttonClassName = "", buttonName = "Add T
   });
 
   return (
-    <Dialog open={isOpen} onOpenChange={setIsOpen}>
+    <Dialog open={isOpen} onOpenChange={(open) => { setIsOpen(open); if (open) fetchTypes(); }}>
       <DialogTrigger asChild>
         <Button className={buttonClassName}>
           <Plus /> {buttonName}
@@ -118,7 +110,7 @@ export default function AddTagDialog({ buttonClassName = "", buttonName = "Add T
             <Button type="submit" disabled={loading} className="w-1/2">
               {loading ? <LoadingMessage message="Adding..." /> : "Save"}
             </Button>
-            <Button variant="outline" onClick={() => setIsOpen(false)} className="w-1/2">
+            <Button variant="outline" type="button" onClick={() => setIsOpen(false)} className="w-1/2">
               Cancel
             </Button>
           </DialogFooter>

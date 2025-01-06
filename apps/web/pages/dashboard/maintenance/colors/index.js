@@ -1,3 +1,4 @@
+// pages/colors/index.js
 import { Card, CardTitle } from "@/components/ui/card";
 import DashboardLayoutWrapper from "@/components/ui/dashboard-layout";
 import { Button } from "@/components/ui/button";
@@ -32,15 +33,14 @@ import {
 import Loading from "@/components/ui/loading";
 import { Skeleton } from "@/components/ui/skeleton";
 import { useState, useEffect } from "react";
-import useSWR from "swr";
 import { Input } from "@/components/ui/input";
 import { Alert, AlertTitle, AlertDescription } from "@/components/ui/alert";
-
-const fetcher = (url) => fetch(url).then((res) => res.json());
 
 export default function Colors() {
   const router = useRouter();
   const [currentPage, setCurrentPage] = useState(1);
+  const [colors, setColors] = useState([]);
+  const [totalPages, setTotalPages] = useState(1);
   const [initialLoading, setInitialLoading] = useState(true);
   const [loadingNextPage, setLoadingNextPage] = useState(false);
   const [isEditDialogOpen, setIsEditDialogOpen] = useState(false);
@@ -53,26 +53,35 @@ export default function Colors() {
   useEffect(() => {
     const handler = setTimeout(() => {
       setDebouncedSearchTerm(searchTerm);
-      setCurrentPage(1);
+      setCurrentPage(1); // Reset to first page when search changes
     }, 500);
 
-    return () => {
-      clearTimeout(handler);
-    };
+    return () => clearTimeout(handler);
   }, [searchTerm]);
 
-  const { data, isLoading, mutate } = useSWR(
-    `/api/maintenance/colors/get-colors?page=${currentPage}&search=${encodeURIComponent(
-      debouncedSearchTerm
-    )}`,
-    fetcher,
-    {
-      onSuccess: () => {
+  // Fetch colors data
+  useEffect(() => {
+    const fetchColors = async () => {
+      setLoadingNextPage(true);
+      try {
+        const response = await fetch(
+          `/api/maintenance/colors/get-colors?page=${currentPage}&search=${encodeURIComponent(
+            debouncedSearchTerm
+          )}`
+        );
+        const data = await response.json();
+        setColors(data.colors || []);
+        setTotalPages(data.totalPages || 1);
+      } catch (error) {
+        console.error("Error fetching colors:", error);
+      } finally {
         setInitialLoading(false);
         setLoadingNextPage(false);
-      },
-    }
-  );
+      }
+    };
+
+    fetchColors();
+  }, [currentPage, debouncedSearchTerm]);
 
   const handleEdit = (color) => {
     setSelectedColor(color);
@@ -86,22 +95,21 @@ export default function Colors() {
 
   const handleAddColor = (message, type) => {
     handleAlert(message, type, type === "success" ? "Success" : "Failed");
-    mutate();
+    setCurrentPage(1); // Reload colors after addition
   };
 
   const handleColorUpdated = (message, type) => {
     handleAlert(message, type, type === "success" ? "Success" : "Failed");
-    mutate();
+    setCurrentPage(1); // Reload colors after update
   };
 
   const handlePageChange = (page) => {
-    if (page >= 1 && page <= (data?.totalPages || 1)) {
+    if (page >= 1 && page <= totalPages) {
       setCurrentPage(page);
-      setLoadingNextPage(true);
     }
   };
 
-  if (isLoading && initialLoading) {
+  if (initialLoading) {
     return (
       <DashboardLayoutWrapper>
         <Loading message="Loading colors..." />
@@ -112,9 +120,7 @@ export default function Colors() {
   return (
     <DashboardLayoutWrapper>
       {alert.message && (
-        <Alert
-          className={`fixed z-50 w-[30rem] right-14 bottom-12 flex flex-row items-center shadow-lg rounded-lg p-4`}
-        >
+        <Alert className="fixed z-50 w-[30rem] right-14 bottom-12 shadow-lg rounded-lg p-4">
           {alert.type === "success" ? (
             <CircleCheck className="ml-4 scale-[200%] h-[60%] stroke-green-500" />
           ) : (
@@ -156,14 +162,10 @@ export default function Colors() {
             type="text"
             className="min-w-[20rem]"
             placeholder="Search color"
-            variant="icon"
-            icon={Search}
             value={searchTerm}
             onChange={(e) => setSearchTerm(e.target.value)}
           />
-          <AddColorDialog
-            onColorAdded={(message, type) => handleAddColor(message, type)}
-          />
+          <AddColorDialog onColorAdded={(message, type) => handleAddColor(message, type)} />
         </div>
       </div>
       <Card className="flex flex-col p-5 gap-5 justify-between min-h-[49.1rem]">
@@ -176,90 +178,83 @@ export default function Colors() {
             </TableRow>
           </TableHeader>
           <TableBody>
-            {loadingNextPage ? (
-              Array.from({ length: 9 }).map((_, index) => (
-                <TableRow key={index}>
-                  <TableCell>
-                    <Skeleton className="h-[3.25rem] w-[10rem]" />
-                  </TableCell>
-                  <TableCell>
-                    <Skeleton className="h-[3.25rem] w-[10rem]" />
-                  </TableCell>
-                  <TableCell>
-                    <Skeleton className="h-[3.25rem] w-[10rem]" />
+            {loadingNextPage
+              ? Array.from({ length: 9 }).map((_, index) => (
+                  <TableRow key={index}>
+                    <TableCell>
+                      <Skeleton className="h-[3.25rem] w-[10rem]" />
+                    </TableCell>
+                    <TableCell>
+                      <Skeleton className="h-[3.25rem] w-[10rem]" />
+                    </TableCell>
+                    <TableCell>
+                      <Skeleton className="h-[3.25rem] w-[10rem]" />
+                    </TableCell>
+                  </TableRow>
+                ))
+              : colors.length > 0
+              ? colors.map((color) => (
+                  <TableRow key={color.id}>
+                    <TableCell>{color.name}</TableCell>
+                    <TableCell>
+                      <div
+                        className="flex items-center gap-2 text-base font-medium"
+                        style={{ color: color.hexcode }}
+                      >
+                        <span
+                          className="w-7 h-7 rounded-sm"
+                          style={{ backgroundColor: color.hexcode }}
+                        ></span>
+                        {color.hexcode}
+                      </div>
+                    </TableCell>
+                    <TableCell>
+                      <DropdownMenu>
+                        <DropdownMenuTrigger asChild>
+                          <Button variant="outline" className="font-normal flex items-center gap-1">
+                            Action <ChevronDown className="scale-125" />
+                          </Button>
+                        </DropdownMenuTrigger>
+                        <DropdownMenuContent className="w-50">
+                          <DropdownMenuGroup>
+                            <DropdownMenuItem className="justify-center">
+                              <Button
+                                variant="none"
+                                onClick={() => handleEdit(color)}
+                                className="flex items-center gap-2"
+                              >
+                                <Pencil className="scale-125" />
+                                Edit
+                              </Button>
+                            </DropdownMenuItem>
+                          </DropdownMenuGroup>
+                        </DropdownMenuContent>
+                      </DropdownMenu>
+                    </TableCell>
+                  </TableRow>
+                ))
+              : (
+                <TableRow>
+                  <TableCell
+                    colSpan={3}
+                    className="text-center align-middle h-[43rem] text-primary/50 text-lg font-thin tracking-wide"
+                  >
+                    No colors found.
                   </TableCell>
                 </TableRow>
-              ))
-            ) : data?.colors?.length > 0 ? (
-              data.colors.map((color) => (
-                <TableRow key={color.id}>
-                  <TableCell>{color.name}</TableCell>
-                  <TableCell>
-                    <div
-                      className="flex items-center gap-2 text-base font-medium"
-                      style={{ color: color.hexcode }}
-                    >
-                      <span
-                        className="w-7 h-7 rounded-sm"
-                        style={{ backgroundColor: color.hexcode }}
-                      ></span>
-                      {color.hexcode}
-                    </div>
-                  </TableCell>
-                  <TableCell>
-                    <DropdownMenu>
-                      <DropdownMenuTrigger asChild>
-                        <Button
-                          variant="outline"
-                          className="font-normal flex items-center gap-1"
-                        >
-                          Action <ChevronDown className="scale-125" />
-                        </Button>
-                      </DropdownMenuTrigger>
-                      <DropdownMenuContent className="w-50">
-                        <DropdownMenuGroup>
-                          <DropdownMenuItem className="justify-center">
-                            <Button
-                              variant="none"
-                              onClick={() => handleEdit(color)}
-                              className="flex items-center gap-2"
-                            >
-                              <Pencil className="scale-125" />
-                              Edit
-                            </Button>
-                          </DropdownMenuItem>
-                        </DropdownMenuGroup>
-                      </DropdownMenuContent>
-                    </DropdownMenu>
-                  </TableCell>
-                </TableRow>
-              ))
-            ) : (
-              <TableRow>
-                <TableCell
-                  colSpan={3}
-                  className="text-center align-middle h-[43rem] text-primary/50 text-lg font-thin tracking-wide"
-                >
-                  No colors found.
-                </TableCell>
-              </TableRow>
-            )}
+              )}
           </TableBody>
         </Table>
-        {data?.colors?.length > 0 && (
+        {colors.length > 0 && (
           <Pagination className="flex flex-col items-end">
             <PaginationContent>
-              {currentPage > 1 && (
-                <PaginationPrevious onClick={() => handlePageChange(currentPage - 1)} />
-              )}
-              {Array.from({ length: data.totalPages }, (_, i) => i + 1).map((page) => (
+              {currentPage > 1 && <PaginationPrevious onClick={() => handlePageChange(currentPage - 1)} />}
+              {Array.from({ length: totalPages }, (_, i) => i + 1).map((page) => (
                 <PaginationItem key={page} active={page === currentPage}>
                   <PaginationLink onClick={() => handlePageChange(page)}>{page}</PaginationLink>
                 </PaginationItem>
               ))}
-              {currentPage < data.totalPages && (
-                <PaginationNext onClick={() => handlePageChange(currentPage + 1)} />
-              )}
+              {currentPage < totalPages && <PaginationNext onClick={() => handlePageChange(currentPage + 1)} />}
             </PaginationContent>
           </Pagination>
         )}

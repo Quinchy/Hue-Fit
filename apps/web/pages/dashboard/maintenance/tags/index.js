@@ -1,4 +1,4 @@
-// index.js (Tags Component)
+// pages/tags/index.js
 import { Card, CardTitle } from "@/components/ui/card";
 import DashboardLayoutWrapper from "@/components/ui/dashboard-layout";
 import { Button } from "@/components/ui/button";
@@ -33,11 +33,8 @@ import {
 import Loading from "@/components/ui/loading";
 import { Skeleton } from "@/components/ui/skeleton";
 import { useState, useEffect } from "react";
-import useSWR from "swr";
 import { Input } from "@/components/ui/input";
 import { Alert, AlertTitle, AlertDescription } from "@/components/ui/alert";
-
-const fetcher = (url) => fetch(url).then((res) => res.json());
 
 const typeColorMap = {
   UPPERWEAR: "bg-blue-500",
@@ -54,7 +51,10 @@ const getTypeColorClass = (typeName) => {
 export default function Tags() {
   const router = useRouter();
   const [currentPage, setCurrentPage] = useState(1);
-  const [initialLoading, setInitialLoading] = useState(true);
+  const [tags, setTags] = useState([]);
+  const [types, setTypes] = useState([]);
+  const [totalPages, setTotalPages] = useState(1);
+  const [loading, setLoading] = useState(true);
   const [loadingNextPage, setLoadingNextPage] = useState(false);
   const [searchTerm, setSearchTerm] = useState("");
   const [debouncedSearchTerm, setDebouncedSearchTerm] = useState("");
@@ -62,31 +62,55 @@ export default function Tags() {
   const [selectedTag, setSelectedTag] = useState(null);
   const [alert, setAlert] = useState({ message: "", type: "", title: "" });
 
-  const { data: typesData, error: typesError } = useSWR(`/api/maintenance/types/get-types`, fetcher);
-
+  // Debounce search term
   useEffect(() => {
     const handler = setTimeout(() => {
       setDebouncedSearchTerm(searchTerm);
       setCurrentPage(1);
     }, 500);
 
-    return () => {
-      clearTimeout(handler);
-    };
+    return () => clearTimeout(handler);
   }, [searchTerm]);
 
-  const { data, isLoading, mutate } = useSWR(
-    `/api/maintenance/tags/get-tags?page=${currentPage}&search=${encodeURIComponent(
-      debouncedSearchTerm
-    )}`,
-    fetcher,
-    {
-      onSuccess: () => {
-        setInitialLoading(false);
+  // Fetch tags
+  useEffect(() => {
+    const fetchTags = async () => {
+      setLoading(true);
+      setLoadingNextPage(true);
+      try {
+        const response = await fetch(
+          `/api/maintenance/tags/get-tags?page=${currentPage}&search=${encodeURIComponent(
+            debouncedSearchTerm
+          )}`
+        );
+        const data = await response.json();
+        setTags(data.tags || []);
+        setTotalPages(data.totalPages || 1);
+      } catch (error) {
+        console.error("Error fetching tags:", error);
+      } finally {
+        setLoading(false);
         setLoadingNextPage(false);
-      },
-    }
-  );
+      }
+    };
+
+    fetchTags();
+  }, [currentPage, debouncedSearchTerm]);
+
+  // Fetch types
+  useEffect(() => {
+    const fetchTypes = async () => {
+      try {
+        const response = await fetch("/api/maintenance/types/get-types");
+        const data = await response.json();
+        setTypes(data.types || []);
+      } catch (error) {
+        console.error("Error fetching types:", error);
+      }
+    };
+
+    fetchTypes();
+  }, []);
 
   const handleAlert = (message, type, title) => {
     setAlert({ message, type, title });
@@ -94,38 +118,29 @@ export default function Tags() {
   };
 
   const handleEdit = (tag) => {
-    console.log("handleEdit - Tag to edit:", tag); // Log the tag being edited
-    if (typesData && typesData.types) {
-      const type = typesData.types.find((t) => t.name.trim().toUpperCase() === tag.typeName.trim().toUpperCase());
-      const typeId = type ? String(type.id) : "";
-      const tagWithTypeId = { ...tag, typeId };
-      console.log("handleEdit - Tag with typeId:", tagWithTypeId); // Log the tag with typeId
-      setSelectedTag(tagWithTypeId);
-    } else {
-      setSelectedTag({ ...tag, typeId: "" });
-      console.log("handleEdit - typesData not loaded or type not found. Setting typeId to empty."); // Log fallback
-    }
+    const type = types.find((t) => t.name.trim().toUpperCase() === tag.typeName?.trim().toUpperCase());
+    const tagWithTypeId = { ...tag, typeId: type ? String(type.id) : "" };
+    setSelectedTag(tagWithTypeId);
     setIsEditDialogOpen(true);
   };
 
   const handleAddTag = (message, type) => {
     handleAlert(message, type, type === "success" ? "Success" : "Error");
-    mutate();
+    setCurrentPage(1); // Reload tags
   };
 
   const handleTagUpdated = (message, type) => {
     handleAlert(message, type, type === "success" ? "Success" : "Error");
-    mutate();
+    setCurrentPage(1); // Reload tags
   };
 
   const handlePageChange = (page) => {
-    if (page >= 1 && page <= (data?.totalPages || 1)) {
+    if (page >= 1 && page <= totalPages) {
       setCurrentPage(page);
-      setLoadingNextPage(true);
     }
   };
 
-  if (isLoading && initialLoading) {
+  if (loading) {
     return (
       <DashboardLayoutWrapper>
         <Loading message="Loading tags..." />
@@ -136,9 +151,7 @@ export default function Tags() {
   return (
     <DashboardLayoutWrapper>
       {alert.message && (
-        <Alert
-          className={`fixed z-50 w-[30rem] right-14 bottom-12 flex flex-row items-center shadow-lg rounded-lg p-4`}
-        >
+        <Alert className="fixed z-50 w-[30rem] right-14 bottom-12 shadow-lg rounded-lg p-4">
           {alert.type === "success" ? (
             <CheckCircle className="ml-4 scale-[200%] h-[60%] stroke-green-500" />
           ) : (
@@ -160,13 +173,6 @@ export default function Tags() {
               {alert.message}
             </AlertDescription>
           </div>
-          <Button
-            variant="ghost"
-            className="ml-auto p-2"
-            onClick={() => setAlert({ message: "", type: "", title: "" })}
-          >
-            <X className="scale-150 stroke-primary/50 -translate-x-2" />
-          </Button>
         </Alert>
       )}
 
@@ -181,8 +187,6 @@ export default function Tags() {
             type="text"
             className="min-w-[20rem]"
             placeholder="Search a tag"
-            variant="icon"
-            icon={Search}
             value={searchTerm}
             onChange={(e) => setSearchTerm(e.target.value)}
           />
@@ -213,8 +217,8 @@ export default function Tags() {
                   </TableCell>
                 </TableRow>
               ))
-            ) : data?.tags?.length > 0 ? (
-              data.tags.map((tag) => (
+            ) : tags.length > 0 ? (
+              tags.map((tag) => (
                 <TableRow key={tag.id}>
                   <TableCell>{tag.name}</TableCell>
                   <TableCell>
@@ -233,10 +237,7 @@ export default function Tags() {
                   <TableCell>
                     <DropdownMenu>
                       <DropdownMenuTrigger asChild>
-                        <Button
-                          variant="outline"
-                          className="font-normal flex items-center gap-1"
-                        >
+                        <Button variant="outline" className="font-normal flex items-center gap-1">
                           Action <ChevronDown className="scale-125" />
                         </Button>
                       </DropdownMenuTrigger>
@@ -270,37 +271,32 @@ export default function Tags() {
             )}
           </TableBody>
         </Table>
-        {data?.tags?.length > 0 && (
+        {tags.length > 0 && (
           <Pagination className="flex flex-col items-end">
             <PaginationContent>
-              {currentPage > 1 && (
-                <PaginationPrevious onClick={() => handlePageChange(currentPage - 1)} />
-              )}
-              {Array.from({ length: data.totalPages }, (_, i) => i + 1).map((page) => (
+              {currentPage > 1 && <PaginationPrevious onClick={() => handlePageChange(currentPage - 1)} />}
+              {Array.from({ length: totalPages }, (_, i) => i + 1).map((page) => (
                 <PaginationItem key={page} active={page === currentPage}>
                   <PaginationLink onClick={() => handlePageChange(page)}>{page}</PaginationLink>
                 </PaginationItem>
               ))}
-              {currentPage < data.totalPages && (
-                <PaginationNext onClick={() => handlePageChange(currentPage + 1)} />
-              )}
+              {currentPage < totalPages && <PaginationNext onClick={() => handlePageChange(currentPage + 1)} />}
             </PaginationContent>
           </Pagination>
         )}
       </Card>
-      {selectedTag && typesData && (
+      {selectedTag && (
         <EditTagDialog
           tag={selectedTag}
           isOpen={isEditDialogOpen}
           onOpenChange={(open) => {
-            console.log("EditTagDialog open state:", open); // Log dialog open state
             setIsEditDialogOpen(open);
             if (!open) {
               setSelectedTag(null);
             }
           }}
           onTagUpdated={(message, type) => handleTagUpdated(message, type)}
-          types={typesData.types || []}
+          types={types}
         />
       )}
     </DashboardLayoutWrapper>

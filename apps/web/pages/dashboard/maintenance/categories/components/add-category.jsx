@@ -1,4 +1,3 @@
-// pages/categories/components/add-category.jsx
 import { useFormik } from "formik";
 import { Dialog, DialogTrigger, DialogContent, DialogHeader, DialogFooter } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
@@ -14,14 +13,12 @@ import { useState, useEffect } from "react";
 export default function AddCategoryDialog({ buttonClassName = "", buttonName = "Add Category", onAdd }) {
   const [isDialogOpen, setIsDialogOpen] = useState(false);
   const [loading, setLoading] = useState(false);
-  const [errorMessage, setErrorMessage] = useState("");
 
   const formik = useFormik({
     initialValues: { name: "" },
     validationSchema: addCategorySchema,
     onSubmit: async (values, { resetForm }) => {
       setLoading(true);
-      setErrorMessage("");
       try {
         const response = await fetch("/api/maintenance/categories/add-category", {
           method: "POST",
@@ -48,9 +45,8 @@ export default function AddCategoryDialog({ buttonClassName = "", buttonName = "
   useEffect(() => {
     if (!isDialogOpen) {
       formik.resetForm();
-      setErrorMessage("");
     }
-  }, [isDialogOpen, formik]);
+  }, [isDialogOpen]);
 
   return (
     <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
@@ -64,18 +60,17 @@ export default function AddCategoryDialog({ buttonClassName = "", buttonName = "
           <CardTitle className="text-2xl">Add Category</CardTitle>
         </DialogHeader>
         <form onSubmit={formik.handleSubmit} className="flex flex-col gap-5">
+          {/* Category Name */}
           <div className="flex flex-col gap-2">
             <Label htmlFor="name" className="font-bold flex items-center">
-              Category Name <Asterisk className="w-4 h-4 text-red-500" />
+              Category Name <Asterisk className="w-4 h-4" />
             </Label>
             <Input
               id="name"
               name="name"
               placeholder="Enter category name"
               value={formik.values.name}
-              onChange={(e) => {
-                formik.handleChange(e);
-              }}
+              onChange={formik.handleChange}
               onBlur={formik.handleBlur}
               className={InputErrorStyle(formik.errors.name, formik.touched.name)}
             />

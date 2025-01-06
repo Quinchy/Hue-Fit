@@ -32,57 +32,75 @@ import {
   PaginationLink,
 } from "@/components/ui/pagination";
 import { useState, useEffect } from "react";
-import useSWR from "swr";
 import Loading from "@/components/ui/loading";
 import { Input } from "@/components/ui/input";
 import { Alert, AlertTitle, AlertDescription } from "@/components/ui/alert";
 
-const fetcher = (url) => fetch(url).then((res) => res.json());
-
 export default function Measurements() {
   const router = useRouter();
   const [currentPage, setCurrentPage] = useState(1);
-  const [initialLoading, setInitialLoading] = useState(true);
-  const [loadingNextPage, setLoadingNextPage] = useState(false);
+  const [measurements, setMeasurements] = useState([]);
+  const [totalPages, setTotalPages] = useState(1);
+  const [types, setTypes] = useState([]);
+  const [loading, setLoading] = useState(true);
   const [searchTerm, setSearchTerm] = useState("");
   const [debouncedSearchTerm, setDebouncedSearchTerm] = useState("");
-  const [measurements, setMeasurements] = useState([]);
   const [alert, setAlert] = useState({ message: "", type: "", title: "" });
-
-  // State for Edit Dialog
   const [selectedMeasurement, setSelectedMeasurement] = useState(null);
   const [isEditDialogOpen, setIsEditDialogOpen] = useState(false);
 
+  // Debounce search term
+  useEffect(() => {
+    const handler = setTimeout(() => {
+      setDebouncedSearchTerm(searchTerm);
+      setCurrentPage(1); // Reset to first page when search changes
+    }, 500);
+
+    return () => clearTimeout(handler);
+  }, [searchTerm]);
+
   // Fetch Measurements
-  const { data, isLoading, error, mutate } = useSWR(
-    `/api/maintenance/measurements/get-measurements?page=${currentPage}&search=${encodeURIComponent(
-      debouncedSearchTerm
-    )}`,
-    fetcher,
-    {
-      onSuccess: () => {
-        setInitialLoading(false);
-        setLoadingNextPage(false);
-      },
-    }
-  );
+  useEffect(() => {
+    const fetchMeasurements = async () => {
+      setLoading(true);
+      try {
+        const response = await fetch(
+          `/api/maintenance/measurements/get-measurements?page=${currentPage}&search=${encodeURIComponent(
+            debouncedSearchTerm
+          )}`
+        );
+        const data = await response.json();
+        setMeasurements(
+          data.measurements?.map((measurement) => ({
+            ...measurement,
+            assignTo: measurement.Type?.name || "",
+          })) || []
+        );
+        setTotalPages(data.totalPages || 1);
+      } catch (error) {
+        console.error("Error fetching measurements:", error);
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    fetchMeasurements();
+  }, [currentPage, debouncedSearchTerm]);
 
   // Fetch Types
-  const { data: typesData, error: typesError } = useSWR(
-    "/api/maintenance/types/get-types",
-    fetcher
-  );
-
   useEffect(() => {
-    if (data && data.measurements) {
-      // Map measurements to include 'assignTo' for consistency
-      const mappedMeasurements = data.measurements.map((measurement) => ({
-        ...measurement,
-        assignTo: measurement.Type?.name || "",
-      }));
-      setMeasurements(mappedMeasurements);
-    }
-  }, [data]);
+    const fetchTypes = async () => {
+      try {
+        const response = await fetch("/api/maintenance/types/get-types");
+        const data = await response.json();
+        setTypes(data.types || []);
+      } catch (error) {
+        console.error("Error fetching types:", error);
+      }
+    };
+
+    fetchTypes();
+  }, []);
 
   const handleAlert = (message, type, title) => {
     setAlert({ message, type, title });
@@ -91,32 +109,19 @@ export default function Measurements() {
 
   const handleMeasurementAdded = (message, type) => {
     handleAlert(message, type, type === "success" ? "Success" : "Failed");
-    mutate();
+    setCurrentPage(1); // Reload after addition
   };
 
   const handleMeasurementEdited = (message, type) => {
     handleAlert(message, type, type === "success" ? "Success" : "Failed");
-    mutate();
+    setCurrentPage(1); // Reload after update
   };
 
   const handlePageChange = (page) => {
-    if (page >= 1 && page <= (data?.totalPages || 1)) {
+    if (page >= 1 && page <= totalPages) {
       setCurrentPage(page);
-      setLoadingNextPage(true);
     }
   };
-
-  // Debounce search term
-  useEffect(() => {
-    const handler = setTimeout(() => {
-      setDebouncedSearchTerm(searchTerm);
-      setCurrentPage(1); // Reset to first page on search
-    }, 500);
-
-    return () => {
-      clearTimeout(handler);
-    };
-  }, [searchTerm]);
 
   const typeColorMap = {
     UPPERWEAR: "bg-blue-500",
@@ -130,7 +135,7 @@ export default function Measurements() {
     return typeColorMap[typeName.toUpperCase()] || typeColorMap.DEFAULT;
   };
 
-  if (isLoading && initialLoading) {
+  if (loading) {
     return (
       <DashboardLayoutWrapper>
         <Loading message="Loading measurements..." />
@@ -138,18 +143,10 @@ export default function Measurements() {
     );
   }
 
-  if (typesError) {
-    return (
-      <DashboardLayoutWrapper>
-        <div className="text-red-500">Failed to load types.</div>
-      </DashboardLayoutWrapper>
-    );
-  }
-
   return (
     <DashboardLayoutWrapper>
       {alert.message && (
-        <Alert className={`fixed z-50 w-[30rem] right-14 bottom-12 flex flex-row items-center shadow-lg rounded-lg p-4`}>
+        <Alert className="fixed z-50 w-[30rem] right-14 bottom-12 shadow-lg rounded-lg p-4">
           {alert.type === "success" ? (
             <CircleCheck className="ml-4 scale-[200%] h-[60%] stroke-green-500" />
           ) : (
@@ -180,7 +177,6 @@ export default function Measurements() {
           </Button>
         </Alert>
       )}
-      {/* Header Section */}
       <div className="flex justify-between items-center">
         <CardTitle className="text-4xl">Measurements</CardTitle>
         <div className="flex gap-3 items-center">
@@ -192,16 +188,13 @@ export default function Measurements() {
             type="text"
             className="min-w-[20rem]"
             placeholder="Search a measurement"
-            variant="icon"
-            icon={Search}
             value={searchTerm}
             onChange={(e) => setSearchTerm(e.target.value)}
           />
-          <AddMeasurementDialog onMeasurementAdded={(message, type) => handleMeasurementAdded(message, type)} />
+          <AddMeasurementDialog onMeasurementAdded={handleMeasurementAdded} />
         </div>
       </div>
 
-      {/* Measurements Table */}
       <Card className="flex flex-col gap-5 p-5 justify-between min-h-[49.1rem]">
         <Table>
           <TableHeader>
@@ -212,21 +205,7 @@ export default function Measurements() {
             </TableRow>
           </TableHeader>
           <TableBody>
-            {loadingNextPage ? (
-              Array.from({ length: 8 }).map((_, index) => (
-                <TableRow key={index}>
-                  <TableCell>
-                    <Skeleton className="h-[3.25rem] w-[10rem]" />
-                  </TableCell>
-                  <TableCell>
-                    <Skeleton className="h-[3.25rem] w-[10rem]" />
-                  </TableCell>
-                  <TableCell>
-                    <Skeleton className="h-[3.25rem] w-[10rem]" />
-                  </TableCell>
-                </TableRow>
-              ))
-            ) : measurements.length > 0 ? (
+            {measurements.length > 0 ? (
               measurements.map((measurement) => (
                 <TableRow key={measurement.id}>
                   <TableCell>{measurement.name}</TableCell>
@@ -246,10 +225,7 @@ export default function Measurements() {
                   <TableCell className="w-[30%]">
                     <DropdownMenu>
                       <DropdownMenuTrigger asChild>
-                        <Button
-                          variant="outline"
-                          className="font-normal flex items-center gap-1"
-                        >
+                        <Button variant="outline" className="font-normal flex items-center gap-1">
                           Action <ChevronDown className="scale-125" />
                         </Button>
                       </DropdownMenuTrigger>
@@ -287,29 +263,21 @@ export default function Measurements() {
           </TableBody>
         </Table>
 
-        {/* Pagination */}
         {measurements.length > 0 && (
           <Pagination className="flex flex-col items-end">
             <PaginationContent>
-              {currentPage > 1 && (
-                <PaginationPrevious onClick={() => handlePageChange(currentPage - 1)} />
-              )}
-              {Array.from({ length: data?.totalPages || 0 }, (_, i) => i + 1).map((page) => (
+              {currentPage > 1 && <PaginationPrevious onClick={() => handlePageChange(currentPage - 1)} />}
+              {Array.from({ length: totalPages }, (_, i) => i + 1).map((page) => (
                 <PaginationItem key={page} active={page === currentPage}>
-                  <PaginationLink onClick={() => handlePageChange(page)}>
-                    {page}
-                  </PaginationLink>
+                  <PaginationLink onClick={() => handlePageChange(page)}>{page}</PaginationLink>
                 </PaginationItem>
               ))}
-              {currentPage < (data?.totalPages || 1) && (
-                <PaginationNext onClick={() => handlePageChange(currentPage + 1)} />
-              )}
+              {currentPage < totalPages && <PaginationNext onClick={() => handlePageChange(currentPage + 1)} />}
             </PaginationContent>
           </Pagination>
         )}
       </Card>
 
-      {/* Edit Measurement Dialog */}
       {selectedMeasurement && (
         <EditMeasurementDialog
           measurement={selectedMeasurement}
@@ -320,8 +288,8 @@ export default function Measurements() {
               setSelectedMeasurement(null);
             }
           }}
-          onMeasurementEdited={(message, type) => handleMeasurementEdited(message, type)}
-          types={typesData?.types || []} // Pass types as prop
+          onMeasurementEdited={handleMeasurementEdited}
+          types={types}
         />
       )}
     </DashboardLayoutWrapper>

@@ -3,7 +3,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Plus, Asterisk } from "lucide-react";
 import { Label } from "@/components/ui/label";
-import { useState, useEffect } from "react";
+import { useState } from "react";
 import { useFormik } from "formik";
 import { addTypeSchema } from "@/utils/validation-schema";
 import { InputErrorMessage, InputErrorStyle } from "@/components/ui/error-message";
@@ -11,7 +11,7 @@ import { CardTitle } from "@/components/ui/card";
 import { LoadingMessage } from "@/components/ui/loading-message";
 
 export default function AddTypeDialog({ buttonClassName = "", buttonName = "Add Type", onAdd }) {
-  const [isDialogOpen, setIsDialogOpen] = useState(false);
+  const [open, setOpen] = useState(false);
   const [loading, setLoading] = useState(false);
 
   const formik = useFormik({
@@ -29,7 +29,7 @@ export default function AddTypeDialog({ buttonClassName = "", buttonName = "Add 
         if (response.ok) {
           onAdd("Type added successfully.", "success");
           resetForm();
-          setIsDialogOpen(false);
+          setOpen(false); // Close the dialog after successful submission
         } else {
           const errorData = await response.json();
           onAdd(errorData.error || "Failed to add type.", "error");
@@ -42,17 +42,11 @@ export default function AddTypeDialog({ buttonClassName = "", buttonName = "Add 
     },
   });
 
-  useEffect(() => {
-    if (!isDialogOpen) {
-      formik.resetForm();
-    }
-  }, [isDialogOpen, formik]);  
-
   return (
-    <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
+    <Dialog open={open} onOpenChange={setOpen}>
       <DialogTrigger asChild>
         <Button className={buttonClassName}>
-          <Plus/>
+          <Plus />
           {buttonName}
         </Button>
       </DialogTrigger>
@@ -82,7 +76,15 @@ export default function AddTypeDialog({ buttonClassName = "", buttonName = "Add 
             <Button type="submit" disabled={loading} className="w-1/2">
               {loading ? <LoadingMessage message="Saving..." /> : "Save"}
             </Button>
-            <Button variant="outline" onClick={() => setIsDialogOpen(false)} className="w-1/2">
+            <Button
+              variant="outline"
+              type="button"
+              onClick={() => {
+                formik.resetForm();
+                setOpen(false); // Close the dialog
+              }}
+              className="w-1/2"
+            >
               Cancel
             </Button>
           </DialogFooter>

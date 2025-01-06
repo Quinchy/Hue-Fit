@@ -1,5 +1,3 @@
-// pages/dashboard/measurement/components/add-measurement.js
-
 import { Dialog, DialogTrigger, DialogContent, DialogHeader, DialogFooter } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -22,23 +20,27 @@ export default function AddMeasurementDialog({
   const [loading, setLoading] = useState(false);
   const [types, setTypes] = useState([]);
 
-  useEffect(() => {
-    const fetchTypes = async () => {
-      try {
-        const response = await fetch("/api/maintenance/types/get-types");
-        if (response.ok) {
-          const data = await response.json();
-          setTypes(data.types || []);
-        } else {
-          console.error("Failed to fetch types");
-        }
-      } catch (error) {
-        console.error("Error fetching types:", error);
+  const fetchTypes = async () => {
+    try {
+      const response = await fetch("/api/maintenance/types/get-types");
+      if (response.ok) {
+        const data = await response.json();
+        setTypes(data.types || []);
+      } else {
+        console.error("Failed to fetch types.");
       }
-    };
+    } catch (error) {
+      console.error("Error fetching types:", error);
+    }
+  };
 
-    fetchTypes();
-  }, []);
+  useEffect(() => {
+    if (isDialogOpen) {
+      fetchTypes();
+    } else {
+      setTypes([]);
+    }
+  }, [isDialogOpen]);
 
   const formik = useFormik({
     initialValues: {
@@ -64,7 +66,8 @@ export default function AddMeasurementDialog({
           setIsDialogOpen(false);
         } else {
           const errorData = await response.json();
-          onMeasurementAdded && onMeasurementAdded(errorData.error || "Failed to add measurement.", "error");
+          onMeasurementAdded &&
+            onMeasurementAdded(errorData.error || "Failed to add measurement.", "error");
         }
       } catch (error) {
         console.error("Error adding measurement:", error);
@@ -75,12 +78,6 @@ export default function AddMeasurementDialog({
     },
   });
 
-  useEffect(() => {
-    if (!isDialogOpen) {
-      formik.resetForm();
-    }
-  }, [isDialogOpen, formik]);
-  
   return (
     <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
       <DialogTrigger asChild>
@@ -88,11 +85,12 @@ export default function AddMeasurementDialog({
           <Plus /> {buttonName}
         </Button>
       </DialogTrigger>
-      <DialogContent>
+      <DialogContent className="min-w-[40rem]">
         <DialogHeader>
           <CardTitle className="text-2xl">Add Measurement</CardTitle>
         </DialogHeader>
         <form onSubmit={formik.handleSubmit} className="flex flex-col gap-4">
+          {/* Measurement Name */}
           <div className="flex flex-col gap-1">
             <Label htmlFor="name" className="font-bold flex flex-row items-center">
               Measurement Name <Asterisk className="w-4" />
@@ -109,6 +107,7 @@ export default function AddMeasurementDialog({
             <InputErrorMessage error={formik.errors.name} touched={formik.touched.name} />
           </div>
 
+          {/* Assign To */}
           <div className="flex flex-col gap-1">
             <Label htmlFor="assignTo" className="font-bold flex flex-row items-center">
               Assign to <Asterisk className="w-4" />
@@ -140,7 +139,12 @@ export default function AddMeasurementDialog({
             <Button type="submit" disabled={loading} className="w-1/2">
               {loading ? <LoadingMessage message="Saving..." /> : "Save"}
             </Button>
-            <Button type="button" variant="outline" onClick={() => setIsDialogOpen(false)} className="w-1/2">
+            <Button
+              type="button"
+              variant="outline"
+              onClick={() => setIsDialogOpen(false)}
+              className="w-1/2"
+            >
               Cancel
             </Button>
           </DialogFooter>
