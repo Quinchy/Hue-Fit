@@ -31,13 +31,22 @@ export default async function handler(req, res) {
 
     const categoryId = await getCategoryIdByName(prisma, categoryName, shopId);
 
-    const thumbnailURL = await uploadFileToSupabase(
-      files.thumbnail?.[0],
-      files.thumbnail?.[0]?.filepath,
-      files.thumbnail?.[0]?.originalFilename,
-      productNo,
-      "products/product-thumbnails"
-    );
+    const thumbnailURL = files.thumbnail?.[0]
+      ? await uploadFileToSupabase(
+          files.thumbnail[0],
+          files.thumbnail[0]?.filepath,
+          files.thumbnail[0]?.originalFilename,
+          productNo,
+          "products/product-thumbnails"
+        )
+      : null;
+
+    if (!thumbnailURL) {
+      return res.status(415).json({
+        error: "Thumbnail upload failed",
+        message: "Invalid mime type or unsupported file",
+      });
+    }
 
     const product = await prisma.product.create({
       data: {
@@ -46,7 +55,7 @@ export default async function handler(req, res) {
         description,
         thumbnailURL,
         totalQuantity: 0,
-        shopId,
+        shopId, // Directly pass shopId as foreign key
         typeId,
         categoryId,
         tagId,
@@ -138,7 +147,6 @@ export default async function handler(req, res) {
           colorId,
           price: new Prisma.Decimal(priceVal),
           totalQuantity: 0,
-          isTryOnAvailable: false,
         },
       });
 

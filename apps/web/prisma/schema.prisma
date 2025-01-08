@@ -286,7 +286,7 @@ model ProductVariant {
   colorId          Int
   price            Decimal  @db.Decimal(10, 2)
   totalQuantity    Int      @default(0)
-  isTryOnAvailable Boolean  @default(false)
+  pngClotheURL     String?
   created_at       DateTime @default(now())
   updated_at       DateTime @updatedAt
 

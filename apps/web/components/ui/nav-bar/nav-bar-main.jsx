@@ -7,7 +7,7 @@ import { buttonVariants } from "@/components/ui/button"
 
 const NavbarMain = () => {
   return (
-    <div className='w-full flex flex-row items-center text-sm justify-between px-24 bg-oneOpacityWhite h-[100px] border-b-2 border-border backdrop-blur-[5px] fixed z-50'>
+    <div className='w-full flex flex-row items-center text-sm justify-between px-24 bg-oneOpacityWhite h-[100px] border-b-2 border-border backdrop-blur-[1px] fixed z-50'>
       <Link href={routes.home}>
         <HueFitLogo 
           height={50}

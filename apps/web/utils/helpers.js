@@ -64,8 +64,13 @@ export async function disconnectPrisma() {
   await prisma.$disconnect();
 }
 
-// Helper to upload a file to Supabase Storage
-export async function uploadFileToSupabase(file, filepath, originalFilename, uniqueId, bucketPath) {
+export async function uploadFileToSupabase(
+  file,
+  filepath,
+  originalFilename,
+  uniqueId,
+  bucketPath
+) {
   // Validate required parameters
   if (!file || !filepath || !originalFilename || !uniqueId || !bucketPath) {
     console.error("Invalid file or parameters provided");
@@ -73,20 +78,24 @@ export async function uploadFileToSupabase(file, filepath, originalFilename, uni
   }
 
   // Extract the file extension
-  const fileExt = originalFilename.split('.').pop().toLowerCase();
+  const fileExt = originalFilename.split(".").pop().toLowerCase();
 
   // Determine the MIME type based on the file extension
-  let mimeType = 'text/plain'; // Default
-  if (fileExt === 'png') mimeType = 'image/png';
-  else if (fileExt === 'jpg' || fileExt === 'jpeg') mimeType = 'image/jpeg';
-  else if (fileExt === 'pdf') mimeType = 'application/pdf';
+  let mimeType = "text/plain"; // Default
+  if (fileExt === "png") mimeType = "image/png";
+  else if (fileExt === "jpg" || fileExt === "jpeg") mimeType = "image/jpeg";
+  else if (fileExt === "pdf") mimeType = "application/pdf";
+  else if (fileExt === "webp") mimeType = "image/webp";
+
+  // Use webp as the default format if desired
+  const finalExt = fileExt === "webp" ? "webp" : fileExt;
 
   // Remove the extension from the original filename for more customization options
-  const bucketPathName = bucketPath.replace(/\//g, '-');
+  const bucketPathName = bucketPath.replace(/\//g, "-");
 
   // Generate a unique filename
   const uniqueSuffix = uuidv4(); // Generate a new UUID
-  const fileName = `${uniqueId}-${bucketPathName}-${uniqueSuffix}.${fileExt}`;
+  const fileName = `${uniqueId}-${bucketPathName}-${uniqueSuffix}.${finalExt}`;
 
   try {
     // Read the file content as a Buffer
@@ -96,25 +105,24 @@ export async function uploadFileToSupabase(file, filepath, originalFilename, uni
     const { data, error } = await supabase.storage
       .from(bucketPath)
       .upload(fileName, fileContent, {
-        cacheControl: '3600',
+        cacheControl: "3600",
         contentType: mimeType, // Explicitly set the content type
         upsert: false, // Prevents overwriting files with the same name
       });
 
     if (error) {
-      console.error('Failed to upload file to Supabase:', error);
+      console.error("Failed to upload file to Supabase:", error);
       return null;
     }
 
-    console.log('File uploaded to Supabase...');
+    console.log("File uploaded to Supabase...");
 
     // Construct and return the public URL for the uploaded file
     const publicURL = `${process.env.NEXT_PUBLIC_SUPABASE_URL}/storage/v1/object/public/${bucketPath}/${fileName}`;
-    console.log('Public URL generated...');
+    console.log("Public URL generated...");
     return publicURL;
-
   } catch (err) {
-    console.error('Error reading or uploading file:', err);
+    console.error("Error reading or uploading file:", err);
     return null;
   }
 }

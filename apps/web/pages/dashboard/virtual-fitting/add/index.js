@@ -1,436 +1,265 @@
-// AddVirtualFitting.js
-
-import React, {
-  useState,
-  useRef,
-  useEffect,
-  useCallback
-} from "react";
+// /add/index.js
+import React, { useState } from "react";
 import { Button } from "@/components/ui/button";
-import * as tf from "@tensorflow/tfjs-core";
-import "@tensorflow/tfjs-backend-webgl";
-import "@tensorflow/tfjs-backend-wasm";
-import "@tensorflow/tfjs-converter";
-import * as posedetection from "@tensorflow-models/pose-detection";
+import { Input } from "@/components/ui/input";
+import Image from "next/image";
 import DashboardLayoutWrapper from "@/components/ui/dashboard-layout";
-import { CardTitle } from "@/components/ui/card";
-import { MoveLeft } from "lucide-react";
+import { ScrollArea } from "@/components/ui/scroll-area";
+import { Card, CardTitle } from "@/components/ui/card";
+import { MoveLeft, Search, Camera, Upload } from "lucide-react";
 import routes from "@/routes";
 import { useRouter } from "next/router";
-import Image from "next/image";
+import useSWR from 'swr';
+
+const fetcher = (url) => fetch(url).then((res) => res.json());
 
 export default function AddVirtualFitting() {
   const router = useRouter();
-  const [isCameraVisible, setIsCameraVisible] = useState(false);
-  const [uploadedClothingImageURL, setUploadedClothingImageURL] = useState(null);
-  const videoElementRef = useRef(null);
-  const canvasElementRef = useRef(null);
-  const [poseDetector, setPoseDetector] = useState(null);
-  const [isCameraReady, setIsCameraReady] = useState(false);
-  const [isDetectionRunning, setIsDetectionRunning] = useState(false);
-  const clothingImageElementRef = useRef(null);
-  const [statusMessage, setStatusMessage] = useState("");
+  const [searchTerm, setSearchTerm] = useState('');
+  const [currentPage, setCurrentPage] = useState(1);
+  const [selectedType, setSelectedType] = useState('ALL');
+  const [selectedProduct, setSelectedProduct] = useState(null);
+  const [uploadedFiles, setUploadedFiles] = useState({}); // { variantId: { file, url } }
 
-  const handleClothingImageUpload = (event) => {
+  const { data: productsData, isLoading: productsLoading } = useSWR(
+    `/api/products/get-product?page=${currentPage}&search=${searchTerm}&type=${selectedType !== 'ALL' ? selectedType : ''}`,
+    fetcher
+  );
+
+  const { data: variantsData, isLoading: variantsLoading } = useSWR(
+    selectedProduct ? `/api/products/get-product-variants?productId=${selectedProduct.id}` : null,
+    fetcher
+  );
+
+  const handleSearchChange = (e) => {
+    setSearchTerm(e.target.value);
+    setCurrentPage(1);
+  };
+
+  const handlePageChange = (page) => {
+    if (page >= 1 && page <= (productsData?.totalPages || 1)) {
+      setCurrentPage(page);
+    }
+  };
+
+  const handleTypeSelect = (type) => {
+    setSelectedType(type);
+    setCurrentPage(1);
+  };
+
+  const handleProductSelect = (product) => {
+    setSelectedProduct(product);
+  };
+
+  const handleFileUpload = (variantId, event) => {
     const file = event.target.files[0];
     if (file && file.type === "image/png") {
       const imageURL = URL.createObjectURL(file);
-      setUploadedClothingImageURL(imageURL);
-      const clothingImage = new Image();
-      clothingImage.src = imageURL;
-      clothingImage.onload = () => {
-        clothingImageElementRef.current = clothingImage;
-      };
-    } else {
-      setUploadedClothingImageURL(null);
-      clothingImageElementRef.current = null;
+      setUploadedFiles((prev) => ({ ...prev, [variantId]: { file, url: imageURL } }));
     }
   };
 
-  const initializePoseDetector = async () => {
-    let retriesRemaining = 3;
-    while (retriesRemaining > 0) {
-      try {
-        await tf.setBackend("webgl");
-        await tf.ready();
-        const detectionModel = posedetection.SupportedModels.MoveNet;
-        const detectorConfig = {
-          modelType: posedetection.movenet.modelType.SINGLEPOSE_LIGHTNING
-        };
-        const detectorInstance = await posedetection.createDetector(
-          detectionModel,
-          detectorConfig
-        );
-        setPoseDetector(detectorInstance);
-        return;
-      } catch (error) {
-        console.error("Error initializing pose detector:", error);
-        retriesRemaining--;
-        setStatusMessage(
-          retriesRemaining === 0
-            ? "Failed to initialize pose detector. Please refresh the page."
-            : "Retrying detector setup..."
-        );
-      }
-    }
-  };
-
-  const activateCamera = () => {
-    if (uploadedClothingImageURL) {
-      setIsCameraVisible(true);
-      setStatusMessage("Initializing camera...");
-    } else {
-      setStatusMessage("Please select a PNG image first.");
-    }
-  };
-
-  // Wrap the clothing overlay logic in a useCallback, so that it doesn't re-create on every render
-  const renderClothingOverlay = useCallback(
-    (poses, canvasContext) => {
-      const keypoints = poses[0].keypoints;
-      const leftShoulder = keypoints.find(
-        (kp) => kp.name === "left_shoulder" && kp.score > 0.5
-      );
-      const rightShoulder = keypoints.find(
-        (kp) => kp.name === "right_shoulder" && kp.score > 0.5
-      );
-      const leftHip = keypoints.find(
-        (kp) => kp.name === "left_hip" && kp.score > 0.5
-      );
-      const rightHip = keypoints.find(
-        (kp) => kp.name === "right_hip" && kp.score > 0.5
-      );
-
-      if (!leftShoulder || !rightShoulder) {
-        setStatusMessage(
-          "Upper body not fully detected. Move into view and ensure good lighting."
-        );
-        return;
-      }
-
-      if (!clothingImageElementRef.current) {
-        setStatusMessage("No clothing image loaded. Please select a PNG file.");
-        return;
-      }
-
-      const clothingImage = clothingImageElementRef.current;
-      const scaleX = 640 / videoElementRef.current.videoWidth;
-      const scaleY = 480 / videoElementRef.current.videoHeight;
-
-      const leftShoulderX = leftShoulder.x * scaleX;
-      const leftShoulderY = leftShoulder.y * scaleY;
-      const rightShoulderX = rightShoulder.x * scaleX;
-      const rightShoulderY = rightShoulder.y * scaleY;
-
-      const shoulderCenterX = (leftShoulderX + rightShoulderX) / 2;
-      const shoulderCenterY = (leftShoulderY + rightShoulderY) / 2;
-      const shoulderWidth = Math.abs(rightShoulderX - leftShoulderX);
-
-      let torsoHeight;
-      let centerX;
-      let topY;
-      let overlayWidth;
-      let overlayHeight;
-      const clothingAspectRatio =
-        clothingImage.naturalWidth / clothingImage.naturalHeight;
-
-      if (leftHip && rightHip) {
-        const leftHipX = leftHip.x * scaleX;
-        const leftHipY = leftHip.y * scaleY;
-        const rightHipX = rightHip.x * scaleX;
-        const rightHipY = rightHip.y * scaleY;
-
-        const hipCenterX = (leftHipX + rightHipX) / 2;
-        const hipCenterY = (leftHipY + rightHipY) / 2;
-
-        torsoHeight = hipCenterY - shoulderCenterY;
-        centerX = (shoulderCenterX + hipCenterX) / 2;
-        topY = shoulderCenterY - torsoHeight * 0.15;
-        setStatusMessage("Torso detected. Applying clothing...");
-      } else {
-        torsoHeight = shoulderWidth * 2.0;
-        centerX = shoulderCenterX;
-        topY = shoulderCenterY - torsoHeight * 0.15;
-        setStatusMessage("Hips not detected. Using shoulders only. Applying clothing...");
-      }
-
-      overlayHeight = torsoHeight;
-      overlayWidth = overlayHeight * clothingAspectRatio;
-
-      if (overlayWidth < shoulderWidth) {
-        overlayWidth = shoulderWidth;
-        overlayHeight = overlayWidth / clothingAspectRatio;
-      }
-
-      overlayWidth *= 1.3;
-      overlayHeight *= 1.3;
-
-      canvasContext.drawImage(
-        clothingImage,
-        centerX - overlayWidth / 2,
-        topY,
-        overlayWidth,
-        overlayHeight
-      );
-
-      const verticalGradient = canvasContext.createLinearGradient(
-        centerX,
-        topY,
-        centerX,
-        topY + overlayHeight
-      );
-      verticalGradient.addColorStop(0, "rgba(0,0,0,0)");
-      verticalGradient.addColorStop(0.5, "rgba(0,0,0,0.05)");
-      verticalGradient.addColorStop(1, "rgba(0,0,0,0.1)");
-      canvasContext.fillStyle = verticalGradient;
-      canvasContext.fillRect(
-        centerX - overlayWidth / 2,
-        topY,
-        overlayWidth,
-        overlayHeight
-      );
-
-      const radialGradient = canvasContext.createRadialGradient(
-        centerX,
-        topY + overlayHeight / 2,
-        overlayWidth * 0.1,
-        centerX,
-        topY + overlayHeight / 2,
-        overlayWidth / 2
-      );
-      radialGradient.addColorStop(0, "rgba(0,0,0,0)");
-      radialGradient.addColorStop(1, "rgba(0,0,0,0.1)");
-      canvasContext.fillStyle = radialGradient;
-      canvasContext.fillRect(
-        centerX - overlayWidth / 2,
-        topY,
-        overlayWidth,
-        overlayHeight
-      );
-
-      const edgeGradient = canvasContext.createLinearGradient(
-        centerX - overlayWidth / 2,
-        topY,
-        centerX + overlayWidth / 2,
-        topY
-      );
-      edgeGradient.addColorStop(0, "rgba(0,0,0,0.1)");
-      edgeGradient.addColorStop(0.5, "rgba(0,0,0,0)");
-      edgeGradient.addColorStop(1, "rgba(0,0,0,0.1)");
-      canvasContext.fillStyle = edgeGradient;
-      canvasContext.fillRect(
-        centerX - overlayWidth / 2,
-        topY,
-        overlayWidth,
-        overlayHeight
-      );
-
-      if (shoulderWidth < 50) {
-        setStatusMessage("You seem too far away. Move closer.");
-      } else if (shoulderWidth > 200) {
-        setStatusMessage("You seem too close. Move farther back.");
-      } else {
-        setStatusMessage("Clothing applied. Adjust your position for a better fit.");
-      }
-    },
-    [videoElementRef, setStatusMessage, clothingImageElementRef]
-  );
-
-  const performPoseDetection = useCallback(async () => {
-    if (
-      !videoElementRef.current ||
-      !poseDetector ||
-      !canvasElementRef.current ||
-      !isCameraReady
-    ) {
-      if (!isCameraReady) setStatusMessage("Waiting for camera...");
-      return;
-    }
-
+  const handleSubmitFile = async (variantId) => {
+    if (!uploadedFiles[variantId]?.file) return;
+    const formData = new FormData();
+    formData.append("variantId", variantId);
+    formData.append("file", uploadedFiles[variantId].file);
     try {
-      const videoElement = videoElementRef.current;
-      const canvasElement = canvasElementRef.current;
-      const canvasContext = canvasElement.getContext("2d");
-
-      if (videoElement.videoWidth === 0 || videoElement.videoHeight === 0) return;
-
-      canvasElement.width = 640;
-      canvasElement.height = 480;
-      canvasContext.clearRect(0, 0, canvasElement.width, canvasElement.height);
-      canvasContext.drawImage(videoElement, 0, 0, canvasElement.width, canvasElement.height);
-
-      const detectedPoses = await poseDetector.estimatePoses(videoElement, {
-        flipHorizontal: false
+      const response = await fetch("/api/products/upload-virtual-clothe", {
+        method: "POST",
+        body: formData,
       });
-
-      if (!detectedPoses || detectedPoses.length === 0) {
-        setStatusMessage("No human detected. Please step into frame.");
-        return;
+      const data = await response.json();
+      if(response.ok) {
+        alert("Upload successful");
+      } else {
+        alert("Upload failed: " + data.error);
       }
-
-      renderClothingOverlay(detectedPoses, canvasContext);
     } catch (error) {
-      console.error("Error in pose detection:", error);
-      setStatusMessage("Error detecting poses. Retrying...");
-      setIsDetectionRunning(false);
-      setTimeout(() => setIsDetectionRunning(true), 3000);
+      console.error("Error uploading file:", error);
     }
-  }, [
-    isCameraReady,
-    poseDetector,
-    setStatusMessage,
-    setIsDetectionRunning,
-    renderClothingOverlay
-  ]);
+  };
 
-  useEffect(() => {
-    if (!isCameraVisible) return;
-
-    let cameraStream;
-    let detectionInterval;
-
-    const initializeCameraStream = async () => {
-      cameraStream = await navigator.mediaDevices.getUserMedia({
-        video: { width: 640, height: 480, frameRate: { ideal: 30, max: 30 } },
-        audio: false
-      });
-      if (videoElementRef.current) {
-        videoElementRef.current.srcObject = cameraStream;
-        videoElementRef.current.setAttribute("playsinline", "");
-        videoElementRef.current.onloadedmetadata = async () => {
-          await videoElementRef.current.play();
-          setIsCameraReady(true);
-          setStatusMessage("Camera ready, detecting poses...");
-        };
-      }
-    };
-
-    const startPoseDetection = () => {
-      if (!isDetectionRunning) {
-        setIsDetectionRunning(true);
-        detectionInterval = setInterval(performPoseDetection, 1000 / 30);
-      }
-    };
-
-    initializePoseDetector()
-      .then(initializeCameraStream)
-      .then(() => {
-        const waitForReadyState = setInterval(() => {
-          if (isCameraReady && poseDetector) {
-            startPoseDetection();
-            clearInterval(waitForReadyState);
-          }
-        }, 100);
-      });
-
-    return () => {
-      if (detectionInterval) clearInterval(detectionInterval);
-      if (cameraStream) {
-        cameraStream.getTracks().forEach((track) => track.stop());
-      }
-    };
-  }, [
-    isCameraVisible,
-    poseDetector,
-    isCameraReady,
-    isDetectionRunning,
-    uploadedClothingImageURL,
-    performPoseDetection
-  ]);
+  const openVirtualTryOn = (pngClotheURL) => {
+    window.open(`/dashboard/virtual-fitting/add/virtual-try-on?pngClotheURL=${encodeURIComponent(pngClotheURL)}`, '_blank');
+  };
 
   return (
     <DashboardLayoutWrapper>
-      <div className="flex justify-between items-center mb-5">
+      <div className="flex justify-between items-center">
         <CardTitle className="text-4xl">Add Virtual Fitting</CardTitle>
         <Button variant="outline" onClick={() => router.push(routes.virtualFitting)}>
           <MoveLeft className="scale-125" />
           Back to Virtual Fitting
         </Button>
       </div>
-      <div style={{ textAlign: "center", padding: "20px", color: "#fff" }}>
-        {!isCameraVisible && (
-          <>
-            <input
-              type="file"
-              accept="image/png"
-              onChange={handleClothingImageUpload}
-              style={{ margin: "20px 0" }}
+      <Card className="flex flex-row gap-4 p-5 min-h-[49.1rem] max-h-[49.1rem]">
+        {/* Left side: Product search and list */}
+        <ScrollArea className="w-1/2">
+          <div className="flex flex-col gap-4 p-1">
+            <Input
+              type="text"
+              className="min-w-[30rem]"
+              placeholder="Search products"
+              variant="icon"
+              icon={Search}
+              value={searchTerm}
+              onChange={handleSearchChange}
             />
-            {uploadedClothingImageURL && (
-              <div style={{ margin: "10px 0" }}>
-                <Image
-                  src={uploadedClothingImageURL}
-                  alt="Uploaded Clothing"
-                  width={200}
-                  height={200}
-                />
-              </div>
-            )}
-            <Button onClick={activateCamera} disabled={!uploadedClothingImageURL}>
-              Virtual Try-On
-            </Button>
-            {statusMessage && (
-              <div style={{ marginTop: "20px", color: "yellow" }}>
-                {statusMessage}
-              </div>
-            )}
-          </>
-        )}
-        {isCameraVisible && (
-          <div
-            style={{
-              position: "relative",
-              width: "640px",
-              height: "480px",
-              margin: "0 auto",
-              background: "#000"
-            }}
-          >
-            <video
-              ref={videoElementRef}
-              style={{
-                position: "absolute",
-                top: 0,
-                left: 0,
-                width: "640px",
-                height: "480px",
-                objectFit: "cover"
-              }}
-              muted
-              playsInline
-              autoPlay
-            />
-            <canvas
-              ref={canvasElementRef}
-              style={{
-                position: "absolute",
-                top: 0,
-                left: 0,
-                width: "640px",
-                height: "480px"
-              }}
-            />
-            <div
-              style={{
-                position: "absolute",
-                bottom: 10,
-                left: "50%",
-                transform: "translateX(-50%)",
-                color: "yellow",
-                backgroundColor: "rgba(0,0,0,0.7)",
-                padding: "5px 10px",
-                borderRadius: "5px",
-                zIndex: 3,
-                fontSize: "14px",
-                maxWidth: "90%",
-                textAlign: "center"
-              }}
-            >
-              {statusMessage}
+            <div className="flex flex-col gap-4">
+              {productsLoading || !productsData
+                ? Array.from({ length: 9 }).map((_, index) => (
+                    <div key={index} className="mb-2 p-2 bg-accent rounded animate-pulse" />
+                  ))
+                : productsData.products.length === 0 ? (
+                    <div className="flex items-center justify-center h-[46rem] text-primary/50 text-lg font-thin tracking-wide">
+                      No products found.
+                    </div>
+                  ) : (
+                    productsData.products.map((product) => (
+                      <div
+                        key={product.id}
+                        className={`flex items-center mb-4 p-2 bg-accent hover:ring-2 ring-primary/15 duration-300 ease-in-out rounded shadow cursor-pointer ${
+                          selectedProduct?.id === product.id ? "ring-2 ring-primary/75" : ""
+                        }`}
+                        onClick={() => handleProductSelect(product)}
+                      >
+                        <div className="relative w-16 h-16 mr-4">
+                          <Image
+                            src={product.thumbnailURL}
+                            alt={product.name}
+                            layout="fill"
+                            objectFit="cover"
+                            className="rounded"
+                          />
+                        </div>
+                        <div>
+                          <h3 className="font-semibold">{product.name}</h3>
+                          <div className="flex flex-row gap-2 items-center">
+                            <p>Product Number:</p>
+                            <p className="text-sm font-thin">{product.productNo}</p>
+                          </div>
+                        </div>
+                      </div>
+                    ))
+                  )}
             </div>
           </div>
-        )}
-      </div>
+          {productsData?.totalPages > 1 && (
+            <div className="flex justify-center mt-4 space-x-2">
+              {currentPage > 1 && (
+                <Button variant="outline" size="sm" onClick={() => handlePageChange(currentPage - 1)}>
+                  Previous
+                </Button>
+              )}
+              {Array.from({ length: productsData.totalPages }, (_, i) => i + 1).map(
+                (page) => (
+                  <Button
+                    key={page}
+                    variant={page === currentPage ? "default" : "outline"}
+                    size="sm"
+                    onClick={() => handlePageChange(page)}
+                  >
+                    {page}
+                  </Button>
+                )
+              )}
+              {currentPage < productsData.totalPages && (
+                <Button variant="outline" size="sm" onClick={() => handlePageChange(currentPage + 1)}>
+                  Next
+                </Button>
+              )}
+            </div>
+          )}
+        </ScrollArea>
+
+        {/* Right side: Product variants */}
+        <ScrollArea className="w-1/2 bg-muted/50 rounded p-5">
+          {selectedProduct ? (
+            <div>
+              <h2 className="text-base font-extralight mb-4">To set a Virtual Fitting, you need to upload a PNG photo of that product variant.</h2>
+              {variantsLoading || !variantsData ? (
+                <div>Loading variants...</div>
+              ) : variantsData.length === 0 ? (
+                <div>No variants found for this product.</div>
+              ) : (
+                variantsData.map((variant) => (
+                  <Card key={variant.id} className="flex flex-col gap-2 p-4 border rounded-lg mb-2">
+                    <div className="flex flex-row items-center justify-between gap-2 mb-4">
+                      <div className="flex items-center gap-2">
+                        {variant.ProductVariantImage?.[0]?.imageURL && (
+                          <div className="w-14 h-14 relative">
+                            <Image
+                              src={variant.ProductVariantImage[0].imageURL}
+                              alt={`Image for ${variant.Color.name}`}
+                              layout="fill"
+                              objectFit="cover"
+                              className="rounded"
+                            />
+                          </div>
+                        )}
+                        <p className="font-semibold mb-2">Color: {variant.Color.name}</p>
+                      </div>
+                      <Button
+                        variant="outline"
+                        disabled={!variant.pngClotheURL}
+                        onClick={() => openVirtualTryOn(variant.pngClotheURL)}
+                      >
+                        <Camera className="scale-125" />
+                        Virtual Fit
+                      </Button>
+                    </div>
+                    <div className="flex flex-col items-center mb-2">
+                      <label
+                        htmlFor={`image-${variant.id}`}
+                        className={`text-center border-2 border-dashed p-4 rounded-lg w-full ${
+                          variant.pngClotheURL ? "opacity-50 cursor-not-allowed" : ""
+                        }`}
+                        style={{
+                          cursor: variant.pngClotheURL ? "not-allowed" : "pointer",
+                        }}
+                      >
+                        <div className="flex flex-col items-center gap-2">
+                          <Upload className={`stroke-primary/50 ${variant.pngClotheURL ? "opacity-50" : ""}`} />
+                          <span className={`text-primary/50 font-thin ${variant.pngClotheURL ? "opacity-50" : ""}`}>
+                            {variant.pngClotheURL ? "Virtual Try On is available" : "Click here to upload a PNG image"}
+                          </span>
+                        </div>
+                        <input
+                          id={`image-${variant.id}`}
+                          type="file"
+                          accept="image/png"
+                          onChange={(e) => handleFileUpload(variant.id, e)}
+                          className="hidden"
+                          disabled={!!variant.pngClotheURL}
+                        />
+                      </label>
+                      {uploadedFiles[variant.id] && (
+                        <div className="mt-2 w-full flex flex-col items-center">
+                          <Image
+                            src={uploadedFiles[variant.id].url}
+                            alt={`Preview for ${variant.Color.name}`}
+                            width={200}
+                            height={200}
+                            className="p-4"
+                          />
+                          <Button className="mt-2 w-full" onClick={() => handleSubmitFile(variant.id)}>
+                            Submit
+                          </Button>
+                        </div>
+                      )}
+                    </div>
+                  </Card>
+                ))
+              )}
+            </div>
+          ) : (
+            <div className="flex items-center justify-center h-[46rem] text-primary/50 text-lg font-thin tracking-wide">
+              Select a product to view its variants and setup their virtual fit.
+            </div>
+          )}
+        </ScrollArea>
+      </Card>
     </DashboardLayoutWrapper>
   );
 }
