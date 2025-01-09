@@ -44,7 +44,7 @@ export const authOptions = {
             if (profile) {
               firstName = profile.firstName;
               lastName = profile.lastName;
-              profilePicture = profile.profilePicture || "/images/profile-picture.png";
+              profilePicture = profile.profilePicture || "/images/placeholder-profile-picture.png";
             }
           } else if (user.Role.name === "VENDOR") {
             profile = await prisma.vendorProfile.findUnique({
@@ -53,7 +53,7 @@ export const authOptions = {
             if (profile) {
               firstName = profile.firstName;
               lastName = profile.lastName;
-              profilePicture = profile.profilePicture || "/images/profile-picture.png";
+              profilePicture = profile.profilePicture || "/images/placeholder-profile-picture.png";
             }
           }
 

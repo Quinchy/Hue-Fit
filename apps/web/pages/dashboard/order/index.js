@@ -35,6 +35,10 @@ export default function Orders() {
   const [search, setSearch] = useState("");
   const [status, setStatus] = useState("");
   const [loading, setLoading] = useState(false);
+  const navItems = [
+    { label: "Orders", href: routes.order },
+    { label: "Reserves", href: routes.orderReserve },
+  ];
 
   const fetchOrders = async (page = 1, searchQuery = "", statusFilter = "") => {
     setLoading(true);
@@ -100,21 +104,8 @@ export default function Orders() {
           </DropdownMenu>
         </div>
       </div>
-      <DashboardPagesNavigation>
-        <Link
-          className={`${buttonVariants({ variant: "ghost" })} px-5 uppercase text-lg font-semibold`}
-          href={routes.order}
-        >
-          Orders
-        </Link>
-        <Link
-          className={`${buttonVariants({ variant: "ghost" })} px-5 uppercase text-lg font-semibold`}
-          href={routes.orderReserve}
-        >
-          Reserves
-        </Link>
-      </DashboardPagesNavigation>
-      <Card className="flex flex-col gap-5 justify-between min-h-[43.75rem]">
+      <Card className="flex flex-col p-5 gap-4 min-h-[49rem]">
+        <DashboardPagesNavigation items={navItems} />
         <Table>
           <TableHeader>
             <TableRow>
@@ -130,28 +121,28 @@ export default function Orders() {
           <TableBody>
             {loading ? (
               // Show skeletons while loading data
-              Array.from({ length: 5 }).map((_, index) => (
+              Array.from({ length: 8 }).map((_, index) => (
                 <TableRow key={index}>
                   <TableCell>
-                    <Skeleton className="h-6 w-24" />
+                    <Skeleton className="h-14 w-full" />
                   </TableCell>
                   <TableCell>
-                    <Skeleton className="h-6 w-32" />
+                    <Skeleton className="h-14 w-full" />
                   </TableCell>
                   <TableCell>
-                    <Skeleton className="h-6 w-12" />
+                    <Skeleton className="h-14 w-full" />
                   </TableCell>
                   <TableCell>
-                    <Skeleton className="h-6 w-12" />
+                    <Skeleton className="h-14 w-full" />
                   </TableCell>
                   <TableCell>
-                    <Skeleton className="h-6 w-16" />
+                    <Skeleton className="h-14 w-full" />
                   </TableCell>
                   <TableCell>
-                    <Skeleton className="h-6 w-20" />
+                    <Skeleton className="h-14 w-full" />
                   </TableCell>
                   <TableCell>
-                    <Skeleton className="h-6 w-20" />
+                    <Skeleton className="h-14 w-full" />
                   </TableCell>
                 </TableRow>
               ))
@@ -212,7 +203,7 @@ export default function Orders() {
               ))
             ) : (
               <TableRow>
-                <TableCell colSpan={7} className="text-center">
+                <TableCell colSpan={7} className="text-center align-middle h-[39rem] text-primary/50 text-lg font-thin tracking-wide">
                   No orders found.
                 </TableCell>
               </TableRow>

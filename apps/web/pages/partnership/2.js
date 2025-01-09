@@ -1,56 +1,54 @@
-// 2.js
-
-import { useState, useEffect, useContext, useRef, useCallback, useMemo } from "react"
-import { useRouter } from "next/router"
-import { useFormik } from "formik"
-import { shopInfoSchema } from "@/utils/validation-schema"
-import routes from "@/routes"
-import { Card, CardTitle } from "@/components/ui/card"
-import { Input } from "@/components/ui/input"
-import { Label } from "@/components/ui/label"
-import { Button } from "@/components/ui/button"
+import { useState, useEffect, useContext, useRef, useCallback, useMemo } from "react";
+import { useRouter } from "next/router";
+import { useFormik } from "formik";
+import { shopInfoSchema } from "@/utils/validation-schema";
+import routes from "@/routes";
+import { Card, CardTitle } from "@/components/ui/card";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import { Button } from "@/components/ui/button";
 import {
   InputErrorMessage,
   InputErrorStyle,
-  ErrorMessage
-} from "@/components/ui/error-message"
-import FileUpload from "@/components/ui/file-upload"
-import ImageUpload from "@/components/ui/image-upload"
-import WebsiteLayoutWrapper from "@/components/ui/website-layout"
-import { Check, Asterisk, Phone, Mail, Info, Loader } from "lucide-react"
-import { FormContext } from "@/providers/form-provider"
+  ErrorMessage,
+} from "@/components/ui/error-message";
+import FileUpload from "@/components/ui/file-upload";
+import ImageUpload from "@/components/ui/image-upload";
+import WebsiteLayoutWrapper from "@/components/ui/website-layout";
+import { Check, Asterisk, Phone, Mail, Info } from "lucide-react";
+import { FormContext } from "@/providers/form-provider";
 import {
   Select,
   SelectContent,
   SelectItem,
   SelectTrigger,
-  SelectValue
-} from "@/components/ui/select"
-import provincesData from "./data/province.json"
-import municipalitiesData from "./data/municipality.json"
-import barangaysData from "./data/barangay.json"
-import dynamic from "next/dynamic"
-import { LoadingMessage } from "@/components/ui/loading-message"
+  SelectValue,
+} from "@/components/ui/select";
+import provincesData from "./data/province.json";
+import municipalitiesData from "./data/municipality.json";
+import barangaysData from "./data/barangay.json";
+import dynamic from "next/dynamic";
+import { LoadingMessage } from "@/components/ui/loading-message";
 
-const MapPicker = dynamic(() => import("@/components/ui/map-picker"), { ssr: false })
+const MapPicker = dynamic(() => import("@/components/ui/map-picker"), { ssr: false });
 
 export default function ShopInformationStep() {
-  const router = useRouter()
-  const { formData, updateFormData } = useContext(FormContext)
-  const [provinces, setProvinces] = useState([])
-  const [municipalities, setMunicipalities] = useState([])
-  const [barangays, setBarangays] = useState([])
-  const [loading, setLoading] = useState(false)
-  const [errorMessage, setErrorMessage] = useState("")
+  const router = useRouter();
+  const { formData, updateFormData } = useContext(FormContext);
+  const [provinces, setProvinces] = useState([]);
+  const [municipalities, setMunicipalities] = useState([]);
+  const [barangays, setBarangays] = useState([]);
+  const [loading, setLoading] = useState(false);
+  const [errorMessage, setErrorMessage] = useState("");
 
   const timeOptions = useMemo(
     () => [
       "6:00 AM","6:30 AM","7:00 AM","7:30 AM","8:00 AM","8:30 AM","9:00 AM","9:30 AM","10:00 AM","10:30 AM","11:00 AM","11:30 AM",
       "12:00 PM","12:30 PM","1:00 PM","1:30 PM","2:00 PM","2:30 PM","3:00 PM","3:30 PM","4:00 PM","4:30 PM","5:00 PM","5:30 PM",
-      "6:00 PM","6:30 PM","7:00 PM","7:30 PM","8:00 PM","8:30 PM","9:00 PM","9:30 PM","10:00 PM"
+      "6:00 PM","6:30 PM","7:00 PM","7:30 PM","8:00 PM","8:30 PM","9:00 PM","9:30 PM","10:00 PM",
     ],
     []
-  )
+  );
 
   const fieldOrder = useMemo(
     () => [
@@ -68,17 +66,17 @@ export default function ShopInformationStep() {
       "closingTime",
       "postalNumber",
       "latitude",
-      "longitude"
+      "longitude",
     ],
     []
-  )
+  );
 
   const fieldRefs = useRef(
     fieldOrder.reduce((acc, field) => {
-      acc[field] = null
-      return acc
+      acc[field] = null;
+      return acc;
     }, {})
-  )
+  );
 
   const [initialValues, setInitialValues] = useState({
     shopName: "",
@@ -96,54 +94,54 @@ export default function ShopInformationStep() {
     shopLogo: [],
     googleMapPlaceName: "",
     latitude: null,
-    longitude: null
-  })
+    longitude: null,
+  });
 
   const formik = useFormik({
     initialValues,
     enableReinitialize: true,
     validationSchema: shopInfoSchema,
     onSubmit: async (values) => {
-      setLoading(true)
-      setErrorMessage("")
-      updateFormData(values)
-      const completeData = { ...formData, ...values }
-      const formDataToSend = new FormData()
+      setLoading(true);
+      setErrorMessage("");
+      updateFormData(values);
+      const completeData = { ...formData, ...values };
+      const formDataToSend = new FormData();
 
       Object.entries(completeData).forEach(([key, value]) => {
         if (key !== "businessLicense") {
-          formDataToSend.append(key, value)
+          formDataToSend.append(key, value);
         }
-      })
+      });
 
       if (completeData.businessLicense && completeData.businessLicense.length > 0) {
         completeData.businessLicense.forEach((file, index) => {
           if (file instanceof File) {
-            formDataToSend.append(`businessLicense[${index}]`, file, file.name)
+            formDataToSend.append(`businessLicense[${index}]`, file, file.name);
           }
-        })
+        });
       }
 
       try {
         const response = await fetch("/api/partnership/send-shop-request", {
           method: "POST",
-          body: formDataToSend
-        })
+          body: formDataToSend,
+        });
 
         if (response.ok) {
-          document.cookie = "currentStep=5; path=/"
-          router.push(routes.partnership5)
+          document.cookie = "currentStep=5; path=/";
+          router.push(routes.partnership5);
         } else {
-          const errorData = await response.json()
-          setErrorMessage(errorData.message || "An error occurred")
+          const errorData = await response.json();
+          setErrorMessage(errorData.message || "An error occurred");
         }
       } catch (error) {
-        setErrorMessage("An unexpected error occurred")
+        setErrorMessage("An unexpected error occurred");
       } finally {
-        setLoading(false)
+        setLoading(false);
       }
-    }
-  })
+    },
+  });
 
   const {
     values,
@@ -152,75 +150,77 @@ export default function ShopInformationStep() {
     setFieldValue,
     handleBlur,
     handleChange,
-    submitCount
-  } = formik
+    submitCount,
+  } = formik;
 
   useEffect(() => {
-    setProvinces(provincesData)
-  }, [])
+    setProvinces(provincesData);
+  }, []);
 
   useEffect(() => {
-    const selectedProvince = provinces.find(
-      (option) => option.name === values.province
-    )
-    if (selectedProvince) {
-      const selectedProvinceCode = selectedProvince.code
-      const filteredMunicipalities = municipalitiesData.filter(
-        (municipality) => municipality.provinceCode === selectedProvinceCode
-      )
-      setMunicipalities(filteredMunicipalities)
-      setBarangays([])
-      formik.setFieldValue("municipality", "")
-      formik.setFieldValue("barangay", "")
+    if (values.province) {
+      const selectedProvince = provinces.find(
+        (option) => option.name === values.province
+      );
+      if (selectedProvince) {
+        const selectedProvinceCode = selectedProvince.code;
+        const filteredMunicipalities = municipalitiesData.filter(
+          (municipality) => municipality.provinceCode === selectedProvinceCode
+        );
+        setMunicipalities(filteredMunicipalities);
+        setBarangays([]);
+      } else {
+        setMunicipalities([]);
+        setBarangays([]);
+      }
+    } else {
+      setMunicipalities([]);
+      setBarangays([]);
     }
-  }, [values.province, provinces, formik])
+  }, [values.province, provinces]);
 
   useEffect(() => {
-    const selectedMunicipality = municipalitiesData.find(
-      (municipality) => municipality.name === values.municipality
-    )
-    if (selectedMunicipality) {
-      const selectedMunicipalityCode = selectedMunicipality.code
-      const filteredBarangays = barangaysData.filter(
-        (barangay) => barangay.municipalityCode === selectedMunicipalityCode
-      )
-      setBarangays(filteredBarangays)
-      formik.setFieldValue("barangay", "")
+    if (values.municipality) {
+      const selectedMunicipality = municipalitiesData.find(
+        (municipality) => municipality.name === values.municipality
+      );
+      if (selectedMunicipality) {
+        const selectedMunicipalityCode = selectedMunicipality.code;
+        const filteredBarangays = barangaysData.filter(
+          (barangay) => barangay.municipalityCode === selectedMunicipalityCode
+        );
+        setBarangays(filteredBarangays);
+      } else {
+        setBarangays([]);
+      }
+    } else {
+      setBarangays([]);
     }
-  }, [values.municipality, formik])
+  }, [values.municipality]);
 
   useEffect(() => {
     if (submitCount > 0 && Object.keys(errors).length > 0) {
-      const errorFields = fieldOrder.filter((field) => errors[field])
+      const errorFields = fieldOrder.filter((field) => errors[field]);
       if (errorFields.length > 0) {
-        const firstErrorField = errorFields[0]
+        const firstErrorField = errorFields[0];
         if (fieldRefs.current[firstErrorField]) {
           fieldRefs.current[firstErrorField].scrollIntoView({
             behavior: "smooth",
-            block: "center"
-          })
+            block: "center",
+          });
         }
       }
     }
-  }, [submitCount, errors, fieldOrder])
+  }, [submitCount, errors, fieldOrder]);
 
   const handleLocationSelect = useCallback(
     (coords, placeName) => {
-      formik.setFieldValue("latitude", coords.lat)
-      formik.setFieldValue("longitude", coords.lng)
-      formik.setFieldValue("googleMapPlaceName", placeName || "None")
+      formik.setFieldValue("latitude", coords.lat);
+      formik.setFieldValue("longitude", coords.lng);
+      formik.setFieldValue("googleMapPlaceName", placeName || "None");
     },
     [formik]
-  )
-
-  useEffect(() => {
-    if (values.openingTime) {
-      formik.setFieldValue("openingTime", values.openingTime)
-    }
-    if (values.closingTime) {
-      formik.setFieldValue("closingTime", values.closingTime)
-    }
-  }, [values.openingTime, values.closingTime, formik])
+  );
 
   return (
     <WebsiteLayoutWrapper className="justify-center items-center">
@@ -253,13 +253,14 @@ export default function ShopInformationStep() {
                     className="flex flex-col gap-2"
                   >
                     <Label
-                      htmlFor="shopLogo"
+                      htmlFor="shopLogoFile"
                       className="font-bold flex flex-row items-center"
                     >
-                      Shop Logo{" "}
+                      Shop Logo <Asterisk className="ml-1" />
                     </Label>
                     <ImageUpload
-                      onFileSelect={(files) => formik.setFieldValue("shopLogo", files)}
+                      inputId="shopLogoFile"
+                      onFileSelect={(files) => setFieldValue("shopLogo", files)}
                       initialFiles={values.shopLogo}
                       className={`${
                         errors.shopLogo && touched.shopLogo
@@ -289,7 +290,10 @@ export default function ShopInformationStep() {
                         name="shopName"
                         placeholder="Please enter the shop name"
                         {...formik.getFieldProps("shopName")}
-                        className={InputErrorStyle(errors.shopName, touched.shopName)}
+                        className={InputErrorStyle(
+                          errors.shopName,
+                          touched.shopName
+                        )}
                       />
                       <InputErrorMessage
                         error={errors.shopName}
@@ -369,9 +373,7 @@ export default function ShopInformationStep() {
                     </Label>
                     <Select
                       aria-labelledby="openingTime"
-                      onValueChange={(value) => {
-                        formik.setFieldValue("openingTime", value)
-                      }}
+                      onValueChange={(value) => setFieldValue("openingTime", value)}
                       value={values.openingTime || ""}
                     >
                       <SelectTrigger
@@ -407,9 +409,7 @@ export default function ShopInformationStep() {
                     </Label>
                     <Select
                       aria-labelledby="closingTime"
-                      onValueChange={(value) => {
-                        formik.setFieldValue("closingTime", value)
-                      }}
+                      onValueChange={(value) => setFieldValue("closingTime", value)}
                       value={values.closingTime || ""}
                     >
                       <SelectTrigger
@@ -452,7 +452,7 @@ export default function ShopInformationStep() {
                     </p>
                   </div>
                   <FileUpload
-                    onFileSelect={(files) => formik.setFieldValue("businessLicense", files)}
+                    onFileSelect={(files) => setFieldValue("businessLicense", files)}
                     initialFiles={values.businessLicense}
                     className={`w-full h-[400px] ${
                       errors.businessLicense && touched.businessLicense
@@ -487,9 +487,9 @@ export default function ShopInformationStep() {
                     onValueChange={(value) => {
                       const selectedProvince = provinces.find(
                         (option) => option.code === value
-                      )
+                      );
                       if (selectedProvince) {
-                        formik.setFieldValue("province", selectedProvince.name)
+                        setFieldValue("province", selectedProvince.name);
                       }
                     }}
                     value={
@@ -518,6 +518,7 @@ export default function ShopInformationStep() {
                     touched={touched.province}
                   />
                 </div>
+
                 <div
                   ref={(el) => (fieldRefs.current["municipality"] = el)}
                   className="flex flex-col gap-1"
@@ -529,9 +530,7 @@ export default function ShopInformationStep() {
                     Municipality <Asterisk className="w-4" />
                   </Label>
                   <Select
-                    onValueChange={(value) =>
-                      formik.setFieldValue("municipality", value)
-                    }
+                    onValueChange={(value) => setFieldValue("municipality", value)}
                     aria-labelledby="municipality"
                     value={values.municipality}
                     disabled={values.province === ""}
@@ -557,6 +556,7 @@ export default function ShopInformationStep() {
                     touched={touched.municipality}
                   />
                 </div>
+
                 <div
                   ref={(el) => (fieldRefs.current["barangay"] = el)}
                   className="flex flex-col gap-1"
@@ -571,9 +571,9 @@ export default function ShopInformationStep() {
                     onValueChange={(value) => {
                       const selectedBarangay = barangays.find(
                         (option) => option.code === value
-                      )
+                      );
                       if (selectedBarangay) {
-                        formik.setFieldValue("barangay", selectedBarangay.name)
+                        setFieldValue("barangay", selectedBarangay.name);
                       }
                     }}
                     aria-labelledby="barangay"
@@ -605,6 +605,7 @@ export default function ShopInformationStep() {
                     touched={touched.barangay}
                   />
                 </div>
+
                 <div
                   ref={(el) => (fieldRefs.current["postalNumber"] = el)}
                   className="flex flex-col gap-1"
@@ -631,6 +632,7 @@ export default function ShopInformationStep() {
                     touched={touched.postalNumber}
                   />
                 </div>
+
                 <div
                   ref={(el) => (fieldRefs.current["buildingNo"] = el)}
                   className="flex flex-col gap-2"
@@ -657,6 +659,7 @@ export default function ShopInformationStep() {
                     touched={touched.buildingNo}
                   />
                 </div>
+
                 <div
                   ref={(el) => (fieldRefs.current["street"] = el)}
                   className="flex flex-col gap-2"
@@ -682,6 +685,7 @@ export default function ShopInformationStep() {
                 </div>
               </div>
             </div>
+
             <div className="flex flex-col gap-5">
               <div className="flex flex-col gap-1">
                 <CardTitle className="text-2xl">
@@ -697,21 +701,17 @@ export default function ShopInformationStep() {
                 ref={(el) => (fieldRefs.current["latitude"] = el)}
                 className="flex flex-col gap-2"
               >
-                <Label className={`font-bold flex flex-row items-center`}>
-                  {"Your Shop's Google Map Location"}
-                  <Asterisk className="w-4" />
+                <Label className="font-bold flex flex-row items-center">
+                  {"Your Shop's Google Map Location"} <Asterisk className="w-4" />
                 </Label>
                 <MapPicker
                   onLocationSelect={useCallback(
                     (coords, placeName) => {
-                      formik.setFieldValue("latitude", coords.lat)
-                      formik.setFieldValue("longitude", coords.lng)
-                      formik.setFieldValue(
-                        "googleMapPlaceName",
-                        placeName || "None"
-                      )
+                      setFieldValue("latitude", coords.lat);
+                      setFieldValue("longitude", coords.lng);
+                      setFieldValue("googleMapPlaceName", placeName || "None");
                     },
-                    [formik]
+                    [setFieldValue]
                   )}
                 />
                 <div className="flex flex-col items-center justify-center">
@@ -726,6 +726,7 @@ export default function ShopInformationStep() {
                 </div>
               </div>
             </div>
+
             <div className="flex flex-col gap-5 items-center">
               <Button type="submit" className="w-full mt-4" disabled={loading}>
                 {loading ? <LoadingMessage message="Submitting..." /> : "Submit"}
@@ -738,5 +739,5 @@ export default function ShopInformationStep() {
         </Card>
       </div>
     </WebsiteLayoutWrapper>
-  )
+  );
 }

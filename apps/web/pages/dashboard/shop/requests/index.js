@@ -46,6 +46,10 @@ export default function ShopRequests() {
   const router = useRouter();
   const { alert } = router.query; // Read the alert query parameter
   const [showAlert, setShowAlert] = useState(false);
+  const navItems = [
+    { label: "Shops", href: routes.shop },
+    { label: "Requests", href: routes.shopRequest },
+  ];
 
   useEffect(() => {
     if (alert) {
@@ -171,144 +175,139 @@ export default function ShopRequests() {
           </DropdownMenu> 
         </div>
       </div>
-      <DashboardPagesNavigation>
-        <Link className={`${buttonVariants({ variant: "ghost" })} px-5 uppercase text-lg font-semibold`} href={routes.shop}>
-          Shops
-        </Link>
-        <Link className={`${buttonVariants({ variant: "ghost" })} px-5 uppercase text-lg font-semibold`} href={routes.shopRequest}>
-          Requests
-        </Link>
-      </DashboardPagesNavigation>
-      <Card className="flex flex-col gap-5 justify-between min-h-[43.75rem]">
-        <Table>
-          <TableHeader>
-            <TableRow>
-              <TableHead className="max-w-[1.2rem]">Request Number</TableHead>
-              <TableHead className="max-w-[3rem]">Shop Name</TableHead>
-              <TableHead className="max-w-[4rem]">Address</TableHead>
-              <TableHead className="max-w-[1rem] text-center">Status</TableHead>
-              <TableHead className="max-w-[1rem] text-center">Action</TableHead>
-            </TableRow>
-          </TableHeader>
-          <TableBody>
-            {loading ? (
-              Array.from({ length: 7 }).map((_, index) => (
-                <TableRow key={index}>
-                  <TableCell><Skeleton className="h-14 w-full" /></TableCell>
-                  <TableCell><Skeleton className="h-14 w-full" /></TableCell>
-                  <TableCell><Skeleton className="h-14 w-full" /></TableCell>
-                  <TableCell><Skeleton className="h-14 w-full" /></TableCell>
-                  <TableCell><Skeleton className="h-14 w-full" /></TableCell>
-                </TableRow>
-              ))
-            ) : requests && requests.length > 0 ? (
-              requests.map((request) => (
-                <TableRow key={request.id}>
-                  <TableCell className="max-w-[1.2rem] font-medium">{request.requestNo}</TableCell>
-                  <TableCell className="max-w-[3rem] overflow-hidden whitespace-nowrap text-ellipsis">{request.shopName}</TableCell>
-                  <TableCell className="max-w-[4rem] overflow-hidden whitespace-nowrap text-ellipsis">
-                    {request.address} {/* Use the full address string from the API */}
-                  </TableCell>
-                  <TableCell className="max-w-[1rem] text-center">
-                    <p className={`py-1 w-full rounded font-bold text-card ${getStatusBgColor(request.status)}`}>{request.status}</p>
-                  </TableCell>
-                  <TableCell className="max-w-[1rem] text-center">
-                    <DropdownMenu>
-                      <DropdownMenuTrigger asChild>
-                        <Button variant="outline" className="font-normal">
-                          Action                       
-                          <ChevronDown className="scale-125" />
-                        </Button>
-                      </DropdownMenuTrigger>
-                      <DropdownMenuContent className="w-50">
-                        <DropdownMenuGroup>
-                          <DropdownMenuItem className="justify-center">
-                            <Button 
-                              variant="none" 
-                              className="text-base"
-                              onClick={() => handleManageClick(request.requestNo)}
-                            >
-                              <Pencil className="scale-125" />
-                              Manage
-                            </Button>
-                          </DropdownMenuItem>
-                          <DropdownMenuItem className="justify-center">
-                            <Button variant="none" className="font-bold text-base text-red-500">
-                              <Trash2 className="scale-125 stroke-red-500" />
-                              Delete
-                            </Button>
-                          </DropdownMenuItem>
-                        </DropdownMenuGroup>
-                      </DropdownMenuContent>
-                    </DropdownMenu> 
-                  </TableCell>
-                </TableRow>
-              ))
-            ) : (
+      <Card className="flex flex-col p-5 gap-4 min-h-[49rem]">
+        <DashboardPagesNavigation items={navItems} />
+        <div className="flex flex-col justify-between min-h-[42rem] gap-4">
+          <Table>
+            <TableHeader>
               <TableRow>
-                <TableCell colSpan={5} className="text-center align-middle h-[30rem] text-primary/50 text-lg font-thin tracking-wide">
-                  There are no shop-partnership requests yet.
-                </TableCell>
+                <TableHead className="max-w-[1.2rem]">Request Number</TableHead>
+                <TableHead className="max-w-[3rem]">Shop Name</TableHead>
+                <TableHead className="max-w-[4rem]">Address</TableHead>
+                <TableHead className="max-w-[1rem] text-center">Status</TableHead>
+                <TableHead className="max-w-[1rem] text-center">Action</TableHead>
               </TableRow>
-            )}
-          </TableBody>
-        </Table>
-        <Pagination className="flex flex-col items-end">
-          <PaginationContent>
-            {/* Previous button, disabled on the first page */}
-            {currentPage > 1 && (
-              <PaginationPrevious
-                onClick={() => handlePageChange(currentPage - 1)}
-              />
-            )}
+            </TableHeader>
+            <TableBody>
+              {loading ? (
+                Array.from({ length: 7 }).map((_, index) => (
+                  <TableRow key={index}>
+                    <TableCell><Skeleton className="h-14 w-full" /></TableCell>
+                    <TableCell><Skeleton className="h-14 w-full" /></TableCell>
+                    <TableCell><Skeleton className="h-14 w-full" /></TableCell>
+                    <TableCell><Skeleton className="h-14 w-full" /></TableCell>
+                    <TableCell><Skeleton className="h-14 w-full" /></TableCell>
+                  </TableRow>
+                ))
+              ) : requests && requests.length > 0 ? (
+                requests.map((request) => (
+                  <TableRow key={request.id}>
+                    <TableCell className="max-w-[1.2rem] font-medium">{request.requestNo}</TableCell>
+                    <TableCell className="max-w-[3rem] overflow-hidden whitespace-nowrap text-ellipsis">{request.shopName}</TableCell>
+                    <TableCell className="max-w-[4rem] overflow-hidden whitespace-nowrap text-ellipsis">
+                      {request.address} {/* Use the full address string from the API */}
+                    </TableCell>
+                    <TableCell className="max-w-[1rem] text-center">
+                      <p className={`py-1 w-full rounded font-bold text-card ${getStatusBgColor(request.status)}`}>{request.status}</p>
+                    </TableCell>
+                    <TableCell className="max-w-[1rem] text-center">
+                      <DropdownMenu>
+                        <DropdownMenuTrigger asChild>
+                          <Button variant="outline" className="font-normal">
+                            Action                       
+                            <ChevronDown className="scale-125" />
+                          </Button>
+                        </DropdownMenuTrigger>
+                        <DropdownMenuContent className="w-50">
+                          <DropdownMenuGroup>
+                            <DropdownMenuItem className="justify-center">
+                              <Button 
+                                variant="none" 
+                                className="text-base"
+                                onClick={() => handleManageClick(request.requestNo)}
+                              >
+                                <Pencil className="scale-125" />
+                                Manage
+                              </Button>
+                            </DropdownMenuItem>
+                            <DropdownMenuItem className="justify-center">
+                              <Button variant="none" className="font-bold text-base text-red-500">
+                                <Trash2 className="scale-125 stroke-red-500" />
+                                Delete
+                              </Button>
+                            </DropdownMenuItem>
+                          </DropdownMenuGroup>
+                        </DropdownMenuContent>
+                      </DropdownMenu> 
+                    </TableCell>
+                  </TableRow>
+                ))
+              ) : (
+                <TableRow>
+                  <TableCell colSpan={5} className="text-center align-middle h-[35rem] text-primary/50 text-lg font-thin tracking-wide">
+                    There are no shop-partnership requests yet.
+                  </TableCell>
+                </TableRow>
+              )}
+            </TableBody>
+          </Table>
+          <Pagination className="flex flex-col items-end">
+            <PaginationContent>
+              {/* Previous button, disabled on the first page */}
+              {currentPage > 1 && (
+                <PaginationPrevious
+                  onClick={() => handlePageChange(currentPage - 1)}
+                />
+              )}
 
-            {/* Page numbers with ellipsis */}
-            {Array.from({ length: totalPages }).map((_, index) => {
-              const page = index + 1;
+              {/* Page numbers with ellipsis */}
+              {Array.from({ length: totalPages }).map((_, index) => {
+                const page = index + 1;
 
-              // Always show the first, last, and current page, along with pages adjacent to the current page
-              if (
-                page === 1 || 
-                page === totalPages || 
-                (page >= currentPage - 1 && page <= currentPage + 1)
-              ) {
-                return (
-                  <PaginationItem key={page}>
-                    <PaginationLink
-                      href="#"
-                      isActive={page === currentPage}
-                      onClick={() => handlePageChange(page)}
-                    >
-                      {page}
-                    </PaginationLink>
-                  </PaginationItem>
-                );
-              }
+                // Always show the first, last, and current page, along with pages adjacent to the current page
+                if (
+                  page === 1 || 
+                  page === totalPages || 
+                  (page >= currentPage - 1 && page <= currentPage + 1)
+                ) {
+                  return (
+                    <PaginationItem key={page}>
+                      <PaginationLink
+                        href="#"
+                        isActive={page === currentPage}
+                        onClick={() => handlePageChange(page)}
+                      >
+                        {page}
+                      </PaginationLink>
+                    </PaginationItem>
+                  );
+                }
 
-              // Show ellipsis when necessary
-              if (
-                (page === currentPage - 2 && currentPage > 3) || 
-                (page === currentPage + 2 && currentPage < totalPages - 2)
-              ) {
-                return (
-                  <PaginationItem key={page} disabled>
-                    <span className="px-2">...</span>
-                  </PaginationItem>
-                );
-              }
+                // Show ellipsis when necessary
+                if (
+                  (page === currentPage - 2 && currentPage > 3) || 
+                  (page === currentPage + 2 && currentPage < totalPages - 2)
+                ) {
+                  return (
+                    <PaginationItem key={page} disabled>
+                      <span className="px-2">...</span>
+                    </PaginationItem>
+                  );
+                }
 
-              return null; // Skip other pages
-            })}
+                return null; // Skip other pages
+              })}
 
-            {/* Next button, disabled on the last page */}
-            {currentPage < totalPages && (
-              <PaginationNext
-                href="#"
-                onClick={() => handlePageChange(currentPage + 1)}
-              />
-            )}
-          </PaginationContent>
-        </Pagination>
+              {/* Next button, disabled on the last page */}
+              {currentPage < totalPages && (
+                <PaginationNext
+                  href="#"
+                  onClick={() => handlePageChange(currentPage + 1)}
+                />
+              )}
+            </PaginationContent>
+          </Pagination>
+        </div>
       </Card>
     </DashboardLayoutWrapper>
   );

@@ -1,22 +1,22 @@
+// File: "pages/dashboard.js"
 import { useSession } from "next-auth/react";
-import { Card, CardTitle } from "@/components/ui/card";
-import DashboardLayoutWrapper from "@/components/ui/dashboard-layout";
+import AdminDashboard from "@/components/ui/dashboard/admin";
+import VendorDashboard from "@/components/ui/dashboard/vendor";
 
 export default function Dashboard() {
   const { data: session } = useSession();
 
   if (!session) {
-    return <div>Loading...</div>; // Show a loading message or redirect if the user is not logged in
+    return <div>Loading...</div>;
   }
 
-  return (
-    <DashboardLayoutWrapper>
-      <CardTitle className="text-4xl">Dashboard</CardTitle>
-      <Card>
-        <h1>Admin Dashboard</h1>
-        <h2>Session Information</h2>
-        <pre>{JSON.stringify(session, null, 2)}</pre>
-      </Card>
-    </DashboardLayoutWrapper>
-  );
+  const userRole = session?.user?.role;
+
+  if (userRole === "ADMIN") {
+    return <AdminDashboard />;
+  } else if (userRole === "VENDOR") {
+    return <VendorDashboard />;
+  }
+
+  return <div>Unauthorized</div>;
 }

@@ -1,3 +1,5 @@
+import Profile from "./pages/dashboard/profile";
+
 // routes.js
 const routes = {
   home: '/',
@@ -13,6 +15,7 @@ const routes = {
   forgotPassword1: '/account/forgot-password/step1',
   forgotPassword2: '/account/forgot-password/step2',
   dashboard: '/dashboard',
+  profile: '/dashboard/profile',
   settings: '/dashboard/settings',
   shop: '/dashboard/shop',
   shopAdd: '/dashboard/shop/add',

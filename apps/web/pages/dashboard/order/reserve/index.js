@@ -38,6 +38,11 @@ import { NotepadText } from 'lucide-react';
 import { buttonVariants } from "@/components/ui/button"
 
 export default function Reserves() {
+  const navItems = [
+    { label: "Orders", href: routes.order },
+    { label: "Reserves", href: routes.orderReserve },
+  ];
+
   return (
     <DashboardLayoutWrapper>
       {/* Page Header */}
@@ -70,18 +75,9 @@ export default function Reserves() {
         </div>
       </div>
 
-      {/* Navigation Tabs */}
-      <DashboardPagesNavigation>
-        <Link className={`${buttonVariants({ variant: "ghost" })} px-5 uppercase text-lg font-semibold`} href={routes.order}>
-          Orders
-        </Link>
-        <Link className={`${buttonVariants({ variant: "ghost" })} px-5 uppercase text-lg font-semibold`} href={routes.orderReserve}>
-          Reserves
-        </Link>
-      </DashboardPagesNavigation>
-
       {/* Reserves Table */}
-      <Card className="flex flex-col gap-5 justify-between min-h-[43.75rem]">
+      <Card className="flex flex-col p-5 gap-4 min-h-[49rem]">
+        <DashboardPagesNavigation items={navItems} />
         <Table>
         <TableHeader>
           <TableRow>

@@ -32,7 +32,7 @@ export default async function handler(req, res) {
     };
 
     // Fetch orders with pagination and filtering
-    const orders = await prisma.orders.findMany({
+    const orders = await prisma.order.findMany({
       where: whereConditions,
       skip: skip,
       take: perPageNumber,
@@ -66,7 +66,7 @@ export default async function handler(req, res) {
     });
 
     // Fetch total order count for pagination
-    const totalCount = await prisma.orders.count({
+    const totalCount = await prisma.order.count({
       where: whereConditions,
     });
 

@@ -2,7 +2,7 @@
 import prisma, { disconnectPrisma } from "@/utils/helpers";
 
 export default async function handler(req, res) {
-  const { page = 1, limit = 7 } = req.query; // Default to page 1 and 7 items per page
+  const { page = 1, limit = 7 } = req.query;
 
   try {
     const offset = (page - 1) * limit;
@@ -13,6 +13,7 @@ export default async function handler(req, res) {
       select: {
         shopNo: true,
         name: true,
+        // Correct relation for the ShopAddress model
         ShopAddress: {
           select: {
             buildingNo: true,
@@ -37,12 +38,10 @@ export default async function handler(req, res) {
       totalPages: Math.ceil(totalShops / limit),
       currentPage: parseInt(page),
     });
-  } 
-  catch (error) {
+  } catch (error) {
     console.error("Error fetching active shops:", error);
     res.status(500).json({ error: "Failed to fetch active shops" });
-  } 
-  finally {
+  } finally {
     await disconnectPrisma();
   }
 }

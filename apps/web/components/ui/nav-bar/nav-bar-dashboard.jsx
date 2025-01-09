@@ -5,27 +5,9 @@ import routes from "@/routes";
 import HueFitLogo from "@/public/images/HueFitLogo";
 import Link from "next/link";
 import { useEffect, useState } from "react";
-import {
-  House,
-  Store,
-  Shirt,
-  Tag,
-  User,
-  Settings,
-  LogOut,
-  MessageSquareMore,
-  Wrench,
-  Camera
-} from "lucide-react";
+import { House, Store, Shirt, Tag, User, Settings, LogOut, MessageSquareMore, Wrench, Camera } from "lucide-react";
 import { ModeToggle } from "@/components/ui/mode-toggle";
-import {
-  DropdownMenu,
-  DropdownMenuContent,
-  DropdownMenuItem,
-  DropdownMenuLabel,
-  DropdownMenuSeparator,
-  DropdownMenuTrigger
-} from "@/components/ui/dropdown-menu";
+import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuLabel, DropdownMenuSeparator, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
 import Image from "next/image";
 import { Skeleton } from "@/components/ui/skeleton";
 
@@ -161,7 +143,7 @@ const NavbarDashboard = () => {
           <DropdownMenuSeparator />
           <DropdownMenuItem>
             <Link
-              href={routes.userView}
+              href={routes.profile}
               className="flex justify-start items-center gap-1 font-semibold py-2 px-4 rounded w-full uppercase"
             >
               <User className="stroke-primary" /> Profile
