@@ -6,30 +6,10 @@ import { useRouter } from "next/router";
 import routes from "@/routes";
 import AddColorDialog from "./components/add-color";
 import EditColorDialog from "./components/edit-color";
-import {
-  Table,
-  TableHead,
-  TableHeader,
-  TableBody,
-  TableCell,
-  TableRow,
-} from "@/components/ui/table";
-import {
-  DropdownMenu,
-  DropdownMenuContent,
-  DropdownMenuItem,
-  DropdownMenuTrigger,
-  DropdownMenuGroup,
-} from "@/components/ui/dropdown-menu";
-import { MoveLeft, ChevronDown, Pencil, Search, X, CircleCheck, CircleAlert } from "lucide-react";
-import {
-  Pagination,
-  PaginationPrevious,
-  PaginationContent,
-  PaginationItem,
-  PaginationNext,
-  PaginationLink,
-} from "@/components/ui/pagination";
+import { Table, TableHead, TableHeader, TableBody, TableCell, TableRow } from "@/components/ui/table";
+import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger, DropdownMenuGroup } from "@/components/ui/dropdown-menu";
+import { MoveLeft, ChevronDown, Pencil, X, CircleCheck, CircleAlert } from "lucide-react";
+import { Pagination, PaginationPrevious, PaginationContent, PaginationItem, PaginationNext, PaginationLink } from "@/components/ui/pagination";
 import Loading from "@/components/ui/loading";
 import { Skeleton } from "@/components/ui/skeleton";
 import { useState, useEffect } from "react";
@@ -49,44 +29,34 @@ export default function Colors() {
   const [debouncedSearchTerm, setDebouncedSearchTerm] = useState("");
   const [alert, setAlert] = useState({ message: "", type: "", title: "" });
 
-  // Debounce search term
+  const fetchColors = async (page = currentPage, search = debouncedSearchTerm) => {
+    setLoadingNextPage(true);
+    try {
+      const response = await fetch(
+        `/api/maintenance/colors/get-colors?page=${page}&search=${encodeURIComponent(search)}`
+      );
+      const data = await response.json();
+      setColors(data.colors || []);
+      setTotalPages(data.totalPages || 1);
+    } catch (error) {
+      console.error("Error fetching colors:", error);
+    } finally {
+      setInitialLoading(false);
+      setLoadingNextPage(false);
+    }
+  };
+
   useEffect(() => {
     const handler = setTimeout(() => {
       setDebouncedSearchTerm(searchTerm);
-      setCurrentPage(1); // Reset to first page when search changes
+      setCurrentPage(1);
     }, 500);
-
     return () => clearTimeout(handler);
   }, [searchTerm]);
 
-  // Fetch colors data
   useEffect(() => {
-    const fetchColors = async () => {
-      setLoadingNextPage(true);
-      try {
-        const response = await fetch(
-          `/api/maintenance/colors/get-colors?page=${currentPage}&search=${encodeURIComponent(
-            debouncedSearchTerm
-          )}`
-        );
-        const data = await response.json();
-        setColors(data.colors || []);
-        setTotalPages(data.totalPages || 1);
-      } catch (error) {
-        console.error("Error fetching colors:", error);
-      } finally {
-        setInitialLoading(false);
-        setLoadingNextPage(false);
-      }
-    };
-
     fetchColors();
   }, [currentPage, debouncedSearchTerm]);
-
-  const handleEdit = (color) => {
-    setSelectedColor(color);
-    setIsEditDialogOpen(true);
-  };
 
   const handleAlert = (message, type, title) => {
     setAlert({ message, type, title });
@@ -95,12 +65,21 @@ export default function Colors() {
 
   const handleAddColor = (message, type) => {
     handleAlert(message, type, type === "success" ? "Success" : "Failed");
-    setCurrentPage(1); // Reload colors after addition
+    if (type === "success") {
+      fetchColors();
+    }
   };
 
   const handleColorUpdated = (message, type) => {
     handleAlert(message, type, type === "success" ? "Success" : "Failed");
-    setCurrentPage(1); // Reload colors after update
+    if (type === "success") {
+      fetchColors();
+    }
+  };
+
+  const handleEdit = (color) => {
+    setSelectedColor(color);
+    setIsEditDialogOpen(true);
   };
 
   const handlePageChange = (page) => {
@@ -165,7 +144,7 @@ export default function Colors() {
             value={searchTerm}
             onChange={(e) => setSearchTerm(e.target.value)}
           />
-          <AddColorDialog onColorAdded={(message, type) => handleAddColor(message, type)} />
+          <AddColorDialog onColorAdded={handleAddColor} />
         </div>
       </div>
       <Card className="flex flex-col p-5 gap-5 justify-between min-h-[49.1rem]">
@@ -248,13 +227,19 @@ export default function Colors() {
         {colors.length > 0 && (
           <Pagination className="flex flex-col items-end">
             <PaginationContent>
-              {currentPage > 1 && <PaginationPrevious onClick={() => handlePageChange(currentPage - 1)} />}
+              {currentPage > 1 && (
+                <PaginationPrevious onClick={() => handlePageChange(currentPage - 1)} />
+              )}
               {Array.from({ length: totalPages }, (_, i) => i + 1).map((page) => (
                 <PaginationItem key={page} active={page === currentPage}>
-                  <PaginationLink onClick={() => handlePageChange(page)}>{page}</PaginationLink>
+                  <PaginationLink onClick={() => handlePageChange(page)}>
+                    {page}
+                  </PaginationLink>
                 </PaginationItem>
               ))}
-              {currentPage < totalPages && <PaginationNext onClick={() => handlePageChange(currentPage + 1)} />}
+              {currentPage < totalPages && (
+                <PaginationNext onClick={() => handlePageChange(currentPage + 1)} />
+              )}
             </PaginationContent>
           </Pagination>
         )}
@@ -269,7 +254,7 @@ export default function Colors() {
               setSelectedColor(null);
             }
           }}
-          onColorUpdated={(message, type) => handleColorUpdated(message, type)}
+          onColorUpdated={handleColorUpdated}
         />
       )}
     </DashboardLayoutWrapper>

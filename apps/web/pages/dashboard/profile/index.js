@@ -1,32 +1,30 @@
+// File: /pages/profile/index.js
 import React, { useState, useEffect, useRef } from "react";
 import DashboardLayoutWrapper from "@/components/ui/dashboard-layout";
 import { Card, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Button } from "@/components/ui/button";
-import { Pencil, Upload } from "lucide-react";
+import { Pencil, Upload, Loader } from "lucide-react";
 import Image from "next/image";
 import Cropper from "react-easy-crop";
-import {
-  Dialog,
-  DialogContent,
-  DialogHeader,
-  DialogTitle,
-  DialogFooter,
-} from "@/components/ui/dialog";
-
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog";
+import { useFormik } from "formik";
+import { editUserSchema } from "@/utils/validation-schema";
 import Loading from "@/components/ui/loading";
+
+// For the alert styling
+import { Alert, AlertTitle, AlertDescription } from "@/components/ui/alert";
+import { X, CircleCheck, CircleAlert } from "lucide-react";
 
 const getCroppedImg = async (imageSrc, crop, croppedAreaPixels) => {
   const image = new window.Image();
   image.src = imageSrc;
-
   return new Promise((resolve, reject) => {
     image.onload = () => {
       const canvas = document.createElement("canvas");
       canvas.width = croppedAreaPixels.width;
       canvas.height = croppedAreaPixels.height;
-
       const ctx = canvas.getContext("2d");
       ctx.drawImage(
         image,
@@ -39,19 +37,15 @@ const getCroppedImg = async (imageSrc, crop, croppedAreaPixels) => {
         croppedAreaPixels.width,
         croppedAreaPixels.height
       );
-
       canvas.toBlob((blob) => {
         if (!blob) {
           reject("Canvas is empty");
           return;
         }
-        const file = new File([blob], "cropped-image.jpg", {
-          type: "image/jpeg",
-        });
-        resolve(URL.createObjectURL(file));
+        const fileURL = URL.createObjectURL(blob);
+        resolve({ blob, fileURL });
       }, "image/jpeg");
     };
-
     image.onerror = (error) => {
       reject(error);
     };
@@ -61,50 +55,111 @@ const getCroppedImg = async (imageSrc, crop, croppedAreaPixels) => {
 export default function Profile() {
   const [isEditing, setIsEditing] = useState(false);
   const [userData, setUserData] = useState(null);
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState(null);
-  const [formValues, setFormValues] = useState({});
   const [profilePicture, setProfilePicture] = useState(null);
-  const fileInputRef = useRef(null);
+  const [loading, setLoading] = useState(true);
+  const [saving, setSaving] = useState(false);
+  const [error, setError] = useState(null);
 
+  const fileInputRef = useRef(null);
   const [imageSrc, setImageSrc] = useState(null);
   const [crop, setCrop] = useState({ x: 0, y: 0 });
   const [zoom, setZoom] = useState(1);
   const [croppedAreaPixels, setCroppedAreaPixels] = useState(null);
   const [isCropDialogOpen, setIsCropDialogOpen] = useState(false);
 
-  useEffect(() => {
-    const fetchUserData = async () => {
-      try {
-        const response = await fetch("/api/users/get-user-info", {
-          method: "GET",
-          headers: { "Content-Type": "application/json" },
-        });
+  // Alert states
+  const [alert, setAlert] = useState({ message: "", type: "", title: "" });
 
-        if (!response.ok) {
-          throw new Error(`HTTP error! status: ${response.status}`);
+  // Fetch user data
+  const fetchUserData = async () => {
+    try {
+      const response = await fetch("/api/users/get-user-info", {
+        method: "GET",
+        headers: { "Content-Type": "application/json" },
+      });
+      if (!response.ok) {
+        throw new Error(`HTTP error! status: ${response.status}`);
+      }
+      const data = await response.json();
+      setUserData(data);
+      setProfilePicture(data.profilePicture || "/images/placeholder-profile-picture.png");
+      formik.setValues({
+        username: data.username || "",
+        email: data.email || "",
+        firstName: data.firstName || "",
+        lastName: data.lastName || "",
+        contactNo: data.contactNo || "",
+      });
+    } catch (err) {
+      setError(err.message);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const formik = useFormik({
+    initialValues: {
+      username: "",
+      email: "",
+      firstName: "",
+      lastName: "",
+      contactNo: "",
+    },
+    validationSchema: editUserSchema,
+    onSubmit: async (values) => {
+      setSaving(true);
+      try {
+        const formData = new FormData();
+        formData.append("username", values.username);
+        formData.append("email", values.email);
+        formData.append("firstName", values.firstName);
+        formData.append("lastName", values.lastName);
+        formData.append("contactNo", values.contactNo);
+
+        // If a new profile picture was selected
+        if (profilePicture?.blob) {
+          formData.append("profilePicture", profilePicture.blob, "profile.jpg");
         }
 
-        const data = await response.json();
-        setUserData(data);
-        setFormValues(data);
-        setProfilePicture(data.profilePicture || "/images/placeholder-profile-picture.png");
-      } catch (err) {
-        setError(err.message);
+        const response = await fetch("/api/users/edit-user-info", {
+          method: "POST",
+          body: formData,
+        });
+        if (!response.ok) {
+          throw new Error(`Failed to save changes, status: ${response.status}`);
+        }
+        const result = await response.json();
+        if (result.success) {
+          setUserData((prev) => ({
+            ...prev,
+            ...values,
+            profilePicture: profilePicture?.fileURL || prev.profilePicture,
+          }));
+          setIsEditing(false);
+          handleAlert("User Profile has been updated successfully.", "success", "Success");
+        } else {
+          handleAlert("User Profile update failed.", "failed", "Error");
+        }
+      } catch (error) {
+        console.error("Error saving user data:", error);
+        handleAlert("User Profile update failed.", "failed", "Error");
       } finally {
-        setLoading(false);
+        setSaving(false);
       }
-    };
+    },
+  });
 
+  // Show or hide alert
+  const handleAlert = (message, type, title) => {
+    setAlert({ message, type, title });
+    setTimeout(() => setAlert({ message: "", type: "", title: "" }), 5000);
+  };
+
+  useEffect(() => {
     fetchUserData();
   }, []);
 
-  const handleFieldChange = (field, value) => {
-    if (!isEditing) return;
-    setFormValues((prev) => ({ ...prev, [field]: value }));
-  };
-
-  const handleFileChange = async (e) => {
+  const handleFileChange = (e) => {
     if (e.target.files && e.target.files[0]) {
       const file = e.target.files[0];
       const imageUrl = URL.createObjectURL(file);
@@ -115,12 +170,12 @@ export default function Profile() {
 
   const handleCropConfirm = async () => {
     try {
-      const croppedImage = await getCroppedImg(imageSrc, crop, croppedAreaPixels);
-      setProfilePicture(croppedImage);
+      const { blob, fileURL } = await getCroppedImg(imageSrc, crop, croppedAreaPixels);
+      setProfilePicture({ blob, fileURL });
       setImageSrc(null);
       setIsCropDialogOpen(false);
-    } catch (error) {
-      console.error("Error cropping image:", error);
+    } catch (err) {
+      console.error("Error cropping image:", err);
     }
   };
 
@@ -131,8 +186,18 @@ export default function Profile() {
 
   const handleCancelEditing = () => {
     if (userData) {
-      setFormValues(userData);
-      setProfilePicture(userData.profilePicture || "/images/placeholder-profile-picture.png");
+      formik.setValues({
+        username: userData.username || "",
+        email: userData.email || "",
+        firstName: userData.firstName || "",
+        lastName: userData.lastName || "",
+        contactNo: userData.contactNo || "",
+      });
+      setProfilePicture(
+        userData.profilePicture
+          ? { fileURL: userData.profilePicture }
+          : null
+      );
     }
     setIsEditing(false);
   };
@@ -151,12 +216,50 @@ export default function Profile() {
 
   return (
     <DashboardLayoutWrapper>
+      {/* ALERT */}
+      {alert.message && (
+        <Alert className="flex flex-row items-center fixed z-50 w-[30rem] right-14 bottom-12 shadow-lg rounded-lg p-4">
+          {alert.type === "success" ? (
+            <CircleCheck className="ml-4 scale-[200%] h-[60%] stroke-green-500" />
+          ) : (
+            <CircleAlert className="ml-4 scale-[200%] h-[60%] stroke-red-500" />
+          )}
+          <div className="flex flex-col justify-center ml-10">
+            <AlertTitle
+              className={`text-lg font-bold ${
+                alert.type === "success" ? "text-green-500" : "text-red-500"
+              }`}
+            >
+              {alert.title}
+            </AlertTitle>
+            <AlertDescription
+              className={`tracking-wide font-light ${
+                alert.type === "success" ? "text-green-300" : "text-red-300"
+              }`}
+            >
+              {alert.message}
+            </AlertDescription>
+          </div>
+          <Button
+            variant="ghost"
+            className="ml-auto p-2"
+            onClick={() => setAlert({ message: "", type: "", title: "" })}
+          >
+            <X className="scale-150 stroke-primary/50 -translate-x-2" />
+          </Button>
+        </Alert>
+      )}
+
       <CardTitle className="text-4xl mb-5">Profile</CardTitle>
       <div className="flex gap-5">
         <div className="flex flex-col gap-2 items-center">
           <Card className="bg-accent p-2">
             <Image
-              src={profilePicture}
+              src={
+                profilePicture?.fileURL ||
+                profilePicture ||
+                "/images/placeholder-profile-picture.png"
+              }
               alt="Profile Picture"
               objectFit="cover"
               width={300}
@@ -189,73 +292,120 @@ export default function Profile() {
             <h2 className="text-2xl font-bold">Personal Information</h2>
             <Button
               variant="ghost"
-              onClick={() => setIsEditing((prev) => !prev)}
+              onClick={() => setIsEditing(true)}
               className="w-10 h-10 p-0"
               disabled={isEditing}
             >
               <Pencil className="scale-125" />
             </Button>
           </div>
-          <div className="flex flex-col gap-4">
-            <div className="flex flex-col gap-1">
-              <Label className="font-bold">User No</Label>
-              <Input value={formValues.userNo || ""} disabled />
-            </div>
+
+          <p className="text-base font-semibold">
+            User No: {userData?.userNo || "N/A"}
+          </p>
+          <p className="text-base font-semibold">
+            Role: {userData?.role || "N/A"}
+          </p>
+          {userData?.position && (
+            <p className="text-base font-semibold">Position: {userData.position}</p>
+          )}
+
+          <form onSubmit={formik.handleSubmit} className="flex flex-col gap-4 mt-5">
             <div className="flex flex-col gap-1">
               <Label className="font-bold">Username</Label>
               <Input
-                value={formValues.username || ""}
+                name="username"
+                value={formik.values.username}
+                onChange={formik.handleChange}
                 disabled={!isEditing}
-                onChange={(e) => handleFieldChange("username", e.target.value)}
+                className={
+                  formik.touched.username && formik.errors.username ? "border-red-500" : ""
+                }
               />
+              {formik.touched.username && formik.errors.username && (
+                <span className="text-red-500 text-sm">{formik.errors.username}</span>
+              )}
             </div>
             <div className="flex flex-col gap-1">
               <Label className="font-bold">Email</Label>
               <Input
-                value={formValues.email || ""}
+                name="email"
+                value={formik.values.email}
+                onChange={formik.handleChange}
                 disabled={!isEditing}
-                onChange={(e) => handleFieldChange("email", e.target.value)}
+                className={
+                  formik.touched.email && formik.errors.email ? "border-red-500" : ""
+                }
               />
+              {formik.touched.email && formik.errors.email && (
+                <span className="text-red-500 text-sm">{formik.errors.email}</span>
+              )}
             </div>
             <div className="flex flex-col gap-1">
               <Label className="font-bold">First Name</Label>
               <Input
-                value={formValues.firstName || ""}
+                name="firstName"
+                value={formik.values.firstName}
+                onChange={formik.handleChange}
                 disabled={!isEditing}
-                onChange={(e) => handleFieldChange("firstName", e.target.value)}
+                className={
+                  formik.touched.firstName && formik.errors.firstName
+                    ? "border-red-500"
+                    : ""
+                }
               />
+              {formik.touched.firstName && formik.errors.firstName && (
+                <span className="text-red-500 text-sm">{formik.errors.firstName}</span>
+              )}
             </div>
             <div className="flex flex-col gap-1">
               <Label className="font-bold">Last Name</Label>
               <Input
-                value={formValues.lastName || ""}
+                name="lastName"
+                value={formik.values.lastName}
+                onChange={formik.handleChange}
                 disabled={!isEditing}
-                onChange={(e) => handleFieldChange("lastName", e.target.value)}
+                className={
+                  formik.touched.lastName && formik.errors.lastName ? "border-red-500" : ""
+                }
               />
+              {formik.touched.lastName && formik.errors.lastName && (
+                <span className="text-red-500 text-sm">{formik.errors.lastName}</span>
+              )}
             </div>
             <div className="flex flex-col gap-1">
               <Label className="font-bold">Contact No</Label>
               <Input
-                value={formValues.contactNo || ""}
+                name="contactNo"
+                value={formik.values.contactNo}
+                onChange={formik.handleChange}
                 disabled={!isEditing}
-                onChange={(e) => handleFieldChange("contactNo", e.target.value)}
+                className={
+                  formik.touched.contactNo && formik.errors.contactNo ? "border-red-500" : ""
+                }
               />
+              {formik.touched.contactNo && formik.errors.contactNo && (
+                <span className="text-red-500 text-sm">{formik.errors.contactNo}</span>
+              )}
             </div>
+
             {isEditing && (
               <div className="flex flex-col justify-end gap-2 mt-10">
-                <Button variant="default" className="w-full">
-                  Save
-                </Button>
                 <Button
-                  variant="outline"
-                  className="w-full"
-                  onClick={handleCancelEditing}
+                  type="submit"
+                  variant="default"
+                  className="w-full flex items-center justify-center gap-2"
+                  disabled={saving}
                 >
+                  {saving ? <Loader className="animate-spin" /> : null}
+                  {saving ? "Saving..." : "Save"}
+                </Button>
+                <Button variant="outline" className="w-full" onClick={handleCancelEditing}>
                   Cancel
                 </Button>
               </div>
             )}
-          </div>
+          </form>
         </Card>
       </div>
 

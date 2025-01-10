@@ -7,22 +7,9 @@ import routes from "@/routes";
 import AddCategoryDialog from "./components/add-category";
 import EditCategoryDialog from "./components/edit-category";
 import { Table, TableHead, TableHeader, TableBody, TableCell, TableRow } from "@/components/ui/table";
-import {
-  DropdownMenu,
-  DropdownMenuContent,
-  DropdownMenuItem,
-  DropdownMenuTrigger,
-  DropdownMenuGroup,
-} from "@/components/ui/dropdown-menu";
-import { MoveLeft, ChevronDown, Pencil, Search, X, CircleCheck, CircleAlert } from "lucide-react";
-import {
-  Pagination,
-  PaginationPrevious,
-  PaginationContent,
-  PaginationItem,
-  PaginationNext,
-  PaginationLink,
-} from "@/components/ui/pagination";
+import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger, DropdownMenuGroup } from "@/components/ui/dropdown-menu";
+import { MoveLeft, ChevronDown, Pencil, X, CircleCheck, CircleAlert } from "lucide-react";
+import { Pagination, PaginationPrevious, PaginationContent, PaginationItem, PaginationNext, PaginationLink } from "@/components/ui/pagination";
 import Loading from "@/components/ui/loading";
 import { Skeleton } from "@/components/ui/skeleton";
 import { useState, useEffect } from "react";
@@ -42,46 +29,34 @@ export default function Categories() {
   const [debouncedSearchTerm, setDebouncedSearchTerm] = useState("");
   const [alert, setAlert] = useState({ message: "", type: "", title: "" });
 
-  // Debounce search term
+  const fetchCategories = async (page = currentPage, search = debouncedSearchTerm) => {
+    setLoadingNextPage(true);
+    try {
+      const response = await fetch(
+        `/api/maintenance/categories/get-categories?page=${page}&search=${encodeURIComponent(search)}`
+      );
+      const data = await response.json();
+      setCategories(data.categories || []);
+      setTotalPages(data.totalPages || 1);
+    } catch (error) {
+      console.error("Error fetching categories:", error);
+    } finally {
+      setInitialLoading(false);
+      setLoadingNextPage(false);
+    }
+  };
+
   useEffect(() => {
     const handler = setTimeout(() => {
       setDebouncedSearchTerm(searchTerm);
-      setCurrentPage(1); // Reset to first page on search
+      setCurrentPage(1);
     }, 500);
-
-    return () => {
-      clearTimeout(handler);
-    };
+    return () => clearTimeout(handler);
   }, [searchTerm]);
 
-  // Fetch categories data
   useEffect(() => {
-    const fetchCategories = async () => {
-      setLoadingNextPage(true);
-      try {
-        const response = await fetch(
-          `/api/maintenance/categories/get-categories?page=${currentPage}&search=${encodeURIComponent(
-            debouncedSearchTerm
-          )}`
-        );
-        const data = await response.json();
-        setCategories(data.categories || []);
-        setTotalPages(data.totalPages || 1);
-      } catch (error) {
-        console.error("Error fetching categories:", error);
-      } finally {
-        setInitialLoading(false);
-        setLoadingNextPage(false);
-      }
-    };
-
     fetchCategories();
   }, [currentPage, debouncedSearchTerm]);
-
-  const handleEdit = (category) => {
-    setSelectedCategory(category);
-    setIsEditDialogOpen(true);
-  };
 
   const handleAlert = (message, type, title) => {
     setAlert({ message, type, title });
@@ -90,12 +65,21 @@ export default function Categories() {
 
   const handleAddCategory = (message, type) => {
     handleAlert(message, type, type === "success" ? "Success" : "Failed");
-    setCurrentPage(1); // Reload categories after addition
+    if (type === "success") {
+      fetchCategories();
+    }
   };
 
   const handleCategoryUpdated = (message, type) => {
     handleAlert(message, type, type === "success" ? "Success" : "Failed");
-    setCurrentPage(1); // Reload categories after update
+    if (type === "success") {
+      fetchCategories();
+    }
+  };
+
+  const handleEdit = (category) => {
+    setSelectedCategory(category);
+    setIsEditDialogOpen(true);
   };
 
   const handlePageChange = (page) => {
@@ -137,7 +121,11 @@ export default function Categories() {
               {alert.message}
             </AlertDescription>
           </div>
-          <Button variant="ghost" className="ml-auto p-2" onClick={() => setAlert({ message: "", type: "", title: "" })}>
+          <Button
+            variant="ghost"
+            className="ml-auto p-2"
+            onClick={() => setAlert({ message: "", type: "", title: "" })}
+          >
             <X className="scale-150 stroke-primary/50 -translate-x-2" />
           </Button>
         </Alert>
@@ -193,7 +181,11 @@ export default function Categories() {
                         <DropdownMenuContent className="w-50">
                           <DropdownMenuGroup>
                             <DropdownMenuItem className="justify-center">
-                              <Button variant="none" onClick={() => handleEdit(category)} className="flex items-center gap-2">
+                              <Button
+                                variant="none"
+                                onClick={() => handleEdit(category)}
+                                className="flex items-center gap-2"
+                              >
                                 <Pencil className="scale-125" />
                                 Edit
                               </Button>
@@ -206,7 +198,10 @@ export default function Categories() {
                 ))
               : (
                 <TableRow>
-                  <TableCell colSpan={2} className="text-center align-middle h-[43rem] text-primary/50 text-lg font-thin tracking-wide">
+                  <TableCell
+                    colSpan={2}
+                    className="text-center align-middle h-[43rem] text-primary/50 text-lg font-thin tracking-wide"
+                  >
                     No categories found.
                   </TableCell>
                 </TableRow>
@@ -216,13 +211,19 @@ export default function Categories() {
         {categories.length > 0 && (
           <Pagination className="flex flex-col items-end">
             <PaginationContent>
-              {currentPage > 1 && <PaginationPrevious onClick={() => handlePageChange(currentPage - 1)} />}
+              {currentPage > 1 && (
+                <PaginationPrevious onClick={() => handlePageChange(currentPage - 1)} />
+              )}
               {Array.from({ length: totalPages }, (_, i) => i + 1).map((page) => (
                 <PaginationItem key={page} active={page === currentPage}>
-                  <PaginationLink onClick={() => handlePageChange(page)}>{page}</PaginationLink>
+                  <PaginationLink onClick={() => handlePageChange(page)}>
+                    {page}
+                  </PaginationLink>
                 </PaginationItem>
               ))}
-              {currentPage < totalPages && <PaginationNext onClick={() => handlePageChange(currentPage + 1)} />}
+              {currentPage < totalPages && (
+                <PaginationNext onClick={() => handlePageChange(currentPage + 1)} />
+              )}
             </PaginationContent>
           </Pagination>
         )}

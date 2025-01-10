@@ -21,12 +21,11 @@ export default function EditCategoryDialog({ category, isOpen, onOpenChange, onC
     onSubmit: async (values) => {
       setLoading(true);
       try {
-        const response = await fetch(`/api/maintenance/categories/update-category`, {
+        const response = await fetch("/api/maintenance/categories/update-category", {
           method: "PUT",
           headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ id: category.id, name: values.name }), // Pass id in payload
+          body: JSON.stringify({ id: category.id, name: values.name }),
         });
-
         if (response.ok) {
           onCategoryUpdated("Category updated successfully.", "success");
           onOpenChange(false);
@@ -46,7 +45,6 @@ export default function EditCategoryDialog({ category, isOpen, onOpenChange, onC
     if (!isOpen) {
       formik.resetForm();
     }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [isOpen]);
 
   return (
@@ -65,9 +63,7 @@ export default function EditCategoryDialog({ category, isOpen, onOpenChange, onC
               name="name"
               placeholder="Enter category name"
               value={formik.values.name}
-              onChange={(e) => {
-                formik.handleChange(e);
-              }}
+              onChange={formik.handleChange}
               onBlur={formik.handleBlur}
               className={InputErrorStyle(formik.errors.name, formik.touched.name)}
             />

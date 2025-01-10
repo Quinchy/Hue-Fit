@@ -1,3 +1,4 @@
+// pages/colors/components/add-color.jsx
 import { Dialog, DialogTrigger, DialogContent, DialogHeader, DialogFooter } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -34,9 +35,7 @@ export default function AddColorDialog({ buttonClassName = "", buttonName = "Add
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify(values),
         });
-
         if (response.ok) {
-          const { color } = await response.json();
           onColorAdded("Color added successfully.", "success");
           resetForm();
           setUploadedImage(null);
@@ -87,9 +86,7 @@ export default function AddColorDialog({ buttonClassName = "", buttonName = "Add
         </DialogHeader>
         <form onSubmit={formik.handleSubmit}>
           <div className="flex flex-row gap-5">
-            {/* Name and Hex Code Section */}
             <div className="flex flex-col gap-4 w-1/2">
-              {/* Name Field */}
               <div className="flex flex-col gap-2">
                 <Label htmlFor="name" className="font-bold flex items-center">
                   Name <Asterisk className="w-4 h-4 " />
@@ -105,8 +102,6 @@ export default function AddColorDialog({ buttonClassName = "", buttonName = "Add
                 />
                 <InputErrorMessage error={formik.errors.name} touched={formik.touched.name} />
               </div>
-
-              {/* Hex Code Field */}
               <div className="flex flex-col gap-2">
                 <Label htmlFor="hexCode" className="font-bold flex items-center">
                   Hex Code <Asterisk className="w-4 h-4 " />
@@ -132,8 +127,6 @@ export default function AddColorDialog({ buttonClassName = "", buttonName = "Add
                 <InputErrorMessage error={formik.errors.hexCode} touched={formik.touched.hexCode} />
               </div>
             </div>
-
-            {/* Image Color Picker Section */}
             <div className="flex flex-col gap-4 w-1/2">
               <Label className="font-bold">Image Color Picker</Label>
               <div className="flex flex-col items-center gap-2 border-dashed border-2 p-5 rounded-md">

@@ -1,5 +1,4 @@
 // pages/colors/components/edit-color.jsx
-
 import { Dialog, DialogContent, DialogHeader, DialogFooter } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -27,16 +26,15 @@ export default function EditColorDialog({ color = {}, isOpen, onOpenChange, onCo
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify({ id: color.id, ...values }),
         });
-
         if (response.ok) {
-          onColorUpdated && onColorUpdated("Color updated successfully.", "success");
+          onColorUpdated("Color updated successfully.", "success");
           onOpenChange(false);
         } else {
           const errorData = await response.json();
-          onColorUpdated && onColorUpdated(errorData.error || "Failed to update color.", "error");
+          onColorUpdated(errorData.error || "Failed to update color.", "error");
         }
-      } catch (error) {
-        onColorUpdated && onColorUpdated("An unexpected error occurred.", "error");
+      } catch {
+        onColorUpdated("An unexpected error occurred.", "error");
       } finally {
         setLoading(false);
       }
@@ -59,7 +57,7 @@ export default function EditColorDialog({ color = {}, isOpen, onOpenChange, onCo
           <div className="flex flex-col gap-4">
             <div className="flex flex-col gap-2">
               <Label htmlFor="name" className="font-bold flex items-center">
-                Name <Asterisk className="w-4 h-4 text-red-500" />
+                Name <Asterisk className="w-4 h-4" />
               </Label>
               <Input
                 id="name"
@@ -74,7 +72,7 @@ export default function EditColorDialog({ color = {}, isOpen, onOpenChange, onCo
             </div>
             <div className="flex flex-col gap-2">
               <Label htmlFor="hexCode" className="font-bold flex items-center">
-                Hex Code <Asterisk className="w-4 h-4 text-red-500" />
+                Hex Code <Asterisk className="w-4 h-4" />
               </Label>
               <div className="flex items-center gap-2">
                 <Input

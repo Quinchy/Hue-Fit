@@ -1,5 +1,4 @@
 // pages/dashboard/measurement/components/edit-measurement.js
-
 import { Dialog, DialogContent, DialogHeader, DialogFooter } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -13,13 +12,7 @@ import { InputErrorMessage, InputErrorStyle } from "@/components/ui/error-messag
 import { LoadingMessage } from "@/components/ui/loading-message";
 import { CardTitle } from "@/components/ui/card";
 
-export default function EditMeasurementDialog({
-  measurement = {},
-  isOpen,
-  onOpenChange,
-  onMeasurementEdited,
-  types = [],
-}) {
+export default function EditMeasurementDialog({ measurement = {}, isOpen, onOpenChange, onMeasurementEdited, types = [] }) {
   const [loading, setLoading] = useState(false);
 
   const formik = useFormik({
@@ -34,14 +27,10 @@ export default function EditMeasurementDialog({
       try {
         const response = await fetch("/api/maintenance/measurements/update-measurement", {
           method: "PUT",
-          headers: {
-            "Content-Type": "application/json",
-          },
+          headers: { "Content-Type": "application/json" },
           body: JSON.stringify({ id: measurement.id, name: values.name, assignTo: values.assignTo }),
         });
-
         if (response.ok) {
-          const { measurement: updatedMeasurement } = await response.json();
           onMeasurementEdited && onMeasurementEdited("Measurement edited successfully.", "success");
           resetForm();
           onOpenChange(false);
@@ -63,7 +52,7 @@ export default function EditMeasurementDialog({
       formik.resetForm();
     }
   }, [isOpen, formik]);
-  
+
   return (
     <Dialog open={isOpen} onOpenChange={onOpenChange}>
       <DialogContent>
@@ -71,10 +60,9 @@ export default function EditMeasurementDialog({
           <CardTitle className="text-2xl">Edit Measurement</CardTitle>
         </DialogHeader>
         <form onSubmit={formik.handleSubmit} className="flex flex-col gap-4">
-          {/* Measurement Name */}
           <div className="flex flex-col gap-2">
             <Label htmlFor="name" className="font-bold flex items-center">
-              Measurement Name <Asterisk className="w-4 h-4 text-red-500" />
+              Measurement Name <Asterisk className="w-4 h-4" />
             </Label>
             <Input
               id="name"
@@ -88,10 +76,9 @@ export default function EditMeasurementDialog({
             <InputErrorMessage error={formik.errors.name} touched={formik.touched.name} />
           </div>
 
-          {/* Assign To */}
           <div className="flex flex-col gap-2">
             <Label htmlFor="assignTo" className="font-bold flex items-center">
-              Assign to <Asterisk className="w-4 h-4 text-red-500" />
+              Assign to <Asterisk className="w-4 h-4" />
             </Label>
             <Select
               id="assignTo"
@@ -99,9 +86,7 @@ export default function EditMeasurementDialog({
               value={formik.values.assignTo}
               disabled={loading}
             >
-              <SelectTrigger
-                className={InputErrorStyle(formik.errors.assignTo, formik.touched.assignTo)}
-              >
+              <SelectTrigger className={InputErrorStyle(formik.errors.assignTo, formik.touched.assignTo)}>
                 <SelectValue placeholder="Select a clothing type" />
               </SelectTrigger>
               <SelectContent>
@@ -117,7 +102,6 @@ export default function EditMeasurementDialog({
             <InputErrorMessage error={formik.errors.assignTo} touched={formik.touched.assignTo} />
           </div>
 
-          {/* Dialog Footer */}
           <DialogFooter className="mt-10">
             <Button type="submit" disabled={loading} className="w-1/2">
               {loading ? <LoadingMessage message="Saving..." /> : "Save"}

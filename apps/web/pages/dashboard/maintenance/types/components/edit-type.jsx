@@ -59,7 +59,7 @@ export default function EditTypeDialog({ type = {}, isOpen, onOpenChange, onEdit
           <div className="flex flex-col gap-4">
             <div className="flex flex-col gap-2">
               <Label htmlFor="name" className="font-bold flex items-center">
-                Name <Asterisk className="w-4 h-4 text-red-500" />
+                Name <Asterisk className="w-4 h-4" />
               </Label>
               <Input
                 id="name"

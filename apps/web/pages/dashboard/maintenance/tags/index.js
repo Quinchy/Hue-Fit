@@ -2,34 +2,14 @@
 import { Card, CardTitle } from "@/components/ui/card";
 import DashboardLayoutWrapper from "@/components/ui/dashboard-layout";
 import { Button } from "@/components/ui/button";
-import { MoveLeft, ChevronDown, Pencil, Search, CheckCircle, CircleAlert, X } from "lucide-react";
+import { MoveLeft, ChevronDown, Pencil, X, CheckCircle, CircleAlert } from "lucide-react";
 import { useRouter } from "next/router";
 import routes from "@/routes";
 import AddTagDialog from "./components/add-tag";
 import EditTagDialog from "./components/edit-tag";
-import {
-  Table,
-  TableHead,
-  TableHeader,
-  TableBody,
-  TableCell,
-  TableRow,
-} from "@/components/ui/table";
-import {
-  DropdownMenu,
-  DropdownMenuContent,
-  DropdownMenuItem,
-  DropdownMenuTrigger,
-  DropdownMenuGroup,
-} from "@/components/ui/dropdown-menu";
-import {
-  Pagination,
-  PaginationPrevious,
-  PaginationContent,
-  PaginationItem,
-  PaginationNext,
-  PaginationLink,
-} from "@/components/ui/pagination";
+import { Table, TableHead, TableHeader, TableBody, TableCell, TableRow } from "@/components/ui/table";
+import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger, DropdownMenuGroup } from "@/components/ui/dropdown-menu";
+import { Pagination, PaginationPrevious, PaginationContent, PaginationItem, PaginationNext, PaginationLink } from "@/components/ui/pagination";
 import Loading from "@/components/ui/loading";
 import { Skeleton } from "@/components/ui/skeleton";
 import { useState, useEffect } from "react";
@@ -54,50 +34,51 @@ export default function Tags() {
   const [tags, setTags] = useState([]);
   const [types, setTypes] = useState([]);
   const [totalPages, setTotalPages] = useState(1);
-  const [loading, setLoading] = useState(true);
+
+  const [initialLoading, setInitialLoading] = useState(true);
   const [loadingNextPage, setLoadingNextPage] = useState(false);
+
   const [searchTerm, setSearchTerm] = useState("");
   const [debouncedSearchTerm, setDebouncedSearchTerm] = useState("");
+
   const [isEditDialogOpen, setIsEditDialogOpen] = useState(false);
   const [selectedTag, setSelectedTag] = useState(null);
+
   const [alert, setAlert] = useState({ message: "", type: "", title: "" });
 
-  // Debounce search term
+  // Fetch tags
+  const fetchTags = async (page = currentPage, search = debouncedSearchTerm) => {
+    setLoadingNextPage(true);
+    try {
+      const response = await fetch(
+        `/api/maintenance/tags/get-tags?page=${page}&search=${encodeURIComponent(search)}`
+      );
+      const data = await response.json();
+      setTags(data.tags || []);
+      setTotalPages(data.totalPages || 1);
+    } catch (error) {
+      console.error("Error fetching tags:", error);
+    } finally {
+      setInitialLoading(false);
+      setLoadingNextPage(false);
+    }
+  };
+
+  // Debounce search input
   useEffect(() => {
     const handler = setTimeout(() => {
       setDebouncedSearchTerm(searchTerm);
       setCurrentPage(1);
     }, 500);
-
     return () => clearTimeout(handler);
   }, [searchTerm]);
 
-  // Fetch tags
+  // Fetch tags whenever page or debounced search changes
   useEffect(() => {
-    const fetchTags = async () => {
-      setLoading(true);
-      setLoadingNextPage(true);
-      try {
-        const response = await fetch(
-          `/api/maintenance/tags/get-tags?page=${currentPage}&search=${encodeURIComponent(
-            debouncedSearchTerm
-          )}`
-        );
-        const data = await response.json();
-        setTags(data.tags || []);
-        setTotalPages(data.totalPages || 1);
-      } catch (error) {
-        console.error("Error fetching tags:", error);
-      } finally {
-        setLoading(false);
-        setLoadingNextPage(false);
-      }
-    };
-
     fetchTags();
   }, [currentPage, debouncedSearchTerm]);
 
-  // Fetch types
+  // Fetch types once
   useEffect(() => {
     const fetchTypes = async () => {
       try {
@@ -108,7 +89,6 @@ export default function Tags() {
         console.error("Error fetching types:", error);
       }
     };
-
     fetchTypes();
   }, []);
 
@@ -118,20 +98,28 @@ export default function Tags() {
   };
 
   const handleEdit = (tag) => {
-    const type = types.find((t) => t.name.trim().toUpperCase() === tag.typeName?.trim().toUpperCase());
+    const type = types.find(
+      (t) => t.name.trim().toUpperCase() === tag.typeName?.trim().toUpperCase()
+    );
     const tagWithTypeId = { ...tag, typeId: type ? String(type.id) : "" };
     setSelectedTag(tagWithTypeId);
     setIsEditDialogOpen(true);
   };
 
+  // Refetch tags after adding
   const handleAddTag = (message, type) => {
     handleAlert(message, type, type === "success" ? "Success" : "Error");
-    setCurrentPage(1); // Reload tags
+    if (type === "success") {
+      fetchTags(1, debouncedSearchTerm);
+    }
   };
 
+  // Refetch tags after updating
   const handleTagUpdated = (message, type) => {
     handleAlert(message, type, type === "success" ? "Success" : "Error");
-    setCurrentPage(1); // Reload tags
+    if (type === "success") {
+      fetchTags(1, debouncedSearchTerm);
+    }
   };
 
   const handlePageChange = (page) => {
@@ -140,7 +128,7 @@ export default function Tags() {
     }
   };
 
-  if (loading) {
+  if (initialLoading) {
     return (
       <DashboardLayoutWrapper>
         <Loading message="Loading tags..." />
@@ -173,6 +161,13 @@ export default function Tags() {
               {alert.message}
             </AlertDescription>
           </div>
+          <Button
+            variant="ghost"
+            className="ml-auto p-2"
+            onClick={() => setAlert({ message: "", type: "", title: "" })}
+          >
+            <X className="scale-150 stroke-primary/50 -translate-x-2" />
+          </Button>
         </Alert>
       )}
 
@@ -190,9 +185,10 @@ export default function Tags() {
             value={searchTerm}
             onChange={(e) => setSearchTerm(e.target.value)}
           />
-          <AddTagDialog onAdd={(message, type) => handleAddTag(message, type)} />
+          <AddTagDialog onTagAdded={(message, type) => handleAddTag(message, type)} />
         </div>
       </div>
+
       <Card className="flex flex-col p-5 gap-5 justify-between min-h-[49.1rem]">
         <Table>
           <TableHeader>
@@ -203,88 +199,95 @@ export default function Tags() {
             </TableRow>
           </TableHeader>
           <TableBody>
-            {loadingNextPage ? (
-              Array.from({ length: 8 }).map((_, index) => (
-                <TableRow key={index}>
-                  <TableCell>
-                    <Skeleton className="h-[3.25rem] w-[10rem]" />
-                  </TableCell>
-                  <TableCell>
-                    <Skeleton className="h-[3.25rem] w-[10rem]" />
-                  </TableCell>
-                  <TableCell>
-                    <Skeleton className="h-[3.25rem] w-[10rem]" />
+            {loadingNextPage
+              ? Array.from({ length: 8 }).map((_, index) => (
+                  <TableRow key={index}>
+                    <TableCell>
+                      <Skeleton className="h-[3.25rem] w-[10rem]" />
+                    </TableCell>
+                    <TableCell>
+                      <Skeleton className="h-[3.25rem] w-[10rem]" />
+                    </TableCell>
+                    <TableCell>
+                      <Skeleton className="h-[3.25rem] w-[10rem]" />
+                    </TableCell>
+                  </TableRow>
+                ))
+              : tags.length > 0
+              ? tags.map((tag) => (
+                  <TableRow key={tag.id}>
+                    <TableCell>{tag.name}</TableCell>
+                    <TableCell>
+                      {tag.typeName ? (
+                        <p
+                          className={`py-1 max-w-[7rem] text-center mr-1 rounded font-bold text-white ${getTypeColorClass(
+                            tag.typeName
+                          )}`}
+                        >
+                          {tag.typeName}
+                        </p>
+                      ) : (
+                        <span>Unassigned</span>
+                      )}
+                    </TableCell>
+                    <TableCell>
+                      <DropdownMenu>
+                        <DropdownMenuTrigger asChild>
+                          <Button variant="outline" className="font-normal flex items-center gap-1">
+                            Action <ChevronDown className="scale-125" />
+                          </Button>
+                        </DropdownMenuTrigger>
+                        <DropdownMenuContent className="w-50">
+                          <DropdownMenuGroup>
+                            <DropdownMenuItem className="justify-center">
+                              <Button
+                                variant="none"
+                                onClick={() => handleEdit(tag)}
+                                className="flex items-center gap-2"
+                              >
+                                <Pencil className="scale-125" />
+                                Edit
+                              </Button>
+                            </DropdownMenuItem>
+                          </DropdownMenuGroup>
+                        </DropdownMenuContent>
+                      </DropdownMenu>
+                    </TableCell>
+                  </TableRow>
+                ))
+              : (
+                <TableRow>
+                  <TableCell
+                    colSpan={3}
+                    className="text-center align-middle h-[43rem] text-primary/50 text-lg font-thin tracking-wide"
+                  >
+                    No tags found.
                   </TableCell>
                 </TableRow>
-              ))
-            ) : tags.length > 0 ? (
-              tags.map((tag) => (
-                <TableRow key={tag.id}>
-                  <TableCell>{tag.name}</TableCell>
-                  <TableCell>
-                    {tag.typeName ? (
-                      <p
-                        className={`py-1 max-w-[7rem] text-center mr-1 rounded font-bold text-white ${getTypeColorClass(
-                          tag.typeName
-                        )}`}
-                      >
-                        {tag.typeName}
-                      </p>
-                    ) : (
-                      <span>Unassigned</span>
-                    )}
-                  </TableCell>
-                  <TableCell>
-                    <DropdownMenu>
-                      <DropdownMenuTrigger asChild>
-                        <Button variant="outline" className="font-normal flex items-center gap-1">
-                          Action <ChevronDown className="scale-125" />
-                        </Button>
-                      </DropdownMenuTrigger>
-                      <DropdownMenuContent className="w-50">
-                        <DropdownMenuGroup>
-                          <DropdownMenuItem className="justify-center">
-                            <Button
-                              variant="none"
-                              onClick={() => handleEdit(tag)}
-                              className="flex items-center gap-2"
-                            >
-                              <Pencil className="scale-125" />
-                              Edit
-                            </Button>
-                          </DropdownMenuItem>
-                        </DropdownMenuGroup>
-                      </DropdownMenuContent>
-                    </DropdownMenu>
-                  </TableCell>
-                </TableRow>
-              ))
-            ) : (
-              <TableRow>
-                <TableCell
-                  colSpan={3}
-                  className="text-center align-middle h-[43rem] text-primary/50 text-lg font-thin tracking-wide"
-                >
-                  No tags found.
-                </TableCell>
-              </TableRow>
-            )}
+              )}
           </TableBody>
         </Table>
         {tags.length > 0 && (
           <Pagination className="flex flex-col items-end">
             <PaginationContent>
-              {currentPage > 1 && <PaginationPrevious onClick={() => handlePageChange(currentPage - 1)} />}
+              {currentPage > 1 && (
+                <PaginationPrevious onClick={() => handlePageChange(currentPage - 1)} />
+              )}
               {Array.from({ length: totalPages }, (_, i) => i + 1).map((page) => (
                 <PaginationItem key={page} active={page === currentPage}>
-                  <PaginationLink onClick={() => handlePageChange(page)}>{page}</PaginationLink>
+                  <PaginationLink onClick={() => handlePageChange(page)}>
+                    {page}
+                  </PaginationLink>
                 </PaginationItem>
               ))}
-              {currentPage < totalPages && <PaginationNext onClick={() => handlePageChange(currentPage + 1)} />}
+              {currentPage < totalPages && (
+                <PaginationNext onClick={() => handlePageChange(currentPage + 1)} />
+              )}
             </PaginationContent>
           </Pagination>
         )}
       </Card>
+
       {selectedTag && (
         <EditTagDialog
           tag={selectedTag}

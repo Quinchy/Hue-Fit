@@ -1,3 +1,4 @@
+// pages/sizes/components/add-size.jsx
 import { Dialog, DialogTrigger, DialogContent, DialogHeader, DialogFooter } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -16,23 +17,6 @@ export default function AddSizeDialog({ buttonClassName = "", buttonName = "Add 
   const [loading, setLoading] = useState(false);
   const [isDialogOpen, setIsDialogOpen] = useState(false);
 
-  const fetchSizes = async () => {
-    try {
-      setLoading(true);
-      const response = await fetch("/api/maintenance/sizes/get-sizes?page=1&search=");
-      if (response.ok) {
-        const data = await response.json();
-        setSizes(data.sizes || []);
-      } else {
-        throw new Error("Failed to fetch sizes.");
-      }
-    } catch (error) {
-      console.error("Error fetching sizes:", error);
-    } finally {
-      setLoading(false);
-    }
-  };
-
   const formik = useFormik({
     initialValues: {
       name: "",
@@ -49,12 +33,9 @@ export default function AddSizeDialog({ buttonClassName = "", buttonName = "Add 
         };
         const response = await fetch("/api/maintenance/sizes/add-size", {
           method: "POST",
-          headers: {
-            "Content-Type": "application/json",
-          },
+          headers: { "Content-Type": "application/json" },
           body: JSON.stringify(payload),
         });
-
         if (response.ok) {
           const data = await response.json();
           onSizeAdded && onSizeAdded(data.message, "success");
@@ -64,11 +45,26 @@ export default function AddSizeDialog({ buttonClassName = "", buttonName = "Add 
           const errorData = await response.json();
           onSizeAdded && onSizeAdded(errorData.error || "Failed to add size.", "error");
         }
-      } catch (error) {
+      } catch {
         onSizeAdded && onSizeAdded("An error occurred while adding the size.", "error");
       }
     },
   });
+
+  const fetchSizes = async () => {
+    try {
+      setLoading(true);
+      const response = await fetch("/api/maintenance/sizes/get-sizes?page=1&search=");
+      if (response.ok) {
+        const data = await response.json();
+        setSizes(data.sizes || []);
+      }
+    } catch (error) {
+      // Handle errors silently or log to console
+    } finally {
+      setLoading(false);
+    }
+  };
 
   useEffect(() => {
     if (isDialogOpen) {
@@ -91,7 +87,6 @@ export default function AddSizeDialog({ buttonClassName = "", buttonName = "Add 
           <CardTitle className="text-2xl">Add Size</CardTitle>
         </DialogHeader>
         <form onSubmit={formik.handleSubmit} className="flex flex-col gap-5">
-          {/* Size Name */}
           <div className="flex flex-col gap-2">
             <Label htmlFor="name" className="font-bold flex items-center">
               Size Name <Asterisk className="w-4 h-4" />
@@ -108,7 +103,6 @@ export default function AddSizeDialog({ buttonClassName = "", buttonName = "Add 
             <InputErrorMessage error={formik.errors.name} touched={formik.touched.name} />
           </div>
 
-          {/* Abbreviation */}
           <div className="flex flex-col gap-2">
             <Label htmlFor="abbreviation" className="font-bold flex items-center">
               Abbreviation <Asterisk className="w-4 h-4" />
@@ -125,7 +119,6 @@ export default function AddSizeDialog({ buttonClassName = "", buttonName = "Add 
             <InputErrorMessage error={formik.errors.abbreviation} touched={formik.touched.abbreviation} />
           </div>
 
-          {/* Next To */}
           <div className="flex flex-col gap-2">
             <Label htmlFor="nextId" className="font-bold flex items-center">
               Next to
@@ -136,9 +129,7 @@ export default function AddSizeDialog({ buttonClassName = "", buttonName = "Add 
               disabled={loading}
             >
               <SelectTrigger className={`w-full ${InputErrorStyle(formik.errors.nextId, formik.touched.nextId)}`}>
-                <SelectValue
-                  placeholder={loading ? "Loading sizes..." : "Select a size or leave empty for largest"}
-                />
+                <SelectValue placeholder={loading ? "Loading sizes..." : "Select a size or leave empty"} />
               </SelectTrigger>
               <SelectContent>
                 <SelectGroup>

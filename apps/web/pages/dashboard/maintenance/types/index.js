@@ -2,34 +2,14 @@
 import { Card, CardTitle } from "@/components/ui/card";
 import DashboardLayoutWrapper from "@/components/ui/dashboard-layout";
 import { Button } from "@/components/ui/button";
-import { MoveLeft, Search, Pencil, ChevronDown, X, CircleCheck, CircleAlert } from "lucide-react";
+import { MoveLeft, Pencil, ChevronDown, X, CircleCheck, CircleAlert } from "lucide-react";
 import { useRouter } from "next/router";
 import routes from "@/routes";
 import AddTypeDialog from "./components/add-type";
 import EditTypeDialog from "./components/edit-type";
-import {
-  Table,
-  TableHead,
-  TableHeader,
-  TableBody,
-  TableCell,
-  TableRow,
-} from "@/components/ui/table";
-import {
-  DropdownMenu,
-  DropdownMenuContent,
-  DropdownMenuItem,
-  DropdownMenuTrigger,
-  DropdownMenuGroup,
-} from "@/components/ui/dropdown-menu";
-import {
-  Pagination,
-  PaginationPrevious,
-  PaginationContent,
-  PaginationItem,
-  PaginationNext,
-  PaginationLink,
-} from "@/components/ui/pagination";
+import { Table, TableHead, TableHeader, TableBody, TableCell, TableRow } from "@/components/ui/table";
+import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger, DropdownMenuGroup } from "@/components/ui/dropdown-menu";
+import { Pagination, PaginationPrevious, PaginationContent, PaginationItem, PaginationNext, PaginationLink } from "@/components/ui/pagination";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Input } from "@/components/ui/input";
 import { useState, useEffect } from "react";
@@ -39,69 +19,71 @@ import { Alert, AlertTitle, AlertDescription } from "@/components/ui/alert";
 export default function Types() {
   const router = useRouter();
   const [currentPage, setCurrentPage] = useState(1);
-  const [types, setTypes] = useState([]);
+  const [typesData, setTypesData] = useState([]);
   const [totalPages, setTotalPages] = useState(1);
-  const [loading, setLoading] = useState(true);
+
+  const [initialLoading, setInitialLoading] = useState(true);
   const [loadingNextPage, setLoadingNextPage] = useState(false);
+
   const [isEditDialogOpen, setIsEditDialogOpen] = useState(false);
   const [selectedType, setSelectedType] = useState(null);
+
   const [searchTerm, setSearchTerm] = useState("");
   const [debouncedSearchTerm, setDebouncedSearchTerm] = useState("");
+
   const [alert, setAlert] = useState({ message: "", type: "", title: "" });
 
-  // Debounce search term
+  const fetchTypes = async (page = currentPage, search = debouncedSearchTerm) => {
+    setLoadingNextPage(true);
+    try {
+      const response = await fetch(
+        `/api/maintenance/types/get-types?page=${page}&search=${encodeURIComponent(search)}`
+      );
+      const data = await response.json();
+      setTypesData(data.types || []);
+      setTotalPages(data.totalPages || 1);
+    } catch (error) {
+      console.error("Error fetching types:", error);
+    } finally {
+      setInitialLoading(false);
+      setLoadingNextPage(false);
+    }
+  };
+
   useEffect(() => {
     const handler = setTimeout(() => {
       setDebouncedSearchTerm(searchTerm);
-      setCurrentPage(1); // Reset to first page when search changes
+      setCurrentPage(1);
     }, 500);
-
     return () => clearTimeout(handler);
   }, [searchTerm]);
 
-  // Fetch types data
   useEffect(() => {
-    const fetchTypes = async () => {
-      setLoading(true);
-      setLoadingNextPage(true);
-      try {
-        const response = await fetch(
-          `/api/maintenance/types/get-types?page=${currentPage}&search=${encodeURIComponent(
-            debouncedSearchTerm
-          )}`
-        );
-        const data = await response.json();
-        setTypes(data.types || []);
-        setTotalPages(data.totalPages || 1);
-      } catch (error) {
-        console.error("Error fetching types:", error);
-      } finally {
-        setLoading(false);
-        setLoadingNextPage(false);
-      }
-    };
-
     fetchTypes();
   }, [currentPage, debouncedSearchTerm]);
-
-  const handleEdit = (type) => {
-    setSelectedType(type);
-    setIsEditDialogOpen(true);
-  };
 
   const handleAlert = (message, type, title) => {
     setAlert({ message, type, title });
     setTimeout(() => setAlert({ message: "", type: "", title: "" }), 5000);
   };
 
+  const handleEdit = (type) => {
+    setSelectedType(type);
+    setIsEditDialogOpen(true);
+  };
+
   const handleAddType = (message, type) => {
     handleAlert(message, type, type === "success" ? "Success" : "Failed");
-    setCurrentPage(1); // Reload data after adding
+    if (type === "success") {
+      fetchTypes(1, debouncedSearchTerm);
+    }
   };
 
   const handleTypeUpdated = (message, type) => {
     handleAlert(message, type, type === "success" ? "Success" : "Failed");
-    setCurrentPage(1); // Reload data after updating
+    if (type === "success") {
+      fetchTypes(1, debouncedSearchTerm);
+    }
   };
 
   const handlePageChange = (page) => {
@@ -110,7 +92,7 @@ export default function Types() {
     }
   };
 
-  if (loading) {
+  if (initialLoading) {
     return (
       <DashboardLayoutWrapper>
         <Loading message="Loading types..." />
@@ -127,7 +109,7 @@ export default function Types() {
           ) : (
             <CircleAlert className="ml-4 scale-[200%] h-[60%] stroke-red-500" />
           )}
-          <div className="flex flex-col ml-4">
+          <div className="flex flex-col justify-center ml-10">
             <AlertTitle
               className={`text-lg font-bold ${
                 alert.type === "success" ? "text-green-500" : "text-red-500"
@@ -152,6 +134,7 @@ export default function Types() {
           </Button>
         </Alert>
       )}
+
       <div className="flex justify-between items-center">
         <CardTitle className="text-4xl">Types</CardTitle>
         <div className="flex gap-3 items-center">
@@ -166,9 +149,10 @@ export default function Types() {
             value={searchTerm}
             onChange={(e) => setSearchTerm(e.target.value)}
           />
-          <AddTypeDialog onAdd={(message, type) => handleAddType(message, type)} />
+          <AddTypeDialog onAdd={handleAddType} />
         </div>
       </div>
+
       <Card className="flex flex-col gap-5 justify-between p-5 min-h-[49.1rem]">
         <Table>
           <TableHeader>
@@ -178,73 +162,78 @@ export default function Types() {
             </TableRow>
           </TableHeader>
           <TableBody>
-            {loadingNextPage ? (
-              Array.from({ length: 8 }).map((_, index) => (
-                <TableRow key={index}>
-                  <TableCell>
-                    <Skeleton className="h-14 w-[70rem]" />
-                  </TableCell>
-                  <TableCell>
-                    <Skeleton className="h-14 w-24 text-end" />
+            {loadingNextPage
+              ? Array.from({ length: 8 }).map((_, index) => (
+                  <TableRow key={index}>
+                    <TableCell>
+                      <Skeleton className="h-14 w-[70rem]" />
+                    </TableCell>
+                    <TableCell>
+                      <Skeleton className="h-14 w-24 text-end" />
+                    </TableCell>
+                  </TableRow>
+                ))
+              : typesData.length > 0
+              ? typesData.map((item) => (
+                  <TableRow key={item.id}>
+                    <TableCell className="w-[80%]">{item.name.toUpperCase()}</TableCell>
+                    <TableCell className="w-[20%]">
+                      <DropdownMenu>
+                        <DropdownMenuTrigger asChild>
+                          <Button variant="outline" className="font-normal flex items-center gap-1">
+                            Action <ChevronDown className="scale-125" />
+                          </Button>
+                        </DropdownMenuTrigger>
+                        <DropdownMenuContent className="w-50">
+                          <DropdownMenuGroup>
+                            <DropdownMenuItem className="justify-center">
+                              <Button
+                                variant="none"
+                                onClick={() => handleEdit(item)}
+                                className="flex items-center gap-2"
+                              >
+                                <Pencil className="scale-125" />
+                                Edit
+                              </Button>
+                            </DropdownMenuItem>
+                          </DropdownMenuGroup>
+                        </DropdownMenuContent>
+                      </DropdownMenu>
+                    </TableCell>
+                  </TableRow>
+                ))
+              : (
+                <TableRow>
+                  <TableCell
+                    colSpan={2}
+                    className="text-center align-middle h-[43rem] text-primary/50 text-lg font-thin tracking-wide"
+                  >
+                    No types found.
                   </TableCell>
                 </TableRow>
-              ))
-            ) : types.length > 0 ? (
-              types.map((type) => (
-                <TableRow key={type.id}>
-                  <TableCell className="w-[80%]">{type.name.toUpperCase()}</TableCell>
-                  <TableCell className="w-[20%]">
-                    <DropdownMenu>
-                      <DropdownMenuTrigger asChild>
-                        <Button variant="outline" className="font-normal">
-                          Action
-                          <ChevronDown className="scale-125" />
-                        </Button>
-                      </DropdownMenuTrigger>
-                      <DropdownMenuContent className="w-50">
-                        <DropdownMenuGroup>
-                          <DropdownMenuItem className="justify-center">
-                            <Button
-                              variant="none"
-                              onClick={() => handleEdit(type)}
-                              className="flex items-center gap-2"
-                            >
-                              <Pencil className="scale-125" />
-                              Edit
-                            </Button>
-                          </DropdownMenuItem>
-                        </DropdownMenuGroup>
-                      </DropdownMenuContent>
-                    </DropdownMenu>
-                  </TableCell>
-                </TableRow>
-              ))
-            ) : (
-              <TableRow>
-                <TableCell
-                  colSpan={2}
-                  className="text-center align-middle h-[43rem] text-primary/50 text-lg font-thin tracking-wide"
-                >
-                  No types found.
-                </TableCell>
-              </TableRow>
-            )}
+              )}
           </TableBody>
         </Table>
-        {types.length > 0 && (
+
+        {typesData.length > 0 && (
           <Pagination className="flex justify-end">
             <PaginationContent>
-              {currentPage > 1 && <PaginationPrevious onClick={() => handlePageChange(currentPage - 1)} />}
+              {currentPage > 1 && (
+                <PaginationPrevious onClick={() => handlePageChange(currentPage - 1)} />
+              )}
               {Array.from({ length: totalPages }, (_, i) => i + 1).map((page) => (
                 <PaginationItem key={page} active={page === currentPage}>
                   <PaginationLink onClick={() => handlePageChange(page)}>{page}</PaginationLink>
                 </PaginationItem>
               ))}
-              {currentPage < totalPages && <PaginationNext onClick={() => handlePageChange(currentPage + 1)} />}
+              {currentPage < totalPages && (
+                <PaginationNext onClick={() => handlePageChange(currentPage + 1)} />
+              )}
             </PaginationContent>
           </Pagination>
         )}
       </Card>
+
       {selectedType && (
         <EditTypeDialog
           type={selectedType}
@@ -255,7 +244,7 @@ export default function Types() {
               setSelectedType(null);
             }
           }}
-          onEdit={(message, type) => handleTypeUpdated(message, type)}
+          onEdit={handleTypeUpdated}
         />
       )}
     </DashboardLayoutWrapper>

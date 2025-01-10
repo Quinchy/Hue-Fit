@@ -1,3 +1,4 @@
+// pages/categories/components/add-category.jsx
 import { useFormik } from "formik";
 import { Dialog, DialogTrigger, DialogContent, DialogHeader, DialogFooter } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
@@ -25,7 +26,6 @@ export default function AddCategoryDialog({ buttonClassName = "", buttonName = "
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify(values),
         });
-
         if (response.ok) {
           onAdd("Category added successfully.", "success");
           resetForm();
@@ -60,7 +60,6 @@ export default function AddCategoryDialog({ buttonClassName = "", buttonName = "
           <CardTitle className="text-2xl">Add Category</CardTitle>
         </DialogHeader>
         <form onSubmit={formik.handleSubmit} className="flex flex-col gap-5">
-          {/* Category Name */}
           <div className="flex flex-col gap-2">
             <Label htmlFor="name" className="font-bold flex items-center">
               Category Name <Asterisk className="w-4 h-4" />

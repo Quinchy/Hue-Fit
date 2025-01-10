@@ -211,3 +211,11 @@ export const addUnitSchema = Yup.object({
     .max(10, "Abbreviation must be 10 characters or less")
     .required("Abbreviation is required"),
 });
+
+export const editUserSchema = Yup.object().shape({
+  username: Yup.string().required("Username is required"),
+  email: Yup.string().email("Email is not valid").required("Email is required"),
+  firstName: Yup.string().required("First name is required"),
+  lastName: Yup.string().required("Last name is required"),
+  contactNo: Yup.string().required("Contact number is required"),
+});

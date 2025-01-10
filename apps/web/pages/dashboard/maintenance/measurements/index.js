@@ -2,35 +2,15 @@
 import { Card, CardTitle } from "@/components/ui/card";
 import DashboardLayoutWrapper from "@/components/ui/dashboard-layout";
 import { Button } from "@/components/ui/button";
-import { MoveLeft, ChevronDown, Pencil, Search, X, CircleCheck, CircleAlert } from "lucide-react";
+import { MoveLeft, ChevronDown, Pencil, X, CircleCheck, CircleAlert } from "lucide-react";
 import { useRouter } from "next/router";
 import routes from "@/routes";
 import AddMeasurementDialog from "./components/add-measurement";
 import EditMeasurementDialog from "./components/edit-measurement";
-import {
-  Table,
-  TableHead,
-  TableHeader,
-  TableBody,
-  TableCell,
-  TableRow,
-} from "@/components/ui/table";
-import {
-  DropdownMenu,
-  DropdownMenuContent,
-  DropdownMenuItem,
-  DropdownMenuTrigger,
-  DropdownMenuGroup,
-} from "@/components/ui/dropdown-menu";
+import { Table, TableHead, TableHeader, TableBody, TableCell, TableRow } from "@/components/ui/table";
+import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger, DropdownMenuGroup } from "@/components/ui/dropdown-menu";
 import { Skeleton } from "@/components/ui/skeleton";
-import {
-  Pagination,
-  PaginationPrevious,
-  PaginationContent,
-  PaginationItem,
-  PaginationNext,
-  PaginationLink,
-} from "@/components/ui/pagination";
+import { Pagination, PaginationPrevious, PaginationContent, PaginationItem, PaginationNext, PaginationLink } from "@/components/ui/pagination";
 import { useState, useEffect } from "react";
 import Loading from "@/components/ui/loading";
 import { Input } from "@/components/ui/input";
@@ -42,52 +22,48 @@ export default function Measurements() {
   const [measurements, setMeasurements] = useState([]);
   const [totalPages, setTotalPages] = useState(1);
   const [types, setTypes] = useState([]);
-  const [loading, setLoading] = useState(true);
+  const [initialLoading, setInitialLoading] = useState(true);
+  const [loadingNextPage, setLoadingNextPage] = useState(false);
   const [searchTerm, setSearchTerm] = useState("");
   const [debouncedSearchTerm, setDebouncedSearchTerm] = useState("");
   const [alert, setAlert] = useState({ message: "", type: "", title: "" });
   const [selectedMeasurement, setSelectedMeasurement] = useState(null);
   const [isEditDialogOpen, setIsEditDialogOpen] = useState(false);
 
-  // Debounce search term
+  const fetchMeasurements = async (page = currentPage, search = debouncedSearchTerm) => {
+    setLoadingNextPage(true);
+    try {
+      const response = await fetch(
+        `/api/maintenance/measurements/get-measurements?page=${page}&search=${encodeURIComponent(search)}`
+      );
+      const data = await response.json();
+      setMeasurements(
+        data.measurements?.map((m) => ({
+          ...m,
+          assignTo: m.Type?.name || "",
+        })) || []
+      );
+      setTotalPages(data.totalPages || 1);
+    } catch (error) {
+      console.error("Error fetching measurements:", error);
+    } finally {
+      setInitialLoading(false);
+      setLoadingNextPage(false);
+    }
+  };
+
   useEffect(() => {
     const handler = setTimeout(() => {
       setDebouncedSearchTerm(searchTerm);
-      setCurrentPage(1); // Reset to first page when search changes
+      setCurrentPage(1);
     }, 500);
-
     return () => clearTimeout(handler);
   }, [searchTerm]);
 
-  // Fetch Measurements
   useEffect(() => {
-    const fetchMeasurements = async () => {
-      setLoading(true);
-      try {
-        const response = await fetch(
-          `/api/maintenance/measurements/get-measurements?page=${currentPage}&search=${encodeURIComponent(
-            debouncedSearchTerm
-          )}`
-        );
-        const data = await response.json();
-        setMeasurements(
-          data.measurements?.map((measurement) => ({
-            ...measurement,
-            assignTo: measurement.Type?.name || "",
-          })) || []
-        );
-        setTotalPages(data.totalPages || 1);
-      } catch (error) {
-        console.error("Error fetching measurements:", error);
-      } finally {
-        setLoading(false);
-      }
-    };
-
     fetchMeasurements();
   }, [currentPage, debouncedSearchTerm]);
 
-  // Fetch Types
   useEffect(() => {
     const fetchTypes = async () => {
       try {
@@ -98,7 +74,6 @@ export default function Measurements() {
         console.error("Error fetching types:", error);
       }
     };
-
     fetchTypes();
   }, []);
 
@@ -109,12 +84,16 @@ export default function Measurements() {
 
   const handleMeasurementAdded = (message, type) => {
     handleAlert(message, type, type === "success" ? "Success" : "Failed");
-    setCurrentPage(1); // Reload after addition
+    if (type === "success") {
+      fetchMeasurements();
+    }
   };
 
   const handleMeasurementEdited = (message, type) => {
     handleAlert(message, type, type === "success" ? "Success" : "Failed");
-    setCurrentPage(1); // Reload after update
+    if (type === "success") {
+      fetchMeasurements();
+    }
   };
 
   const handlePageChange = (page) => {
@@ -135,7 +114,7 @@ export default function Measurements() {
     return typeColorMap[typeName.toUpperCase()] || typeColorMap.DEFAULT;
   };
 
-  if (loading) {
+  if (initialLoading) {
     return (
       <DashboardLayoutWrapper>
         <Loading message="Loading measurements..." />
@@ -177,6 +156,7 @@ export default function Measurements() {
           </Button>
         </Alert>
       )}
+
       <div className="flex justify-between items-center">
         <CardTitle className="text-4xl">Measurements</CardTitle>
         <div className="flex gap-3 items-center">
@@ -205,74 +185,93 @@ export default function Measurements() {
             </TableRow>
           </TableHeader>
           <TableBody>
-            {measurements.length > 0 ? (
-              measurements.map((measurement) => (
-                <TableRow key={measurement.id}>
-                  <TableCell>{measurement.name}</TableCell>
-                  <TableCell>
-                    {measurement.assignTo ? (
-                      <p
-                        className={`py-1 max-w-[7rem] text-center mr-1 rounded font-bold text-white ${getTypeColorClass(
-                          measurement.assignTo || "DEFAULT"
-                        )}`}
-                      >
-                        {measurement.assignTo}
-                      </p>
-                    ) : (
-                      <span>-</span>
-                    )}
-                  </TableCell>
-                  <TableCell className="w-[30%]">
-                    <DropdownMenu>
-                      <DropdownMenuTrigger asChild>
-                        <Button variant="outline" className="font-normal flex items-center gap-1">
-                          Action <ChevronDown className="scale-125" />
-                        </Button>
-                      </DropdownMenuTrigger>
-                      <DropdownMenuContent className="w-50">
-                        <DropdownMenuGroup>
-                          <DropdownMenuItem className="justify-center">
-                            <Button
-                              variant="none"
-                              onClick={() => {
-                                setSelectedMeasurement(measurement);
-                                setIsEditDialogOpen(true);
-                              }}
-                              className="flex items-center gap-2"
-                            >
-                              <Pencil className="scale-125" />
-                              Edit
-                            </Button>
-                          </DropdownMenuItem>
-                        </DropdownMenuGroup>
-                      </DropdownMenuContent>
-                    </DropdownMenu>
+            {loadingNextPage
+              ? Array.from({ length: 9 }).map((_, index) => (
+                  <TableRow key={index}>
+                    <TableCell>
+                      <Skeleton className="h-[3.25rem] w-[10rem]" />
+                    </TableCell>
+                    <TableCell>
+                      <Skeleton className="h-[3.25rem] w-[10rem]" />
+                    </TableCell>
+                    <TableCell>
+                      <Skeleton className="h-[3.25rem] w-[10rem]" />
+                    </TableCell>
+                  </TableRow>
+                ))
+              : measurements.length > 0
+              ? measurements.map((measurement) => (
+                  <TableRow key={measurement.id}>
+                    <TableCell>{measurement.name}</TableCell>
+                    <TableCell>
+                      {measurement.assignTo ? (
+                        <p
+                          className={`py-1 max-w-[7rem] text-center mr-1 rounded font-bold text-white ${getTypeColorClass(
+                            measurement.assignTo || "DEFAULT"
+                          )}`}
+                        >
+                          {measurement.assignTo}
+                        </p>
+                      ) : (
+                        <span>-</span>
+                      )}
+                    </TableCell>
+                    <TableCell className="w-[30%]">
+                      <DropdownMenu>
+                        <DropdownMenuTrigger asChild>
+                          <Button variant="outline" className="font-normal flex items-center gap-1">
+                            Action <ChevronDown className="scale-125" />
+                          </Button>
+                        </DropdownMenuTrigger>
+                        <DropdownMenuContent className="w-50">
+                          <DropdownMenuGroup>
+                            <DropdownMenuItem className="justify-center">
+                              <Button
+                                variant="none"
+                                onClick={() => {
+                                  setSelectedMeasurement(measurement);
+                                  setIsEditDialogOpen(true);
+                                }}
+                                className="flex items-center gap-2"
+                              >
+                                <Pencil className="scale-125" />
+                                Edit
+                              </Button>
+                            </DropdownMenuItem>
+                          </DropdownMenuGroup>
+                        </DropdownMenuContent>
+                      </DropdownMenu>
+                    </TableCell>
+                  </TableRow>
+                ))
+              : (
+                <TableRow>
+                  <TableCell
+                    colSpan={3}
+                    className="text-center align-middle h-[43rem] text-primary/50 text-lg font-thin tracking-wide"
+                  >
+                    No measurements found.
                   </TableCell>
                 </TableRow>
-              ))
-            ) : (
-              <TableRow>
-                <TableCell
-                  colSpan={3}
-                  className="text-center align-middle h-[43rem] text-primary/50 text-lg font-thin tracking-wide"
-                >
-                  No measurements found.
-                </TableCell>
-              </TableRow>
-            )}
+              )}
           </TableBody>
         </Table>
-
         {measurements.length > 0 && (
           <Pagination className="flex flex-col items-end">
             <PaginationContent>
-              {currentPage > 1 && <PaginationPrevious onClick={() => handlePageChange(currentPage - 1)} />}
+              {currentPage > 1 && (
+                <PaginationPrevious onClick={() => handlePageChange(currentPage - 1)} />
+              )}
               {Array.from({ length: totalPages }, (_, i) => i + 1).map((page) => (
                 <PaginationItem key={page} active={page === currentPage}>
-                  <PaginationLink onClick={() => handlePageChange(page)}>{page}</PaginationLink>
+                  <PaginationLink onClick={() => handlePageChange(page)}>
+                    {page}
+                  </PaginationLink>
                 </PaginationItem>
               ))}
-              {currentPage < totalPages && <PaginationNext onClick={() => handlePageChange(currentPage + 1)} />}
+              {currentPage < totalPages && (
+                <PaginationNext onClick={() => handlePageChange(currentPage + 1)} />
+              )}
             </PaginationContent>
           </Pagination>
         )}
