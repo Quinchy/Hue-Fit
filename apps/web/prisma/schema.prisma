@@ -72,6 +72,8 @@ model AdminProfile {
   profilePicture String?
   firstName      String
   lastName       String
+  email          String?
+  contactNo      String?
   created_at     DateTime @default(now())
   updated_at     DateTime @updatedAt
 

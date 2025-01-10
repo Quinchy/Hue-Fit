@@ -13,12 +13,7 @@ import { Skeleton } from "@/components/ui/skeleton";
 
 const NavbarDashboard = () => {
   const { data: session } = useSession();
-  const [userInfo, setUserInfo] = useState({
-    firstName: "",
-    lastName: "",
-    role: "",
-    profilePicture: "/images/profile-picture.png"
-  });
+  const [userInfo, setUserInfo] = useState(null);
   const [loading, setLoading] = useState(false);
 
   const links = [
@@ -30,44 +25,40 @@ const NavbarDashboard = () => {
     { route: routes.product, icon: <Shirt />, label: "Products", roles: ["VENDOR"] },
     { route: routes.order, icon: <Tag />, label: "Orders", roles: ["VENDOR"] },
     { route: routes.maintenance, icon: <Wrench />, label: "Maintenance", roles: ["VENDOR"] },
-    { route: routes.virtualFitting, icon: <Camera />, label: "Virtual Fitting", roles: ["VENDOR"] }
+    { route: routes.virtualFitting, icon: <Camera />, label: "Virtual Fitting", roles: ["VENDOR"] },
   ];
 
   useEffect(() => {
     const fetchUserInfo = async () => {
+      if (!session?.user?.id) return;
+
+      setLoading(true);
       try {
-        if (!session?.user?.userNo) return;
+        const response = await fetch("/api/users/get-user-info", {
+          method: "GET",
+          headers: { "Content-Type": "application/json" },
+        });
 
-        const cachedUserInfo = localStorage.getItem(`userInfo-${session.user.userNo}`);
-        if (cachedUserInfo) {
-          setUserInfo(JSON.parse(cachedUserInfo));
-          setLoading(false);
-        } else {
-          setLoading(true);
-          const userData = {
-            firstName: session?.user?.firstName || "First",
-            lastName: session?.user?.lastName || "Last",
-            role: session?.user?.role || "VENDOR",
-            profilePicture: session?.user?.profilePicture || "/images/profile-picture.png"
-          };
-          setUserInfo(userData);
-          setLoading(false);
-
-          localStorage.setItem(`userInfo-${session.user.userNo}`, JSON.stringify(userData));
+        if (!response.ok) {
+          throw new Error("Failed to fetch user info");
         }
+
+        const data = await response.json();
+        setUserInfo({
+          firstName: data.firstName || "First",
+          lastName: data.lastName || "Last",
+          role: data.role || "VENDOR",
+          profilePicture: data.profilePicture || "/images/profile-picture.png",
+        });
       } catch (error) {
         console.error("Error fetching user info:", error);
+      } finally {
+        setLoading(false);
       }
     };
 
     fetchUserInfo();
-  }, [
-    session?.user?.userNo,
-    session?.user?.firstName,
-    session?.user?.lastName,
-    session?.user?.profilePicture,
-    session?.user?.role
-  ]);
+  }, [session?.user?.id]);
 
   return (
     <div className="fixed flex flex-col justify-between items-center min-w-[20rem] border-r-[1px] border-border bg-card text-white h-full z-10 pt-5">
@@ -80,31 +71,20 @@ const NavbarDashboard = () => {
         </div>
 
         <div className="flex flex-col w-full items-center">
-          {loading ? (
-            Array.from({ length: links.length }).map((_, index) => (
-              <div
-                key={index}
-                className="flex flex-row justify-start items-center gap-3 py-3 w-full"
+          {links
+            .filter((link) => link.roles.includes(userInfo?.role || "VENDOR"))
+            .map(({ route, icon, label }) => (
+              <Link
+                key={route}
+                href={route}
+                className="flex flex-row justify-start items-center gap-3 py-3 w-full hover:bg-accent duration-300 ease-in-out"
               >
-                <Skeleton className="ml-10 w-[180px] h-6" />
-              </div>
-            ))
-          ) : (
-            links
-              .filter((link) => link.roles.includes(userInfo.role))
-              .map(({ route, icon, label }) => (
-                <Link
-                  key={route}
-                  href={route}
-                  className="flex flex-row justify-start items-center gap-3 py-3 w-full hover:bg-accent duration-300 ease-in-out"
-                >
-                  <div className="pl-10 flex flex-row items-center gap-3 text-primary uppercase">
-                    {icon}
-                    {label}
-                  </div>
-                </Link>
-              ))
-          )}
+                <div className="pl-10 flex flex-row items-center gap-3 text-primary uppercase">
+                  {icon}
+                  {label}
+                </div>
+              </Link>
+            ))}
         </div>
       </div>
 
@@ -122,7 +102,7 @@ const NavbarDashboard = () => {
             ) : (
               <div className="flex flex-row pl-10 items-center gap-3">
                 <Image
-                  src={userInfo.profilePicture}
+                  src={userInfo?.profilePicture}
                   width={50}
                   height={50}
                   className="rounded-full border-2 border-background/75"
@@ -130,9 +110,9 @@ const NavbarDashboard = () => {
                 />
                 <div className="flex flex-col items-start gap-0 text-primary">
                   <p className="font-semibold">
-                    {userInfo.firstName} {userInfo.lastName}
+                    {userInfo?.firstName} {userInfo?.lastName}
                   </p>
-                  <p className="font-light">{userInfo.role}</p>
+                  <p className="font-light">{userInfo?.role}</p>
                 </div>
               </div>
             )}
@@ -152,8 +132,6 @@ const NavbarDashboard = () => {
           <DropdownMenuItem>
             <button
               onClick={() => {
-                localStorage.clear();
-                sessionStorage.clear();
                 signOut({ callbackUrl: "/" });
               }}
               className="flex items-center gap-1 justify-start shadow-none text-red-500 font-semibold py-2 px-4 rounded w-full uppercase"

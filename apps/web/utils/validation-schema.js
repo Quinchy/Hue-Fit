@@ -212,10 +212,17 @@ export const addUnitSchema = Yup.object({
     .required("Abbreviation is required"),
 });
 
-export const editUserSchema = Yup.object().shape({
-  username: Yup.string().required("Username is required"),
-  email: Yup.string().email("Email is not valid").required("Email is required"),
-  firstName: Yup.string().required("First name is required"),
-  lastName: Yup.string().required("Last name is required"),
-  contactNo: Yup.string().required("Contact number is required"),
+export const editUserSchema = (role) => 
+Yup.object().shape({
+  username: Yup.string().required("Username is required."),
+  email: role === "VENDOR" 
+    ? Yup.string().email("Invalid email format").required("Email is required.")
+    : Yup.string().email("Invalid email format"), // Optional for admins
+  firstName: Yup.string().required("First name is required."),
+  lastName: Yup.string().required("Last name is required."),
+  contactNo: role === "VENDOR" 
+    ? Yup.string()
+        .matches(/^\d+$/, "Contact number must be numeric.")
+        .required("Contact number is required.")
+    : Yup.string().matches(/^\d+$/, "Contact number must be numeric."), // Optional for admins
 });

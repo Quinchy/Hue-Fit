@@ -1,4 +1,3 @@
-// File: /pages/profile/index.js
 import React, { useState, useEffect, useRef } from "react";
 import DashboardLayoutWrapper from "@/components/ui/dashboard-layout";
 import { Card, CardTitle } from "@/components/ui/card";
@@ -10,10 +9,9 @@ import Image from "next/image";
 import Cropper from "react-easy-crop";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog";
 import { useFormik } from "formik";
-import { editUserSchema } from "@/utils/validation-schema";
+import * as Yup from "yup";
 import Loading from "@/components/ui/loading";
 
-// For the alert styling
 import { Alert, AlertTitle, AlertDescription } from "@/components/ui/alert";
 import { X, CircleCheck, CircleAlert } from "lucide-react";
 
@@ -52,6 +50,21 @@ const getCroppedImg = async (imageSrc, crop, croppedAreaPixels) => {
   });
 };
 
+const editUserSchema = (role) =>
+  Yup.object().shape({
+    username: Yup.string().required("Username is required."),
+    email: role === "VENDOR"
+      ? Yup.string().email("Invalid email format").required("Email is required.")
+      : Yup.string().email("Invalid email format"),
+    firstName: Yup.string().required("First name is required."),
+    lastName: Yup.string().required("Last name is required."),
+    contactNo: role === "VENDOR"
+      ? Yup.string()
+          .matches(/^\d+$/, "Contact number must be numeric.")
+          .required("Contact number is required.")
+      : Yup.string().matches(/^\d+$/, "Contact number must be numeric."),
+  });
+
 export default function Profile() {
   const [isEditing, setIsEditing] = useState(false);
   const [userData, setUserData] = useState(null);
@@ -59,6 +72,7 @@ export default function Profile() {
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState(null);
+  const [role, setRole] = useState("");
 
   const fileInputRef = useRef(null);
   const [imageSrc, setImageSrc] = useState(null);
@@ -67,10 +81,8 @@ export default function Profile() {
   const [croppedAreaPixels, setCroppedAreaPixels] = useState(null);
   const [isCropDialogOpen, setIsCropDialogOpen] = useState(false);
 
-  // Alert states
   const [alert, setAlert] = useState({ message: "", type: "", title: "" });
 
-  // Fetch user data
   const fetchUserData = async () => {
     try {
       const response = await fetch("/api/users/get-user-info", {
@@ -82,6 +94,7 @@ export default function Profile() {
       }
       const data = await response.json();
       setUserData(data);
+      setRole(data.role);
       setProfilePicture(data.profilePicture || "/images/placeholder-profile-picture.png");
       formik.setValues({
         username: data.username || "",
@@ -105,7 +118,7 @@ export default function Profile() {
       lastName: "",
       contactNo: "",
     },
-    validationSchema: editUserSchema,
+    validationSchema: editUserSchema(role),
     onSubmit: async (values) => {
       setSaving(true);
       try {
@@ -116,7 +129,6 @@ export default function Profile() {
         formData.append("lastName", values.lastName);
         formData.append("contactNo", values.contactNo);
 
-        // If a new profile picture was selected
         if (profilePicture?.blob) {
           formData.append("profilePicture", profilePicture.blob, "profile.jpg");
         }
@@ -149,15 +161,14 @@ export default function Profile() {
     },
   });
 
-  // Show or hide alert
+  useEffect(() => {
+    fetchUserData();
+  }, []);
+
   const handleAlert = (message, type, title) => {
     setAlert({ message, type, title });
     setTimeout(() => setAlert({ message: "", type: "", title: "" }), 5000);
   };
-
-  useEffect(() => {
-    fetchUserData();
-  }, []);
 
   const handleFileChange = (e) => {
     if (e.target.files && e.target.files[0]) {
@@ -216,7 +227,6 @@ export default function Profile() {
 
   return (
     <DashboardLayoutWrapper>
-      {/* ALERT */}
       {alert.message && (
         <Alert className="flex flex-row items-center fixed z-50 w-[30rem] right-14 bottom-12 shadow-lg rounded-lg p-4">
           {alert.type === "success" ? (

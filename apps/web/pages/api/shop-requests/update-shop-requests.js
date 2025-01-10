@@ -12,39 +12,36 @@ export default async function handler(req, res) {
   try {
     console.log("Request No:", requestNo);
 
-    // Wrap all database operations in a transaction
-    await prisma.$transaction(async (transaction) => {
-      // Fetch partnership request details
-      const partnershipRequest = await transaction.partnershipRequest.findUnique({
-        where: { requestNo },
-        select: { userId: true, shopId: true, status: true },
-      });
-      console.log("Partnership Request:", partnershipRequest);
-
-      const shopId = partnershipRequest.shopId;
-      console.log("Shop Id:", shopId);
-
-      if (status === "ACTIVE") {
-        // Update user, shop, and partnership request statuses
-        await transaction.user.update({
-          where: { id: partnershipRequest.userId },
-          data: { status },
-        });
-
-        await transaction.shop.update({
-          where: { id: partnershipRequest.shopId },
-          data: { status },
-        });
-
-        await transaction.partnershipRequest.update({
-          where: { requestNo },
-          data: { status: "DONE" },
-        });
-
-        // Add predefined values
-        await addPredefinedValues(shopId, transaction);
-      }
+    // Fetch partnership request details
+    const partnershipRequest = await prisma.partnershipRequest.findUnique({
+      where: { requestNo },
+      select: { userId: true, shopId: true, status: true },
     });
+    console.log("Partnership Request:", partnershipRequest);
+
+    const shopId = partnershipRequest.shopId;
+    console.log("Shop Id:", shopId);
+
+    if (status === "ACTIVE") {
+      // Update user, shop, and partnership request statuses
+      await prisma.user.update({
+        where: { id: partnershipRequest.userId },
+        data: { status },
+      });
+
+      await prisma.shop.update({
+        where: { id: partnershipRequest.shopId },
+        data: { status },
+      });
+
+      await prisma.partnershipRequest.update({
+        where: { requestNo },
+        data: { status: "DONE" },
+      });
+
+      // Add predefined values
+      await addPredefinedValues(shopId);
+    }
 
     // Send notification email
     await sendNotificationEmail(email, status, message);
@@ -121,24 +118,24 @@ async function addPredefinedValues(shopId) {
 function generateTagsData(types, shopId) {
   const typeIds = types.map((type) => type.id);
   return [
-    {typeId: typeIds[0], shopId,name: 'BLAZERS' },
-    {typeId: typeIds[0], shopId,name: 'COATS' },
-    {typeId: typeIds[0], shopId,name: 'CARDIGANS' },
-    {typeId: typeIds[0], shopId,name: 'VESTS' },
-    {typeId: typeIds[1], shopId,name: 'HENLEY SHIRT' },
-    {typeId: typeIds[1], shopId,name: 'T-SHIRTS' },
-    {typeId: typeIds[1], shopId,name: 'POLO SHIRT' },
-    {typeId: typeIds[1], shopId,name: 'SHORT SLEEVES' },
-    {typeId: typeIds[2], shopId,name: 'SHORTS' },
-    {typeId: typeIds[2], shopId,name: 'JEANS' },
-    {typeId: typeIds[2], shopId,name: 'CHINOS' },
-    {typeId: typeIds[2], shopId,name: 'TROUSERS' },
-    {typeId: typeIds[2], shopId,name: 'SLACKS' },
-    {typeId: typeIds[3], shopId,name: 'SANDALS' },
-    {typeId: typeIds[3], shopId,name: 'LOAFERS' },
-    {typeId: typeIds[3], shopId,name: 'BOOTS' },
-    {typeId: typeIds[3], shopId,name: 'SNEAKERS' },
-    {typeId: typeIds[3], shopId,name: 'OXFORD' },
+    { typeId: typeIds[0], shopId, name: 'BLAZERS' },
+    { typeId: typeIds[0], shopId, name: 'COATS' },
+    { typeId: typeIds[0], shopId, name: 'CARDIGANS' },
+    { typeId: typeIds[0], shopId, name: 'VESTS' },
+    { typeId: typeIds[1], shopId, name: 'HENLEY SHIRT' },
+    { typeId: typeIds[1], shopId, name: 'T-SHIRTS' },
+    { typeId: typeIds[1], shopId, name: 'POLO SHIRT' },
+    { typeId: typeIds[1], shopId, name: 'SHORT SLEEVES' },
+    { typeId: typeIds[2], shopId, name: 'SHORTS' },
+    { typeId: typeIds[2], shopId, name: 'JEANS' },
+    { typeId: typeIds[2], shopId, name: 'CHINOS' },
+    { typeId: typeIds[2], shopId, name: 'TROUSERS' },
+    { typeId: typeIds[2], shopId, name: 'SLACKS' },
+    { typeId: typeIds[3], shopId, name: 'SANDALS' },
+    { typeId: typeIds[3], shopId, name: 'LOAFERS' },
+    { typeId: typeIds[3], shopId, name: 'BOOTS' },
+    { typeId: typeIds[3], shopId, name: 'SNEAKERS' },
+    { typeId: typeIds[3], shopId, name: 'OXFORD' },
     // Add more tags as needed...
   ];
 }
