@@ -9,10 +9,10 @@ export default async function handler(req, res) {
   const { username, password } = req.body;
 
   try {
-    const customerRole = await prisma.roles.findFirst({
+    const customerRole = await prisma.role.findFirst({
       where: { name: "CUSTOMER" },
     });
-    const user = await prisma.users.findFirst({
+    const user = await prisma.user.findFirst({
       where: {
         username,
         roleId: customerRole.id,

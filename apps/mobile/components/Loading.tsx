@@ -11,7 +11,7 @@ interface LoadingSpinnerProps {
 }
 
 const LoadingSpinner: React.FC<LoadingSpinnerProps> = ({
-  size = 150,
+  size = 200,
   visible = true,
   onFinish,
   messages = 'Loading...', // Default message
@@ -84,13 +84,14 @@ const styles = StyleSheet.create({
   container: {
     justifyContent: 'center',
     alignItems: 'center',
+    marginBottom: 170,
   },
   message: {
-    marginTop: 20,
-    fontSize: 16,
+    marginTop: -70,
+    fontSize: 12,
     color: 'white',
     textAlign: 'center',
-    fontWeight: 'bold',
+    fontWeight: 'ultralight',
   },
 });
 

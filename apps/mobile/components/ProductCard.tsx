@@ -11,14 +11,14 @@ type ProductCardProps = {
 
 const ProductCard: React.FC<ProductCardProps> = ({ thumbnailURL, productName, price, onPress }) => {
   return (
-    <TouchableOpacity onPress={onPress} style={{ width: '49%', marginBottom: 7 }}>
-      <Box borderWidth={1} borderColor="#c0c0c025" bg="#272727" borderRadius="md" overflow="hidden">
-        <Image source={{ uri: thumbnailURL }} style={{ width: '100%', height: 175 }} resizeMode="cover" />
+    <TouchableOpacity onPress={onPress} style={{ width: '49.2%', marginBottom: 6 }}>
+      <Box borderWidth={1} borderColor="muted.900" bg="dark.100" borderRadius={5} overflow="hidden">
+        <Image source={{ uri: thumbnailURL }} style={{ width: '100%', height: 250 }} resizeMode="cover" />
         <Box p={2}>
-          <Text fontSize="md" color='white' fontWeight="bold" numberOfLines={1}>
+          <Text fontSize="xs" color='white' fontWeight="thin" numberOfLines={1}>
             {productName}
           </Text>
-          <Text color="#C0C0C0" fontSize="sm">
+          <Text color="#fff" fontSize="sm" fontWeight="bold">
             {price}
           </Text>
         </Box>

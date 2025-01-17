@@ -1,96 +1,141 @@
+// getProductDetails.js
+
 import prisma from '@/utils/helpers';
+
+function orderSizes(sizes) {
+  if (!Array.isArray(sizes)) return [];
+  const sizeMap = new Map();
+  const nextIds = new Set();
+  sizes.forEach((size) => {
+    sizeMap.set(size.id, size);
+    if (size.nextId !== null) {
+      nextIds.add(size.nextId);
+    }
+  });
+  const startIds = sizes
+    .map((size) => size.id)
+    .filter((id) => !nextIds.has(id));
+  const orderedSizes = [];
+  startIds.forEach((startId) => {
+    let currentSize = sizeMap.get(startId);
+    const visited = new Set();
+    while (currentSize && !visited.has(currentSize.id)) {
+      orderedSizes.push(currentSize);
+      visited.add(currentSize.id);
+      currentSize = sizeMap.get(currentSize.nextId);
+    }
+  });
+  return orderedSizes;
+}
 
 const getProductDetails = async (req, res) => {
   if (req.method !== 'POST') {
     return res.status(405).json({ message: 'Method not allowed' });
   }
 
-  const { productVariantNo } = req.body;
-
-  if (!productVariantNo) {
-    return res.status(400).json({ message: 'Product Variant No is required.' });
+  const { productId } = req.body;
+  if (!productId) {
+    return res.status(400).json({ message: 'Product ID is required.' });
   }
 
   try {
-    // Fetch the selected product variant
-    const selectedVariant = await prisma.productVariants.findUnique({
-      where: { productVariantNo },
+    const parentProduct = await prisma.product.findUnique({
+      where: { id: productId },
       include: {
-        Product: true, // Parent product
-        Color: true, // Color details
-        ProductVariantImages: true, // Images for the variant
-        ProductVariantSizes: {
+        Shop: {
+          select: { name: true, logo: true, id: true },
+        },
+      },
+    });
+
+    if (!parentProduct) {
+      return res.status(404).json({ message: 'Product not found.' });
+    }
+
+    const allVariants = await prisma.productVariant.findMany({
+      where: { productId },
+      include: {
+        Color: { select: { name: true, hexcode: true } },
+        ProductVariantImage: { select: { imageURL: true } },
+        ProductVariantSize: {
           include: {
-            Size: true, // Size details
-            ProductVariantMeasurements: {
-              include: {
-                Measurement: true, // Measurement details
-                Unit: true, // Unit details
+            Size: {
+              select: {
+                id: true,
+                name: true,
+                abbreviation: true,
+                nextId: true,
               },
             },
           },
         },
       },
+      orderBy: { id: 'asc' },
     });
 
-    if (!selectedVariant) {
-      return res.status(404).json({ message: 'Product Variant not found.' });
-    }
-
-    // Fetch all variants of the parent product
-    const allVariants = await prisma.productVariants.findMany({
-      where: { productNo: selectedVariant.productNo },
+    const measurements = await prisma.productMeasurement.findMany({
+      where: { productId },
       include: {
-        Color: true, // Color details for each variant
+        Measurement: { select: { name: true } },
+        Size: { select: { name: true } },
       },
     });
 
-    // Fetch the parent product
-    const parentProduct = await prisma.products.findUnique({
-      where: { productNo: selectedVariant.productNo },
-      include: {
-        Shop: true, // Shop details
-      },
+    const measurementChart = measurements.reduce((acc, measurement) => {
+      if (!acc[measurement.Size.name]) {
+        acc[measurement.Size.name] = {};
+      }
+      acc[measurement.Size.name][measurement.Measurement.name] = `${measurement.value} ${measurement.unit}`;
+      return acc;
+    }, {});
+
+    const sortedVariants = allVariants.map((variant) => {
+      const unsortedSizes = variant.ProductVariantSize.map((sizeRelation) => ({
+        productVariantSizeId: sizeRelation.id,
+        id: sizeRelation.Size.id,
+        name: sizeRelation.Size.name,
+        abbreviation: sizeRelation.Size.abbreviation,
+        quantity: sizeRelation.quantity,
+        nextId: sizeRelation.Size.nextId,
+      }));
+      return {
+        ...variant,
+        sizes: orderSizes(unsortedSizes),
+      };
     });
 
-    if (!parentProduct) {
-      return res.status(404).json({ message: 'Parent Product not found.' });
-    }
-
-    // Prepare the response
     const response = {
       parentProduct: {
+        id: parentProduct.id,
         name: parentProduct.name,
         description: parentProduct.description,
         thumbnailURL: parentProduct.thumbnailURL,
         shop: {
+          id: parentProduct.Shop.id,
           name: parentProduct.Shop.name,
-          shopNo: parentProduct.Shop.shopNo,
-          description: parentProduct.Shop.description,
-          contactNo: parentProduct.Shop.contactNo,
+          logo: parentProduct.Shop.logo,
         },
       },
-      selectedVariant: {
-        id: selectedVariant.id,
-        productVariantNo: selectedVariant.productVariantNo,
-        color: selectedVariant.Color.name,
-        price: selectedVariant.price,
-        images: selectedVariant.ProductVariantImages.map((img) => img.imageUrl),
-        sizes: selectedVariant.ProductVariantSizes.map((size) => ({
-          sizeName: size.Size.name,
-          quantity: size.quantity,
-          measurements: size.ProductVariantMeasurements.map((measurement) => ({
-            name: measurement.Measurement.name,
-            value: measurement.value,
-            unit: measurement.Unit.abbreviation,
-            fullUnit: `${measurement.value} ${measurement.Unit.abbreviation}`,
-          })),
-        })),
-      },
-      allVariants: allVariants.map((variant) => ({
-        productVariantNo: variant.productVariantNo,
-        color: variant.Color.name,
+      measurementChart,
+      allVariants: sortedVariants.map((variant) => ({
         id: variant.id,
+        productVariantNo: variant.productVariantNo,
+        color: {
+          name: variant.Color?.name || 'Unknown Color',
+          hexcode: variant.Color?.hexcode || '#000000',
+        },
+        price: variant.price,
+        totalQuantity: variant.totalQuantity,
+        pngClotheURL: variant.pngClotheURL,
+        sizes: variant.sizes.map(size => ({
+          productVariantSizeId: size.productVariantSizeId,
+          id: size.id,
+          name: size.name,
+          abbreviation: size.abbreviation,
+          quantity: size.quantity,
+          nextId: size.nextId,
+        })),
+        images: variant.ProductVariantImage.map((img) => img.imageURL),
       })),
     };
 

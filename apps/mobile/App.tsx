@@ -1,127 +1,230 @@
 import React, { useEffect, useState } from "react";
-import { StatusBar, StyleSheet, ImageBackground, View } from "react-native";
+import { StatusBar, StyleSheet, ImageBackground, View, Text, Pressable } from "react-native";
 import { NavigationContainer } from "@react-navigation/native";
-import { NativeBaseProvider } from "native-base";
-import { createStackNavigator, CardStyleInterpolators } from "@react-navigation/stack";
+import { NativeBaseProvider, extendTheme } from "native-base";
+import { createBottomTabNavigator } from "@react-navigation/bottom-tabs";
+import { createStackNavigator } from "@react-navigation/stack";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import { SafeAreaProvider } from "react-native-safe-area-context";
-import LoadingSpinner from "../mobile/components/Loading";
-import { LinearGradient } from "expo-linear-gradient";
 import { GestureHandlerRootView } from "react-native-gesture-handler";
-import { Easing } from "react-native";
-import * as NavigationBar from 'expo-navigation-bar';
-import GetStartedScreen from "./screens/GetStartedScreen";
+import { Home, Store, ShoppingCart, User } from "lucide-react-native";
+import * as NavigationBar from "expo-navigation-bar";
+import * as Font from "expo-font";
+import LoadingSpinner from "./components/Loading";
+import OpenAiLogoRainbow from "./assets/icons/OpenAiLogoRainbow.svg";
+import { SafeAreaView } from "react-native-safe-area-context";
+import { useSafeAreaInsets } from "react-native-safe-area-context";
+
+// Screens
 import LoginScreen from "./screens/account/LoginScreen";
 import RegisterScreen from "./screens/account/RegisterScreen";
+import ForgetPassword1Screen from "./screens/account/ForgetPassword1Screen";
+import ForgetPassword2Screen from "./screens/account/ForgetPassword2Screen";
 import HomeScreen from "./screens/app/HomeScreen";
 import CartScreen from "./screens/app/CartScreen";
-import InputScreen from "./screens/app/InputScreen";
-import NotificationScreen from "./screens/app/NotificationScreen";
-import PlaygroundScreen from "./screens/app/PlaygroundScreen";
-import ProductViewScreen from "./screens/app/ProductViewScreen";
+import VirtualFittingScreen from "./screens/app/VirtualFittingScreen";
+import ShopScreen from "./screens/app/ShopScreen";
 import ProfileSettingsScreen from "./screens/app/ProfileSettingsScreen";
+import InputScreen from "./screens/app/InputScreen";
+import ProductView from "./screens/app/ProductViewScreen";
+import PlaygroundScreen from "./screens/app/PlaygroundScreen";
+import NotificationScreen from "./screens/app/NotificationScreen";
 import ShopLocationScreen from "./screens/app/ShopLocationScreen";
-import WardrobeScreen from "./screens/app/WardrobeScreen";
 import SettingsScreen from "./screens/app/SettingsScreen";
+import WardrobeScreen from "./screens/app/WardrobeScreen";
 
+// Load Geist Fonts
+const loadFonts = async () => {
+  await Font.loadAsync({
+    GeistBlack: require("./assets/fonts/Geist-Black.ttf"),
+    GeistBold: require("./assets/fonts/Geist-Bold.ttf"),
+    GeistExtraBold: require("./assets/fonts/Geist-ExtraBold.ttf"),
+    GeistExtraLight: require("./assets/fonts/Geist-ExtraLight.ttf"),
+    GeistLight: require("./assets/fonts/Geist-Light.ttf"),
+    GeistMedium: require("./assets/fonts/Geist-Medium.ttf"),
+    GeistRegular: require("./assets/fonts/Geist-Regular.ttf"),
+    GeistSemiBold: require("./assets/fonts/Geist-SemiBold.ttf"),
+    GeistThin: require("./assets/fonts/Geist-Thin.ttf"),
+  });
+};
+
+// Extend NativeBase Theme
+const theme = extendTheme({
+  fonts: {
+    heading: "GeistBold",
+    body: "GeistRegular",
+    mono: "GeistMedium",
+  },
+  fontConfig: {
+    Geist: {
+      100: "GeistThin",
+      200: "GeistExtraLight",
+      300: "GeistLight",
+      400: "GeistRegular",
+      500: "GeistMedium",
+      600: "GeistSemiBold",
+      700: "GeistBold",
+      800: "GeistExtraBold",
+      900: "GeistBlack",
+    },
+  },
+});
+
+const Tab = createBottomTabNavigator();
 const Stack = createStackNavigator();
 
+const InputStack = () => (
+  <Stack.Navigator screenOptions={{ headerShown: false }}>
+    <Stack.Screen name="Input" component={InputScreen} />
+    <Stack.Screen name="Playground" component={PlaygroundScreen} />
+  </Stack.Navigator>
+);
+
+const CustomTabBar = ({ state, descriptors, navigation }) => {
+  const insets = useSafeAreaInsets(); // Retrieve dynamic safe area insets
+
+  return (
+    <SafeAreaView
+      style={{
+        backgroundColor: "#0f0f0f", // Background color of the tab bar
+        paddingBottom: insets.bottom, // Dynamically add safe area padding at the bottom
+      }}
+      edges={["bottom"]} // Apply padding only to the bottom edge
+    >
+      <View style={styles.container}>
+        {state.routes.map((route, index) => {
+          const { options } = descriptors[route.key];
+          const isFocused = state.index === index;
+
+          let Icon = null;
+          let label = options.tabBarLabel || route.name;
+
+          if (route.name === "Home") Icon = Home;
+          else if (route.name === "Shops") Icon = Store;
+          else if (route.name === "Cart") Icon = ShoppingCart;
+          else if (route.name === "Profile") Icon = User;
+          else if (route.name === "InputStack") {
+            Icon = OpenAiLogoRainbow;
+            label = "Generate";
+          }
+
+          return (
+            <Pressable
+              key={route.name}
+              onPress={() => {
+                if (!isFocused) navigation.navigate(route.name);
+              }}
+              android_ripple={{
+                color: "rgba(255, 255, 255, 0.2)", // Ripple color
+                radius: 40, // Ripple radius
+                centered: true, // Ensures ripple effect is centered
+              }}
+              style={[
+                styles.iconContainer,
+                {
+                  borderRadius: 10,
+                  overflow: "hidden",
+                },
+              ]}
+            >
+              {Icon && route.name === "InputStack" ? (
+                <Icon width={30} height={30} />
+              ) : (
+                Icon && (
+                  <Icon
+                    size={25}
+                    strokeWidth={1}
+                    color={isFocused ? "#FFF" : "#999"}
+                  />
+                )
+              )}
+              <Text
+                style={[
+                  styles.iconText,
+                  { color: isFocused ? "#FFF" : "#999" },
+                ]}
+              >
+                {label}
+              </Text>
+            </Pressable>
+          );
+        })}
+      </View>
+    </SafeAreaView>
+  );
+};
+const TabNavigator = () => (
+  <Tab.Navigator
+    screenOptions={{ headerShown: false }}
+    tabBar={(props) => <CustomTabBar {...props} />}
+  >
+    <Tab.Screen name="Home" component={HomeScreen} />
+    <Tab.Screen name="Shops" component={ShopScreen} />
+    <Tab.Screen name="InputStack" component={InputStack} options={{ tabBarLabel: "Generate" }} />
+    <Tab.Screen name="Cart" component={CartScreen} />
+    <Tab.Screen name="Profile" component={ProfileSettingsScreen} />
+  </Tab.Navigator>
+);
+
+const AppNavigator = ({ initialRoute }) => (
+  <Stack.Navigator screenOptions={{ headerShown: false }} initialRouteName={initialRoute}>
+    <Stack.Screen name="Login" component={LoginScreen} />
+    <Stack.Screen name="Register" component={RegisterScreen} />
+    <Stack.Screen name="ForgetPassword1" component={ForgetPassword1Screen} />
+    <Stack.Screen name="ForgetPassword2" component={ForgetPassword2Screen} />
+    <Stack.Screen name="Main" component={TabNavigator} />
+    <Stack.Screen name="Cart" component={CartScreen} />
+    <Stack.Screen name="VirtualFitting" component={VirtualFittingScreen} />
+    <Stack.Screen name="ProductView" component={ProductView} />
+    <Stack.Screen name="Notification" component={NotificationScreen} />
+    <Stack.Screen name="ShopLocation" component={ShopLocationScreen} />
+    <Stack.Screen name="Wardrobe" component={WardrobeScreen} />
+    <Stack.Screen name="Settings" component={SettingsScreen} />
+  </Stack.Navigator>
+);
+
 export default function App() {
-  const [initialRoute, setInitialRoute] = useState<string | null>(null);
-  const config = {
-    dependencies: {
-      "linear-gradient": LinearGradient,
-    },
-  };
+  const [initialRoute, setInitialRoute] = useState(null);
+  const [fontsLoaded, setFontsLoaded] = useState(false);
 
   useEffect(() => {
     const checkUserStatus = async () => {
       try {
         const user = await AsyncStorage.getItem("user");
-        const hasVisited = await AsyncStorage.getItem("hasVisited");
-
-        if (user) {
-          setInitialRoute("Home");
-        } else if (hasVisited) {
-          setInitialRoute("Login");
-        } else {
-          await AsyncStorage.setItem("hasVisited", "true");
-          setInitialRoute("GetStarted");
-        }
+        setInitialRoute(user ? "Main" : "Login");
       } catch (error) {
         console.error("Error checking user status:", error);
-        setInitialRoute("GetStarted");
+        setInitialRoute("Login");
       }
     };
 
+    const loadAppFonts = async () => {
+      await loadFonts();
+      setFontsLoaded(true);
+    };
+
     checkUserStatus();
+    loadAppFonts();
   }, []);
 
-  if (initialRoute === null) {
-    return <LoadingSpinner size={200} />;
-  }
+  if (!initialRoute || !fontsLoaded) return <LoadingSpinner size={200} />;
+
   NavigationBar.setPositionAsync("absolute");
-  NavigationBar.setBackgroundColorAsync('#ffffff01')
-  
+  NavigationBar.setBackgroundColorAsync("#0f0f0f");
+
   return (
     <GestureHandlerRootView style={styles.root}>
       <SafeAreaProvider>
-        <NativeBaseProvider config={config}>
-          {/* Full-Screen Background */}
+        <NativeBaseProvider theme={theme}>
           <ImageBackground
-            source={require("./assets/tile-pattern-2.png")} // Replace with your background image path
+            source={require("./assets/tile-pattern-2.png")}
             style={styles.background}
-            resizeMode="repeat" // Repeat the image to create a tiled effect
+            resizeMode="repeat"
           >
-            {/* Semi-transparent overlay */}
             <View style={styles.overlay}>
-              <StatusBar backgroundColor='#ffffff01' />
+              <StatusBar backgroundColor="#ffffff01" />
               <NavigationContainer>
-                <Stack.Navigator
-                  initialRouteName={initialRoute}
-                  screenOptions={{
-                    headerShown: false,
-                    transitionSpec: {
-                      open: {
-                        animation: "timing",
-                        config: {
-                          duration: 200,
-                          easing: Easing.inOut(Easing.cubic),
-                        },
-                      },
-                      close: {
-                        animation: "timing",
-                        config: {
-                          duration: 200,
-                          easing: Easing.inOut(Easing.cubic),
-                        },
-                      },
-                    },
-                    cardStyleInterpolator: CardStyleInterpolators.forFadeFromBottomAndroid,
-                  }}
-                >
-                  <Stack.Screen name="GetStarted" component={GetStartedScreen} options={{ unmountOnBlur: true }} />
-                  <Stack.Screen name="Login" component={LoginScreen} options={{ unmountOnBlur: true }} />
-                  <Stack.Screen name="Register" component={RegisterScreen} options={{ unmountOnBlur: true }} />
-                  <Stack.Screen name="Home" component={HomeScreen} options={{ unmountOnBlur: true }} />
-                  <Stack.Screen name="Wardrobe" component={WardrobeScreen} options={{ unmountOnBlur: true }} />
-                  <Stack.Screen name="Cart" component={CartScreen} options={{ unmountOnBlur: true }} />
-                  <Stack.Screen
-                    name="Profile Settings"
-                    component={ProfileSettingsScreen}
-                    options={{ unmountOnBlur: true }}
-                  />
-                  <Stack.Screen
-                    name="Shop Location"
-                    component={ShopLocationScreen}
-                    options={{ unmountOnBlur: true }}
-                  />
-                  <Stack.Screen name="Settings" component={SettingsScreen} options={{ unmountOnBlur: true }} />
-                  <Stack.Screen name="Notification" component={NotificationScreen} options={{ unmountOnBlur: true }} />
-                  <Stack.Screen name="Input" component={InputScreen} options={{ unmountOnBlur: true }} />
-                  <Stack.Screen name="Playground" component={PlaygroundScreen} options={{ unmountOnBlur: true }} />
-                  <Stack.Screen name="ProductView" component={ProductViewScreen} options={{ unmountOnBlur: true }} />
-                </Stack.Navigator>
+                <AppNavigator initialRoute={initialRoute} />
               </NavigationContainer>
             </View>
           </ImageBackground>
@@ -132,15 +235,27 @@ export default function App() {
 }
 
 const styles = StyleSheet.create({
-  root: {
-    flex: 1,
+  root: { flex: 1 },
+  background: { flex: 1, backgroundColor: "#191919" },
+  overlay: { flex: 1, backgroundColor: "rgba(25, 25, 25, 0.9)" },
+  container: {
+    flexDirection: "row",
+    justifyContent: "space-around",
+    alignItems: "center",
+    backgroundColor: "#0f0f0f",
+    height: 65,
+    position: "absolute",
+    overflow: "hidden",
+    bottom: 0,
+    left: 0,
+    right: 0,
+    marginBottom: 42,
   },
-  background: {
-    flex: 1,
-    backgroundColor: "#191919", // Solid fallback background color
+  iconContainer: { 
+    alignItems: "center",
+    justifyContent: "center",
+    width: 80,
+    height: 80,
   },
-  overlay: {
-    flex: 1,
-    backgroundColor: "rgba(25, 25, 25, 0.9)", // Semi-transparent overlay
-  },
+  iconText: { marginTop: 5, fontSize: 10, textAlign: "center" },
 });

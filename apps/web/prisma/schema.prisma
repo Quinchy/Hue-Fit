@@ -166,8 +166,9 @@ model Shop {
   Color               Color[]
   Size                Size[]
   Measurement         Measurement[]
-  OrderItem           OrderItem[]
+  Order               Order[]
   CartItem            CartItem[]
+  Notification        Notification[]
 }
 
 model ShopAddress {
@@ -225,6 +226,8 @@ model Product {
   Type                Type              @relation(fields: [typeId], references: [id])
   Category            Category          @relation(fields: [categoryId], references: [id])
   Tag                 Tag               @relation(fields: [tagId], references: [id])
+  OrderItem           OrderItem[]
+  CartItem            CartItem[]
   ProductVariant      ProductVariant[]
   ProductMeasurement  ProductMeasurement[]
 }
@@ -315,6 +318,8 @@ model ProductVariantSize {
 
   ProductVariant             ProductVariant              @relation(fields: [productVariantId], references: [id])
   Size                       Size                        @relation(fields: [sizeId], references: [id])
+  CartItem                   CartItem[]
+  OrderItem                  OrderItem[]
 }
 
 model ProductVariantImage {
@@ -350,8 +355,6 @@ model Size {
 
   Shop                Shop                  @relation(fields: [shopId], references: [id])
   ProductVariantSize  ProductVariantSize[]
-  OrderItem           OrderItem[]
-  CartItem            CartItem[]
   ProductMeasurement  ProductMeasurement[]
 
 }
@@ -406,45 +409,46 @@ model WardrobeCustomerFeatures {
 }
 
 model Order {
-  id                Int       @id @default(autoincrement())
-  orderNo           String    @unique(map: "Unique_OrderNo")
-  userId            Int                  
-  quantity          Int       
-  created_at        DateTime  @default(now())
-  updated_at        DateTime  @updatedAt
+  id             Int       @id @default(autoincrement())
+  orderNo        String    @unique(map: "Unique_OrderNo")
+  shopId         Int       // This order is for a single shop
+  userId         Int
+  paymentMethod  String    // e.g. 'COD', 'CARD'
+  status         String    @default("PROCESSING") // e.g. 'PROCESSING', 'PACKAGING', 'DELIVERING', ...
+  created_at     DateTime  @default(now())
+  updated_at     DateTime  @updatedAt
 
-  User             User            @relation(fields: [userId], references: [id])
+  User  User @relation(fields: [userId], references: [id])
+  Shop  Shop @relation(fields: [shopId], references: [id])
 
-  OrderItems        OrderItem[]
+  OrderItems OrderItem[]
+  OrderHistory OrderHistory[]
 }
 
 model OrderItem {
-  id                Int      @id @default(autoincrement())
-  orderId           Int
-  shopId            Int      
-  productVariantId  Int      
-  sizeId            Int      
-  status            String    @default("PROCESSING") // PROCESSING, PREPARING, PACKAGING, DELIVERING
-  quantity          Int     
-  price             Decimal  @db.Decimal(10, 2)
-  created_at        DateTime @default(now())
-  updated_at        DateTime @default(now())
+  id                   Int       @id @default(autoincrement())
+  orderId              Int
+  productId            Int
+  productVariantId     Int
+  productVariantSizeId Int
+  quantity             Int
+  created_at           DateTime  @default(now())
+  updated_at           DateTime  @updatedAt
 
-  Order               Order               @relation(fields: [orderId], references: [id])
-  ProductVariant      ProductVariant      @relation(fields: [productVariantId], references: [id])
-  Shop                Shop                @relation(fields: [shopId], references: [id])
-  Size                Size                @relation(fields: [sizeId], references: [id])
-  OrderItemHistory    OrderItemHistory[]
+  Order              Order              @relation(fields: [orderId], references: [id])
+  Product            Product            @relation(fields: [productId], references: [id])
+  ProductVariant     ProductVariant     @relation(fields: [productVariantId], references: [id])
+  ProductVariantSize ProductVariantSize @relation(fields: [productVariantSizeId], references: [id])
 }
 
-model OrderItemHistory {
+model OrderHistory {
   id          Int      @id @default(autoincrement())
-  orderItemId Int
+  orderId Int
   status      String   
   description String?      
   changed_at  DateTime @default(now())
 
-  Order OrderItem @relation(fields: [orderItemId], references: [id])
+  Order Order @relation(fields: [orderId], references: [id])
 }
 
 model Cart {
@@ -458,32 +462,37 @@ model Cart {
 }
 
 model CartItem {
-  id                Int      @id @default(autoincrement())
-  cartId            Int      
-  shopId            Int      
-  productVariantId  Int      
-  sizeId            Int      
-  quantity          Int      @default(1)
-  created_at        DateTime @default(now())
-  updated_at        DateTime @updatedAt
+  id                     Int      @id @default(autoincrement())
+  cartId                 Int      
+  shopId                 Int   
+  productId              Int   
+  productVariantId       Int      
+  productVariantSizeId   Int      
+  quantity               Int      @default(1)
+  created_at             DateTime @default(now())
+  updated_at             DateTime @updatedAt
 
-  Cart             Cart            @relation(fields: [cartId], references: [id])
-  Shop             Shop            @relation(fields: [shopId], references: [id])
-  ProductVariant   ProductVariant  @relation(fields: [productVariantId], references: [id])
-  Size             Size            @relation(fields: [sizeId], references: [id])
-
-  @@unique([cartId, productVariantId, sizeId], map: "Unique_Cart_Item")
+  Cart                      Cart                  @relation(fields: [cartId], references: [id])
+  Shop                      Shop                  @relation(fields: [shopId], references: [id])
+  Product                   Product               @relation(fields: [productId], references: [id])
+  ProductVariant            ProductVariant        @relation(fields: [productVariantId], references: [id])
+  ProductVariantSize        ProductVariantSize    @relation(fields: [productVariantSizeId], references: [id])
 }
 
 model Notification {
-  id          Int      @id @default(autoincrement())
-  title       String   
-  content     String   
-  type        String   
-  userId      Int      
-  read        Boolean  @default(false)
-  created_at  DateTime @default(now())
-  updated_at  DateTime @updatedAt
+  id        Int      @id @default(autoincrement())
+  title     String
+  message   String
+  // If this notification is for a particular user:
+  userId    Int?
+  // If this notification is for a particular shop:
+  shopId    Int?
 
-  User User @relation(fields: [userId], references: [id])
+  read      Boolean  @default(false)
+  created_at DateTime @default(now())
+  updated_at DateTime @default(now())
+
+  // Relations to User or Shop are optional 
+  User      User?    @relation(fields: [userId], references: [id])
+  Shop      Shop?    @relation(fields: [shopId], references: [id])
 }

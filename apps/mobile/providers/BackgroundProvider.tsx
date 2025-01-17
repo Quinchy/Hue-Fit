@@ -22,7 +22,7 @@ const BackgroundProvider = forwardRef<View, BackgroundProviderProps>(({ children
 const styles = StyleSheet.create({
   background: {
     flex: 1,
-    backgroundColor: '#191919', // The solid background color behind the overlay
+    backgroundColor: '#191919', // The solid background color behind the overlay,
   },
   overlay: {
     flex: 1,

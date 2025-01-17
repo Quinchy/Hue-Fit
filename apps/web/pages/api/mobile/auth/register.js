@@ -21,10 +21,10 @@ export default async function handler(req, res) {
   }
 
   try {
-    const customerRole = await prisma.roles.findFirst({
+    const customerRole = await prisma.role.findFirst({
       where: { name: "CUSTOMER" },
     });
-    const existingUser = await prisma.users.findFirst({
+    const existingUser = await prisma.user.findFirst({
       where: { 
         username,
         roleId: customerRole.id,

@@ -8,7 +8,14 @@ import Link from "next/link";
 import routes from "@/routes";
 import { buttonVariants } from "@/components/ui/button";
 import { Button } from "@/components/ui/button";
-import { Table, TableHead, TableHeader, TableBody, TableCell, TableRow } from "@/components/ui/table";
+import {
+  Table,
+  TableHead,
+  TableHeader,
+  TableBody,
+  TableCell,
+  TableRow,
+} from "@/components/ui/table";
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -24,8 +31,8 @@ import {
   PaginationNext,
   PaginationLink,
 } from "@/components/ui/pagination";
-import { Eye, Pencil, Trash2, Search, ChevronDown } from "lucide-react";
-import { Skeleton } from "@/components/ui/skeleton";  // Import Skeleton component
+import { Pencil, Search, ChevronDown } from "lucide-react";
+import { Skeleton } from "@/components/ui/skeleton";
 
 export default function Orders() {
   const router = useRouter();
@@ -35,6 +42,7 @@ export default function Orders() {
   const [search, setSearch] = useState("");
   const [status, setStatus] = useState("");
   const [loading, setLoading] = useState(false);
+
   const navItems = [
     { label: "Orders", href: routes.order },
     { label: "Reserves", href: routes.orderReserve },
@@ -61,11 +69,8 @@ export default function Orders() {
     fetchOrders(currentPage, search, status);
   }, [currentPage, search, status]);
 
-  const handleViewClick = (orderNo) => {
-    router.push(`/dashboard/order/view/${orderNo}`);
-  };
-
-  const handleEditClick = (orderNo) => {
+  const handleUpdateClick = (orderNo) => {
+    // Navigation for editing/updating an order
     router.push(`/dashboard/order/edit/${orderNo}`);
   };
 
@@ -104,129 +109,171 @@ export default function Orders() {
           </DropdownMenu>
         </div>
       </div>
+
       <Card className="flex flex-col p-5 gap-4 min-h-[49rem]">
         <DashboardPagesNavigation items={navItems} />
-        <Table>
-          <TableHeader>
-            <TableRow>
-              <TableHead className="max-w-[2rem]">Order Number</TableHead>
-              <TableHead className="max-w-[2rem]">Product Name</TableHead>
-              <TableHead className="max-w-[0.75rem] text-center">Size</TableHead>
-              <TableHead className="max-w-[0.75rem] text-center">Quantity</TableHead>
-              <TableHead className="max-w-[1rem] text-center">Price</TableHead>
-              <TableHead className="max-w-[1rem] text-center">Status</TableHead>
-              <TableHead className="max-w-[1rem] text-center">Action</TableHead>
-            </TableRow>
-          </TableHeader>
-          <TableBody>
-            {loading ? (
-              // Show skeletons while loading data
-              Array.from({ length: 8 }).map((_, index) => (
-                <TableRow key={index}>
-                  <TableCell>
-                    <Skeleton className="h-14 w-full" />
-                  </TableCell>
-                  <TableCell>
-                    <Skeleton className="h-14 w-full" />
-                  </TableCell>
-                  <TableCell>
-                    <Skeleton className="h-14 w-full" />
-                  </TableCell>
-                  <TableCell>
-                    <Skeleton className="h-14 w-full" />
-                  </TableCell>
-                  <TableCell>
-                    <Skeleton className="h-14 w-full" />
-                  </TableCell>
-                  <TableCell>
-                    <Skeleton className="h-14 w-full" />
-                  </TableCell>
-                  <TableCell>
-                    <Skeleton className="h-14 w-full" />
-                  </TableCell>
-                </TableRow>
-              ))
-            ) : orders.length > 0 ? (
-              orders.map((order) => (
-                <TableRow key={order.orderNo}>
-                  <TableCell className="max-w-[2rem]">{order.orderNo}</TableCell>
-                  <TableCell className="max-w-[2rem] overflow-hidden whitespace-nowrap text-ellipsis">
-                    {order.ProductVariant?.Product?.name || "N/A"}
-                  </TableCell>
-                  <TableCell className="max-w-[0.75rem] text-center">
-                    {order.Size?.name || "N/A"}
-                  </TableCell>
-                  <TableCell className="max-w-[0.75rem] text-center">
-                    {order.quantity || 0}
-                  </TableCell>
-                  <TableCell className="max-w-[1rem] text-center">
-                    ₱{order.ProductVariant?.price ? parseFloat(order.ProductVariant.price).toFixed(2) : "0.00"}
-                  </TableCell>
-                  <TableCell className="max-w-[1rem] text-center">
-                    <p className="py-1 w-full rounded font-bold text-card bg-yellow-500 uppercase">
-                      {order.status}
-                    </p>
-                  </TableCell>
-                  <TableCell className="max-w-[1rem] text-center">
-                    <DropdownMenu>
-                      <DropdownMenuTrigger asChild>
-                        <Button variant="outline" className="font-normal">
-                          Action
-                          <ChevronDown className="scale-125" />
-                        </Button>
-                      </DropdownMenuTrigger>
-                      <DropdownMenuContent className="w-50">
-                        <DropdownMenuGroup>
-                          <DropdownMenuItem>
-                            <Button variant="none" onClick={() => handleViewClick(order.orderNo)}>
-                              <Eye className="scale-125 mr-2" />
-                              View
-                            </Button>
-                          </DropdownMenuItem>
-                          <DropdownMenuItem>
-                            <Button variant="none" onClick={() => handleEditClick(order.orderNo)}>
-                              <Pencil className="scale-125 mr-2" />
-                              Edit
-                            </Button>
-                          </DropdownMenuItem>
-                          <DropdownMenuItem className="justify-center">
-                            <Button variant="none" className="font-bold text-base text-red-500">
-                              <Trash2 className="scale-125 stroke-red-500" />
-                              Delete
-                            </Button>
-                          </DropdownMenuItem>
-                        </DropdownMenuGroup>
-                      </DropdownMenuContent>
-                    </DropdownMenu>
-                  </TableCell>
-                </TableRow>
-              ))
-            ) : (
+
+        <div className="flex flex-col gap-4 justify-between min-h-[42rem]">
+          <Table>
+            <TableHeader>
               <TableRow>
-                <TableCell colSpan={7} className="text-center align-middle h-[39rem] text-primary/50 text-lg font-thin tracking-wide">
-                  No orders found.
-                </TableCell>
+                <TableHead>Order Number</TableHead>
+                <TableHead>Product Name</TableHead>
+                <TableHead className="text-center">Size</TableHead>
+                <TableHead className="text-center">Quantity</TableHead>
+                <TableHead className="text-center">Price</TableHead>
+                <TableHead className="text-center">Status</TableHead>
+                <TableHead className="text-center">Action</TableHead>
               </TableRow>
-            )}
-          </TableBody>
-        </Table>
-        {orders.length > 0 && (
-          <Pagination className="flex flex-col items-end">
-            <PaginationContent>
-              {currentPage > 1 && (
-                <PaginationPrevious onClick={() => setCurrentPage((prev) => prev - 1)} />
+            </TableHeader>
+            <TableBody>
+              {loading ? (
+                Array.from({ length: 8 }).map((_, index) => (
+                  <TableRow key={index}>
+                    <TableCell>
+                      <Skeleton className="h-14 w-full" />
+                    </TableCell>
+                    <TableCell>
+                      <Skeleton className="h-14 w-full" />
+                    </TableCell>
+                    <TableCell>
+                      <Skeleton className="h-14 w-full" />
+                    </TableCell>
+                    <TableCell>
+                      <Skeleton className="h-14 w-full" />
+                    </TableCell>
+                    <TableCell>
+                      <Skeleton className="h-14 w-full" />
+                    </TableCell>
+                    <TableCell>
+                      <Skeleton className="h-14 w-full" />
+                    </TableCell>
+                    <TableCell>
+                      <Skeleton className="h-14 w-full" />
+                    </TableCell>
+                  </TableRow>
+                ))
+              ) : orders.length > 0 ? (
+                orders.map((order) => {
+                  // Limit to only 2 items
+                  const maxItemsToShow = 2;
+                  const items = order.OrderItems || [];
+                  const limitedItems = items.slice(0, maxItemsToShow);
+
+                  const productNames = limitedItems.map((item) => {
+                    const color = item.ProductVariant?.Color?.name || "";
+                    const product = item.ProductVariant?.Product?.name || "";
+                    return `${color} ${product}`.trim();
+                  });
+
+                  const sizes = limitedItems.map(
+                    (item) => item.ProductVariantSize?.Size?.name || "N/A"
+                  );
+
+                  const quantities = limitedItems.map(
+                    (item) => String(item.quantity || 0)
+                  );
+
+                  const prices = limitedItems.map((item) => {
+                    const p = item.ProductVariant?.price
+                      ? parseFloat(item.ProductVariant.price).toFixed(2)
+                      : "0.00";
+                    return `₱${p}`;
+                  });
+
+                  // Check if more items beyond what we displayed
+                  const hasMoreItems = items.length > maxItemsToShow;
+
+                  return (
+                    <TableRow key={order.id}>
+                      <TableCell>{order.orderNo}</TableCell>
+
+                      <TableCell className="overflow-hidden whitespace-pre-line">
+                        {productNames.length > 0 ? productNames.join("\n") : "No items"}
+                        {hasMoreItems && `\n... +${items.length - maxItemsToShow} more`}
+                      </TableCell>
+
+                      <TableCell className="text-center whitespace-pre-line">
+                        {sizes.join("\n")}
+                        {hasMoreItems && "\n..."}
+                      </TableCell>
+
+                      <TableCell className="text-center whitespace-pre-line">
+                        {quantities.join("\n")}
+                        {hasMoreItems && "\n..."}
+                      </TableCell>
+
+                      <TableCell className="text-center whitespace-pre-line">
+                        {prices.join("\n")}
+                        {hasMoreItems && "\n..."}
+                      </TableCell>
+
+                      <TableCell className="text-center">
+                        <p className="py-1 w-full rounded font-bold text-card bg-yellow-500 uppercase">
+                          {order.status}
+                        </p>
+                      </TableCell>
+
+                      <TableCell className="text-center">
+                        <DropdownMenu>
+                          <DropdownMenuTrigger asChild>
+                            <Button variant="outline" className="font-normal">
+                              Action
+                              <ChevronDown className="scale-125" />
+                            </Button>
+                          </DropdownMenuTrigger>
+                          <DropdownMenuContent className="w-40">
+                            <DropdownMenuGroup>
+                              <DropdownMenuItem className="justify-center">
+                                <Button
+                                  variant="none"
+                                  onClick={() => handleUpdateClick(order.orderNo)}
+                                >
+                                  <Pencil className="scale-125 mr-2" />
+                                  Update
+                                </Button>
+                              </DropdownMenuItem>
+                              {/* Removed View & Delete */}
+                            </DropdownMenuGroup>
+                          </DropdownMenuContent>
+                        </DropdownMenu>
+                      </TableCell>
+                    </TableRow>
+                  );
+                })
+              ) : (
+                <TableRow>
+                  <TableCell
+                    colSpan={7}
+                    className="text-center align-middle h-[39rem] text-primary/50 text-lg font-thin tracking-wide"
+                  >
+                    No orders found.
+                  </TableCell>
+                </TableRow>
               )}
-              {Array.from({ length: totalPages }, (_, i) => i + 1).map((page) => (
-                <PaginationItem key={page} active={page === currentPage}>
-                  <PaginationLink onClick={() => setCurrentPage(page)}>{page}</PaginationLink>
-                </PaginationItem>
-              ))}
-              {currentPage < totalPages && (
-                <PaginationNext onClick={() => setCurrentPage((prev) => prev + 1)} />
-              )}
-            </PaginationContent>
-          </Pagination>
-        )}
+            </TableBody>
+          </Table>
+
+          {orders.length > 0 && (
+            <Pagination className="flex flex-col items-end">
+              <PaginationContent>
+                {currentPage > 1 && (
+                  <PaginationPrevious onClick={() => setCurrentPage((prev) => prev - 1)} />
+                )}
+                {Array.from({ length: totalPages }, (_, i) => i + 1).map((page) => (
+                  <PaginationItem key={page} active={page === currentPage}>
+                    <PaginationLink onClick={() => setCurrentPage(page)}>
+                      {page}
+                    </PaginationLink>
+                  </PaginationItem>
+                ))}
+                {currentPage < totalPages && (
+                  <PaginationNext onClick={() => setCurrentPage((prev) => prev + 1)} />
+                )}
+              </PaginationContent>
+            </Pagination>
+          )}
+        </div>
       </Card>
     </DashboardLayoutWrapper>
   );

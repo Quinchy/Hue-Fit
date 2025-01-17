@@ -124,7 +124,7 @@ const InputScreen: React.FC = ({ navigation }) => {
   if (loading) {
     return (
       <LoadingSpinner
-        size={200}
+        size={300}
         messages={[
           "Matching multiple clothing items...",
           "Creating a personalized color palette...",
@@ -136,34 +136,19 @@ const InputScreen: React.FC = ({ navigation }) => {
     ); // Keep showing the loading spinner until data is fetched
   }
   NavigationBar.setPositionAsync("absolute");
-  NavigationBar.setBackgroundColorAsync('#191919')
+  NavigationBar.setBackgroundColorAsync('#0f0f0f')
   return (
     <BackgroundProvider>
       <SafeAreaView style={{ flex: 1 }} edges={["top", "bottom"]}>
         <ScrollView contentContainerStyle={{ flexGrow: 1 }}>
-          {/* Header with Back Button and Logo */}
-          <HStack justifyContent="space-between" alignItems="center" mt={10} px={4}>
-            <IconButton
-              icon={<ArrowLeft size={24} color="white" />}
-              onPress={() => navigation.goBack()}
-              _pressed={{ bg: "gray.700" }}
-              borderRadius={"full"}
-            />
-            <Image
-              source={require("../../assets/icons/hue-fit-logo.png")}
-              style={{ width: 60, height: 60 }}
-              resizeMode="contain"
-            />
-          </HStack>
-
-          <Center mt={10}>
+          <Center mt={5} mb={10}>
             <GradientCard>
               <Center mb={6}>
                 <Text fontSize="2xl" fontWeight="bold" color="white">
-                  CAN'T PICK AN OUTFIT?
+                  GENERATE OUTFIT
                 </Text>
                 <Text fontSize="md" color="#C0C0C0" fontWeight="light" textAlign="center">
-                  Fill-up the form below and let Hue-Fit AI find an outfit that suits you.
+                  Fill-up the form to let an AI pick an outfit for you.
                 </Text>
               </Center>
 

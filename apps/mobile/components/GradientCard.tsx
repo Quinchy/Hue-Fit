@@ -12,7 +12,7 @@ const GradientCard: React.FC<GradientCardProps> = ({ children }) => {
     <Box
       bg="#191919"
       borderRadius="2xl"
-      p={6}
+      p={2}
       width="100%"
       height="100%"
       alignSelf="center"
