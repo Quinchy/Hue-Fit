@@ -20,6 +20,7 @@ const createOrder = async (req, res) => {
       const cartItemsToRemove = [];
       const isReserveMode = paymentMethod === 'RESERVED';
 
+      // Prepare all items within this shop group
       for (const cartItemId of shopGroup.items) {
         const cartItemIdInt = parseInt(cartItemId, 10);
         const cartItem = await prisma.cartItem.findUnique({
@@ -42,12 +43,9 @@ const createOrder = async (req, res) => {
         }
 
         const availableStock = sizeData.quantity;
-        // If user chose to "reserve" OR if enough stock is > 5 (per your condition),
-        // it proceeds. Otherwise, push to "notEnoughStock".
         if (!isReserveMode) {
           // Standard order logic
           if (availableStock > 5 && availableStock >= cartItem.quantity) {
-            // We can proceed
             orderItemsData.push({
               productId: cartItem.productId,
               productVariantId: cartItem.productVariantId,
@@ -71,18 +69,18 @@ const createOrder = async (req, res) => {
         }
       }
 
-      // If no items to create, skip
+      // If no items to create, skip this shop group
       if (!orderItemsData.length) {
         continue;
       }
 
-      // Generate an orderNo
+      // Generate an order number
       const orderNo = `ORD-${Date.now()}-${shopIdInt}`;
 
-      // Choose status based on reserved or not
+      // Determine status based on reserve mode
       const status = isReserveMode ? 'RESERVED' : 'PROCESSING';
 
-      // Create order + order items
+      // Create the order + order items
       const newOrder = await prisma.order.create({
         data: {
           orderNo,
@@ -104,19 +102,36 @@ const createOrder = async (req, res) => {
         },
       });
 
-      // If not reserved, decrement stock for items that proceeded
+      // If not reserved, decrement stock for the items that proceeded
       if (!isReserveMode) {
         for (const item of newOrder.OrderItems) {
+          // Decrement the quantity on ProductVariantSize
           await prisma.productVariantSize.update({
             where: { id: item.productVariantSizeId },
             data: {
               quantity: { decrement: item.quantity },
             },
           });
+
+          // Decrement the totalQuantity on the ProductVariant
+          await prisma.productVariant.update({
+            where: { id: item.productVariantId },
+            data: {
+              totalQuantity: { decrement: item.quantity },
+            },
+          });
+
+          // Decrement the totalQuantity on the Product
+          await prisma.product.update({
+            where: { id: item.productId },
+            data: {
+              totalQuantity: { decrement: item.quantity },
+            },
+          });
         }
       }
 
-      // Remove cart items from DB for those that succeeded
+      // Remove cart items for those that succeeded
       for (const cid of cartItemsToRemove) {
         await prisma.cartItem.delete({ where: { id: cid } });
       }

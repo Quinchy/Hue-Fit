@@ -423,6 +423,7 @@ model Order {
 
   OrderItems OrderItem[]
   OrderHistory OrderHistory[]
+  Payment Payment[]
 }
 
 model OrderItem {
@@ -495,4 +496,13 @@ model Notification {
   // Relations to User or Shop are optional 
   User      User?    @relation(fields: [userId], references: [id])
   Shop      Shop?    @relation(fields: [shopId], references: [id])
+}
+
+model Payment {
+  id        Int      @id @default(autoincrement())
+  orderId   Int
+  amount    Decimal  @db.Decimal(10, 2)
+  created_at DateTime @default(now())
+  
+  Order     Order    @relation(fields: [orderId], references: [id])
 }

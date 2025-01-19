@@ -1,5 +1,4 @@
-// pages/api/orders/update-order.js
-import prisma from "@/utils/helpers"; // Import Prisma client
+import prisma from "@/utils/helpers";
 
 export default async function handler(req, res) {
   if (req.method !== "POST") {
@@ -7,33 +6,58 @@ export default async function handler(req, res) {
   }
 
   const { orderNo, status } = req.body;
-  
   if (!orderNo || !status) {
-    return res.status(400).json({ error: "Order number and status are required" });
-  }
-
-  if (!["PROCESSING", "PREPARING", "PACKAGING", "DELIVERING"].includes(status)) {
-    return res.status(400).json({ error: "Invalid status" });
+    return res.status(400).json({ error: "Order number and status are required." });
   }
 
   try {
-    // Update the order status
-    const updatedOrder = await prisma.orders.update({
-      where: { orderNo: String(orderNo) },
-      data: { status },
-    });
+    // Uppercase the status for consistency
+    const upperStatus = status.toUpperCase();
 
-    // Add new entry to the OrderHistories table
-    await prisma.orderHistories.create({
-      data: {
-        orderId: updatedOrder.id,
-        status,
+    // Update the order status
+    const updatedOrder = await prisma.order.update({
+      where: { orderNo },
+      data: { status: upperStatus },
+      include: {
+        User: true,
+        OrderItems: {
+          include: {
+            ProductVariant: true,
+          },
+        },
       },
     });
 
-    res.status(200).json({ message: "Order status updated successfully" });
+    // Create a notification for the user about the status update
+    await prisma.notification.create({
+      data: {
+        title: "Order Status Updated",
+        message: `Your order ${orderNo} status changed to ${upperStatus}.`,
+        userId: updatedOrder.userId,
+        shopId: updatedOrder.shopId,
+      },
+    });
+
+    // If the order is completed, record the payment
+    if (upperStatus === "COMPLETED") {
+      // Calculate the total amount from order items
+      const amount = updatedOrder.OrderItems.reduce((sum, item) => {
+        const price = Number(item.ProductVariant.price || 0);
+        return sum + price * (item.quantity || 0);
+      }, 0);
+
+      // Record payment using the Payment model
+      await prisma.payment.create({
+        data: {
+          orderId: updatedOrder.id,
+          amount,
+        },
+      });
+    }
+
+    return res.status(200).json({ message: "Order status updated", order: updatedOrder });
   } catch (error) {
-    console.error("Error updating order status:", error);
-    res.status(500).json({ error: "An error occurred while updating the order status" });
+    console.error("Error updating order:", error);
+    return res.status(500).json({ error: "Internal server error" });
   }
 }

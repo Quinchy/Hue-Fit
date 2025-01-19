@@ -1,4 +1,6 @@
-import prisma from "@/utils/helpers"; // Import your Prisma client
+// /pages/api/orders/get-order-detail.js
+
+import prisma from "@/utils/helpers"; // Make sure this imports your Prisma client instance
 
 export default async function handler(req, res) {
   if (req.method !== "GET") {
@@ -18,26 +20,44 @@ export default async function handler(req, res) {
         User: {
           select: {
             CustomerProfile: {
-              select: { firstName: true, lastName: true },
+              // Retrieve profilePicture from CustomerProfile
+              select: {
+                firstName: true,
+                lastName: true,
+                profilePicture: true,
+              },
             },
             AdminProfile: {
-              select: { firstName: true, lastName: true },
+              select: {
+                firstName: true,
+                lastName: true,
+              },
             },
           },
         },
         Shop: {
-          select: { name: true },
+          select: {
+            name: true,
+          },
         },
         OrderItems: {
           select: {
             id: true,
             quantity: true,
-            Product: { select: { name: true } },
+            Product: {
+              select: {
+                name: true,
+              },
+            },
             ProductVariant: {
               select: {
                 price: true,
-                Color: { select: { name: true } },
-                Product: { select: { name: true } },
+                Color: {
+                  select: { name: true },
+                },
+                Product: {
+                  select: { name: true },
+                },
                 ProductVariantImage: {
                   take: 1,
                   select: { imageURL: true },
@@ -46,14 +66,19 @@ export default async function handler(req, res) {
             },
             ProductVariantSize: {
               select: {
-                Size: { select: { name: true } },
+                Size: {
+                  select: { name: true },
+                },
               },
             },
           },
         },
         OrderHistory: {
           orderBy: { changed_at: "asc" },
-          select: { status: true, changed_at: true },
+          select: {
+            status: true,
+            changed_at: true,
+          },
         },
       },
     });
@@ -62,18 +87,30 @@ export default async function handler(req, res) {
       return res.status(404).json({ error: "Order not found" });
     }
 
+    // Compute a user name from either CustomerProfile or AdminProfile
     let userName = "Unknown User";
-    if (order.User.CustomerProfile) {
+    if (order.User?.CustomerProfile) {
       userName = `${order.User.CustomerProfile.firstName} ${order.User.CustomerProfile.lastName}`;
-    } else if (order.User.AdminProfile) {
+    } else if (order.User?.AdminProfile) {
       userName = `${order.User.AdminProfile.firstName} ${order.User.AdminProfile.lastName}`;
     }
 
+    // Use the actual profilePicture if present; otherwise default to placeholder
+    let userProfilePicture = "/images/profile-picture.png";
+    if (
+      order.User?.CustomerProfile &&
+      order.User.CustomerProfile.profilePicture
+    ) {
+      userProfilePicture = order.User.CustomerProfile.profilePicture;
+    }
+
+    // Modify the response to include the computed user name and profile pic
     const responseData = {
       ...order,
       User: {
         ...order.User,
         name: userName,
+        profilePicture: userProfilePicture,
       },
     };
 

@@ -4,33 +4,11 @@ import DashboardLayoutWrapper from "@/components/ui/dashboard-layout";
 import { Card, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import DashboardPagesNavigation from "@/components/ui/dashboard-pages-navigation";
-import Link from "next/link";
 import routes from "@/routes";
-import { buttonVariants } from "@/components/ui/button";
 import { Button } from "@/components/ui/button";
-import {
-  Table,
-  TableHead,
-  TableHeader,
-  TableBody,
-  TableCell,
-  TableRow,
-} from "@/components/ui/table";
-import {
-  DropdownMenu,
-  DropdownMenuContent,
-  DropdownMenuGroup,
-  DropdownMenuItem,
-  DropdownMenuTrigger,
-} from "@/components/ui/dropdown-menu";
-import {
-  Pagination,
-  PaginationPrevious,
-  PaginationContent,
-  PaginationItem,
-  PaginationNext,
-  PaginationLink,
-} from "@/components/ui/pagination";
+import { Table, TableHead, TableHeader, TableBody, TableCell, TableRow } from "@/components/ui/table";
+import { DropdownMenu, DropdownMenuContent, DropdownMenuGroup, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
+import { Pagination, PaginationPrevious, PaginationContent, PaginationItem, PaginationNext, PaginationLink } from "@/components/ui/pagination";
 import { Pencil, Search, ChevronDown } from "lucide-react";
 import { Skeleton } from "@/components/ui/skeleton";
 
@@ -112,7 +90,6 @@ export default function Orders() {
 
       <Card className="flex flex-col p-5 gap-4 min-h-[49rem]">
         <DashboardPagesNavigation items={navItems} />
-
         <div className="flex flex-col gap-4 justify-between min-h-[42rem]">
           <Table>
             <TableHeader>
@@ -178,7 +155,7 @@ export default function Orders() {
                     const p = item.ProductVariant?.price
                       ? parseFloat(item.ProductVariant.price).toFixed(2)
                       : "0.00";
-                    return `₱${p}`;
+                    return `PHP ${p}`;
                   });
 
                   // Check if more items beyond what we displayed

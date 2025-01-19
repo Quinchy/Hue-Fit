@@ -263,15 +263,6 @@ export default function ProductsPage() {
                                     Edit
                                   </Button>
                                 </DropdownMenuItem>
-                                <DropdownMenuItem className="justify-center">
-                                  <Button
-                                    variant="none"
-                                    className="font-bold text-red-500"
-                                  >
-                                    <Trash2 className="scale-125 stroke-red-500" />
-                                    Delete
-                                  </Button>
-                                </DropdownMenuItem>
                               </DropdownMenuGroup>
                             </DropdownMenuContent>
                           </DropdownMenu>

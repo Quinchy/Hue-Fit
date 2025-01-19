@@ -37,9 +37,9 @@ const NavbarDashboard = () => {
     { route: routes.inquiry, icon: <MessageSquareMore />, label: "Inquiries", roles: ["ADMIN"] },
     { route: routes.settings, icon: <Settings />, label: "Settings", roles: ["ADMIN"] },
     { route: routes.product, icon: <Shirt />, label: "Products", roles: ["VENDOR"] },
+    { route: routes.virtualFitting, icon: <Camera />, label: "Virtual Fitting", roles: ["VENDOR"] },
     { route: routes.order, icon: <Tag />, label: "Orders", roles: ["VENDOR"] },
     { route: routes.maintenance, icon: <Wrench />, label: "Maintenance", roles: ["VENDOR"] },
-    { route: routes.virtualFitting, icon: <Camera />, label: "Virtual Fitting", roles: ["VENDOR"] },
   ];
 
   return (
