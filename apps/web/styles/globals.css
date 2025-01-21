@@ -24,6 +24,7 @@
     --background-image: url('../public/images/tile-pattern-2.png');
     --background: 223 16% 85%;
     --foreground: 240 10% 30%;
+    --pure: 0 0% 100%;
     --card: 0 0% 95%;
     --card-foreground: 240 10% 3.9%;
     --popover: 0 0% 100%;
@@ -53,6 +54,7 @@
     --background-image: url('../public/images/tile-pattern.png');
     --background: 0 0% 12%;
     --foreground: 0 0% 98%;
+    --pure: 0 0% 5%;
     --card: 0 0% 10%;
     --card-foreground: 0 0% 98%;
     --popover: 0 0% 10%;

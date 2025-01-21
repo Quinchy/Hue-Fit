@@ -29,10 +29,10 @@ const NavbarMain = () => {
         </div>
         <div className='flex flex-row items-center gap-5'>
           <Link
-            className={`${buttonVariants({ variant: "default" })} !text-base !font-bold pl-[2.25rem] pr-[1.75rem] py-2 border-muted/30 border-2 shadow-primary/25 shadow-md`}
+            className={`flex flex-row items-center justify-center bg-primary border-muted/30 py-3 border-2 rounded-lg min-w-[12rem] hover:ring-2 hover:ring-primary duration-300 ease-in-out`}
             href={routes.login}
           >
-            <p className="uppercase tracking-widest">Dashboard</p>
+            <p className="uppercase tracking-widest text-pure font-bold text-md">Dashboard</p>
           </Link>
           <ModeToggle/>
         </div>

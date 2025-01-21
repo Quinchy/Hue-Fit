@@ -7,7 +7,7 @@ import {
   useRef,
   useState,
 } from 'react';
-import { motion, useMotionValue } from 'motion/react';
+import { motion, useMotionValue } from 'framer-motion';
 import { cn } from '@/lib/utils';
 import { MoveLeft, MoveRight } from 'lucide-react';
 
@@ -89,6 +89,10 @@ function Carousel({
 function CarouselNavigation({ className, classNameButton, alwaysShow }) {
   const { index, setIndex, itemsCount } = useCarousel();
 
+  // Determine disabled states
+  const isNextDisabled = index + 1 === itemsCount;
+  const isPrevDisabled = index === 0;
+
   return (
     <div
       className={cn(
@@ -96,10 +100,19 @@ function CarouselNavigation({ className, classNameButton, alwaysShow }) {
         className
       )}
     >
-      {/* Move Left button (now navigates forward) */}
-      <button
+      {/* Move Left button (navigates forward) */}
+      <motion.button
         type="button"
         aria-label="Next slide"
+        whileHover={!isNextDisabled ? { scale: 1.05 } : {}}
+        whileTap={
+          !isNextDisabled
+            ? {
+                scale: 1.15,
+                transition: { type: 'spring', stiffness: 300, damping: 10 },
+              }
+            : {}
+        }
         className={cn(
           'pointer-events-auto h-fit w-fit rounded-full border border-primary p-5 transition-opacity duration-300',
           alwaysShow
@@ -110,20 +123,29 @@ function CarouselNavigation({ className, classNameButton, alwaysShow }) {
             : 'disabled:group-hover/hover:opacity-40',
           classNameButton
         )}
-        disabled={index + 1 === itemsCount} // Left button is disabled when at the end
+        disabled={isNextDisabled}
         onClick={() => {
           if (index < itemsCount - 1) {
-            setIndex(index + 1); // Now moves forward
+            setIndex(index + 1);
           }
         }}
       >
         <MoveLeft className="stroke-primary scale-125" size={20} />
-      </button>
+      </motion.button>
 
-      {/* Move Right button (now navigates backward) */}
-      <button
+      {/* Move Right button (navigates backward) */}
+      <motion.button
         type="button"
         aria-label="Previous slide"
+        whileHover={!isPrevDisabled ? { scale: 1.05 } : {}}
+        whileTap={
+          !isPrevDisabled
+            ? {
+                scale: 1.15,
+                transition: { type: 'spring', stiffness: 300, damping: 10 },
+              }
+            : {}
+        }
         className={cn(
           'pointer-events-auto h-fit w-fit rounded-full border border-primary p-5 ml-5 transition-opacity duration-300',
           alwaysShow
@@ -134,15 +156,15 @@ function CarouselNavigation({ className, classNameButton, alwaysShow }) {
             : 'disabled:group-hover/hover:opacity-40',
           classNameButton
         )}
-        disabled={index === 0} // Right button is disabled initially
+        disabled={isPrevDisabled}
         onClick={() => {
           if (index > 0) {
-            setIndex(index - 1); // Now moves backward
+            setIndex(index - 1);
           }
         }}
       >
         <MoveRight className="stroke-primary scale-125" size={20} />
-      </button>
+      </motion.button>
     </div>
   );
 }
