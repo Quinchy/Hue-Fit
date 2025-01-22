@@ -264,7 +264,7 @@ function CarouselContent({ children, className, transition }) {
         x: disableDrag ? undefined : dragX,
       }}
       animate={{
-        translateX: `-${index * (30 / visibleItemsCount)}%`,
+        translateX: `-${index * (40 / visibleItemsCount)}%`,
       }}
       onDragEnd={disableDrag ? undefined : onDragEnd}
       transition={
