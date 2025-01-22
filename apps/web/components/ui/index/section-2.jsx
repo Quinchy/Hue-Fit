@@ -158,16 +158,16 @@ export default function Section2() {
             {"Discover the Power of Smart Fashion"}
           </h1>
           <div className="flex flex-col">
-            <p className="uppercase font-thin text-lg w-[100%] text-[1rem] text-primary text-start">
+            <p className="uppercase font-thin w-[100%] text-[1rem] text-primary text-start">
               {"Our innovative AI technology not only helps you create personalized outfits,"}
             </p>
-            <p className="uppercase font-thin text-lg w-[100%] text-[1rem] text-primary text-start">
+            <p className="uppercase font-thin w-[100%] text-[1rem] text-primary text-start">
               {"but also matches colors to your skin tone and connects you to the perfect wardrobe pieces"}
             </p>
-            <p className="uppercase font-thin text-lg w-[100%] text-[1rem] text-primary text-start">
+            <p className="uppercase font-thin w-[100%] text-[1rem] text-primary text-start">
               {"through seamless shopping. Ready to elevate your look with cutting-edge fashion tech?"}
             </p>
-            <p className="uppercase font-thin text-lg w-[100%] text-[1rem] text-primary text-start">
+            <p className="uppercase font-thin w-[100%] text-[1rem] text-primary text-start">
               {"Dive deeper into how it all works."}
             </p>
           </div>
