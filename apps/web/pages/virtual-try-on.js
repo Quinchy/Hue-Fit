@@ -1,3 +1,4 @@
+// pages/virtual-try-on.js
 import React, { useRef, useState, useCallback, useEffect } from "react";
 import { useRouter } from "next/router";
 import * as tf from "@tensorflow/tfjs-core";
@@ -6,7 +7,6 @@ import "@tensorflow/tfjs-backend-webgl";
 import "@tensorflow/tfjs-backend-wasm";
 import "@tensorflow/tfjs-converter";
 import * as posedetection from "@tensorflow-models/pose-detection";
-import { debounce } from "lodash";
 
 setWasmPaths("/wasm/");
 
@@ -22,24 +22,20 @@ export default function VirtualTryOnPage() {
   const [isCameraReady, setIsCameraReady] = useState(false);
   const [statusMessage, setStatusMessage] = useState("");
   const [mounted, setMounted] = useState(false);
-  const [dpr, setDpr] = useState(1);
-  const detectionIntervalRef = useRef(null);
-  const lastDetectionRef = useRef(0);
+  const [isPortrait, setIsPortrait] = useState(true);
 
+  // The cropped <img> to draw & its ImageData (if needed for future usage)
   const clothingImageElementRef = useRef(null);
   const clothingPixelDataRef = useRef(null);
 
   useEffect(() => {
     setMounted(true);
-    setDpr(window.devicePixelRatio || 1);
-    return () => {
-      if (detectionIntervalRef.current) {
-        cancelAnimationFrame(detectionIntervalRef.current);
-      }
-    };
   }, []);
 
-  const cropTransparentImage = (img) => {
+  /**
+   * Crop transparent edges from the loaded PNG image.
+   */
+  function cropTransparentImage(img) {
     const w = img.naturalWidth;
     const h = img.naturalHeight;
     const tempCanvas = document.createElement("canvas");
@@ -51,7 +47,10 @@ export default function VirtualTryOnPage() {
     const imageData = tempCtx.getImageData(0, 0, w, h);
     const { data } = imageData;
 
-    let top = h, left = w, right = 0, bottom = 0;
+    let top = h,
+      left = w,
+      right = 0,
+      bottom = 0;
     for (let y = 0; y < h; y++) {
       for (let x = 0; x < w; x++) {
         const idx = (y * w + x) * 4;
@@ -64,8 +63,8 @@ export default function VirtualTryOnPage() {
         }
       }
     }
-
     if (right < left || bottom < top) {
+      // Entire image is transparent
       return { croppedImg: img, imageData };
     }
 
@@ -76,235 +75,335 @@ export default function VirtualTryOnPage() {
     croppedCanvas.height = croppedHeight;
     const croppedCtx = croppedCanvas.getContext("2d");
 
-    croppedCtx.drawImage(tempCanvas, left, top, croppedWidth, croppedHeight, 0, 0, croppedWidth, croppedHeight);
+    croppedCtx.drawImage(
+      tempCanvas,
+      left,
+      top,
+      croppedWidth,
+      croppedHeight,
+      0,
+      0,
+      croppedWidth,
+      croppedHeight
+    );
 
+    // We'll keep the smaller region's ImageData
     const croppedImageData = croppedCtx.getImageData(0, 0, croppedWidth, croppedHeight);
+
+    // Create <img> element for final drawing
     const croppedImg = new Image();
     croppedImg.src = croppedCanvas.toDataURL();
 
     return { croppedImg, imageData: croppedImageData };
-  };
+  }
 
+  /**
+   * Load and crop the clothing PNG once the URL is known.
+   */
   useEffect(() => {
-    if (!router.isReady || !pngClotheURL) return;
-    const img = new Image();
-    img.crossOrigin = "anonymous";
-    img.src = pngClotheURL;
-    img.onload = () => {
-      const { croppedImg, imageData } = cropTransparentImage(img);
-      clothingImageElementRef.current = croppedImg;
-      clothingPixelDataRef.current = imageData;
-    };
+    if (!router.isReady) return;
+    if (pngClotheURL) {
+      const img = new Image();
+      img.crossOrigin = "anonymous";
+      img.src = pngClotheURL;
+      img.onload = () => {
+        const { croppedImg, imageData } = cropTransparentImage(img);
+        clothingImageElementRef.current = croppedImg;
+        clothingPixelDataRef.current = imageData;
+      };
+    }
   }, [router.isReady, pngClotheURL]);
 
+  /**
+   * Initialize Pose Detector with tf.js MoveNet (WASM).
+   */
   const initializePoseDetector = async () => {
     try {
-      await tf.setBackend('webgl');
+      await tf.setBackend("wasm");
       await tf.ready();
-    } catch (webglError) {
-      console.log('Falling back to WASM:', webglError);
-      await tf.setBackend('wasm');
-      await tf.ready();
-    }
-
-    try {
-      const detectorInstance = await posedetection.createDetector(
-        posedetection.SupportedModels.MoveNet,
-        { modelType: posedetection.movenet.modelType.SINGLEPOSE_LIGHTNING }
-      );
+      const detectionModel = posedetection.SupportedModels.MoveNet;
+      const detectorConfig = {
+        modelType: posedetection.movenet.modelType.SINGLEPOSE_LIGHTNING,
+      };
+      const detectorInstance = await posedetection.createDetector(detectionModel, detectorConfig);
       setPoseDetector(detectorInstance);
     } catch (error) {
       console.error("Error initializing pose detector:", error);
-      setStatusMessage("Failed to initialize pose detector. Please refresh.");
+      setStatusMessage("Failed to initialize pose detector. Please refresh the page.");
     }
   };
 
-  const adjustVideoCanvasSize = useCallback(() => {
-    const video = videoElementRef.current;
-    const canvas = canvasElementRef.current;
-    const container = containerRef.current;
+  /**
+   * Draw clothing overlay based on the user's pose & type of garment.
+   * All keypoints/skeleton lines are removed — only the clothing is drawn.
+   */
+  const renderClothingOverlay = useCallback(
+    (poses, canvasContext) => {
+      if (!poses || poses.length === 0) return;
+      const keypoints = poses[0].keypoints;
+      if (!keypoints || keypoints.length === 0) return;
 
-    if (!video || !canvas || !container) return;
-
-    const containerWidth = container.clientWidth;
-    const containerHeight = container.clientHeight;
-    const videoAspect = video.videoWidth / video.videoHeight;
-    const containerAspect = containerWidth / containerHeight;
-
-    let displayWidth, displayHeight;
-
-    if (containerAspect > videoAspect) {
-      displayHeight = containerHeight;
-      displayWidth = videoAspect * displayHeight;
-    } else {
-      displayWidth = containerWidth;
-      displayHeight = displayWidth / videoAspect;
-    }
-
-    video.style.width = `${displayWidth}px`;
-    video.style.height = `${displayHeight}px`;
-
-    canvas.width = displayWidth * dpr;
-    canvas.height = displayHeight * dpr;
-    canvas.style.width = `${displayWidth}px`;
-    canvas.style.height = `${displayHeight}px`;
-
-    const ctx = canvas.getContext('2d');
-    ctx.scale(dpr, dpr);
-  }, [dpr]);
-
-  const renderClothingOverlay = useCallback((poses, canvasContext) => {
-    if (!poses?.[0]?.keypoints || !clothingImageElementRef.current) return;
-
-    const keypoints = poses[0].keypoints;
-    const video = videoElementRef.current;
-    const canvas = canvasElementRef.current;
-    const scaleX = canvas.width / video.videoWidth;
-    const scaleY = canvas.height / video.videoHeight;
-
-    const getKeypoint = (name) => keypoints.find(kp => kp.name === name && kp.score > 0.5);
-    const leftShoulder = getKeypoint("left_shoulder");
-    const rightShoulder = getKeypoint("right_shoulder");
-    const leftHip = getKeypoint("left_hip");
-    const rightHip = getKeypoint("right_hip");
-    const leftKnee = getKeypoint("left_knee");
-    const rightKnee = getKeypoint("right_knee");
-    const leftAnkle = getKeypoint("left_ankle");
-    const rightAnkle = getKeypoint("right_ankle");
-
-    const clothingImage = clothingImageElementRef.current;
-    const aspectRatio = clothingImage.naturalWidth / clothingImage.naturalHeight;
-    let overlayX = 0, overlayY = 0, overlayWidth = 0, overlayHeight = 0;
-
-    if (type === "UPPERWEAR" || type === "OUTERWEAR") {
-      if (!leftShoulder || !rightShoulder) {
-        setStatusMessage("Upper body not detected. Adjust position.");
+      if (!clothingImageElementRef.current) {
+        setStatusMessage("No clothing image loaded.");
         return;
       }
 
-      const shoulderCenterX = ((leftShoulder.x + rightShoulder.x)/2) * scaleX;
-      const shoulderCenterY = ((leftShoulder.y + rightShoulder.y)/2) * scaleY;
-      const shoulderWidth = Math.abs(rightShoulder.x - leftShoulder.x) * scaleX;
+      const videoWidth = videoElementRef.current.videoWidth;
+      const videoHeight = videoElementRef.current.videoHeight;
+      const canvasWidth = canvasElementRef.current.width;
+      const canvasHeight = canvasElementRef.current.height;
+      const scaleX = canvasWidth / videoWidth;
+      const scaleY = canvasHeight / videoHeight;
 
-      if (leftHip && rightHip) {
-        const hipCenterY = ((leftHip.y + rightHip.y)/2) * scaleY;
-        overlayHeight = (hipCenterY - shoulderCenterY) * 1.15;
+      // Common Keypoints
+      const leftShoulder = keypoints.find((kp) => kp.name === "left_shoulder" && kp.score > 0.5);
+      const rightShoulder = keypoints.find((kp) => kp.name === "right_shoulder" && kp.score > 0.5);
+      const leftHip = keypoints.find((kp) => kp.name === "left_hip" && kp.score > 0.5);
+      const rightHip = keypoints.find((kp) => kp.name === "right_hip" && kp.score > 0.5);
+
+      // Additional lowerbody Keypoints
+      const leftKnee = keypoints.find((kp) => kp.name === "left_knee" && kp.score > 0.5);
+      const rightKnee = keypoints.find((kp) => kp.name === "right_knee" && kp.score > 0.5);
+      const leftAnkle = keypoints.find((kp) => kp.name === "left_ankle" && kp.score > 0.5);
+      const rightAnkle = keypoints.find((kp) => kp.name === "right_ankle" && kp.score > 0.5);
+
+      const clothingImage = clothingImageElementRef.current;
+      const aspectRatio = clothingImage.naturalWidth / clothingImage.naturalHeight;
+
+      let overlayX = 0,
+        overlayY = 0,
+        overlayWidth = 0,
+        overlayHeight = 0;
+
+      // ----- LOGIC SPLIT BY TYPE -----
+      if (type === "UPPERWEAR" || type === "OUTERWEAR") {
+        // Shoulders -> Hips
+        if (!leftShoulder || !rightShoulder) {
+          setStatusMessage(
+            "Upper body not fully detected. Move into frame and ensure good lighting."
+          );
+          return;
+        }
+
+        const leftShoulderX = leftShoulder.x * scaleX;
+        const leftShoulderY = leftShoulder.y * scaleY;
+        const rightShoulderX = rightShoulder.x * scaleX;
+        const rightShoulderY = rightShoulder.y * scaleY;
+        const shoulderCenterX = (leftShoulderX + rightShoulderX) / 2;
+        const shoulderCenterY = (leftShoulderY + rightShoulderY) / 2;
+        const shoulderWidth = Math.abs(rightShoulderX - leftShoulderX);
+
+        if (leftHip && rightHip) {
+          const leftHipYScaled = leftHip.y * scaleY;
+          const rightHipYScaled = rightHip.y * scaleY;
+          const hipCenterY = (leftHipYScaled + rightHipYScaled) / 2;
+          const torsoHeight = hipCenterY - shoulderCenterY;
+          overlayHeight = torsoHeight * 1.15;
+          overlayWidth = overlayHeight * aspectRatio;
+        } else {
+          // fallback if hips not found
+          overlayWidth = shoulderWidth * 1.2;
+          overlayHeight = (overlayWidth / aspectRatio) * 1.15;
+        }
+
+        if (overlayWidth < shoulderWidth * 1.2) {
+          overlayWidth = shoulderWidth * 1.2;
+          overlayHeight = overlayWidth / aspectRatio;
+        }
+
+        overlayX = shoulderCenterX - overlayWidth / 2;
+        overlayY = shoulderCenterY - overlayHeight * 0.08;
+      } else if (type === "LOWERWEAR") {
+        // Hips -> knee or ankle
+        if (!leftHip || !rightHip) {
+          setStatusMessage("Lower body not fully detected (hips). Please move back to show hips.");
+          return;
+        }
+        const leftHipX = leftHip.x * scaleX;
+        const leftHipY = leftHip.y * scaleY;
+        const rightHipX = rightHip.x * scaleX;
+        const rightHipY = rightHip.y * scaleY;
+        const hipCenterX = (leftHipX + rightHipX) / 2;
+        const hipCenterY = (leftHipY + rightHipY) / 2;
+
+        let lowerPointY = null;
+        if (tag === "SHORTS") {
+          if (!leftKnee || !rightKnee) {
+            setStatusMessage("Knees not detected. Move back to show full lower body.");
+            return;
+          }
+          const leftKneeY = leftKnee.y * scaleY;
+          const rightKneeY = rightKnee.y * scaleY;
+          lowerPointY = (leftKneeY + rightKneeY) / 2; // center between knees
+        } else {
+          if (!leftAnkle || !rightAnkle) {
+            setStatusMessage("Ankles not detected. Move back to show full lower body.");
+            return;
+          }
+          const leftAnkleY = leftAnkle.y * scaleY;
+          const rightAnkleY = rightAnkle.y * scaleY;
+          lowerPointY = (leftAnkleY + rightAnkleY) / 2; // center between ankles
+        }
+
+        const lowerBodyHeight = lowerPointY - hipCenterY;
+        overlayHeight = lowerBodyHeight * 1.2;
         overlayWidth = overlayHeight * aspectRatio;
-      } else {
-        overlayWidth = shoulderWidth * 1.2;
-        overlayHeight = (overlayWidth / aspectRatio) * 1.15;
+
+        const hipWidth = Math.abs(rightHipX - leftHipX);
+        if (overlayWidth < hipWidth * 1.1) {
+          overlayWidth = hipWidth * 1.1;
+          overlayHeight = overlayWidth / aspectRatio;
+        }
+
+        overlayX = hipCenterX - overlayWidth / 2;
+        overlayY = hipCenterY;
       }
 
-      overlayX = shoulderCenterX - overlayWidth/2;
-      overlayY = shoulderCenterY - overlayHeight * 0.08;
-    } else if (type === "LOWERWEAR") {
-      if (!leftHip || !rightHip) {
-        setStatusMessage("Lower body not detected. Adjust position.");
+      // Ensure overlay doesn't go out of canvas boundaries
+      overlayX = Math.max(0, overlayX);
+      overlayY = Math.max(0, overlayY);
+      overlayWidth = Math.min(canvasWidth - overlayX, overlayWidth);
+      overlayHeight = Math.min(canvasHeight - overlayY, overlayHeight);
+
+      // Draw the clothing only
+      canvasContext.drawImage(clothingImage, overlayX, overlayY, overlayWidth, overlayHeight);
+
+      setStatusMessage(
+        `Clothing applied. Type: ${type}${type === "LOWERWEAR" ? ", Tag: " + tag : ""}`
+      );
+    },
+    [type, tag]
+  );
+
+  /**
+   * Perform a single detection & draw.
+   */
+  const performPoseDetection = useCallback(async () => {
+    if (
+      !videoElementRef.current ||
+      !poseDetector ||
+      !canvasElementRef.current ||
+      !isCameraReady
+    ) {
+      if (!isCameraReady) setStatusMessage("Waiting for camera...");
+      return;
+    }
+    try {
+      const videoElement = videoElementRef.current;
+      const canvasElement = canvasElementRef.current;
+      const canvasContext = canvasElement.getContext("2d");
+
+      if (videoElement.videoWidth === 0 || videoElement.videoHeight === 0) return;
+
+      // Draw the camera feed as background
+      canvasContext.drawImage(videoElement, 0, 0, canvasElement.width, canvasElement.height);
+
+      // Estimate poses
+      const detectedPoses = await poseDetector.estimatePoses(videoElement, {
+        flipHorizontal: false,
+      });
+
+      if (!detectedPoses || detectedPoses.length === 0) {
+        setStatusMessage("No human detected. Please step into frame.");
         return;
       }
 
-      const hipCenterX = ((leftHip.x + rightHip.x)/2) * scaleX;
-      const hipCenterY = ((leftHip.y + rightHip.y)/2) * scaleY;
-      const hipWidth = Math.abs(rightHip.x - leftHip.x) * scaleX;
-
-      let lowerPointY = tag === "SHORTS" 
-        ? ((leftKnee?.y ?? hipCenterY) + (rightKnee?.y ?? hipCenterY))/2 * scaleY
-        : ((leftAnkle?.y ?? hipCenterY) + (rightAnkle?.y ?? hipCenterY))/2 * scaleY;
-
-      overlayHeight = (lowerPointY - hipCenterY) * 1.2;
-      overlayWidth = overlayHeight * aspectRatio;
-      overlayX = hipCenterX - overlayWidth/2;
-      overlayY = hipCenterY;
-    }
-
-    overlayX = Math.max(0, overlayX);
-    overlayY = Math.max(0, overlayY);
-    overlayWidth = Math.min(canvas.width - overlayX, overlayWidth);
-    overlayHeight = Math.min(canvas.height - overlayY, overlayHeight);
-
-    canvasContext.drawImage(clothingImage, overlayX, overlayY, overlayWidth, overlayHeight);
-    setStatusMessage(`Clothing applied. Type: ${type}${tag ? `, Tag: ${tag}` : ''}`);
-  }, [type, tag, dpr]);
-
-  const performPoseDetection = useCallback(async () => {
-    const now = Date.now();
-    if (now - lastDetectionRef.current < 66) return;
-    
-    try {
-      const video = videoElementRef.current;
-      const canvas = canvasElementRef.current;
-      const ctx = canvas.getContext('2d');
-
-      if (!video || video.readyState < 2) return;
-
-      ctx.clearRect(0, 0, canvas.width, canvas.height);
-      ctx.drawImage(video, 0, 0, canvas.width, canvas.height);
-
-      const detectedPoses = await poseDetector.estimatePoses(video);
-      if (detectedPoses?.length) {
-        renderClothingOverlay(detectedPoses, ctx);
-        lastDetectionRef.current = now;
-      }
+      renderClothingOverlay(detectedPoses, canvasContext);
     } catch (error) {
-      console.error('Detection error:', error);
+      console.error("Error in pose detection:", error);
+      setStatusMessage("Error detecting poses. Retrying...");
+      setIsDetectionRunning(false);
+      setTimeout(() => setIsDetectionRunning(true), 3000);
     }
-  }, [poseDetector, renderClothingOverlay]);
+  }, [isCameraReady, poseDetector, renderClothingOverlay]);
 
-  useEffect(() => {
-    const handleResize = debounce(adjustVideoCanvasSize, 100);
-    window.addEventListener('resize', handleResize);
-    return () => window.removeEventListener('resize', handleResize);
-  }, [adjustVideoCanvasSize]);
-
+  /**
+   * Initialize camera + start detection loop.
+   */
   useEffect(() => {
     let cameraStream;
-    
-    const initializeCamera = async () => {
+    let animationFrameId;
+
+    const initializeCameraStream = async () => {
       try {
         cameraStream = await navigator.mediaDevices.getUserMedia({
-          video: {
-            width: { ideal: 640 },
-            height: { ideal: 480 },
-            frameRate: { ideal: 15 }
-          },
-          audio: false
+          video: { width: 640, height: 480, frameRate: { ideal: 15, max: 15 } },
+          audio: false,
         });
-
-        const video = videoElementRef.current;
-        video.srcObject = cameraStream;
-        
-        video.onloadedmetadata = async () => {
-          await video.play();
-          adjustVideoCanvasSize();
-          setIsCameraReady(true);
-          
-          const detectionLoop = () => {
-            performPoseDetection();
-            detectionIntervalRef.current = requestAnimationFrame(detectionLoop);
+        if (videoElementRef.current) {
+          videoElementRef.current.srcObject = cameraStream;
+          videoElementRef.current.setAttribute("playsinline", ""); // Important for iOS
+          videoElementRef.current.onloadedmetadata = async () => {
+            await videoElementRef.current.play();
+            setIsCameraReady(true);
+            setStatusMessage("Camera ready, detecting poses...");
           };
-          detectionLoop();
-        };
+        }
       } catch (error) {
-        console.error('Camera error:', error);
-        setStatusMessage('Camera access required. Please allow permission.');
+        console.error("Error accessing camera:", error);
+        setStatusMessage("Unable to access camera. Please allow camera permissions.");
       }
     };
 
-    if (mounted) initializePoseDetector().then(initializeCamera);
+    const startPoseDetection = () => {
+      const detectionLoop = async () => {
+        await performPoseDetection();
+        animationFrameId = requestAnimationFrame(detectionLoop);
+      };
+      detectionLoop();
+    };
+
+    initializePoseDetector()
+      .then(initializeCameraStream)
+      .then(() => {
+        const waitForReadyState = setInterval(() => {
+          if (isCameraReady && poseDetector) {
+            startPoseDetection();
+            clearInterval(waitForReadyState);
+          }
+        }, 100);
+      });
+
+    // Handle device orientation changes
+    const handleOrientationChange = () => {
+      if (window.innerHeight > window.innerWidth) {
+        setIsPortrait(true);
+      } else {
+        setIsPortrait(false);
+      }
+    };
+
+    handleOrientationChange(); // Initial check
+    window.addEventListener('resize', handleOrientationChange);
 
     return () => {
-      cameraStream?.getTracks().forEach(track => track.stop());
+      if (animationFrameId) cancelAnimationFrame(animationFrameId);
+      if (cameraStream) {
+        cameraStream.getTracks().forEach((track) => track.stop());
+      }
+      window.removeEventListener('resize', handleOrientationChange);
     };
-  }, [mounted, performPoseDetection, adjustVideoCanvasSize]);
+  }, [isCameraReady, poseDetector, performPoseDetection]);
 
   if (!mounted) return null;
 
   return (
     <div style={styles.container} ref={containerRef}>
       <div style={styles.cameraContainer}>
-        <video ref={videoElementRef} style={styles.video} muted playsInline autoPlay />
-        <canvas ref={canvasElementRef} style={styles.canvas} />
-        <div style={styles.statusMessage}>{statusMessage}</div>
+        <video
+          ref={videoElementRef}
+          style={styles.video}
+          muted
+          playsInline
+          autoPlay
+        />
+        <canvas
+          ref={canvasElementRef}
+          style={styles.canvas}
+        />
+        <div style={styles.statusMessage}>
+          {statusMessage}
+        </div>
       </div>
     </div>
   );
@@ -319,8 +418,8 @@ const styles = {
     height: "100vh",
     backgroundColor: "#000",
     overflow: "hidden",
-    margin: 0,
-    padding: 0,
+    margin: "0",
+    padding: "0",
   },
   cameraContainer: {
     position: "relative",
@@ -331,14 +430,19 @@ const styles = {
     alignItems: "center",
   },
   video: {
-    position: 'absolute',
-    objectFit: 'cover',
-    backgroundColor: '#000',
+    width: "100%",
+    height: "auto",
+    maxHeight: "100%",
+    objectFit: "contain", // Maintains aspect ratio
+    backgroundColor: "#000", // Ensures black background when not covering
   },
   canvas: {
     position: "absolute",
-    imageRendering: 'crisp-edges',
-    pointerEvents: "none",
+    top: "0",
+    left: "0",
+    width: "100%",
+    height: "100%",
+    pointerEvents: "none", // Ensures canvas doesn't block video interactions
   },
   statusMessage: {
     position: "absolute",
