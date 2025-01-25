@@ -20,6 +20,7 @@ export default function VirtualTryOnPage() {
 
   const [poseDetector, setPoseDetector] = useState(null);
   const [isCameraReady, setIsCameraReady] = useState(false);
+  const [isDetectionRunning, setIsDetectionRunning] = useState(false);
   const [statusMessage, setStatusMessage] = useState("");
   const [mounted, setMounted] = useState(false);
   const [isPortrait, setIsPortrait] = useState(true);
@@ -118,18 +119,27 @@ export default function VirtualTryOnPage() {
    * Initialize Pose Detector with tf.js MoveNet (WASM).
    */
   const initializePoseDetector = async () => {
-    try {
-      await tf.setBackend("wasm");
-      await tf.ready();
-      const detectionModel = posedetection.SupportedModels.MoveNet;
-      const detectorConfig = {
-        modelType: posedetection.movenet.modelType.SINGLEPOSE_LIGHTNING,
-      };
-      const detectorInstance = await posedetection.createDetector(detectionModel, detectorConfig);
-      setPoseDetector(detectorInstance);
-    } catch (error) {
-      console.error("Error initializing pose detector:", error);
-      setStatusMessage("Failed to initialize pose detector. Please refresh the page.");
+    let retriesRemaining = 3;
+    while (retriesRemaining > 0) {
+      try {
+        await tf.setBackend("wasm");
+        await tf.ready();
+        const detectionModel = posedetection.SupportedModels.MoveNet;
+        const detectorConfig = {
+          modelType: posedetection.movenet.modelType.SINGLEPOSE_LIGHTNING,
+        };
+        const detectorInstance = await posedetection.createDetector(detectionModel, detectorConfig);
+        setPoseDetector(detectorInstance);
+        return;
+      } catch (error) {
+        console.error("Error initializing pose detector:", error);
+        retriesRemaining--;
+        setStatusMessage(
+          retriesRemaining === 0
+            ? "Failed to initialize pose detector. Please refresh the page."
+            : "Retrying detector setup..."
+        );
+      }
     }
   };
 
@@ -150,10 +160,8 @@ export default function VirtualTryOnPage() {
 
       const videoWidth = videoElementRef.current.videoWidth;
       const videoHeight = videoElementRef.current.videoHeight;
-      const canvasWidth = canvasElementRef.current.width;
-      const canvasHeight = canvasElementRef.current.height;
-      const scaleX = canvasWidth / videoWidth;
-      const scaleY = canvasHeight / videoHeight;
+      const scaleX = canvasElementRef.current.width / videoWidth;
+      const scaleY = canvasElementRef.current.height / videoHeight;
 
       // Common Keypoints
       const leftShoulder = keypoints.find((kp) => kp.name === "left_shoulder" && kp.score > 0.5);
@@ -262,8 +270,8 @@ export default function VirtualTryOnPage() {
       // Ensure overlay doesn't go out of canvas boundaries
       overlayX = Math.max(0, overlayX);
       overlayY = Math.max(0, overlayY);
-      overlayWidth = Math.min(canvasWidth - overlayX, overlayWidth);
-      overlayHeight = Math.min(canvasHeight - overlayY, overlayHeight);
+      overlayWidth = Math.min(canvasContext.canvas.width - overlayX, overlayWidth);
+      overlayHeight = Math.min(canvasContext.canvas.height - overlayY, overlayHeight);
 
       // Draw the clothing only
       canvasContext.drawImage(clothingImage, overlayX, overlayY, overlayWidth, overlayHeight);
@@ -295,6 +303,10 @@ export default function VirtualTryOnPage() {
 
       if (videoElement.videoWidth === 0 || videoElement.videoHeight === 0) return;
 
+      canvasElement.width = 640;
+      canvasElement.height = 480;
+      canvasContext.clearRect(0, 0, canvasElement.width, canvasElement.height);
+
       // Draw the camera feed as background
       canvasContext.drawImage(videoElement, 0, 0, canvasElement.width, canvasElement.height);
 
@@ -322,12 +334,12 @@ export default function VirtualTryOnPage() {
    */
   useEffect(() => {
     let cameraStream;
-    let animationFrameId;
+    let detectionInterval;
 
     const initializeCameraStream = async () => {
       try {
         cameraStream = await navigator.mediaDevices.getUserMedia({
-          video: { width: 640, height: 480, frameRate: { ideal: 15, max: 15 } },
+          video: { width: 640, height: 480, frameRate: { ideal: 60, max: 60 } },
           audio: false,
         });
         if (videoElementRef.current) {
@@ -346,11 +358,10 @@ export default function VirtualTryOnPage() {
     };
 
     const startPoseDetection = () => {
-      const detectionLoop = async () => {
-        await performPoseDetection();
-        animationFrameId = requestAnimationFrame(detectionLoop);
-      };
-      detectionLoop();
+      if (!isDetectionRunning) {
+        setIsDetectionRunning(true);
+        detectionInterval = setInterval(performPoseDetection, 1000 / 60); // 60 fps for better performance
+      }
     };
 
     initializePoseDetector()
@@ -377,13 +388,13 @@ export default function VirtualTryOnPage() {
     window.addEventListener('resize', handleOrientationChange);
 
     return () => {
-      if (animationFrameId) cancelAnimationFrame(animationFrameId);
+      if (detectionInterval) clearInterval(detectionInterval);
       if (cameraStream) {
         cameraStream.getTracks().forEach((track) => track.stop());
       }
       window.removeEventListener('resize', handleOrientationChange);
     };
-  }, [isCameraReady, poseDetector, performPoseDetection]);
+  }, [isDetectionRunning, isCameraReady, poseDetector, performPoseDetection]);
 
   if (!mounted) return null;
 
