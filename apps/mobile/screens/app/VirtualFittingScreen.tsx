@@ -11,11 +11,10 @@ import {
 } from 'react-native';
 import { WebView } from 'react-native-webview';
 import { Camera } from 'expo-camera';
-import * as Linking from 'expo-linking';
 
 export default function VirtualFittingScreen({ route }) {
-  const { pngClotheURL, type, tag } = route.params; // Assuming you're passing these as navigation params
-  const webViewUrl = `http://192.168.254.105:3000/virtual-try-on?pngClotheURL=${encodeURIComponent(pngClotheURL)}&type=${type}&tag=${tag}`;
+  const { pngClotheURL, type, tag } = route.params;
+  const webViewUrl = `https://hue-fit-web.vercel.app/virtual-try-on?pngClotheURL=${encodeURIComponent(pngClotheURL)}&type=${type}&tag=${tag}`;
   
   const [hasPermission, setHasPermission] = useState(null);
   const [isLoading, setIsLoading] = useState(true);
@@ -28,7 +27,20 @@ export default function VirtualFittingScreen({ route }) {
       setIsLoading(false);
     })();
   }, []);
-  
+
+  const viewportMeta = `
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, 
+    maximum-scale=1.0, user-scalable=no, shrink-to-fit=no" />
+  `;
+
+  const injectedJS = `
+    (function() {
+      ${viewportMeta}
+      document.body.style.overflow = 'hidden';
+      document.documentElement.style.overflow = 'hidden';
+    })();
+  `;
+
   if (isLoading) {
     return (
       <View style={styles.loadingContainer}>
@@ -55,9 +67,7 @@ export default function VirtualFittingScreen({ route }) {
     );
   }
   
-  // Handle Android Permissions for WebView (if possible)
   const onShouldStartLoadWithRequest = (request) => {
-    // Optionally, handle URL schemes or navigation events
     return true;
   };
   
@@ -90,12 +100,17 @@ export default function VirtualFittingScreen({ route }) {
         allowsInlineMediaPlayback
         mediaPlaybackRequiresUserAction={false}
         originWhitelist={['*']}
-        onShouldStartLoadWithRequest={onShouldStartLoadWithRequest}
-        onMessage={onMessage}
-        onError={onError}
-        // For iOS: Allow camera access
-        allowsCameraAccess={true} // Note: This prop might not exist; see notes below
-        // Additional props can be added here
+        injectedJavaScriptBeforeContentLoaded={injectedJS}
+        androidLayerType="hardware"
+        androidHardwareAccelerationDisabled={false}
+        overScrollMode="never"
+        decelerationRate="normal"
+        contentMode="mobile"
+        scalesPageToFit={Platform.OS === 'android'}
+        onError={(syntheticEvent) => {
+          const { nativeEvent } = syntheticEvent;
+          Alert.alert('Error', 'Failed to load virtual fitting room');
+        }}
       />
     </View>
   );

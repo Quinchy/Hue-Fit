@@ -229,7 +229,7 @@ const ProductViewScreen = ({ route, navigation }) => {
                       // Pass type & tag from parentProduct (typeName, tagName)
                       navigation.navigate('VirtualFitting', {
                         pngClotheURL: values.selectedVariant.pngClotheURL,
-                        garmentType: parentProduct?.typeName ?? '',
+                        type: parentProduct?.typeName ?? '',
                         tag: parentProduct?.tagName ?? '',
                       });
                     }
