@@ -3,7 +3,7 @@
     "name": "Hue-Fit",
     "slug": "hue-fit",
     "version": "1.0.0",
-    "orientation": "portrait",
+    "orientation": "default",
     "icon": "./assets/icon.png",
     "userInterfaceStyle": "dark",
     "splash": {
@@ -11,20 +11,60 @@
       "resizeMode": "contain",
       "backgroundColor": "#191919"
     },
+    "assetBundlePatterns": [
+      "**/*"
+    ],
     "ios": {
-      "supportsTablet": true
+      "supportsTablet": true,
+      "infoPlist": {
+        "NSCameraUsageDescription": "This app uses the camera to allow you to try on virtual outfits."
+      },
+      "bundleIdentifier": "com.yourcompany.huefit",
+      "buildNumber": "1.0.0"
     },
     "android": {
       "adaptiveIcon": {
         "foregroundImage": "./assets/adaptive-icon.png",
         "backgroundColor": "#191919"
-      }
+      },
+      "permissions": ["CAMERA"],
+      "package": "com.yourcompany.huefit",
+      "versionCode": 1
     },
     "web": {
-      "favicon": "./assets/favicon.png"
+      "favicon": "./assets/favicon.png",
+      "config": {
+        "firebase": {
+          "apiKey": "YOUR_FIREBASE_API_KEY",
+          "authDomain": "YOUR_FIREBASE_AUTH_DOMAIN",
+          "projectId": "YOUR_FIREBASE_PROJECT_ID",
+          "storageBucket": "YOUR_FIREBASE_STORAGE_BUCKET",
+          "messagingSenderId": "YOUR_FIREBASE_MESSAGING_SENDER_ID",
+          "appId": "YOUR_FIREBASE_APP_ID"
+        }
+      }
     },
+    "plugins": [
+      [
+        "expo-camera",
+        {
+          "cameraPermission": "This app uses the camera to allow you to try on virtual outfits."
+        }
+      ]
+    ],
+    "updates": {
+      "fallbackToCacheTimeout": 0
+    },
+    "assetBundlePatterns": [
+      "**/*"
+    ],
     "extra": {
-      "apiUrl": "https://hue-fit-web.vercel.app"
-    }
+      "apiUrl": "https://hue-fit-web.vercel.app",
+      "eas": {
+        "projectId": "YOUR_EAS_PROJECT_ID"
+      }
+    },
+    "scheme": "huefit",
+    "description": "Hue-Fit allows you to virtually try on outfits using your device's camera."
   }
 }

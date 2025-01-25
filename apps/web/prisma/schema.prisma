@@ -292,6 +292,7 @@ model ProductVariant {
   price            Decimal  @db.Decimal(10, 2)
   totalQuantity    Int      @default(0)
   pngClotheURL     String?
+  objClotheURL     String?
   created_at       DateTime @default(now())
   updated_at       DateTime @updatedAt
 

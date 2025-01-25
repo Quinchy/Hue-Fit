@@ -1,3 +1,4 @@
+// pages/virtual-try-on.js
 import React, { useRef, useState, useCallback, useEffect } from "react";
 import { useRouter } from "next/router";
 import * as tf from "@tensorflow/tfjs-core";
@@ -15,12 +16,14 @@ export default function VirtualTryOnPage() {
 
   const videoElementRef = useRef(null);
   const canvasElementRef = useRef(null);
+  const containerRef = useRef(null);
 
   const [poseDetector, setPoseDetector] = useState(null);
   const [isCameraReady, setIsCameraReady] = useState(false);
   const [isDetectionRunning, setIsDetectionRunning] = useState(false);
   const [statusMessage, setStatusMessage] = useState("");
   const [mounted, setMounted] = useState(false);
+  const [isPortrait, setIsPortrait] = useState(true);
 
   // The cropped <img> to draw & its ImageData (if needed for future usage)
   const clothingImageElementRef = useRef(null);
@@ -328,25 +331,30 @@ export default function VirtualTryOnPage() {
     let detectionInterval;
 
     const initializeCameraStream = async () => {
-      cameraStream = await navigator.mediaDevices.getUserMedia({
-        video: { width: 640, height: 480, frameRate: { ideal: 30, max: 30 } },
-        audio: false,
-      });
-      if (videoElementRef.current) {
-        videoElementRef.current.srcObject = cameraStream;
-        videoElementRef.current.setAttribute("playsinline", "");
-        videoElementRef.current.onloadedmetadata = async () => {
-          await videoElementRef.current.play();
-          setIsCameraReady(true);
-          setStatusMessage("Camera ready, detecting poses...");
-        };
+      try {
+        cameraStream = await navigator.mediaDevices.getUserMedia({
+          video: { width: 640, height: 480, frameRate: { ideal: 30, max: 30 } },
+          audio: false,
+        });
+        if (videoElementRef.current) {
+          videoElementRef.current.srcObject = cameraStream;
+          videoElementRef.current.setAttribute("playsinline", "");
+          videoElementRef.current.onloadedmetadata = async () => {
+            await videoElementRef.current.play();
+            setIsCameraReady(true);
+            setStatusMessage("Camera ready, detecting poses...");
+          };
+        }
+      } catch (error) {
+        console.error("Error accessing camera:", error);
+        setStatusMessage("Unable to access camera. Please allow camera permissions.");
       }
     };
 
     const startPoseDetection = () => {
       if (!isDetectionRunning) {
         setIsDetectionRunning(true);
-        detectionInterval = setInterval(performPoseDetection, 1000 / 30); // 30 fps
+        detectionInterval = setInterval(performPoseDetection, 1000 / 15); // 15 fps for better performance
       }
     };
 
@@ -361,69 +369,96 @@ export default function VirtualTryOnPage() {
         }, 100);
       });
 
+    // Handle device orientation changes
+    const handleOrientationChange = () => {
+      if (window.innerHeight > window.innerWidth) {
+        setIsPortrait(true);
+      } else {
+        setIsPortrait(false);
+      }
+    };
+
+    handleOrientationChange(); // Initial check
+    window.addEventListener('resize', handleOrientationChange);
+
     return () => {
       if (detectionInterval) clearInterval(detectionInterval);
       if (cameraStream) {
         cameraStream.getTracks().forEach((track) => track.stop());
       }
+      window.removeEventListener('resize', handleOrientationChange);
     };
   }, [isDetectionRunning, isCameraReady, poseDetector, performPoseDetection]);
 
   if (!mounted) return null;
 
   return (
-    <div style={{ textAlign: "center", padding: "20px", color: "#fff" }}>
-      <div
-        style={{
-          position: "relative",
-          width: "1500px",
-          height: "800px",
-          margin: "0 auto",
-        }}
-      >
+    <div style={styles.container} ref={containerRef}>
+      <div style={styles.cameraContainer}>
         <video
           ref={videoElementRef}
-          style={{
-            position: "absolute",
-            top: 0,
-            left: 0,
-            width: "1500px",
-            height: "800px",
-            objectFit: "cover",
-          }}
+          style={styles.video}
           muted
           playsInline
           autoPlay
         />
         <canvas
           ref={canvasElementRef}
-          style={{
-            position: "absolute",
-            top: 0,
-            left: 0,
-            width: "1500px",
-            height: "800px",
-          }}
+          style={styles.canvas}
         />
-        <div
-          style={{
-            position: "absolute",
-            bottom: 10,
-            left: "50%",
-            transform: "translateX(-50%)",
-            color: "yellow",
-            backgroundColor: "rgba(0,0,0,0.7)",
-            padding: "5px 10px",
-            borderRadius: "5px",
-            zIndex: 3,
-            fontSize: "14px",
-            maxWidth: "90%",
-            textAlign: "center",
-          }}
-        >
+        <div style={styles.statusMessage}>
           {statusMessage}
         </div>
       </div>
     </div>
   );
 }
+
+const styles = {
+  container: {
+    textAlign: "center",
+    padding: "0",
+    margin: "0",
+    width: "100vw",
+    height: "100vh",
+    overflow: "hidden",
+    backgroundColor: "#000",
+  },
+  cameraContainer: {
+    position: "relative",
+    width: "100%",
+    height: "100%",
+    overflow: "hidden",
+  },
+  video: {
+    position: "absolute",
+    top: "50%",
+    left: "50%",
+    width: "100%",
+    height: "100%",
+    objectFit: "cover",
+    transform: "translate(-50%, -50%)",
+  },
+  canvas: {
+    position: "absolute",
+    top: "0",
+    left: "0",
+    width: "100%",
+    height: "100%",
+    objectFit: "cover",
+  },
+  statusMessage: {
+    position: "absolute",
+    bottom: "5%",
+    left: "50%",
+    transform: "translateX(-50%)",
+    color: "yellow",
+    backgroundColor: "rgba(0,0,0,0.7)",
+    padding: "8px 16px",
+    borderRadius: "8px",
+    zIndex: 3,
+    fontSize: "16px",
+    maxWidth: "90%",
+    textAlign: "center",
+  },
+};

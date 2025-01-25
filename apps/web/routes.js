@@ -5,6 +5,7 @@ const routes = {
   home: '/',
   about: '/about',
   contact: '/contact',
+  virtualFittingMobile: '/virtual-try-on',
   partnership: '/partnership/1',
   partnership2: '/partnership/2',
   partnership3: '/partnership/3',

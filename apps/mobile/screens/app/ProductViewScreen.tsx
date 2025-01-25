@@ -1,7 +1,16 @@
 // ProductViewScreen.js
-
 import React, { useEffect, useState, useRef } from 'react';
-import { Animated, Easing, View, Text, FlatList, Image, TouchableOpacity, Dimensions, StyleSheet } from 'react-native';
+import {
+  Animated,
+  Easing,
+  View,
+  Text,
+  FlatList,
+  Image,
+  TouchableOpacity,
+  Dimensions,
+  StyleSheet
+} from 'react-native';
 import { Formik } from 'formik';
 import * as Yup from 'yup';
 import AsyncStorage from '@react-native-async-storage/async-storage';
@@ -20,6 +29,7 @@ const validationSchema = Yup.object().shape({
 
 const ProductViewScreen = ({ route, navigation }) => {
   const { productId } = route.params;
+
   const [loading, setLoading] = useState(false);
   const [productDetails, setProductDetails] = useState(null);
   const [selectedVariant, setSelectedVariant] = useState(null);
@@ -27,6 +37,8 @@ const ProductViewScreen = ({ route, navigation }) => {
   const [quantity, setQuantity] = useState(1);
 
   const toast = useToast();
+
+  // Flying animation refs
   const flyingAnim = useRef(new Animated.ValueXY({ x: 0, y: 0 })).current;
   const flyingScale = useRef(new Animated.Value(1)).current;
   const fadeAnim = useRef(new Animated.Value(1)).current;
@@ -36,18 +48,23 @@ const ProductViewScreen = ({ route, navigation }) => {
   const [showReserveWarning, setShowReserveWarning] = useState(false);
   const [pendingCartValues, setPendingCartValues] = useState(null);
 
+  // 1) Fetch product details from your API
   const fetchProductDetails = async () => {
     setLoading(true);
     try {
-      const response = await fetch('http://192.168.254.105:3000/api/mobile/products/get-product-details', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ productId }),
-      });
+      const response = await fetch(
+        'http://192.168.254.105:3000/api/mobile/products/get-product-details',
+        {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ productId }),
+        }
+      );
       if (!response.ok) throw new Error('Failed to fetch product details');
 
       const data = await response.json();
       setProductDetails(data);
+      // Pre-select the first variant as default
       setSelectedVariant(data.allVariants[0]);
     } catch (error) {
       console.error('Error fetching product details:', error);
@@ -64,11 +81,15 @@ const ProductViewScreen = ({ route, navigation }) => {
     return <LoadingSpinner size={300} messages="Loading product..." visible />;
   }
 
+  // 2) Destructure the response object
   const { parentProduct, allVariants, measurementChart } = productDetails;
   const shopDetails = parentProduct.shop;
 
+  // 3) Add item to cart (POST)
   const handleAddToCart = async (values) => {
-    const userId = await AsyncStorage.getItem('user').then(user => user ? JSON.parse(user).id : null);
+    const userId = await AsyncStorage.getItem('user').then(user =>
+      user ? JSON.parse(user).id : null
+    );
     if (!userId) {
       console.error('User ID not found');
       return;
@@ -93,13 +114,16 @@ const ProductViewScreen = ({ route, navigation }) => {
     console.log(result);
   };
 
+  // 4) Flying animation to cart
   const animateAddToCart = (values) => {
     if (!values.selectedVariant || !values.selectedVariant.images?.[0]) return;
     setFlyingImage(values.selectedVariant.images[0]);
+
     flyingAnim.setValue({ x: screenWidth / 2 - 25, y: screenHeight - 100 });
     flyingScale.setValue(1);
     fadeAnim.setValue(1);
     setShowFlyingImage(true);
+
     Animated.parallel([
       Animated.timing(flyingAnim, {
         toValue: { x: screenWidth - 50, y: 40 },
@@ -124,11 +148,13 @@ const ProductViewScreen = ({ route, navigation }) => {
     });
   };
 
+  // 5) Low-stock check
   const checkSizeStock = (size) => {
     if (!size) return false;
-    return size.quantity <= 5; // 5 or less triggers reservation warning
+    return size.quantity <= 5; // 5 or fewer => reservation message
   };
 
+  // 6) Render the screen
   return (
     <BackgroundProvider>
       <Formik
@@ -143,9 +169,11 @@ const ProductViewScreen = ({ route, navigation }) => {
         onSubmit={async (values) => {
           const lowStock = checkSizeStock(values.selectedSize);
           if (lowStock) {
+            // Show a modal that warns user about low stock
             setShowReserveWarning(true);
             setPendingCartValues(values);
           } else {
+            // Add to cart directly
             try {
               await handleAddToCart(values);
               animateAddToCart(values);
@@ -163,6 +191,7 @@ const ProductViewScreen = ({ route, navigation }) => {
       >
         {({ handleSubmit, setFieldValue, values, errors, touched }) => (
           <View style={styles.container}>
+            {/* The flying image animation to cart */}
             {showFlyingImage && flyingImage && (
               <Animated.Image
                 source={{ uri: flyingImage }}
@@ -181,11 +210,14 @@ const ProductViewScreen = ({ route, navigation }) => {
               />
             )}
 
+            {/* Top overlay buttons */}
             <View style={styles.overlayButtonsContainer}>
               <TouchableOpacity style={styles.backButton} onPress={() => navigation.goBack()}>
                 <ArrowLeft color="#fff" size={24} />
               </TouchableOpacity>
+
               <View style={{ flexDirection: 'row', alignItems: 'center', gap: 10 }}>
+                {/* Virtual Fitting Button */}
                 <TouchableOpacity
                   style={[
                     styles.backButton,
@@ -194,8 +226,11 @@ const ProductViewScreen = ({ route, navigation }) => {
                   ]}
                   onPress={() => {
                     if (values.selectedVariant?.pngClotheURL) {
+                      // Pass type & tag from parentProduct (typeName, tagName)
                       navigation.navigate('VirtualFitting', {
-                        pngClotheURL: values.selectedVariant.pngClotheURL
+                        pngClotheURL: values.selectedVariant.pngClotheURL,
+                        garmentType: parentProduct?.typeName ?? '',
+                        tag: parentProduct?.tagName ?? '',
                       });
                     }
                   }}
@@ -203,6 +238,8 @@ const ProductViewScreen = ({ route, navigation }) => {
                 >
                   <Camera color="#fff" size={24} />
                 </TouchableOpacity>
+
+                {/* Go to Cart Button */}
                 <TouchableOpacity
                   style={styles.cartButton}
                   onPress={() => navigation.navigate('Cart', { fromProduct: true })}
@@ -212,11 +249,13 @@ const ProductViewScreen = ({ route, navigation }) => {
               </View>
             </View>
 
+            {/* Main content (images, color/size selection, quantity, etc.) */}
             <FlatList
               data={['placeholder']}
               renderItem={() => null}
               ListHeaderComponent={
                 <View style={{ flex: 1, backgroundColor: '#191919' }}>
+                  {/* Variants Image Carousel */}
                   {values.selectedVariant && (
                     <FlatList
                       data={values.selectedVariant.images}
@@ -239,6 +278,8 @@ const ProductViewScreen = ({ route, navigation }) => {
                       )}
                     />
                   )}
+
+                  {/* Variant price */}
                   {values.selectedVariant && (
                     <View style={{ flexDirection: 'row', padding: 10 }}>
                       <Text style={{ fontSize: 24, color: '#fff', fontWeight: '300' }}>PHP </Text>
@@ -247,6 +288,8 @@ const ProductViewScreen = ({ route, navigation }) => {
                       </Text>
                     </View>
                   )}
+
+                  {/* Product Title + Description */}
                   <View style={{ paddingHorizontal: 10, gap: 20 }}>
                     <View style={{ flexDirection: 'column', gap: 10 }}>
                       <Text style={{ fontSize: 16, color: '#fff', fontWeight: '600' }}>
@@ -256,6 +299,8 @@ const ProductViewScreen = ({ route, navigation }) => {
                         {parentProduct?.description || 'No description available.'}
                       </Text>
                     </View>
+
+                    {/* Color Variants */}
                     <View style={{ flexDirection: 'column', gap: 10 }}>
                       <Text style={{ fontSize: 16, fontWeight: '600', color: '#fff' }}>Colors:</Text>
                       <FlatList
@@ -266,7 +311,8 @@ const ProductViewScreen = ({ route, navigation }) => {
                           <TouchableOpacity
                             style={{
                               padding: 10,
-                              backgroundColor: values.selectedVariant?.id === item.id ? '#fff' : '#4E4E4E',
+                              backgroundColor:
+                                values.selectedVariant?.id === item.id ? '#fff' : '#4E4E4E',
                               borderRadius: 5,
                               marginRight: 10,
                             }}
@@ -287,13 +333,17 @@ const ProductViewScreen = ({ route, navigation }) => {
                         <Text style={styles.errorText}>{errors.selectedVariant}</Text>
                       )}
                     </View>
+
+                    {/* Sizes */}
                     {values.selectedVariant && (
                       <View style={{ flexDirection: 'column', gap: 10 }}>
-                        <Text style={{ fontSize: 16, fontWeight: '600', color: '#fff' }}>Sizes:</Text>
+                        <Text style={{ fontSize: 16, fontWeight: '600', color: '#fff' }}>
+                          Sizes:
+                        </Text>
                         <FlatList
                           data={values.selectedVariant.sizes}
                           horizontal
-                          keyExtractor={(size, index) => `${values.selectedVariant.id}-size-${index}`}
+                          keyExtractor={(size, idx) => `${values.selectedVariant.id}-size-${idx}`}
                           renderItem={({ item: size }) => {
                             const isSelected = values.selectedSize?.abbreviation === size.abbreviation;
                             return (
@@ -326,8 +376,12 @@ const ProductViewScreen = ({ route, navigation }) => {
                         )}
                       </View>
                     )}
+
+                    {/* Quantity */}
                     <View style={{ flexDirection: 'column', gap: 10 }}>
-                      <Text style={{ fontSize: 16, fontWeight: '600', color: '#fff' }}>Quantity:</Text>
+                      <Text style={{ fontSize: 16, fontWeight: '600', color: '#fff' }}>
+                        Quantity:
+                      </Text>
                       <View style={styles.quantityContainer}>
                         <TouchableOpacity
                           style={styles.quantityButton}
@@ -355,8 +409,12 @@ const ProductViewScreen = ({ route, navigation }) => {
                         <Text style={styles.errorText}>{errors.quantity}</Text>
                       )}
                     </View>
+
+                    {/* Size Chart */}
                     <View style={{ flexDirection: 'column', gap: 10 }}>
-                      <Text style={{ fontSize: 16, fontWeight: '600', color: '#fff' }}>Size Chart:</Text>
+                      <Text style={{ fontSize: 16, fontWeight: '600', color: '#fff' }}>
+                        Size Chart:
+                      </Text>
                       <View
                         style={{
                           borderWidth: 1,
@@ -365,21 +423,30 @@ const ProductViewScreen = ({ route, navigation }) => {
                           overflow: 'hidden',
                         }}
                       >
+                        {/* Chart Header Row */}
                         <View style={{ flexDirection: 'row', backgroundColor: '#333', padding: 10 }}>
-                          <Text style={{ flex: 1, color: '#fff', textAlign: 'center', fontWeight: 'bold' }}>
+                          <Text
+                            style={{
+                              flex: 1,
+                              color: '#fff',
+                              textAlign: 'center',
+                              fontWeight: 'bold',
+                            }}
+                          >
                             Size
                           </Text>
-                          {Object.keys(measurementChart[Object.keys(measurementChart)[0]] || {}).map(
-                            (measurement) => (
-                              <Text
-                                key={measurement}
-                                style={{ flex: 1, color: '#fff', textAlign: 'center', fontWeight: 'bold' }}
-                              >
-                                {measurement}
-                              </Text>
-                            )
-                          )}
+                          {Object.keys(
+                            measurementChart[Object.keys(measurementChart)[0]] || {}
+                          ).map((measurement) => (
+                            <Text
+                              key={measurement}
+                              style={{ flex: 1, color: '#fff', textAlign: 'center', fontWeight: 'bold' }}
+                            >
+                              {measurement}
+                            </Text>
+                          ))}
                         </View>
+                        {/* Chart Rows */}
                         {Object.entries(measurementChart).map(([sizeName, measurements]) => (
                           <View
                             key={sizeName}
@@ -390,9 +457,14 @@ const ProductViewScreen = ({ route, navigation }) => {
                               padding: 10,
                             }}
                           >
-                            <Text style={{ flex: 1, color: '#fff', textAlign: 'center' }}>{sizeName}</Text>
+                            <Text style={{ flex: 1, color: '#fff', textAlign: 'center' }}>
+                              {sizeName}
+                            </Text>
                             {Object.values(measurements).map((value, index) => (
-                              <Text key={index} style={{ flex: 1, color: '#ccc', textAlign: 'center' }}>
+                              <Text
+                                key={index}
+                                style={{ flex: 1, color: '#ccc', textAlign: 'center' }}
+                              >
                                 {value}
                               </Text>
                             ))}
@@ -400,6 +472,8 @@ const ProductViewScreen = ({ route, navigation }) => {
                         ))}
                       </View>
                     </View>
+
+                    {/* Shop info */}
                     <View style={{ flexDirection: 'column', gap: 10, marginBottom: 200 }}>
                       <Text style={{ fontSize: 16, fontWeight: '600', color: '#fff' }}>Shop:</Text>
                       <View style={{ flexDirection: 'row', alignItems: 'center' }}>
@@ -420,15 +494,25 @@ const ProductViewScreen = ({ route, navigation }) => {
                 </View>
               }
             />
+
+            {/* Bottom bar: "Add to Cart" */}
             <View style={styles.stickyButtonContainer}>
               <TouchableOpacity style={styles.addToCartButton} onPress={handleSubmit}>
                 <Text style={styles.buttonText}>Add to Cart</Text>
               </TouchableOpacity>
             </View>
 
+            {/* Reservation warning if stock <= 5 */}
             <Actionsheet isOpen={showReserveWarning} onClose={() => setShowReserveWarning(false)}>
               <Actionsheet.Content style={{ backgroundColor: '#191919' }}>
-                <Text style={{ color: 'white', fontSize: 18, marginBottom: 10, textAlign: 'center' }}>
+                <Text
+                  style={{
+                    color: 'white',
+                    fontSize: 18,
+                    marginBottom: 10,
+                    textAlign: 'center'
+                  }}
+                >
                   The selected size has low stock (5 or fewer).
                   If you proceed, it will be reserved once you check out.
                 </Text>
@@ -454,7 +538,14 @@ const ProductViewScreen = ({ route, navigation }) => {
                     }
                   }}
                 >
-                  <Text style={{ color: '#191919', fontSize: 16, fontWeight: '400', textAlign: 'center' }}>
+                  <Text
+                    style={{
+                      color: '#191919',
+                      fontSize: 16,
+                      fontWeight: '400',
+                      textAlign: 'center'
+                    }}
+                  >
                     Proceed Anyway
                   </Text>
                 </TouchableOpacity>
@@ -467,7 +558,14 @@ const ProductViewScreen = ({ route, navigation }) => {
                     setShowReserveWarning(false);
                   }}
                 >
-                  <Text style={{ color: '#fff', fontSize: 16, fontWeight: '400', textAlign: 'center' }}>
+                  <Text
+                    style={{
+                      color: '#fff',
+                      fontSize: 16,
+                      fontWeight: '400',
+                      textAlign: 'center'
+                    }}
+                  >
                     Cancel
                   </Text>
                 </TouchableOpacity>

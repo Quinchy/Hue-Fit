@@ -45,8 +45,20 @@ const getProductDetails = async (req, res) => {
         Shop: {
           select: { name: true, logo: true, id: true },
         },
+        Type: {
+          select: {
+            id: true,
+            name: true,
+          },
+        },
+        Tag: {
+          select: {
+            id: true,
+            name: true,
+          },
+        },
       },
-    });
+    });    
 
     if (!parentProduct) {
       return res.status(404).json({ message: 'Product not found.' });
@@ -115,6 +127,8 @@ const getProductDetails = async (req, res) => {
           name: parentProduct.Shop.name,
           logo: parentProduct.Shop.logo,
         },
+        typeName: parentProduct.Type?.name || null,
+        tagName: parentProduct.Tag?.name || null,
       },
       measurementChart,
       allVariants: sortedVariants.map((variant) => ({

@@ -1,8 +1,8 @@
-// nextauth.js
+// nextauth.js (or [...nextauth].js)
 import NextAuth from "next-auth";
-import CredentialsProvider from 'next-auth/providers/credentials';
-import prisma, { fetchPermissions, disconnectPrisma } from '@/utils/helpers';
-import bcrypt from 'bcrypt';
+import CredentialsProvider from "next-auth/providers/credentials";
+import prisma, { fetchPermissions, disconnectPrisma } from "@/utils/helpers";
+import bcrypt from "bcrypt";
 
 export const authOptions = {
   providers: [
@@ -81,18 +81,18 @@ export const authOptions = {
           }
 
           return sessionUser;
-        } 
-        catch (error) {
+        } catch (error) {
           throw new Error(error.message);
-        } 
-        finally {
+        } finally {
           await disconnectPrisma();
         }
       },
     }),
-  ],  
+  ],
   session: { strategy: "jwt" },
-  jwt: { secret: process.env.NEXTAUTH_SECRET },
+  jwt: {
+    secret: process.env.NEXTAUTH_SECRET,
+  },
   callbacks: {
     async session({ session, token }) {
       session.user = {
@@ -128,16 +128,19 @@ export const authOptions = {
   },
   events: {
     async signIn({ user, token }) {
-      if (typeof window !== 'undefined') {
+      if (typeof window !== "undefined") {
         localStorage.setItem("userToken", JSON.stringify(token));
         localStorage.setItem("userPermissions", JSON.stringify(token.permissions));
       }
     },
     async signOut() {
-      sessionStorage.clear();
-      console.log("Session storage cleared.");
-    }
-  }
+      // The typeof window check prevents this code from running in SSR
+      if (typeof window !== "undefined") {
+        sessionStorage.clear();
+        console.log("Session storage cleared.");
+      }
+    },
+  },
 };
 
 export default NextAuth(authOptions);
