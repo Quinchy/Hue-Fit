@@ -1,4 +1,6 @@
+// pages/api/mobile/generate/create-wardrobe.js
 import prisma from '@/utils/helpers'; // Adjust the path based on your project's structure
+import { v4 as uuidv4 } from 'uuid'; // If UUIDs are used elsewhere
 
 export default async function handler(req, res) {
   if (req.method !== 'POST') {
@@ -6,97 +8,82 @@ export default async function handler(req, res) {
     return res.status(405).end(`Method ${req.method} Not Allowed`);
   }
 
-  const { wardrobeId } = req.body;
+  const { generate_outfit_response, user_inputs, userId } = req.body;
 
-  if (!wardrobeId) {
-    return res.status(400).json({ message: 'Wardrobe ID is required' });
+  console.log('generate_outfit_response:', generate_outfit_response);
+  console.log('user_inputs:', user_inputs);
+  console.log('userId:', userId);
+
+  if (!userId) {
+    return res.status(400).json({ message: 'User ID is required' });
+  }
+
+  // Validate required fields in user_inputs
+  const requiredFields = ['height', 'weight', 'age', 'skintone', 'bodyshape', 'outfit_name', 'category'];
+  const missingFields = requiredFields.filter(field => !(field in user_inputs));
+
+  if (missingFields.length > 0) {
+    return res.status(400).json({ message: `Missing fields: ${missingFields.join(', ')}` });
   }
 
   try {
-    // Fetch the wardrobe data along with related data
-    const wardrobe = await prisma.wardrobe.findUnique({
-      where: { id: wardrobeId },
-      include: {
-        wardrobeCustomerFeatures: true, // Include customer features
-        upper_wear: {
-          include: {
-            Product: true,
-            Color: true,
-            ProductVariantImages: {
-              take: 1, // Fetch the first image for the product variant
-            },
-          },
-        },
-        lower_wear: {
-          include: {
-            Product: true,
-            Color: true,
-            ProductVariantImages: {
-              take: 1, // Fetch the first image for the product variant
-            },
-          },
-        },
-        footwear: {
-          include: {
-            Product: true,
-            Color: true,
-            ProductVariantImages: {
-              take: 1, // Fetch the first image for the product variant
-            },
-          },
-        },
-        outerwear: {
-          include: {
-            Product: true,
-            Color: true,
-            ProductVariantImages: {
-              take: 1, // Fetch the first image for the product variant
-            },
-          },
-        },
+    // Create WardrobeCustomerFeatures first
+    const wardrobeCustomerFeatures = await prisma.wardrobeCustomerFeatures.create({
+      data: {
+        height: user_inputs.height,
+        weight: user_inputs.weight,
+        age: user_inputs.age,
+        skintone: user_inputs.skintone,
+        bodyShape: user_inputs.bodyshape,
       },
     });
 
-    if (!wardrobe) {
-      return res.status(404).json({ message: 'Wardrobe not found' });
-    }
-    // Format the response
-    const formatOutfitItem = (item) =>
-      item
-        ? {
-            productVariantNo: item.productVariantNo, // Ensure productVariantNo is included
-            name: item.Product.name,
-            price: item.price,
-            color: {
-              name: item.Color.name,
-              hexcode: item.Color.hexcode,
-            },
-            thumbnail: item.ProductVariantImages[0]?.imageUrl || null, // Use the first image as the thumbnail
-          }
-        : null;    
+    // Helper function to connect ProductVariant by productVariantNo
+    const connectProductVariant = async (productVariantNo) => {
+      const variant = await prisma.productVariant.findUnique({
+        where: { productVariantNo },
+        select: { id: true },
+      });
 
-    const response = {
-      outfitName: wardrobe.outfitName,
-      outfitStyle: wardrobe.outfitStyle,
-      wardrobeCustomerFeatures: {
-        height: wardrobe.wardrobeCustomerFeatures?.height || null,
-        weight: wardrobe.wardrobeCustomerFeatures?.weight || null,
-        age: wardrobe.wardrobeCustomerFeatures?.age || null,
-        skintone: wardrobe.wardrobeCustomerFeatures?.skintone || null,
-        bodyShape: wardrobe.wardrobeCustomerFeatures?.bodyShape || null,
-      },
-      outfitDetails: {
-        upper_wear: formatOutfitItem(wardrobe.upper_wear),
-        lower_wear: formatOutfitItem(wardrobe.lower_wear),
-        footwear: formatOutfitItem(wardrobe.footwear),
-        outerwear: formatOutfitItem(wardrobe.outerwear),
-      },
+      if (!variant) {
+        throw new Error(`ProductVariant with productVariantNo '${productVariantNo}' not found.`);
+      }
+
+      return { connect: { id: variant.id } };
     };
 
-    console.log('Wardrobe details:', response);
-    return res.status(200).json({ wardrobe: response });
+    // Prepare connections for each clothing category
+    const upperwearConnection = await connectProductVariant(generate_outfit_response.best_combination.upper_wear.productVariantNo);
+    const lowerwearConnection = await connectProductVariant(generate_outfit_response.best_combination.lower_wear.productVariantNo);
+    const footwearConnection = await connectProductVariant(generate_outfit_response.best_combination.footwear.productVariantNo);
+    const outerwearConnection = generate_outfit_response.best_combination.outerwear
+      ? await connectProductVariant(generate_outfit_response.best_combination.outerwear.productVariantNo)
+      : undefined;
+
+    // Create Wardrobe
+    const wardrobeData = {
+      upperwear: upperwearConnection,
+      lowerwear: lowerwearConnection,
+      footwear: footwearConnection,
+      outerwear: outerwearConnection, // This will be undefined if no outerwear is provided
+      userId: userId,
+      wardrobeCustomerFeaturesId: wardrobeCustomerFeatures.id,
+      name: user_inputs.outfit_name,       // Changed from 'outfitName' to 'name' to match the schema
+      outfitStyle: user_inputs.category,   // Ensure 'category' exists in user_inputs
+    };
+
+    await prisma.wardrobe.create({
+      data: wardrobeData,
+    });
+
+    res.status(200).json({
+      message: 'Wardrobe and customer features data saved successfully',
+    });
   } catch (error) {
-    console.error('Error fetching wardrobe details:', error);
-    return res.status(500).json({ message: 'Internal server error' });
+    console.error('Error saving wardrobe data:', error);
+    res.status(500).json({
+      message: 'Internal server error',
+      error: error.message, // Optional: Include error message for debugging (remove in production)
+    });
   }
 }

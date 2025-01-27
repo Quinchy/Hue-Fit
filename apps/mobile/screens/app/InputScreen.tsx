@@ -60,7 +60,7 @@ const InputScreen: React.FC = ({ navigation }) => {
         outfit_name: outfitName, // Match "outfit_name"
       };
       const response = await fetch(
-        `https://hue-fit-ai.onrender.com/generate-outfit?unique=${Date.now()}`,
+        `http://192.168.254.105:8000/generate-outfit?unique=${Date.now()}`,
         {
           method: "POST",
           headers: {
@@ -97,7 +97,7 @@ const InputScreen: React.FC = ({ navigation }) => {
         };
         console.log("User ID:", userId);
         // Send data to the new API
-        await fetch(`${EXPO_PUBLIC_API_URL}/api/mobile/generate/create-wardrobe`, {
+        await fetch(`http://192.168.254.105:3000/api/mobile/generate/create-wardrobe`, {
           method: "POST",
           headers: {
             "Content-Type": "application/json",

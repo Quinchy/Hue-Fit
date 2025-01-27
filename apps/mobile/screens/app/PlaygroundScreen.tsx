@@ -33,7 +33,7 @@ const PlaygroundScreen: React.FC = ({ route, navigation }) => {
         setIsFetching(true);
     
         try {
-          const response = await fetch(`${EXPO_PUBLIC_API_URL}/api/mobile/generate/get-wardrobe-details`, {
+          const response = await fetch(`http://127.0.0.1:8000/api/mobile/generate/get-wardrobe-details`, {
             method: 'POST',
             headers: {
               'Content-Type': 'application/json',
@@ -174,7 +174,7 @@ const PlaygroundScreen: React.FC = ({ route, navigation }) => {
     };
 
     try {
-      const response = await fetch(`https://hue-fit-ai.onrender.com/generate-outfit?unique=${Date.now()}`, {
+      const response = await fetch(`http://127.0.0.1:8000/generate-outfit?unique=${Date.now()}`, {
         method: "POST",
         headers: {
           "Content-Type": "application/json",

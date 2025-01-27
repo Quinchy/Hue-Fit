@@ -156,12 +156,8 @@ export default function VirtualTryOnPage() {
       const scaleY = canvasHeight / videoHeight;
 
       // Common Keypoints
-      const leftShoulder = keypoints.find(
-        (kp) => kp.name === "left_shoulder" && kp.score > 0.5
-      );
-      const rightShoulder = keypoints.find(
-        (kp) => kp.name === "right_shoulder" && kp.score > 0.5
-      );
+      const leftShoulder = keypoints.find((kp) => kp.name === "left_shoulder" && kp.score > 0.5);
+      const rightShoulder = keypoints.find((kp) => kp.name === "right_shoulder" && kp.score > 0.5);
       const leftHip = keypoints.find((kp) => kp.name === "left_hip" && kp.score > 0.5);
       const rightHip = keypoints.find((kp) => kp.name === "right_hip" && kp.score > 0.5);
 
@@ -266,8 +262,8 @@ export default function VirtualTryOnPage() {
       // Ensure overlay doesn't go out of canvas boundaries
       overlayX = Math.max(0, overlayX);
       overlayY = Math.max(0, overlayY);
-      overlayWidth = Math.min(canvasWidth - overlayX, overlayWidth);
-      overlayHeight = Math.min(canvasHeight - overlayY, overlayHeight);
+      overlayWidth = Math.min(canvasContext.canvas.width - overlayX, overlayWidth);
+      overlayHeight = Math.min(canvasContext.canvas.height - overlayY, overlayHeight);
 
       // Draw the clothing only
       canvasContext.drawImage(clothingImage, overlayX, overlayY, overlayWidth, overlayHeight);
@@ -325,21 +321,11 @@ export default function VirtualTryOnPage() {
   useEffect(() => {
     let cameraStream;
     let animationFrameId;
-    let lastDetectionTime = 0;
-    const detectionInterval = 1000 / 15; // 15 FPS
-
-    const detectionLoop = async (timestamp) => {
-      if (timestamp - lastDetectionTime > detectionInterval) {
-        await performPoseDetection();
-        lastDetectionTime = timestamp;
-      }
-      animationFrameId = requestAnimationFrame(detectionLoop);
-    };
 
     const initializeCameraStream = async () => {
       try {
         cameraStream = await navigator.mediaDevices.getUserMedia({
-          video: { width: 640, height: 480, frameRate: { ideal: 30, max: 30 } },
+          video: { width: 640, height: 480, frameRate: { ideal: 15, max: 15 } },
           audio: false,
         });
         if (videoElementRef.current) {
@@ -349,7 +335,6 @@ export default function VirtualTryOnPage() {
             await videoElementRef.current.play();
             setIsCameraReady(true);
             setStatusMessage("Camera ready, detecting poses...");
-            animationFrameId = requestAnimationFrame(detectionLoop);
           };
         }
       } catch (error) {
@@ -358,7 +343,24 @@ export default function VirtualTryOnPage() {
       }
     };
 
-    initializePoseDetector().then(initializeCameraStream);
+    const startPoseDetectionLoop = () => {
+      const detectionLoop = async () => {
+        await performPoseDetection();
+        animationFrameId = requestAnimationFrame(detectionLoop);
+      };
+      detectionLoop();
+    };
+
+    initializePoseDetector()
+      .then(initializeCameraStream)
+      .then(() => {
+        const waitForReadyState = setInterval(() => {
+          if (isCameraReady && poseDetector) {
+            startPoseDetectionLoop();
+            clearInterval(waitForReadyState);
+          }
+        }, 100);
+      });
 
     // Handle device orientation changes
     const handleOrientationChange = () => {
@@ -379,7 +381,7 @@ export default function VirtualTryOnPage() {
       }
       window.removeEventListener("resize", handleOrientationChange);
     };
-  }, [performPoseDetection, initializePoseDetector]);
+  }, [isCameraReady, poseDetector, performPoseDetection]);
 
   if (!mounted) return null;
 
@@ -407,33 +409,30 @@ export default function VirtualTryOnPage() {
 
 const styles = {
   container: {
-    position: "relative",
+    display: "flex",
+    justifyContent: "center",
+    alignItems: "center",
     width: "100vw",
     height: "100vh",
     backgroundColor: "#000",
     overflow: "hidden",
     margin: "0",
     padding: "0",
-    display: "flex",
-    justifyContent: "center",
-    alignItems: "center",
   },
   cameraContainer: {
     position: "relative",
     width: "100%",
     height: "100%",
-    aspectRatio: "4 / 3", // Ensures the container maintains a 4:3 aspect ratio
-    maxWidth: "100%",
-    maxHeight: "100%",
     display: "flex",
     justifyContent: "center",
     alignItems: "center",
   },
   video: {
     width: "100%",
-    height: "100%",
-    objectFit: "cover", // Covers the container without stretching
-    backgroundColor: "#000",
+    height: "auto",
+    maxHeight: "100%",
+    objectFit: "contain", // Maintains aspect ratio
+    backgroundColor: "#000", // Ensures black background when not covering
   },
   canvas: {
     position: "absolute",

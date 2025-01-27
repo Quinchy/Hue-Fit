@@ -1,6 +1,6 @@
 // pages/api/mobile/generate/create-wardrobe.js
 import prisma from '@/utils/helpers'; // Adjust the path based on your project structure
-import { v4 as uuidv4 } from 'uuid';
+import { v4 as uuidv4 } from 'uuid'; // If UUIDs are used elsewhere
 
 export default async function handler(req, res) {
   if (req.method === 'POST') {
@@ -26,23 +26,42 @@ export default async function handler(req, res) {
         },
       });
 
+      // Helper function to connect ProductVariant by productVariantNo
+      const connectProductVariant = async (productVariantNo) => {
+        const variant = await prisma.productVariant.findUnique({
+          where: { productVariantNo },
+          select: { id: true },
+        });
+
+        if (!variant) {
+          throw new Error(`ProductVariant with productVariantNo '${productVariantNo}' not found.`);
+        }
+
+        return { connect: { id: variant.id } };
+      };
+
+      // Prepare connections for each clothing category
+      const upperwearConnection = await connectProductVariant(generate_outfit_response.best_combination.upper_wear.productVariantNo);
+      const lowerwearConnection = await connectProductVariant(generate_outfit_response.best_combination.lower_wear.productVariantNo);
+      const footwearConnection = await connectProductVariant(generate_outfit_response.best_combination.footwear.productVariantNo);
+      const outerwearConnection = generate_outfit_response.best_combination.outerwear
+        ? await connectProductVariant(generate_outfit_response.best_combination.outerwear.productVariantNo)
+        : undefined;
+
       // Create Wardrobe
       const wardrobeData = {
-        upper_wear_id: generate_outfit_response.best_combination.upper_wear.productVariantNo,
-        lower_wear_id: generate_outfit_response.best_combination.lower_wear.productVariantNo,
-        footwear_id: generate_outfit_response.best_combination.footwear.productVariantNo,
-        outerwear_id: generate_outfit_response.best_combination.outerwear
-        ? generate_outfit_response.best_combination.outerwear.productVariantNo
-        : null,
+        upperwear: upperwearConnection,
+        lowerwear: lowerwearConnection,
+        footwear: footwearConnection,
+        outerwear: outerwearConnection, // This will be undefined if no outerwear is provided
         userId: userId,
         wardrobeCustomerFeaturesId: wardrobeCustomerFeatures.id,
-        outfitName: user_inputs.outfit_name,
-        outfitStyle: user_inputs.category,
+        name: user_inputs.outfit_name,       // Changed from 'outfitName' to 'name' to match the schema
+        outfitStyle: user_inputs.category,   // Ensure 'category' exists in user_inputs
       };
 
       await prisma.wardrobe.create({
         data: wardrobeData,
-        wardrobeId: wardrobeData.id,
       });
 
       res.status(200).json({
@@ -52,6 +71,7 @@ export default async function handler(req, res) {
       console.error('Error saving wardrobe data:', error);
       res.status(500).json({
         message: 'Internal server error',
+        error: error.message, // Optional: Include error message for debugging (remove in production)
       });
     }
   } else {
