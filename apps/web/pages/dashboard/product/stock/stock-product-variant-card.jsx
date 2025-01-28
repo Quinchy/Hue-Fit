@@ -13,15 +13,19 @@ export default function StockProductVariantCard({
   variantIndex,
   sizes,
 }) {
+  const productVariantSize = Array.isArray(variant?.ProductVariantSize)
+    ? variant.ProductVariantSize
+    : [];
+
   const [isEditing, setIsEditing] = useState(false);
   const [quantities, setQuantities] = useState(
-    variant.ProductVariantSize.reduce((acc, vq) => {
+    productVariantSize.reduce((acc, vq) => {
       acc[vq.Size.abbreviation] = vq.quantity;
       return acc;
     }, {})
   );
   const [increments, setIncrements] = useState(
-    variant.ProductVariantSize.reduce((acc, vq) => {
+    productVariantSize.reduce((acc, vq) => {
       acc[vq.Size.abbreviation] = 0;
       return acc;
     }, {})
@@ -39,27 +43,15 @@ export default function StockProductVariantCard({
 
   // Handle update action
   const handleUpdate = () => {
-    // Update quantities with increments
-    const updatedQuantities = { ...quantities };
-    Object.keys(increments).forEach((sizeAbbr) => {
-      updatedQuantities[sizeAbbr] += increments[sizeAbbr];
-    });
-    setQuantities(updatedQuantities);
-    setIncrements(
-      variant.ProductVariantSize.reduce((acc, vq) => {
-        acc[vq.Size.abbreviation] = 0;
-        return acc;
-      }, {})
-    );
-    setIsEditing(false);
     // TODO: Persist the updated quantities via API call
+    setIsEditing(false);
   };
 
   // Handle cancel action
   const handleCancel = () => {
     // Reset increments to zero
     setIncrements(
-      variant.ProductVariantSize.reduce((acc, vq) => {
+      productVariantSize.reduce((acc, vq) => {
         acc[vq.Size.abbreviation] = 0;
         return acc;
       }, {})
@@ -68,21 +60,23 @@ export default function StockProductVariantCard({
   };
 
   // Get the variant color name
-  const variantColor = variant.Color?.name || "N/A";
+  const variantColor = variant?.Color?.name || "N/A";
 
   // Get the variant image URL (use the first image or a placeholder)
   const variantImageURL =
-    variant.ProductVariantImage?.[0]?.imageURL ||
+    variant?.ProductVariantImage?.[0]?.imageURL ||
     "/images/placeholder-picture.png";
 
   // Sort variant sizes based on the order of 'sizes' prop
-  const sortedVariantSizes = sizes
-    .map((size) =>
-      variant.ProductVariantSize.find(
-        (vq) => vq.Size.abbreviation === size.abbreviation
-      )
-    )
-    .filter(Boolean);
+  const sortedVariantSizes = Array.isArray(sizes)
+    ? sizes
+        .map((size) =>
+          productVariantSize.find(
+            (vq) => vq.Size.abbreviation === size.abbreviation
+          )
+        )
+        .filter(Boolean)
+    : [];
 
   return (
     <Card className="flex flex-col p-5 gap-5">
@@ -119,7 +113,7 @@ export default function StockProductVariantCard({
           </div>
           <div className="flex flex-col gap-2">
             {sortedVariantSizes.map((vq) => {
-              const sizeAbbr = vq.Size.abbreviation;
+              const sizeAbbr = vq?.Size?.abbreviation;
               const sizeObj = sizes.find((sz) => sz.abbreviation === sizeAbbr);
 
               // If size is not found in the sizes list, skip rendering
@@ -153,15 +147,13 @@ export default function StockProductVariantCard({
                           className="w-full"
                         />
                       </div>
-                      <p className="mt-5"><MoveRight /></p>
+                      <MoveRight className="scale-125 mt-5" />
                       <div className="flex flex-col gap-1">
                         <Label className="uppercase text-sm text-primary/80">In Stock</Label>
                         <Input
                           type="number"
                           min="0"
-                          value={
-                            (quantities[sizeAbbr] || 0) + (increments[sizeAbbr] || 0)
-                          }
+                          value={quantities[sizeAbbr] || 0}
                           disabled
                           className="w-full"
                         />
