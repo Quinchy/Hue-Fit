@@ -45,20 +45,6 @@ export async function getUserIdFromSession(req, res) {
   }
 }
 
-// Helper to fetch permissions based on roleId
-export async function fetchPermissions(roleId) {
-  try {
-    return await prisma.permission.findMany({
-      where: { roleId },
-      select: { pageId: true, can_view: true },
-    });
-  } 
-  catch (error) {
-    console.error("Error fetching permissions:", error);
-    return [];
-  }
-}
-
 // Helper to disconnect Prisma client safely
 export async function disconnectPrisma() {
   await prisma.$disconnect();

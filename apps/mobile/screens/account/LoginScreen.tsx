@@ -1,10 +1,11 @@
+// Frontend: LoginScreen.tsx
+
 import React, { useState } from 'react';
 import { Image, ScrollView, Alert } from 'react-native';
 import { VStack, HStack, Text, Center } from 'native-base';
 import BackgroundProvider from '../../providers/BackgroundProvider';
 import CustomInput from '../../components/Input';
 import DefaultButton from '../../components/Button';
-import OutlineButton from '../../components/OutlineButton';
 import GradientCard from '../../components/GradientCard';
 import Link from '../../components/Link';
 import AsyncStorage from '@react-native-async-storage/async-storage';
@@ -21,6 +22,12 @@ export default function LoginScreen() {
   const [loading, setLoading] = useState(false);
 
   const handleLogin = async () => {
+    // Basic input validation (optional but recommended)
+    if (!username.trim() || !password) {
+      Alert.alert('Validation Error', 'Please enter both username and password.');
+      return;
+    }
+
     setLoading(true);
     try {
       const response = await fetch(`http://192.168.254.105:3000/api/mobile/auth/login`, {
@@ -33,22 +40,31 @@ export default function LoginScreen() {
       if (contentType && contentType.includes('application/json')) {
         const data = await response.json();
         if (response.ok) {
+          // Store the entire user object
           await AsyncStorage.setItem('user', JSON.stringify(data));
+
+          // Additionally, store firstName, lastName, and profilePicture separately
+          await AsyncStorage.setItem('firstName', data.firstName);
+          await AsyncStorage.setItem('lastName', data.lastName);
+          await AsyncStorage.setItem('profilePicture', data.profilePicture || '');
+
+          // Navigate to the Main screen
           navigation.reset({ index: 0, routes: [{ name: 'Main' }] });
         } else {
-          Alert.alert('Login failed', data.message || 'Invalid credentials');
+          Alert.alert('Login Failed', data.message || 'Invalid credentials');
         }
       } else {
-        Alert.alert('Login failed', 'Unexpected response format');
+        Alert.alert('Login Failed', 'Unexpected response format');
       }
     } catch (error) {
-      Alert.alert('Login error', 'An error occurred. Please try again.');
+      console.error("Login error:", error);
+      Alert.alert('Login Error', 'An error occurred. Please try again.');
     } finally {
       setLoading(false);
     }
   };
 
-  if (loading) return <LoadingSpinner size={150} />;
+  if (loading) return <LoadingSpinner size={300} messages="Loading Hue-Fit..." visible />;
 
   return (
     <BackgroundProvider>
@@ -56,7 +72,7 @@ export default function LoginScreen() {
         <Center>
           <Image
             source={require('../../assets/icons/hue-fit-logo.png')}
-            style={{ width: 60, height: 60, marginTop: 250, marginBottom: 50 }}
+            style={{ width: 60, height: 60, marginTop: 225, marginBottom: 30 }}
             resizeMode="contain"
           />
           <GradientCard>
@@ -72,17 +88,23 @@ export default function LoginScreen() {
               </HStack>
             </Center>
             <VStack space={4} alignItems="center">
-              <CustomInput label="Username" placeholder="Username" value={username} onChangeText={setUsername} />
-              <CustomInput label="Password" placeholder="Password" value={password} onChangeText={setPassword} isPassword />
+              <CustomInput
+                label="Username"
+                placeholder="Username"
+                value={username}
+                onChangeText={setUsername}
+              />
+              <CustomInput
+                label="Password"
+                placeholder="Password"
+                value={password}
+                onChangeText={setPassword}
+                isPassword
+              />
               <Text alignSelf="flex-end" color="gray.400" fontSize="sm" mt={-2} mb={2}>
                 Forgot Password?
               </Text>
               <DefaultButton title="LOGIN" onPress={handleLogin} />
-              <Text color="gray.400" fontSize="sm" my={4}>
-                ─────────── OR CONTINUE WITH ───────────
-              </Text>
-              <OutlineButton title="GOOGLE" width="full" onPress={() => {}} />
-              <OutlineButton title="FACEBOOK" width="full" onPress={() => {}} />
             </VStack>
           </GradientCard>
         </Center>

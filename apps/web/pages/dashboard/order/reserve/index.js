@@ -126,7 +126,6 @@ export default function Reserves() {
                 <TableHead className="text-center">Quantity</TableHead>
                 <TableHead className="text-center">Price</TableHead>
                 <TableHead className="text-center">Status</TableHead>
-                <TableHead className="text-center">Action</TableHead>
               </TableRow>
             </TableHeader>
             <TableBody>
@@ -213,30 +212,6 @@ export default function Reserves() {
                         <p className="py-1 w-full rounded font-bold text-card bg-blue-500 uppercase">
                           {order.status}
                         </p>
-                      </TableCell>
-
-                      <TableCell className="text-center">
-                        <DropdownMenu>
-                          <DropdownMenuTrigger asChild>
-                            <Button variant="outline" className="font-normal">
-                              Action
-                              <ChevronDown className="scale-125" />
-                            </Button>
-                          </DropdownMenuTrigger>
-                          <DropdownMenuContent className="w-40">
-                            <DropdownMenuGroup>
-                              <DropdownMenuItem className="justify-center">
-                                <Button
-                                  variant="none"
-                                  onClick={() => handleUpdateClick(order.orderNo)}
-                                >
-                                  <Pencil className="scale-125 mr-2" />
-                                  Update
-                                </Button>
-                              </DropdownMenuItem>
-                            </DropdownMenuGroup>
-                          </DropdownMenuContent>
-                        </DropdownMenu>
                       </TableCell>
                     </TableRow>
                   );

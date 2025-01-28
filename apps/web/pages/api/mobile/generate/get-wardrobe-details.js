@@ -1,6 +1,5 @@
 // pages/api/mobile/generate/create-wardrobe.js
-import prisma from '@/utils/helpers'; // Adjust the path based on your project's structure
-import { v4 as uuidv4 } from 'uuid'; // If UUIDs are used elsewhere
+import prisma from '@/utils/helpers';
 
 export default async function handler(req, res) {
   if (req.method !== 'POST') {

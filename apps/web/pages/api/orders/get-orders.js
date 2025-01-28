@@ -16,6 +16,9 @@ export default async function handler(req, res) {
     // Filter conditions
     const whereConditions = {
       shopId: shopId,
+      status: {
+        not: "RESERVED", // Exclude RESERVED orders by default
+      },
       ...(search && {
         orderNo: {
           contains: search,
@@ -24,7 +27,7 @@ export default async function handler(req, res) {
       }),
       ...(status && {
         status: {
-          equals: status,
+          equals: status, // If a status is explicitly provided, use it
         },
       }),
     };

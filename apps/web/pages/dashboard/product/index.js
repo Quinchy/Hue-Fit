@@ -7,7 +7,7 @@ import DashboardLayoutWrapper from '@/components/ui/dashboard-layout';
 import { Card, CardTitle } from '@/components/ui/card';
 import Link from 'next/link';
 import Image from 'next/image';
-import { X, Plus, NotepadText, Search, ChevronDown, Eye, Pencil, Trash2, Copy, CheckCircle2 } from 'lucide-react';
+import { X, Plus, NotepadText, Search, ChevronDown, Eye, Pencil, Package, Copy, CheckCircle2 } from 'lucide-react';
 import { buttonVariants, Button } from '@/components/ui/button';
 import { Pagination, PaginationPrevious, PaginationContent, PaginationItem, PaginationNext, PaginationLink } from '@/components/ui/pagination';
 import { Table, TableHead, TableHeader, TableBody, TableCell, TableRow } from '@/components/ui/table';
@@ -48,6 +48,11 @@ export default function ProductsPage() {
 
   const handleEditClick = (productNo) => {
     router.push(routes.productEdit.replace('[productNo]', productNo));
+  };
+
+  // New handler for Stock action
+  const handleStockClick = (productNo) => {
+    router.push(routes.productStock.replace('[productNo]', productNo));
   };
 
   const handleTypeSelect = (type) => {
@@ -97,7 +102,10 @@ export default function ProductsPage() {
             value={searchTerm}
             onChange={handleSearchChange}
           />
-          <Link className={buttonVariants({ variant: 'default' })} href={routes.productAdd}>
+          <Link
+            className={buttonVariants({ variant: 'default' })}
+            href={routes.productAdd}
+          >
             <Plus className="scale-110 stroke-[3px]" />
             Add Product
           </Link>
@@ -261,6 +269,18 @@ export default function ProductsPage() {
                                   >
                                     <Pencil className="scale-125" />
                                     Edit
+                                  </Button>
+                                </DropdownMenuItem>
+                                {/* New Stock Action */}
+                                <DropdownMenuItem className="justify-center">
+                                  <Button
+                                    variant="none"
+                                    onClick={() =>
+                                      handleStockClick(product.productNo)
+                                    }
+                                  >
+                                    <Package className="scale-125" />
+                                    Stock
                                   </Button>
                                 </DropdownMenuItem>
                               </DropdownMenuGroup>

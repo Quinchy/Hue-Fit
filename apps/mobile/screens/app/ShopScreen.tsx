@@ -1,15 +1,22 @@
 // screens/app/ShopScreen.js
 import React, { useEffect, useState } from 'react';
-import { FlatList, RefreshControl, ActivityIndicator, View, StyleSheet } from 'react-native';
-import { VStack, HStack, Text, Box, IconButton } from 'native-base';
+import {
+  FlatList,
+  RefreshControl,
+  View,
+  StyleSheet,
+  ActivityIndicator, // Import ActivityIndicator
+} from 'react-native';
+import { VStack, HStack, Box, IconButton } from 'native-base';
 import BackgroundProvider from '../../providers/BackgroundProvider';
 import SearchBar from '../../components/SearchBar';
 import { Bell } from 'lucide-react-native';
 import ProductCard from '../../components/ProductCard';
+import LoadingSpinner from '../../components/Loading'; // Import LoadingSpinner
 
 const ShopScreen = ({ navigation }) => {
   const [products, setProducts] = useState([]);
-  const [loading, setLoading] = useState(false);
+  const [loading, setLoading] = useState(false); // Loading state for initial load and loading more
   const [refreshing, setRefreshing] = useState(false);
   const [page, setPage] = useState(1);
   const [hasMore, setHasMore] = useState(true);
@@ -22,10 +29,21 @@ const ShopScreen = ({ navigation }) => {
       const response = await fetch(
         `http://192.168.254.105:3000/api/mobile/home/get-products?limit=10&page=${pageNumber}`
       );
-      if (!response.ok) return;
+      if (!response.ok) throw new Error('Failed to fetch products');
       const data = await response.json();
       if (data.products?.length > 0) {
-        setProducts((prev) => (reset ? data.products : [...prev, ...data.products]));
+        setProducts((prev) => {
+          if (reset) {
+            return data.products;
+          } else {
+            // Prevent duplicates by filtering out products that already exist
+            const existingProductIds = new Set(prev.map((product) => product.id));
+            const newProducts = data.products.filter(
+              (product) => !existingProductIds.has(product.id)
+            );
+            return [...prev, ...newProducts];
+          }
+        });
         setPage(reset ? 2 : pageNumber + 1);
         if (data.products.length < 10) setHasMore(false);
       } else {
@@ -64,6 +82,17 @@ const ShopScreen = ({ navigation }) => {
     fetchProducts(1);
   }, []);
 
+  // Show LoadingSpinner during initial load
+  if (loading && page === 1) {
+    return (
+      <BackgroundProvider>
+        <View style={styles.loadingContainerFull}>
+          <LoadingSpinner size={300} messages="Loading shops..." visible />
+        </View>
+      </BackgroundProvider>
+    );
+  }
+
   return (
     <BackgroundProvider>
       <FlatList
@@ -72,12 +101,24 @@ const ShopScreen = ({ navigation }) => {
         renderItem={renderProductCard}
         numColumns={2}
         columnWrapperStyle={styles.columnWrapper}
-        marginBottom={120}
+        // Remove the incorrect marginBottom prop
+        // Add paddingBottom via contentContainerStyle
+        contentContainerStyle={styles.listContent}
         ListHeaderComponent={
           <VStack alignItems="center" mt={10}>
-            <Box width="100%" mb={2} flexDirection="row" justifyContent="space-between" alignItems="center">
+            <Box
+              width="100%"
+              mb={2}
+              flexDirection="row"
+              justifyContent="space-between"
+              alignItems="center"
+            >
               <Box flex={1} mx={2}>
-                <SearchBar placeholder="Search products..." onChangeText={(text) => setSearchQuery(text)} />
+                <SearchBar
+                  placeholder="Search products..."
+                  onChangeText={(text) => setSearchQuery(text)}
+                  value={searchQuery}
+                />
               </Box>
               <HStack>
                 <IconButton
@@ -91,14 +132,15 @@ const ShopScreen = ({ navigation }) => {
             </Box>
           </VStack>
         }
-        refreshControl={<RefreshControl refreshing={refreshing} onRefresh={handleRefresh} />}
+        refreshControl={
+          <RefreshControl refreshing={refreshing} onRefresh={handleRefresh} />
+        }
         onEndReached={handleLoadMore}
         onEndReachedThreshold={0.5}
         ListFooterComponent={
-          loading ? (
-            <View style={styles.loadingContainer}>
-              <ActivityIndicator size="large" color="#C0C0C0" />
-              <Text style={styles.loadingText}>Loading more products...</Text>
+          loading && page > 1 ? ( // Show ActivityIndicator when loading more products
+            <View style={styles.footerLoadingContainer}>
+              <ActivityIndicator size="small" color="#FFF" />
             </View>
           ) : null
         }
@@ -112,14 +154,22 @@ const styles = StyleSheet.create({
     justifyContent: 'space-between',
     paddingHorizontal: 7,
   },
-  loadingContainer: {
-    marginVertical: 50,
+  loadingContainerFull: {
+    flex: 1,
+    justifyContent: 'center',
     alignItems: 'center',
   },
-  loadingText: {
-    marginTop: 10,
-    fontSize: 16,
-    color: '#555',
+  loadingContainer: {
+    marginVertical: 20,
+    alignItems: 'center',
+  },
+  // Add a new style for the FlatList content
+  listContent: {
+    paddingBottom: 120, // Adjust this value as needed
+  },
+  footerLoadingContainer: { // New style for the footer loading indicator
+    paddingVertical: 20,
+    alignItems: 'center',
   },
 });
 

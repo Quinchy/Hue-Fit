@@ -1,7 +1,7 @@
 // nextauth.js (or [...nextauth].js)
 import NextAuth from "next-auth";
 import CredentialsProvider from "next-auth/providers/credentials";
-import prisma, { fetchPermissions, disconnectPrisma } from "@/utils/helpers";
+import prisma, { disconnectPrisma } from "@/utils/helpers";
 import bcrypt from "bcrypt";
 
 export const authOptions = {
@@ -100,7 +100,6 @@ export const authOptions = {
         role: token.role,
         roleId: token.roleId,
         userNo: token.userNo,
-        permissions: token.permissions,
         shopId: token.shopId,
         firstName: token.firstName,
         lastName: token.lastName,
@@ -117,11 +116,7 @@ export const authOptions = {
         token.firstName = user.firstName;
         token.lastName = user.lastName;
         token.profilePicture = user.profilePicture;
-        token.permissions = await fetchPermissions(user.roleId);
         if (user.role === "VENDOR") token.shopId = user.shopId;
-      }
-      if (trigger === "update" || session?.triggerUpdate) {
-        token.permissions = await fetchPermissions(token.roleId);
       }
       return token;
     },
@@ -130,7 +125,6 @@ export const authOptions = {
     async signIn({ user, token }) {
       if (typeof window !== "undefined") {
         localStorage.setItem("userToken", JSON.stringify(token));
-        localStorage.setItem("userPermissions", JSON.stringify(token.permissions));
       }
     },
     async signOut() {

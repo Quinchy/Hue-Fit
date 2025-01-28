@@ -75,8 +75,8 @@ export default function RegisterScreen({ navigation }) {
             style={{
               width: 60,
               height: 60,
-              marginTop: 250,
-              marginBottom: 50,
+              marginTop: 225,
+              marginBottom: 30,
             }}
             resizeMode="contain"
           />

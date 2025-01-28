@@ -14,30 +14,6 @@ model Role {
   updated_at  DateTime @updatedAt
 
   User        User[]
-  Permission  Permission[]
-}
-
-model Page {
-  id          Int      @id @default(autoincrement())
-  name        String   @unique
-  created_at  DateTime @default(now())
-  updated_at  DateTime @updatedAt
-
-  Permission  Permission[]
-}
-
-model Permission {
-  id         Int     @id @default(autoincrement())
-  roleId     Int
-  pageId     Int
-  can_view   Boolean  @default(false)
-  created_at DateTime @default(now())
-  updated_at DateTime @updatedAt
-
-  Role Role @relation(fields: [roleId], references: [id])
-  Page Page @relation(fields: [pageId], references: [id])
-
-  @@unique([roleId, pageId])
 }
 
 model User {

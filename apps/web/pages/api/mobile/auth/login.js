@@ -12,10 +12,18 @@ export default async function handler(req, res) {
     const customerRole = await prisma.role.findFirst({
       where: { name: "CUSTOMER" },
     });
+
+    if (!customerRole) {
+      return res.status(500).json({ message: "Customer role not found" });
+    }
+
     const user = await prisma.user.findFirst({
       where: {
         username,
         roleId: customerRole.id,
+      },
+      include: {
+        CustomerProfile: true, // Include CustomerProfile to access firstName, lastName, and profilePicture
       },
     });
 
@@ -30,12 +38,18 @@ export default async function handler(req, res) {
       return res.status(401).json({ message: "Invalid credentials: Wrong password" });
     }
 
+    // Ensure CustomerProfile exists
+    if (!user.CustomerProfile) {
+      return res.status(500).json({ message: "Customer profile not found" });
+    }
+
     // Respond with user data (select only relevant fields)
     res.status(200).json({
       id: user.id,
       username: user.username,
-      firstName: user.firstName,
-      lastName: user.lastName,
+      firstName: user.CustomerProfile.firstName,
+      lastName: user.CustomerProfile.lastName,
+      profilePicture: user.CustomerProfile.profilePicture || '',
       roleId: user.roleId,
     });
   } catch (error) {

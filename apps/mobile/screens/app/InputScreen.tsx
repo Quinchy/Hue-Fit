@@ -139,9 +139,9 @@ const InputScreen: React.FC = ({ navigation }) => {
   NavigationBar.setBackgroundColorAsync('#0f0f0f')
   return (
     <BackgroundProvider>
-      <SafeAreaView style={{ flex: 1 }} edges={["top", "bottom"]}>
-        <ScrollView contentContainerStyle={{ flexGrow: 1 }}>
-          <Center mt={5} mb={10}>
+      <SafeAreaView edges={["top", "bottom"]} top={20}>
+        <ScrollView>
+          <Center>
             <GradientCard>
               <Center mb={6}>
                 <Text fontSize="2xl" fontWeight="bold" color="white">

@@ -8,7 +8,6 @@ import {
   Shirt,
   Tag,
   User,
-  Settings,
   LogOut,
   MessageSquareMore,
   Wrench,
@@ -35,7 +34,6 @@ const NavbarDashboard = () => {
     { route: routes.shop, icon: <Store />, label: "Shops", roles: ["ADMIN"] },
     { route: routes.user, icon: <User />, label: "Users", roles: ["ADMIN"] },
     { route: routes.inquiry, icon: <MessageSquareMore />, label: "Inquiries", roles: ["ADMIN"] },
-    { route: routes.settings, icon: <Settings />, label: "Settings", roles: ["ADMIN"] },
     { route: routes.product, icon: <Shirt />, label: "Products", roles: ["VENDOR"] },
     { route: routes.virtualFitting, icon: <Camera />, label: "Virtual Fitting", roles: ["VENDOR"] },
     { route: routes.order, icon: <Tag />, label: "Orders", roles: ["VENDOR"] },
@@ -126,17 +124,28 @@ const NavbarDashboard = () => {
           <DropdownMenuItem>
             <Link
               href={routes.profile}
-              className="flex justify-start items-center gap-1 font-semibold py-2 px-4 rounded w-full uppercase"
+              className="flex justify-start items-center gap-3 font-semibold py-2 px-4 rounded w-full uppercase"
             >
               <User className="stroke-primary" /> Profile
             </Link>
           </DropdownMenuItem>
+          {/* Add Shop menu item if the user is a VENDOR */}
+          {userRole === "VENDOR" && (
+            <DropdownMenuItem>
+              <Link
+                href={routes.shopProfile}
+                className="flex justify-start items-center gap-3 font-semibold py-2 px-4 rounded w-full uppercase"
+              >
+                <Store className="stroke-primary" /> Shop
+              </Link>
+            </DropdownMenuItem>
+          )}
           <DropdownMenuItem>
             <button
               onClick={() => {
                 signOut({ callbackUrl: "/" });
               }}
-              className="flex items-center gap-1 justify-start shadow-none text-red-500 font-semibold py-2 px-4 rounded w-full uppercase"
+              className="flex items-center gap-3 justify-start shadow-none text-red-500 font-semibold py-2 px-4 rounded w-full uppercase"
             >
               <LogOut /> Logout
             </button>
