@@ -6,12 +6,13 @@ import { Card, CardTitle } from "@/components/ui/card";
 import { Label } from "@/components/ui/label";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
-import { Pencil, MoveRight } from "lucide-react";
+import { Pencil, MoveRight, Loader2 } from "lucide-react";
 
 export default function StockProductVariantCard({
   variant,
   variantIndex,
   sizes,
+  onAlert, // Receive the alert handler from parent
 }) {
   const productVariantSize = Array.isArray(variant?.ProductVariantSize)
     ? variant.ProductVariantSize
@@ -30,6 +31,7 @@ export default function StockProductVariantCard({
       return acc;
     }, {})
   );
+  const [isUpdating, setIsUpdating] = useState(false);
 
   // Handle increment input change for a specific size
   const handleIncrementChange = (sizeAbbr, value) => {
@@ -42,9 +44,56 @@ export default function StockProductVariantCard({
   };
 
   // Handle update action
-  const handleUpdate = () => {
-    // TODO: Persist the updated quantities via API call
-    setIsEditing(false);
+  const handleUpdate = async () => {
+    setIsUpdating(true);
+    try {
+      const response = await fetch("/api/products/update-product-stocks", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          productVariantId: variant.id,
+          increments,
+        }),
+      });
+
+      const data = await response.json();
+
+      if (response.ok) {
+        // Update the quantities state
+        const newQuantities = { ...quantities };
+        Object.keys(increments).forEach((sizeAbbr) => {
+          newQuantities[sizeAbbr] += increments[sizeAbbr];
+        });
+        setQuantities(newQuantities);
+        // Reset increments
+        setIncrements(
+          productVariantSize.reduce((acc, vq) => {
+            acc[vq.Size.abbreviation] = 0;
+            return acc;
+          }, {})
+        );
+        setIsEditing(false);
+        // Trigger success alert in parent
+        onAlert({
+          message: "Stock updated successfully.",
+          type: "success",
+          title: "Success",
+        });
+      } else {
+        throw new Error(data.message || "Failed to update stock.");
+      }
+    } catch (error) {
+      // Trigger error alert in parent
+      onAlert({
+        message: error.message || "An error occurred.",
+        type: "error",
+        title: "Error",
+      });
+    } finally {
+      setIsUpdating(false);
+    }
   };
 
   // Handle cancel action
@@ -172,14 +221,23 @@ export default function StockProductVariantCard({
                 onClick={handleUpdate}
                 aria-label="Update Quantities"
                 className="flex items-center gap-1"
+                disabled={isUpdating}
               >
-                Update
+                {isUpdating ? (
+                  <>
+                    <Loader2 className="animate-spin" />
+                    Updating...
+                  </>
+                ) : (
+                  "Update"
+                )}
               </Button>
               <Button
                 variant="outline"
                 onClick={handleCancel}
                 aria-label="Cancel Editing"
                 className="flex items-center gap-1"
+                disabled={isUpdating}
               >
                 Cancel
               </Button>

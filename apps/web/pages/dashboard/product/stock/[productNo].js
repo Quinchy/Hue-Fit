@@ -11,6 +11,8 @@ import { Button } from '@/components/ui/button';
 import { MoveLeft } from 'lucide-react';
 import StockProductVariantCard from './stock-product-variant-card';
 import Loading from '@/components/ui/loading';
+import { Alert } from "@/components/ui/alert";
+import { CircleCheck, CircleAlert, X } from 'lucide-react';
 
 const fetcher = (url) => fetch(url).then((res) => res.json());
 
@@ -33,6 +35,7 @@ export default function StockProduct() {
   const [product, setProduct] = useState(null);
   const [orderedSizes, setOrderedSizes] = useState([]);
   const [filteredTags, setFilteredTags] = useState([]);
+  const [alert, setAlert] = useState({ message: "", type: "", title: "" });
 
   useEffect(() => {
     if (data?.product) {
@@ -117,8 +120,47 @@ export default function StockProduct() {
 
   const { colors = [] } = productData || [];
 
+  // Handler to receive alerts from child components
+  const handleAlert = (newAlert) => {
+    setAlert(newAlert);
+  };
+
   return (
     <DashboardLayoutWrapper>
+      {/* Alert Component */}
+      {alert.message && (
+        <Alert className="flex flex-row items-center fixed z-50 w-[30rem] right-14 bottom-12 shadow-lg rounded-lg p-4">
+          {alert.type === "success" ? (
+            <CircleCheck className="ml-4 scale-[200%] h-[60%] stroke-green-500" />
+          ) : (
+            <CircleAlert className="ml-4 scale-[200%] h-[60%] stroke-red-500" />
+          )}
+          <div className="flex flex-col justify-center ml-10">
+            <div
+              className={`text-lg font-bold ${
+                alert.type === "success" ? "text-green-500" : "text-red-500"
+              }`}
+            >
+              {alert.title}
+            </div>
+            <div
+              className={`tracking-wide font-light ${
+                alert.type === "success" ? "text-green-300" : "text-red-300"
+              }`}
+            >
+              {alert.message}
+            </div>
+          </div>
+          <Button
+            variant="ghost"
+            className="ml-auto p-2"
+            onClick={() => setAlert({ message: "", type: "", title: "" })}
+          >
+            <X className="scale-150 stroke-primary/50 -translate-x-2" />
+          </Button>
+        </Alert>
+      )}
+
       {/* Header Section with Manage Stock Title, Product Name, and Back Button */}
       <div className="flex flex-col md:flex-row justify-between items-start md:items-center">
         <div>
@@ -136,7 +178,7 @@ export default function StockProduct() {
       <div className="flex flex-col gap-3 mb-10">
         <div className="flex flex-row items-center gap-5 w-full">
           <CardTitle className="text-2xl min-w-[9rem]">Variations</CardTitle>
-          <div className="h-[1px] w-full bg-primary/25"></div>
+          <div className='h-[1px] w-full bg-primary/25'></div>
         </div>
         <div className='flex flex-col gap-3'>
           {product?.ProductVariant?.map((variant, index) => (
@@ -145,6 +187,7 @@ export default function StockProduct() {
               variant={variant}
               variantIndex={index}
               sizes={orderedSizes}
+              onAlert={handleAlert} // Pass the alert handler
             />
           ))}
         </div>
