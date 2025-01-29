@@ -61,6 +61,8 @@ const routes = {
   sizesAdd: '/dashboard/maintenance/sizes/add/[unitNo]',
   virtualFitting: '/dashboard/virtual-fitting',
   addVirtualFitting: '/dashboard/virtual-fitting/add',
+  virtualTryOn: '/dashboard/virtual-fitting/virtual-try-on',
+  aiTryOn: '/dashboard/virtual-fitting/ai-try-on',
 };
 
 export default routes;

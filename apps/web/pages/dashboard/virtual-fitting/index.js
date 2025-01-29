@@ -5,7 +5,7 @@ import Image from "next/image";
 import DashboardLayoutWrapper from "@/components/ui/dashboard-layout";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Card, CardTitle } from "@/components/ui/card";
-import { Search, Camera, Upload, ChevronDown, Loader2, CheckCircle2, X } from "lucide-react";
+import { Search, Camera, Cpu, Upload, ChevronDown, Loader2, CheckCircle2, X } from "lucide-react";
 import useSWR from 'swr';
 import { 
   Pagination, PaginationPrevious, PaginationItem, 
@@ -16,6 +16,7 @@ import {
   DropdownMenuItem, DropdownMenuTrigger
 } from '@/components/ui/dropdown-menu';
 import { Alert, AlertTitle, AlertDescription } from '@/components/ui/alert';
+import routes from '@/routes';
 
 const fetcher = (url) => fetch(url).then((res) => res.json());
 
@@ -136,12 +137,29 @@ export default function VirtualFitting() {
   // 4. Open Virtual Try-On with type & tag
   const openVirtualTryOn = (pngClotheURL, typeName, tagName) => {
     // Only pass the tag if type is LOWERWEAR
-    window.open(
-      `/dashboard/virtual-fitting/virtual-try-on?pngClotheURL=${encodeURIComponent(
-        pngClotheURL
-      )}&type=${encodeURIComponent(typeName)}&tag=${encodeURIComponent(tagName)}`,
-      '_blank'
-    );
+    const url = `${routes.virtualTryOn}?pngClotheURL=${encodeURIComponent(
+      pngClotheURL
+    )}&type=${encodeURIComponent(typeName)}${
+      typeName.toUpperCase() === 'LOWERWEAR' && tagName
+        ? `&tag=${encodeURIComponent(tagName)}`
+        : ''
+    }`;
+  
+    window.open(url, '_blank');
+  };  
+
+  // 5. Open AI Try-On with type & tag
+  const openAITryOn = (pngClotheURL, typeName, tagName) => {
+    // Only pass the tag if type is LOWERWEAR
+    const url = `${routes.aiTryOn}?pngClotheURL=${encodeURIComponent(
+      pngClotheURL
+    )}&type=${encodeURIComponent(typeName)}${
+      typeName.toUpperCase() === 'LOWERWEAR' && tagName
+        ? `&tag=${encodeURIComponent(tagName)}`
+        : ''
+    }`;
+  
+    window.open(url, '_blank');
   };
 
   // Filter products to only the allowed types
@@ -156,7 +174,7 @@ export default function VirtualFitting() {
     <DashboardLayoutWrapper>
       {/* Success Alert */}
       {showAlert && (
-        <Alert className="fixed z-50 w-[30rem] right-12 bottom-10 flex items-center shadow-lg rounded-lg">
+        <Alert className="fixed z-50 w-[30rem] right-12 bottom-10 flex items-center shadow-lg rounded-lg p-4">
           <CheckCircle2 className="h-10 w-10 stroke-green-500" />
           <div className="ml-7">
             <AlertTitle className="text-green-400 text-base font-semibold">
@@ -330,23 +348,42 @@ export default function VirtualFitting() {
                           Color: {variant.Color.name}
                         </p>
                       </div>
-                      <Button
-                        variant="outline"
-                        disabled={!variant.pngClotheURL}
-                        onClick={() =>
-                          openVirtualTryOn(
-                            variant.pngClotheURL,
-                            selectedProduct.Type.name,
-                            // Only pass Tag if LOWERWEAR
-                            selectedProduct.Type.name === 'LOWERWEAR'
-                              ? selectedProduct.Tag?.name || ''
-                              : ''
-                          )
-                        }
-                      >
-                        <Camera className="scale-125" />
-                        Virtual Fit
-                      </Button>
+                      <div className="flex flex-row gap-2">
+                        <Button
+                          variant="outline"
+                          disabled={!variant.pngClotheURL}
+                          onClick={() =>
+                            openVirtualTryOn(
+                              variant.pngClotheURL,
+                              selectedProduct.Type.name,
+                              // Only pass Tag if LOWERWEAR
+                              selectedProduct.Type.name === 'LOWERWEAR'
+                                ? selectedProduct.Tag?.name || ''
+                                : ''
+                            )
+                          }
+                        >
+                          <Camera className="scale-125 mr-2" />
+                          Virtual Fit
+                        </Button>
+                        <Button
+                          variant="outline"
+                          disabled={!variant.pngClotheURL}
+                          onClick={() =>
+                            openAITryOn(
+                              variant.pngClotheURL,
+                              selectedProduct.Type.name,
+                              // Only pass Tag if LOWERWEAR
+                              selectedProduct.Type.name === 'LOWERWEAR'
+                                ? selectedProduct.Tag?.name || ''
+                                : ''
+                            )
+                          }
+                        >
+                          <Cpu className="scale-125 mr-2" />
+                          AI Try-On
+                        </Button>
+                      </div>
                     </div>
                     <div className="flex flex-col items-center mb-2">
                       <label
