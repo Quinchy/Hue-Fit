@@ -1,4 +1,4 @@
-// nextauth.js (or [...nextauth].js)
+// pages/api/auth/[...nextauth].js
 import NextAuth from "next-auth";
 import CredentialsProvider from "next-auth/providers/credentials";
 import prisma, { disconnectPrisma } from "@/utils/helpers";
@@ -66,6 +66,7 @@ export const authOptions = {
             firstName,
             lastName,
             profilePicture,
+            status: user.status,
           };
 
           if (user.Role.name === "VENDOR") {
@@ -77,7 +78,9 @@ export const authOptions = {
                 },
               },
             });
+            // Mark shopFormSubmitted as true if a shop exists
             sessionUser.shopId = vendorProfile?.Shop?.id || null;
+            sessionUser.shopFormSubmitted = Boolean(vendorProfile?.Shop?.id);
           }
 
           return sessionUser;
@@ -101,13 +104,16 @@ export const authOptions = {
         roleId: token.roleId,
         userNo: token.userNo,
         shopId: token.shopId,
+        shopFormSubmitted: token.shopFormSubmitted,
         firstName: token.firstName,
         lastName: token.lastName,
         profilePicture: token.profilePicture,
+        status: token.status,
       };
       return session;
     },
-    async jwt({ token, user, trigger, session }) {
+    async jwt({ token, user }) {
+      // On initial sign in, store values on the token
       if (user) {
         token.id = user.id;
         token.role = user.role;
@@ -116,7 +122,28 @@ export const authOptions = {
         token.firstName = user.firstName;
         token.lastName = user.lastName;
         token.profilePicture = user.profilePicture;
-        if (user.role === "VENDOR") token.shopId = user.shopId;
+        token.status = user.status;
+        if (user.role === "VENDOR") {
+          token.shopId = user.shopId;
+          token.shopFormSubmitted = Boolean(user.shopId);
+        }
+        return token;
+      }
+      // For subsequent requests for vendors, refresh the token values from the DB
+      if (token.role === "VENDOR") {
+        try {
+          const updatedUser = await prisma.user.findUnique({
+            where: { id: token.id },
+            include: { VendorProfile: { select: { Shop: { select: { id: true } } } } },
+          });
+          if (updatedUser) {
+            token.status = updatedUser.status;
+            token.shopId = updatedUser.VendorProfile?.Shop?.id || null;
+            token.shopFormSubmitted = Boolean(updatedUser.VendorProfile?.Shop?.id);
+          }
+        } catch (err) {
+          console.error("Error refreshing token:", err);
+        }
       }
       return token;
     },
@@ -128,7 +155,6 @@ export const authOptions = {
       }
     },
     async signOut() {
-      // The typeof window check prevents this code from running in SSR
       if (typeof window !== "undefined") {
         sessionStorage.clear();
         console.log("Session storage cleared.");

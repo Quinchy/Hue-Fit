@@ -25,6 +25,7 @@ import CartScreen from "./screens/app/CartScreen";
 import VirtualFittingScreen from "./screens/app/VirtualFittingScreen";
 import ShopScreen from "./screens/app/ShopScreen";
 import ProfileSettingsScreen from "./screens/app/ProfileSettingsScreen";
+import OrderTransactionScreen from "./screens/app/OrderTransactionScreen";
 import InputScreen from "./screens/app/InputScreen";
 import ProductView from "./screens/app/ProductViewScreen";
 import PlaygroundScreen from "./screens/app/PlaygroundScreen";
@@ -174,6 +175,8 @@ const AppNavigator = ({ initialRoute }) => (
     <Stack.Screen name="ForgetPassword2" component={ForgetPassword2Screen} />
     <Stack.Screen name="Main" component={TabNavigator} />
     <Stack.Screen name="Cart" component={CartScreen} />
+    <Stack.Screen name="ProfileSettings" component={ProfileSettingsScreen} />
+    <Stack.Screen name="OrderTransactionScreen" component={OrderTransactionScreen} />
     <Stack.Screen name="VirtualFitting" component={VirtualFittingScreen} />
     <Stack.Screen name="ProductView" component={ProductView} />
     <Stack.Screen name="Notification" component={NotificationScreen} />

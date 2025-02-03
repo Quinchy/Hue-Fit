@@ -1,13 +1,7 @@
+// components/Login.jsx
 import { useState } from "react";
 import { Button } from "@/components/ui/button";
-import {
-  Card,
-  CardContent,
-  CardDescription,
-  CardFooter,
-  CardHeader,
-  CardTitle,
-} from "@/components/ui/card";
+import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { PasswordInput } from "@/components/ui/password-input";
 import { Label } from "@/components/ui/label";
@@ -23,10 +17,9 @@ import { useRouter } from "next/router";
 
 export default function Login() {
   const router = useRouter();
-  const [loading, setLoading] = useState(false); // Track loading state
-  const [errorMessage, setErrorMessage] = useState(""); // Track error message
+  const [loading, setLoading] = useState(false);
+  const [errorMessage, setErrorMessage] = useState("");
 
-  // Initialize Formik
   const formik = useFormik({
     initialValues: {
       username: "",
@@ -34,8 +27,8 @@ export default function Login() {
     },
     validationSchema: loginSchema,
     onSubmit: async (values) => {
-      setLoading(true); // Start loading
-      setErrorMessage(""); // Clear any previous error message
+      setLoading(true);
+      setErrorMessage("");
       const result = await signIn("credentials", {
         redirect: false,
         username: values.username,
@@ -46,32 +39,30 @@ export default function Login() {
         try {
           const response = await fetch("/api/auth/session");
           const session = await response.json();
-
-          // Redirect based on the user's role
-          if (session.user && session.user.role === "ADMIN" || session.user.role === "VENDOR") {
-            await router.push(routes.dashboard);
-          } 
-          else {
-            await router.push(routes.home);
+          if (session.user) {
+            if (session.user.role === "VENDOR" && session.user.status === "PENDING") {
+              await router.push(routes.shopSetup);
+            } else if (session.user.role === "ADMIN" || session.user.role === "VENDOR") {
+              await router.push(routes.dashboard);
+            } else {
+              await router.push(routes.home);
+            }
           }
-        } 
-        catch (error) {
-          setErrorMessage("An unexpected error occurred. Please try again."); // Handle other errors
+        } catch (error) {
+          setErrorMessage("An unexpected error occurred. Please try again.");
         }
-      } 
-      else {
-        // Display the error message from NextAuth
+      } else {
         setErrorMessage(result.error || "Invalid credentials. Please try again.");
       }
 
-      setLoading(false); // End loading
+      setLoading(false);
     },
   });
   
   return (
-    <Card className="mt-40 rounded-se-none rounded-es-none w-[650px] flex flex-col gap-7">
+    <Card className="mt-40 w-[650px] flex flex-col gap-7">
       <CardHeader className="flex flex-col items-center">
-        <CardTitle className="text-4xl">Login to Hue-Fit Vendor</CardTitle>
+        <CardTitle className="text-4xl">Login to Hue-Fit</CardTitle>
         <CardDescription>
           Enter your username and password to access Hue-Fit Dashboard.
         </CardDescription>
@@ -115,7 +106,7 @@ export default function Login() {
           <Button
             type="submit"
             className="w-full mt-4"
-            disabled={loading} // Disable button when loading
+            disabled={loading}
           >
             {loading ? <LoadingMessage message="Logging in ..." /> : "Login"}
           </Button>

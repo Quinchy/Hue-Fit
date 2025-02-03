@@ -87,7 +87,7 @@ model CustomerFeature {
 model VendorProfile {
   id             Int      @id @default(autoincrement())
   userId         Int      @unique
-  shopId         Int   
+  shopId         Int?   
   profilePicture String?
   firstName      String
   lastName       String
@@ -98,7 +98,7 @@ model VendorProfile {
   updated_at     DateTime @updatedAt
 
   User User  @relation(fields: [userId], references: [id])
-  Shop Shop  @relation("ShopEmployees", fields: [shopId], references: [id])
+  Shop Shop? @relation("ShopEmployees", fields: [shopId], references: [id])
 }
 
 model PartnershipRequest {

@@ -1,10 +1,10 @@
+// Updated API: /api/shop-requests/get-manage-shop-request.js
 import prisma from '@/utils/helpers';
 
 export default async function handler(req, res) {
   const { requestNo } = req.query;
 
   try {
-    // Fetch the partnership request with related shop, address, google map data, business licenses, and shop owner (via Users)
     const request = await prisma.partnershipRequest.findUnique({
       where: { requestNo },
       include: {
@@ -15,6 +15,10 @@ export default async function handler(req, res) {
             contactNo: true,
             status: true,
             addressId: true,
+            openingTime: true,
+            closingTime: true,
+            logo: true,
+            email: true,
             ShopAddress: {
               select: {
                 buildingNo: true,
@@ -49,7 +53,7 @@ export default async function handler(req, res) {
         },
       },
     });
-    // Fetch the VendorProfile details using the userId from the Owner relation
+
     const ownerProfile = request.Shop.Owner ? await prisma.vendorProfile.findUnique({
       where: { userId: request.Shop.Owner.id },
       select: {
@@ -61,7 +65,6 @@ export default async function handler(req, res) {
       },
     }) : null;
 
-    // Format the response data
     const formattedRequest = {
       ...request,
       shopName: request.Shop.name,
@@ -75,10 +78,12 @@ export default async function handler(req, res) {
       postalNumber: request.Shop.ShopAddress.postalCode,
       latitude: request.Shop.ShopAddress.GoogleMapLocation ? request.Shop.ShopAddress.GoogleMapLocation.latitude : 'N/A',
       longitude: request.Shop.ShopAddress.GoogleMapLocation ? request.Shop.ShopAddress.GoogleMapLocation.longitude : 'N/A',
-      googleMapPlaceName: request.Shop.ShopAddress.GoogleMapLocation ? request.Shop.ShopAddress.GoogleMapLocation.placeName : 'N/A',
-      // Include business licenses as an array of URLs
+      googleMapPlaceName: request.Shop.ShopAddress.GoogleMapLocation ? request.Shop.ShopAddress.GoogleMapLocation.name : 'N/A',
       businessLicense: request.Shop.BusinessLicense ? request.Shop.BusinessLicense.map((license) => license.licenseUrl) : [],
-      // Add owner details from VendorProfile
+      openingTime: request.Shop.openingTime,
+      closingTime: request.Shop.closingTime,
+      shopLogo: request.Shop.logo,
+      shopEmail: request.Shop.email,
       contactPerson: ownerProfile ? {
         firstName: ownerProfile.firstName,
         lastName: ownerProfile.lastName,
@@ -87,9 +92,8 @@ export default async function handler(req, res) {
         position: ownerProfile.position,
       } : null,
     };
-    // Send the response
-    res.status(200).json(formattedRequest);
 
+    res.status(200).json(formattedRequest);
   } 
   catch (error) {
     console.error("Error fetching shop request:", error);

@@ -1,13 +1,20 @@
-import React, { useState, useRef } from 'react';
-import { GoogleMap, useJsApiLoader, Marker } from '@react-google-maps/api';
-import { Skeleton } from '@/components/ui/skeleton';
+// components/ui/map-picker.jsx
+import React, { useState, useEffect, useRef } from "react";
+import { GoogleMap, useJsApiLoader, Marker } from "@react-google-maps/api";
+import { Skeleton } from "@/components/ui/skeleton";
 
-const libraries = ['places'];
-const BATAAN_CENTER = { lat: 14.676041, lng: 120.536389 };
+const libraries = ["places"];
+const DEFAULT_CENTER = { lat: 14.676041, lng: 120.536389 };
 
-const MapPicker = ({ onLocationSelect, center = BATAAN_CENTER }) => {
-  const [selectedPosition, setSelectedPosition] = useState(null);
-  const [placeName, setPlaceName] = useState('None');
+const MapPicker = ({
+  onLocationSelect,
+  disabled = false,
+  initialPosition = null,
+  initialPlaceName = "None",
+  center = DEFAULT_CENTER,
+}) => {
+  const [selectedPosition, setSelectedPosition] = useState(initialPosition);
+  const [placeName, setPlaceName] = useState(initialPlaceName);
   const mapRef = useRef(null);
 
   const { isLoaded, loadError } = useJsApiLoader({
@@ -15,32 +22,37 @@ const MapPicker = ({ onLocationSelect, center = BATAAN_CENTER }) => {
     libraries,
   });
 
+  useEffect(() => {
+    if (initialPosition) {
+      setSelectedPosition(initialPosition);
+    }
+    if (initialPlaceName) {
+      setPlaceName(initialPlaceName);
+    }
+  }, [initialPosition, initialPlaceName]);
+
   const handleMapClick = (event) => {
+    if (disabled) return;
     const lat = event.latLng.lat();
     const lng = event.latLng.lng();
     const clickedLocation = { lat, lng };
-
     setSelectedPosition(clickedLocation);
-    setPlaceName('None');
-
+    setPlaceName("None");
     if (onLocationSelect) {
-      onLocationSelect(clickedLocation, 'None');
+      onLocationSelect(clickedLocation, "None");
     }
-
     if (event.placeId) {
-      // Fetch details about the place
       const service = new window.google.maps.places.PlacesService(mapRef.current);
       service.getDetails(
-        { placeId: event.placeId, fields: ['name'] },
+        { placeId: event.placeId, fields: ["name"] },
         (place, status) => {
-          if (
-            status === window.google.maps.places.PlacesServiceStatus.OK &&
-            place &&
-            place.name
-          ) {
+          if (status === window.google.maps.places.PlacesServiceStatus.OK && place?.name) {
             setPlaceName(place.name);
+            if (onLocationSelect) {
+              onLocationSelect(clickedLocation, place.name);
+            }
           } else {
-            setPlaceName('No place details available');
+            setPlaceName("No place details available");
           }
         }
       );
@@ -51,52 +63,42 @@ const MapPicker = ({ onLocationSelect, center = BATAAN_CENTER }) => {
     mapRef.current = map;
   };
 
-  if (loadError) {
-    return <div>Error loading maps</div>;
-  }
-
-  if (!isLoaded) {
+  if (loadError) return <div>Error loading maps</div>;
+  if (!isLoaded)
     return (
-      <div style={{ width: '100%', height: '700px', borderRadius: '10px' }}>
+      <div style={{ width: "100%", height: "700px", borderRadius: "10px" }}>
         <Skeleton className="w-full h-full rounded-md" />
       </div>
     );
-  }
+
+  const mapCenter = selectedPosition ? selectedPosition : center;
 
   return (
-    <div style={{ position: 'relative', height: '700px' }}>
-      {/* Location Details Overlay */}
+    <div style={{ position: "relative", height: "700px" }}>
       <div
         className="absolute top-14 left-2 bg-card/90 border border-primary/50 p-4 rounded-lg shadow-card shadow-md z-10"
-        style={{ maxWidth: '300px' }}
+        style={{ maxWidth: "300px" }}
       >
         <h3 className="text-lg font-bold uppercase">Location Details:</h3>
         <p className="text-sm font-light">
-          <strong className="font-bold">Latitude:</strong> {selectedPosition?.lat || 'N/A'}
+          <strong className="font-bold">Latitude:</strong> {selectedPosition?.lat || "N/A"}
         </p>
         <p className="text-sm font-light">
-          <strong className="font-bold">Longitude:</strong> {selectedPosition?.lng || 'N/A'}
+          <strong className="font-bold">Longitude:</strong> {selectedPosition?.lng || "N/A"}
         </p>
         <p className="text-sm font-light">
           <strong className="font-bold">Place Name:</strong> {placeName}
         </p>
       </div>
-
-      {/* Google Map */}
       <GoogleMap
-        mapContainerStyle={{ width: '100%', height: '100%', borderRadius: '10px' }}
-        center={center}
+        mapContainerStyle={{ width: "100%", height: "100%", borderRadius: "10px" }}
+        center={mapCenter}
         zoom={selectedPosition ? 15 : 10}
         onClick={handleMapClick}
         onLoad={handleMapLoad}
-        options={{
-          disableDefaultUI: false,
-          mapTypeControl: true,
-        }}
+        options={{ disableDefaultUI: false, mapTypeControl: true }}
       >
-        {selectedPosition && (
-          <Marker position={selectedPosition} />
-        )}
+        {selectedPosition && <Marker position={selectedPosition} />}
       </GoogleMap>
     </div>
   );

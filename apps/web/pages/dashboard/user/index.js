@@ -1,57 +1,52 @@
-// components/UsersPage.js
-
+// pages/dashboard/users/index.js
 import { useState } from 'react';
+import useSWR from 'swr';
 import { useRouter } from 'next/router';
-import DashboardLayoutWrapper from "@/components/ui/dashboard-layout";
-import { Card, CardTitle } from "@/components/ui/card";
-import { Button } from "@/components/ui/button";
-import routes from '@/routes';
-import { Plus, Eye, Pencil, Trash2, ChevronDown } from 'lucide-react';
-import {
-  Table,
-  TableBody,
-  TableCell,
-  TableHead,
-  TableHeader,
-  TableRow,
-} from "@/components/ui/table";
-import {
-  Pagination,
-  PaginationContent,
-  PaginationItem,
-  PaginationLink,
-  PaginationNext,
-  PaginationPrevious,
-} from "@/components/ui/pagination";
-import {
-  DropdownMenu,
-  DropdownMenuContent,
-  DropdownMenuGroup,
-  DropdownMenuItem,
-  DropdownMenuTrigger,
-} from "@/components/ui/dropdown-menu";
-import { Input } from "@/components/ui/input";
-import { Search } from 'lucide-react';
+import DashboardLayoutWrapper from '@/components/ui/dashboard-layout';
+import { Card, CardTitle } from '@/components/ui/card';
+import { Button, buttonVariants } from '@/components/ui/button';
+import { Input } from '@/components/ui/input';
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
+import { Pagination, PaginationContent, PaginationItem, PaginationLink, PaginationNext, PaginationPrevious } from '@/components/ui/pagination';
+import { DropdownMenu, DropdownMenuContent, DropdownMenuGroup, DropdownMenuItem, DropdownMenuTrigger } from '@/components/ui/dropdown-menu';
+import { Plus, Eye, Pencil, Trash2, ChevronDown, Search, NotepadText } from 'lucide-react';
 import Image from 'next/image';
 import Link from 'next/link';
-import { buttonVariants } from '@/components/ui/button';
-import { NotepadText } from 'lucide-react';
+import { Skeleton } from '@/components/ui/skeleton';
+import routes from '@/routes';
+
+const fetcher = (url) => fetch(url).then((res) => res.json());
 
 export default function UsersPage() {
   const [currentPage, setCurrentPage] = useState(1);
-  const [totalPages] = useState(2); // Set total pages manually for mock data
+  const [searchTerm, setSearchTerm] = useState('');
+  const [selectedRole, setSelectedRole] = useState('ALL');
   const router = useRouter();
 
+  const { data: usersData, error, isLoading } = useSWR(
+    `/api/users/get-users?page=${currentPage}&search=${encodeURIComponent(searchTerm)}&role=${selectedRole !== 'ALL' ? selectedRole : ''}`,
+    fetcher
+  );
+
+  const handleSearchChange = (e) => {
+    setSearchTerm(e.target.value);
+    setCurrentPage(1);
+  };
+
+  const handleRoleSelect = (role) => {
+    setSelectedRole(role);
+    setCurrentPage(1);
+  };
+
   const handlePageChange = (page) => {
-    if (page >= 1 && page <= totalPages) {
+    if (page >= 1 && page <= (usersData?.totalPages || 1)) {
       setCurrentPage(page);
     }
   };
 
   const handleViewClick = (userNo, role) => {
-    // Passing `userNo` and `role` as query parameters to the view route
     router.push({
-      pathname: routes.userView.replace("[userNo]", userNo),
+      pathname: routes.userView.replace('[userNo]', userNo),
       query: { role },
     });
   };
@@ -61,7 +56,15 @@ export default function UsersPage() {
       <div className="flex flex-row justify-between">
         <CardTitle className="text-4xl">Users</CardTitle>
         <div className="flex flex-row gap-5">
-          <Input type="text" className="min-w-[30rem]" placeholder="Search user" variant="icon" icon={Search} />
+          <Input
+            type="text"
+            className="min-w-[30rem]"
+            placeholder="Search user"
+            variant="icon"
+            icon={Search}
+            value={searchTerm}
+            onChange={handleSearchChange}
+          />
           <DropdownMenu>
             <DropdownMenuTrigger asChild>
               <Button variant="outline" className="font-normal">
@@ -71,211 +74,145 @@ export default function UsersPage() {
             </DropdownMenuTrigger>
             <DropdownMenuContent className="w-48">
               <DropdownMenuGroup>
-                <DropdownMenuItem className="justify-center uppercase text-base tracking-wide font-semibold">
-                  <Button variant="none" className="text-base">Admin</Button>
-                </DropdownMenuItem>
-                <DropdownMenuItem className="justify-center">
-                  <Button variant="none" className="text-base">Vendor</Button>
-                </DropdownMenuItem>
-                <DropdownMenuItem className="justify-center">
-                  <Button variant="none" className="text-base">Customer</Button>
-                </DropdownMenuItem>
+                {['ALL', 'ADMIN', 'VENDOR', 'CUSTOMER'].map((role) => (
+                  <DropdownMenuItem key={role} className="justify-center" onClick={() => handleRoleSelect(role)}>
+                    <Button variant="none" className="text-base">{role}</Button>
+                  </DropdownMenuItem>
+                ))}
               </DropdownMenuGroup>
             </DropdownMenuContent>
-          </DropdownMenu> 
-          <Link className={buttonVariants({ variant: "default" })} href={routes.userAdd}>
+          </DropdownMenu>
+          <Link className={buttonVariants({ variant: 'default' })} href={routes.userAdd}>
             <Plus className="scale-110 stroke-[3px]" />
             Add User
           </Link>
         </div>
       </div>
-      <Card className="flex flex-col gap-5 justify-between min-h-[49.1rem]">
+      <Card className="flex flex-col p-5 gap-5 justify-between min-h-[49.1rem]">
         <Table>
           <TableHeader>
             <TableRow>
-              <TableHead className="max-w-[1rem]">Picture</TableHead>
-              <TableHead className="max-w-[3rem]">Name</TableHead>
-              <TableHead className="max-w-[3rem]">Username/Email</TableHead>
-              <TableHead className="max-w-[1rem] text-center">Role</TableHead>
-              <TableHead className="max-w-[1rem] text-center">Action</TableHead>
+              <TableHead className="w-[5rem]">Picture</TableHead>
+              <TableHead className="w-1/2">Name</TableHead>
+              <TableHead className="w-1/2">Username/Email</TableHead>
+              <TableHead className="min-w-[10rem] text-center">Role</TableHead>
+              <TableHead className="w-[5rem] text-center">Action</TableHead>
             </TableRow>
           </TableHeader>
           <TableBody>
-            {/* Replace hardcoded TableRow items with dynamic data as needed */}
-            <TableRow>
-              <TableCell className="max-w-[1rem]">
-                <Image src="/images/profile-picture.png" alt="Profile" width={60} height={60} className="rounded-full" />
-              </TableCell>
-              <TableCell className="max-w-[3rem] font-medium">Full Name</TableCell>
-              <TableCell className="max-w-[3rem]">
-                <div>Username</div>
-                <div className="text-primary/55">Email</div>
-              </TableCell>
-              <TableCell className="max-w-[1rem] text-center">
-                <p className="py-1 w-full rounded font-bold text-card bg-yellow-500 uppercase">ADMIN</p>
-              </TableCell>
-              <TableCell className="max-w-[1rem] text-center">
-                <DropdownMenu>
-                  <DropdownMenuTrigger asChild>
-                    <Button variant="outline" className="font-normal">
-                      Action  
-                      <ChevronDown className="scale-125" />
-                    </Button>
-                  </DropdownMenuTrigger>
-                  <DropdownMenuContent className="w-50">
-                    <DropdownMenuGroup>
-                      <DropdownMenuItem className="justify-center uppercase text-base tracking-wide font-semibold">
-                        <Button
-                          variant="none"
-                          className="text-base"
-                          onClick={() => handleViewClick(1, "ADMIN")} // Pass role as "ADMIN"
-                        >
-                          <Eye className="scale-125"/>
-                          View
-                        </Button>
-                      </DropdownMenuItem>
-                      <DropdownMenuItem className="justify-center">
-                        <Button
-                          variant="none"
-                          className="text-base"
-                          onClick={() => router.push(routes.userEdit.replace("[userNo]", 1))}
-                        >
-                          <Pencil className="scale-125"/>
-                          Edit
-                        </Button>
-                      </DropdownMenuItem>
-                      <DropdownMenuItem className="justify-center">
-                        <Button variant="none" className="font-bold text-base text-red-500">
-                          <Trash2 className="scale-125 stroke-red-500" />
-                          Delete
-                        </Button>
-                      </DropdownMenuItem>
-                    </DropdownMenuGroup>
-                  </DropdownMenuContent>
-                </DropdownMenu>
-              </TableCell>
-            </TableRow>
-            <TableRow>
-              <TableCell className="max-w-[1rem]">
-                <Image src="/images/profile-picture.png" alt="Profile" width={60} height={60} className="rounded-full" />
-              </TableCell>
-              <TableCell className="max-w-[3rem] font-medium">Full Name</TableCell>
-              <TableCell className="max-w-[3rem]">
-                <div>Username</div>
-                <div className="text-primary/55">Email</div>
-              </TableCell>
-              <TableCell className="max-w-[1rem] text-center">
-                <p className="py-1 w-full rounded font-bold text-card bg-purple-500 uppercase">VENDOR</p>
-              </TableCell>
-              <TableCell className="max-w-[1rem] text-center">
-                <DropdownMenu>
-                  <DropdownMenuTrigger asChild>
-                    <Button variant="outline" className="font-normal">
-                      Action  
-                      <ChevronDown className="scale-125" />
-                    </Button>
-                  </DropdownMenuTrigger>
-                  <DropdownMenuContent className="w-50">
-                    <DropdownMenuGroup>
-                      <DropdownMenuItem className="justify-center uppercase text-base tracking-wide font-semibold">
-                        <Button
-                          variant="none"
-                          className="text-base"
-                          onClick={() => handleViewClick(1, "VENDOR")} // Pass role as "ADMIN"
-                        >
-                          <Eye className="scale-125"/>
-                          View
-                        </Button>
-                      </DropdownMenuItem>
-                      <DropdownMenuItem className="justify-center">
-                        <Button
-                          variant="none"
-                          className="text-base"
-                          onClick={() => router.push(routes.userEdit.replace("[userNo]", 1))}
-                        >
-                          <Pencil className="scale-125"/>
-                          Edit
-                        </Button>
-                      </DropdownMenuItem>
-                      <DropdownMenuItem className="justify-center">
-                        <Button variant="none" className="font-bold text-base text-red-500">
-                          <Trash2 className="scale-125 stroke-red-500" />
-                          Delete
-                        </Button>
-                      </DropdownMenuItem>
-                    </DropdownMenuGroup>
-                  </DropdownMenuContent>
-                </DropdownMenu>
-              </TableCell>
-            </TableRow>
-            <TableRow>
-              <TableCell className="max-w-[1rem]">
-                <Image src="/images/profile-picture.png" alt="Profile" width={60} height={60} className="rounded-full" />
-              </TableCell>
-              <TableCell className="max-w-[3rem] font-medium">Full Name</TableCell>
-              <TableCell className="max-w-[3rem]">
-                <div>Username</div>
-                <div className="text-primary/55">Email</div>
-              </TableCell>
-              <TableCell className="max-w-[1rem] text-center">
-                <p className="py-1 w-full rounded font-bold text-card bg-sky-500 uppercase">Customer</p>
-              </TableCell>
-              <TableCell className="max-w-[1rem] text-center">
-                <DropdownMenu>
-                  <DropdownMenuTrigger asChild>
-                    <Button variant="outline" className="font-normal">
-                      Action  
-                      <ChevronDown className="scale-125" />
-                    </Button>
-                  </DropdownMenuTrigger>
-                  <DropdownMenuContent className="w-50">
-                    <DropdownMenuGroup>
-                      <DropdownMenuItem className="justify-center uppercase text-base tracking-wide font-semibold">
-                        <Button
-                          variant="none"
-                          className="text-base"
-                          onClick={() => handleViewClick(1, "CUSTOMER")}
-                        >
-                          <Eye className="scale-125"/>
-                          View
-                        </Button>
-                      </DropdownMenuItem>
-                      <DropdownMenuItem className="justify-center">
-                        <Button
-                          variant="none"
-                          className="text-base"
-                          onClick={() => router.push(routes.userEdit.replace("[userNo]", 1))}
-                        >
-                          <Pencil className="scale-125"/>
-                          Edit
-                        </Button>
-                      </DropdownMenuItem>
-                      <DropdownMenuItem className="justify-center">
-                        <Button variant="none" className="font-bold text-base text-red-500">
-                          <Trash2 className="scale-125 stroke-red-500" />
-                          Delete
-                        </Button>
-                      </DropdownMenuItem>
-                    </DropdownMenuGroup>
-                  </DropdownMenuContent>
-                </DropdownMenu>
-              </TableCell>
-            </TableRow>
+            {isLoading || !usersData
+              ? Array.from({ length: 8 }).map((_, idx) => (
+                  <TableRow key={idx}>
+                    <TableCell>
+                      <Skeleton className="w-full h-14" />
+                    </TableCell>
+                    <TableCell>
+                      <Skeleton className="w-full h-14" />
+                    </TableCell>
+                    <TableCell>
+                      <Skeleton className="w-full h-14" />
+                    </TableCell>
+                    <TableCell className="text-center">
+                      <Skeleton className="w-full h-14" />
+                    </TableCell>
+                    <TableCell className="text-center">
+                      <Skeleton className="w-full h-14" />
+                    </TableCell>
+                  </TableRow>
+                ))
+              : usersData.users.length === 0 ? (
+                  <TableRow>
+                    <TableCell colSpan={5} className="text-center py-10 text-primary/50 text-lg font-thin tracking-wide">
+                      No users found.
+                    </TableCell>
+                  </TableRow>
+                ) : (
+                  usersData.users.map((user) => {
+                    const profile =
+                      user.Role.name === 'ADMIN'
+                        ? user.AdminProfile
+                        : user.Role.name === 'VENDOR'
+                        ? user.VendorProfile
+                        : user.CustomerProfile;
+                    const fullName = profile ? `${profile.firstName} ${profile.lastName}` : user.username;
+                    const picture = profile && profile.profilePicture ? profile.profilePicture : '/images/placeholder-profile-picture.png';
+
+                    let roleBg = 'bg-gray-300';
+                    if (user.Role.name === 'ADMIN') roleBg = 'bg-yellow-500';
+                    else if (user.Role.name === 'VENDOR') roleBg = 'bg-purple-500';
+                    else if (user.Role.name === 'CUSTOMER') roleBg = 'bg-sky-500';
+
+                    return (
+                      <TableRow key={user.userNo}>
+                        <TableCell>
+                          <Image src={picture} alt="Profile" width={60} height={60} className="rounded-full" />
+                        </TableCell>
+                        <TableCell className="font-medium">{fullName}</TableCell>
+                        <TableCell>
+                          <div>{user.username}</div>
+                        </TableCell>
+                        <TableCell className="text-center">
+                          <p className={`py-1 w-full rounded font-bold text-card uppercase ${roleBg}`}>
+                            {user.Role.name}
+                          </p>
+                        </TableCell>
+                        <TableCell className="text-center">
+                          <DropdownMenu>
+                            <DropdownMenuTrigger asChild>
+                              <Button variant="outline" className="font-normal">
+                                Action
+                                <ChevronDown className="scale-125" />
+                              </Button>
+                            </DropdownMenuTrigger>
+                            <DropdownMenuContent className="w-50">
+                              <DropdownMenuGroup>
+                                <DropdownMenuItem className="justify-center">
+                                  <Button variant="none" className="text-base" onClick={() => handleViewClick(user.userNo, user.Role.name)}>
+                                    <Eye className="scale-125" />
+                                    View
+                                  </Button>
+                                </DropdownMenuItem>
+                                <DropdownMenuItem className="justify-center">
+                                  <Button variant="none" className="text-base" onClick={() => router.push(routes.userEdit.replace('[userNo]', user.userNo))}>
+                                    <Pencil className="scale-125" />
+                                    Edit
+                                  </Button>
+                                </DropdownMenuItem>
+                                <DropdownMenuItem className="justify-center">
+                                  <Button variant="none" className="font-bold text-base text-red-500">
+                                    <Trash2 className="scale-125 stroke-red-500" />
+                                    Delete
+                                  </Button>
+                                </DropdownMenuItem>
+                              </DropdownMenuGroup>
+                            </DropdownMenuContent>
+                          </DropdownMenu>
+                        </TableCell>
+                      </TableRow>
+                    );
+                  })
+                )}
           </TableBody>
         </Table>
-        <Pagination className="flex flex-col items-end">
-          <PaginationContent>
-            <PaginationPrevious onClick={() => handlePageChange(currentPage - 1)} disabled={currentPage === 1} />
-            {Array.from({ length: totalPages }, (_, i) => i + 1).map((page) => (
-              <PaginationItem key={page} active={page === currentPage}>
-                <PaginationLink onClick={() => handlePageChange(page)}>
-                  {page}
-                </PaginationLink>
-              </PaginationItem>
-            ))}
-            <PaginationNext onClick={() => handlePageChange(currentPage + 1)} disabled={currentPage === totalPages} />
-          </PaginationContent>
-        </Pagination>
+        {usersData && usersData.users.length > 0 && (
+          <Pagination className="flex flex-col items-end">
+            <PaginationContent>
+              {currentPage > 1 && (
+                <PaginationPrevious onClick={() => handlePageChange(currentPage - 1)} />
+              )}
+              {Array.from({ length: usersData.totalPages }, (_, i) => i + 1).map((page) => (
+                <PaginationItem key={page} active={page === currentPage}>
+                  <PaginationLink onClick={() => handlePageChange(page)}>
+                    {page}
+                  </PaginationLink>
+                </PaginationItem>
+              ))}
+              {currentPage < usersData.totalPages && (
+                <PaginationNext onClick={() => handlePageChange(currentPage + 1)} />
+              )}
+            </PaginationContent>
+          </Pagination>
+        )}
       </Card>
     </DashboardLayoutWrapper>
   );

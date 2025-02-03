@@ -80,15 +80,7 @@ export const shopInfoSchema = Yup.object().shape({
   googleMapPlaceName: Yup.string().nullable(),
   latitude: Yup.number().required("Latitude is required."),
   longitude: Yup.number().required("Longitude is required."),
-}).test(
-  'location-selected',
-  'You should mark the location of your shop on the Google Map or enter your registered Google Map Location on map picker.',
-  function (value) {
-    const { latitude, longitude } = value;
-    // Check if both latitude and longitude are not null
-    return latitude != null && longitude != null;
-  }
-);
+});
 
 export const manageShopRequestSchema = Yup.object().shape({
   status: Yup.string()

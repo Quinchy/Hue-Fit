@@ -41,7 +41,6 @@ const NavbarMain = () => {
           <ModeToggle/>
         </div>
       </nav>
-
     </div>
   );
 };

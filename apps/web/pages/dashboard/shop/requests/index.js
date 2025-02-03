@@ -2,38 +2,16 @@ import { useState, useEffect } from 'react';
 import { useRouter } from 'next/router';
 import DashboardLayoutWrapper from "@/components/ui/dashboard-layout";
 import DashboardPagesNavigation from "@/components/ui/dashboard-pages-navigation";
-import Link from "next/link";
 import routes from '@/routes';
-import { buttonVariants } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Search } from 'lucide-react';
 import { Skeleton } from "@/components/ui/skeleton";
-import {
-  DropdownMenu,
-  DropdownMenuContent,
-  DropdownMenuGroup,
-  DropdownMenuItem,
-  DropdownMenuTrigger,
-} from "@/components/ui/dropdown-menu";
-import {
-  Table,
-  TableBody,
-  TableCell,
-  TableHead,
-  TableHeader,
-  TableRow,
-} from "@/components/ui/table";
-import {
-  Pagination,
-  PaginationContent,
-  PaginationItem,
-  PaginationLink,
-  PaginationNext,
-  PaginationPrevious,
-} from "@/components/ui/pagination";
+import { DropdownMenu, DropdownMenuContent, DropdownMenuGroup, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
+import { Pagination, PaginationContent, PaginationItem, PaginationLink, PaginationNext, PaginationPrevious } from "@/components/ui/pagination";
 import { Card, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { Pencil, Trash2, ChevronDown, NotepadText } from 'lucide-react';
+import { Pencil, CircleSlash2, ChevronDown, NotepadText } from 'lucide-react';
 import { MailCheck,  MailMinus } from 'lucide-react';
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 
@@ -170,6 +148,9 @@ export default function ShopRequests() {
                 <DropdownMenuItem onClick={() => handleStatusFilterChange("DONE")} className="justify-center uppercase text-base tracking-wide font-semibold">
                   DONE
                 </DropdownMenuItem>
+                <DropdownMenuItem onClick={() => handleStatusFilterChange("REJECTED")} className="justify-center uppercase text-base tracking-wide font-semibold">
+                  REJECTED
+                </DropdownMenuItem>
               </DropdownMenuGroup>
             </DropdownMenuContent>
           </DropdownMenu> 
@@ -228,12 +209,6 @@ export default function ShopRequests() {
                               >
                                 <Pencil className="scale-125" />
                                 Manage
-                              </Button>
-                            </DropdownMenuItem>
-                            <DropdownMenuItem className="justify-center">
-                              <Button variant="none" className="font-bold text-base text-red-500">
-                                <Trash2 className="scale-125 stroke-red-500" />
-                                Delete
                               </Button>
                             </DropdownMenuItem>
                           </DropdownMenuGroup>

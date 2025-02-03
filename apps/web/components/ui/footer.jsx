@@ -12,16 +12,16 @@ const socialLinkClasses =
   "border-[1px] p-3 border-primary/50 rounded-full flex flex-col items-center justify-center transition-colors duration-300 hover:border-primary";
 
 const navLinkClasses =
-  "transition-colors duration-300 hover:text-primary";
+  "transition-colors duration-300 hover:text-primary items-center justify-center flex flex-col text-primary/75";
 
 const Footer = ({ bgClass = "bg-card", className = "" }) => {
   return (
     <footer className={`flex flex-col items-center gap-10 justify-between w-full pt-40 pb-5 border-t-2 ${bgClass} ${className}`}>
-      <div className="flex flex-row gap-64 items-center">
-        <Link href={routes.home} className="flex justify-center min-w-[15rem]">
-          <HueFitLogo height={50} className="fill-primary" />
-        </Link>
-        <div className="flex flex-row justify-center min-w-[15rem] gap-5">
+      <div className="w-full flex flex-row justify-between items-center px-24">
+        <div className='flex flex-row items-center gap-5'>
+          <Link href={routes.home}>
+            <HueFitLogo height={50} className="fill-primary" />
+          </Link>
           <MotionLink
             href=""
             className={socialLinkClasses}
@@ -56,7 +56,7 @@ const Footer = ({ bgClass = "bg-card", className = "" }) => {
             <Instagram className="stroke-1" />
           </MotionLink>
         </div>
-        <div className="flex flex-row justify-center gap-5 min-w-[15rem]">
+        <div className="flex flex-row justify-center gap-5">
           <MotionLink
             href={routes.home}
             className={navLinkClasses}
@@ -89,6 +89,17 @@ const Footer = ({ bgClass = "bg-card", className = "" }) => {
             }}
           >
             Contact
+          </MotionLink>
+          <MotionLink
+            href={routes.partnership}
+            className={navLinkClasses}
+            whileHover={{ scale: 1.05 }}
+            whileTap={{ 
+              scale: 1.15,
+              transition: { type: 'spring', stiffness: 300, damping: 10 },
+            }}
+          >
+            Partnership
           </MotionLink>
         </div>
       </div>

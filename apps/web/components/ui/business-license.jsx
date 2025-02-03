@@ -32,7 +32,7 @@ const BusinessLicense = ({ imageUrl }) => {
     <div className="relative flex flex-col items-center">
       {/* Render preview for images or PDFs */}
       {isPdf ? (
-        <div className="relative w-[10rem] h-[12rem] rounded shadow-md border-2 border-primary/50 border-dashed p-2">
+        <div className="relative w-[10rem] h-[12rem] rounded border-2 border-dashed border-primary/20 p-2">
           <embed
             src={previewUrl || placeholderImage}
             type="application/pdf"
@@ -55,7 +55,7 @@ const BusinessLicense = ({ imageUrl }) => {
             height={128}
             quality={100}
             onClick={() => setIsModalOpen(true)} // Open modal for images
-            className="cursor-pointer object-cover rounded shadow-md min-h-[12rem] min-w-[10rem] border-2 border-primary/50 border-dashed p-2"
+            className="cursor-pointer object-cover rounded min-h-[12rem] min-w-[10rem] border-2 border-dashed border-primary/20 p-2"
           />
         </div>
       )}

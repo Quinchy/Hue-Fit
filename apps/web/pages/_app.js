@@ -9,63 +9,62 @@ import { ThemeProvider } from "@/components/ui/theme-provider";
 import NavbarMain from "@/components/ui/nav-bar/nav-bar-main";
 import NavbarAccount from "@/components/ui/nav-bar/nav-bar-account";
 import NavbarDashboard from "@/components/ui/nav-bar/nav-bar-dashboard";
-import { PermissionProvider } from '@/providers/permission-provider'; 
 import { FormProvider } from '@/providers/form-provider';
 
 export default function App({ Component, pageProps: { session, ...pageProps } }) {
   const router = useRouter();
+
+  // Normalize pathname so that if a user visits "/shopSetup", it becomes "/partnership/setup-shop"
+  const normalizedPathname = router.pathname === "/shopSetup" ? routes.shopSetup : router.pathname;
 
   let title = 'Hue-Fit';
   let NavBarComponent = NavbarMain;
   let customStyle = '';
   let divClassName = 'flex flex-col justify-center items-center';
 
-  // Check if the current route is 'virtualFittingMobile'
-  const isVirtualFittingMobile = router.pathname.startsWith(routes.virtualFittingMobile);
+  // Hide Navbar on shop setup/status pages and virtual fitting mobile routes.
+  const hideNavbarPaths = [routes.shopSetup, routes.shopStatus, routes.shopSuccess];
+  const isNavbarHidden = hideNavbarPaths.includes(normalizedPathname);
+  const isVirtualFittingMobile = normalizedPathname.startsWith(routes.virtualFittingMobile);
 
   if (!isVirtualFittingMobile) {
-    if (router.pathname.startsWith(routes.account)) {
+    if (normalizedPathname.startsWith(routes.account)) {
       NavBarComponent = NavbarAccount;
-    } 
-    else if (router.pathname.startsWith(routes.dashboard)) {
+    } else if (normalizedPathname.startsWith(routes.dashboard)) {
       NavBarComponent = NavbarDashboard;
       divClassName = 'flex flex-col items-start ml-[22rem]';
     }
   } else {
-    // Optionally, adjust divClassName or other styles for 'virtualFittingMobile'
     divClassName = 'flex flex-col justify-center items-center w-full h-full';
   }
 
   return (
     <SessionProvider session={session}>
       <FormProvider>        
-        <PermissionProvider>
-          <ThemeProvider
-            attribute="class"
-            defaultTheme="system"
-            enableSystem
-            disableTransitionOnChange
-          >
-            <main className={`${GeistSans.className} ${customStyle}`}>
-              <Head>
-                <title>{title}</title> 
-              </Head>
-              {router.pathname === '/404' ? (
-                <div>
+        <ThemeProvider
+          attribute="class"
+          defaultTheme="system"
+          enableSystem
+          disableTransitionOnChange
+        >
+          <main className={`${GeistSans.className} ${customStyle}`}>
+            <Head>
+              <title>{title}</title> 
+            </Head>
+            {normalizedPathname === '/404' ? (
+              <div>
+                <Component {...pageProps} />
+              </div>
+            ) : (
+              <>
+                {!isVirtualFittingMobile && !isNavbarHidden && <NavBarComponent />}
+                <div className={divClassName}>
                   <Component {...pageProps} />
                 </div>
-              ) : (
-                <>
-                  {/* Render Navbar only if not on 'virtualFittingMobile' route */}
-                  {!isVirtualFittingMobile && <NavBarComponent />}
-                  <div className={divClassName ? divClassName : ''}>
-                    <Component {...pageProps} />
-                  </div>
-                </>
-              )}
-            </main>
-          </ThemeProvider>
-        </PermissionProvider>
+              </>
+            )}
+          </main>
+        </ThemeProvider>
       </FormProvider>
     </SessionProvider>
   );

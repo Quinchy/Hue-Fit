@@ -6,7 +6,7 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@
 import { Pagination, PaginationContent, PaginationItem, PaginationLink, PaginationNext } from "@/components/ui/pagination";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
-import { Eye, Pencil, Trash2, Plus, Search, ChevronDown } from "lucide-react";
+import { Eye, Pencil, CircleMinus, Plus, Search, ChevronDown } from "lucide-react";
 import { DropdownMenu, DropdownMenuContent, DropdownMenuGroup, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
 import { NotepadText } from 'lucide-react';
 import { Skeleton } from "@/components/ui/skeleton";
@@ -144,8 +144,8 @@ export default function Shop() {
                               </DropdownMenuItem>
                               <DropdownMenuItem className="justify-center">
                                 <Button variant="none" className="font-bold text-base text-red-500">
-                                  <Trash2 className="scale-125 stroke-red-500" />
-                                  Delete
+                                  <CircleMinus className="scale-125 stroke-red-500" />
+                                  Closed
                                 </Button>
                               </DropdownMenuItem>
                             </DropdownMenuGroup>
