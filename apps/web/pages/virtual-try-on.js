@@ -263,6 +263,8 @@ export default function VirtualTryOnPage() {
       overlayWidth = Math.min(canvasContext.canvas.width - overlayX, overlayWidth);
       overlayHeight = Math.min(canvasContext.canvas.height - overlayY, overlayHeight);
 
+      // Clear the canvas and draw only the clothing overlay.
+      canvasContext.clearRect(0, 0, canvasContext.canvas.width, canvasContext.canvas.height);
       canvasContext.drawImage(clothingImage, overlayX, overlayY, overlayWidth, overlayHeight);
 
       setStatusMessage(
@@ -273,7 +275,7 @@ export default function VirtualTryOnPage() {
   );
 
   /**
-   * Perform pose detection and overlay rendering.
+   * Perform pose detection and update the overlay.
    */
   const performPoseDetection = useCallback(async () => {
     if (
@@ -286,21 +288,14 @@ export default function VirtualTryOnPage() {
       return;
     }
     try {
-      const videoElement = videoElementRef.current;
+      // Get the canvas context (with alpha transparency enabled).
       const canvasElement = canvasElementRef.current;
-      const canvasContext = canvasElement.getContext("2d");
+      const canvasContext = canvasElement.getContext("2d", { alpha: true });
+      // Clear only the overlay canvas.
+      canvasContext.clearRect(0, 0, canvasElement.width, canvasElement.height);
 
-      if (videoElement.videoWidth === 0 || videoElement.videoHeight === 0) return;
-
-      canvasContext.drawImage(
-        videoElement,
-        0,
-        0,
-        canvasElement.width,
-        canvasElement.height
-      );
-
-      const detectedPoses = await poseDetector.estimatePoses(videoElement, {
+      // Estimate poses from the video element.
+      const detectedPoses = await poseDetector.estimatePoses(videoElementRef.current, {
         flipHorizontal: false,
       });
 
@@ -309,6 +304,7 @@ export default function VirtualTryOnPage() {
         return;
       }
 
+      // Draw only the clothing overlay.
       renderClothingOverlay(detectedPoses, canvasContext);
     } catch (error) {
       console.error("Error in pose detection:", error);
@@ -323,7 +319,7 @@ export default function VirtualTryOnPage() {
     const initCameraStream = async () => {
       setIsCameraReady(false);
       try {
-        // Stop any existing stream
+        // Stop any existing stream.
         if (videoElementRef.current && videoElementRef.current.srcObject) {
           const tracks = videoElementRef.current.srcObject.getTracks();
           tracks.forEach((track) => track.stop());
@@ -344,8 +340,6 @@ export default function VirtualTryOnPage() {
           const ratio = window.devicePixelRatio || 1;
           canvasElementRef.current.width = videoElementRef.current.videoWidth * ratio;
           canvasElementRef.current.height = videoElementRef.current.videoHeight * ratio;
-          canvasElementRef.current.style.width = videoElementRef.current.videoWidth + "px";
-          canvasElementRef.current.style.height = videoElementRef.current.videoHeight + "px";
           setIsCameraReady(true);
           setStatusMessage("Camera ready, detecting poses...");
         };
@@ -358,21 +352,18 @@ export default function VirtualTryOnPage() {
   }, [facingMode]);
 
   /**
-   * Start the pose detection loop once the camera is ready and the detector is initialized.
+   * Start the pose detection loop once the camera is ready and detector is initialized.
    */
   useEffect(() => {
     let animationFrameId;
-    const startPoseDetectionLoop = () => {
-      const detectionLoop = async () => {
-        await performPoseDetection();
-        setTimeout(() => {
-          animationFrameId = requestAnimationFrame(detectionLoop);
-        }, 66); // roughly 15 fps
-      };
-      detectionLoop();
+    const detectionLoop = async () => {
+      await performPoseDetection();
+      setTimeout(() => {
+        animationFrameId = requestAnimationFrame(detectionLoop);
+      }, 66); // roughly 15 fps
     };
     if (isCameraReady && poseDetector) {
-      startPoseDetectionLoop();
+      detectionLoop();
     }
     return () => {
       if (animationFrameId) cancelAnimationFrame(animationFrameId);
@@ -399,11 +390,19 @@ export default function VirtualTryOnPage() {
     return () => window.removeEventListener("resize", handleOrientationChange);
   }, []);
 
+  /**
+   * Initialize pose detector on mount.
+   */
+  useEffect(() => {
+    initializePoseDetector();
+  }, []);
+
   if (!mounted) return null;
 
   return (
     <div style={styles.container} ref={containerRef}>
       <div style={styles.cameraContainer}>
+        {/* Video element shows the live camera feed */}
         <video
           ref={videoElementRef}
           style={styles.video}
@@ -411,6 +410,7 @@ export default function VirtualTryOnPage() {
           playsInline
           autoPlay
         />
+        {/* Canvas is positioned on top to show only the clothing overlay */}
         <canvas ref={canvasElementRef} style={styles.canvas} />
         <button style={styles.toggleButton} onClick={toggleCamera}>
           Switch Camera
@@ -435,23 +435,20 @@ const styles = {
   },
   cameraContainer: {
     position: "relative",
-    width: "100%",
-    height: "100%",
-    display: "flex",
-    justifyContent: "center",
-    alignItems: "center",
   },
+  // Video element displays the camera feed normally.
   video: {
     width: "100%",
-    height: "auto",
-    maxHeight: "100%",
+    height: "100%",
     objectFit: "contain",
     backgroundColor: "#000",
   },
+  // Canvas is absolutely positioned over the video and remains transparent.
   canvas: {
     position: "absolute",
     top: "0",
     left: "0",
+    zIndex: 2,
     width: "100%",
     height: "100%",
     pointerEvents: "none",
