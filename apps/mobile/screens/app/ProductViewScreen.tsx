@@ -16,8 +16,9 @@ import * as Yup from 'yup';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import BackgroundProvider from '../../providers/BackgroundProvider';
 import LoadingSpinner from '../../components/Loading';
-import { ShoppingCart, ArrowLeft, Camera } from 'lucide-react-native';
+import { ShoppingCart, ArrowLeft, Camera, Cpu } from 'lucide-react-native';
 import { Actionsheet, useToast } from 'native-base';
+import { EXPO_PUBLIC_API_URL } from '@env';
 
 const { width: screenWidth, height: screenHeight } = Dimensions.get('window');
 
@@ -53,7 +54,7 @@ const ProductViewScreen = ({ route, navigation }) => {
     setLoading(true);
     try {
       const response = await fetch(
-        'http://192.168.254.105:3000/api/mobile/products/get-product-details',
+        `${EXPO_PUBLIC_API_URL}/api/mobile/products/get-product-details`,
         {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
@@ -102,7 +103,7 @@ const ProductViewScreen = ({ route, navigation }) => {
       shopId: values.shopId,
       userId,
     };
-    const response = await fetch('http://192.168.254.105:3000/api/mobile/cart/add-to-cart', {
+    const response = await fetch(`${EXPO_PUBLIC_API_URL}/api/mobile/cart/add-to-cart`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify(payload),
@@ -237,6 +238,26 @@ const ProductViewScreen = ({ route, navigation }) => {
                   disabled={!values.selectedVariant?.pngClotheURL}
                 >
                   <Camera color="#fff" size={24} />
+                </TouchableOpacity>
+
+                {/* New AI Try-On Button */}
+                <TouchableOpacity
+                  style={[
+                    styles.backButton,
+                    !values.selectedVariant?.pngClotheURL && { opacity: 0.5 }
+                  ]}
+                  onPress={() => {
+                    if (values.selectedVariant?.pngClotheURL) {
+                      navigation.navigate('AiTryOn', {
+                        pngClotheURL: values.selectedVariant.pngClotheURL,
+                        type: parentProduct?.typeName ?? '',
+                        tag: parentProduct?.tagName ?? '',
+                      });
+                    }
+                  }}
+                  disabled={!values.selectedVariant?.pngClotheURL}
+                >
+                  <Cpu color="#fff" size={24} />
                 </TouchableOpacity>
 
                 {/* Go to Cart Button */}

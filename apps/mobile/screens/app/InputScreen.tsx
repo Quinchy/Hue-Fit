@@ -60,7 +60,7 @@ const InputScreen: React.FC = ({ navigation }) => {
         outfit_name: outfitName, // Match "outfit_name"
       };
       const response = await fetch(
-        `http://192.168.254.105:8000/generate-outfit?unique=${Date.now()}`,
+        `https://hue-fit-ai.onrender.com/generate-outfit?unique=${Date.now()}`,
         {
           method: "POST",
           headers: {

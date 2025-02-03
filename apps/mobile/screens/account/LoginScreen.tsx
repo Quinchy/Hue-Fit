@@ -12,6 +12,7 @@ import AsyncStorage from '@react-native-async-storage/async-storage';
 import LoadingSpinner from '../../components/Loading';
 import { useNavigation } from '@react-navigation/native';
 import { NativeStackNavigationProp } from '@react-navigation/native-stack';
+import { EXPO_PUBLIC_API_URL } from '@env';
 
 type RootStackParamList = { Main: undefined; Register: undefined };
 
@@ -30,7 +31,7 @@ export default function LoginScreen() {
 
     setLoading(true);
     try {
-      const response = await fetch(`http://192.168.254.105:3000/api/mobile/auth/login`, {
+      const response = await fetch(`${EXPO_PUBLIC_API_URL}/api/mobile/auth/login`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ username, password }),

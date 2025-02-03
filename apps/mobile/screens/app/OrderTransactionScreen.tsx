@@ -7,6 +7,7 @@ import { SafeAreaView, useSafeAreaInsets } from "react-native-safe-area-context"
 import { VStack, Text, Box, HStack } from "native-base";
 import { ArrowLeft } from "lucide-react-native";
 import AsyncStorage from "@react-native-async-storage/async-storage";
+import { EXPO_PUBLIC_API_URL } from '@env';
 
 const Tab = createMaterialTopTabNavigator();
 
@@ -67,7 +68,7 @@ const OrderTransactionScreen = () => {
       }
 
       try {
-        const response = await fetch("http://192.168.254.105:3000/api/mobile/orders/get-orders", {
+        const response = await fetch(`${EXPO_PUBLIC_API_URL}/api/mobile/orders/get-orders`, {
           method: "POST",
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify({ userId }),

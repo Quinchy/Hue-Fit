@@ -13,6 +13,7 @@ import SearchBar from '../../components/SearchBar';
 import { Bell } from 'lucide-react-native';
 import ProductCard from '../../components/ProductCard';
 import LoadingSpinner from '../../components/Loading'; // Import LoadingSpinner
+import { EXPO_PUBLIC_API_URL } from '@env';
 
 const ShopScreen = ({ navigation }) => {
   const [products, setProducts] = useState([]);
@@ -27,7 +28,7 @@ const ShopScreen = ({ navigation }) => {
     setLoading(true);
     try {
       const response = await fetch(
-        `http://192.168.254.105:3000/api/mobile/home/get-products?limit=10&page=${pageNumber}`
+        `${EXPO_PUBLIC_API_URL}/api/mobile/home/get-products?limit=10&page=${pageNumber}`
       );
       if (!response.ok) throw new Error('Failed to fetch products');
       const data = await response.json();

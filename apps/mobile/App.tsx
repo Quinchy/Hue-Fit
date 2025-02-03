@@ -23,6 +23,7 @@ import ForgetPassword2Screen from "./screens/account/ForgetPassword2Screen";
 import HomeScreen from "./screens/app/HomeScreen";
 import CartScreen from "./screens/app/CartScreen";
 import VirtualFittingScreen from "./screens/app/VirtualFittingScreen";
+import AiTryOnScreen from "./screens/app/AiTryOnScreen";
 import ShopScreen from "./screens/app/ShopScreen";
 import ProfileSettingsScreen from "./screens/app/ProfileSettingsScreen";
 import OrderTransactionScreen from "./screens/app/OrderTransactionScreen";
@@ -178,6 +179,7 @@ const AppNavigator = ({ initialRoute }) => (
     <Stack.Screen name="ProfileSettings" component={ProfileSettingsScreen} />
     <Stack.Screen name="OrderTransactionScreen" component={OrderTransactionScreen} />
     <Stack.Screen name="VirtualFitting" component={VirtualFittingScreen} />
+    <Stack.Screen name="AiTryOn" component={AiTryOnScreen} />
     <Stack.Screen name="ProductView" component={ProductView} />
     <Stack.Screen name="Notification" component={NotificationScreen} />
     <Stack.Screen name="ShopLocation" component={ShopLocationScreen} />

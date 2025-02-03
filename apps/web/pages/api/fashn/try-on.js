@@ -1,6 +1,5 @@
 // pages/api/fashn/try-on.js
 
-import { getSessionUser } from "@/utils/helpers";
 import fs from "fs";
 import fetch from "node-fetch";
 
@@ -20,11 +19,6 @@ export default async function handler(req, res) {
   if (req.method !== "POST") {
     res.setHeader("Allow", ["POST"]);
     return res.status(405).json({ error: "Method not allowed" });
-  }
-
-  const sessionUser = await getSessionUser(req, res);
-  if (!sessionUser) {
-    return res.status(401).json({ error: "Unauthorized" });
   }
 
   try {

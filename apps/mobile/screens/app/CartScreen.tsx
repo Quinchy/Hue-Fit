@@ -1,30 +1,14 @@
 // screens/app/CartScreen.js
 import React, { useState, useEffect, useCallback } from 'react';
-import {
-  VStack,
-  HStack,
-  Text,
-  Box,
-  Pressable,
-  useToast,
-  Actionsheet,
-  Radio,
-} from 'native-base';
-import {
-  Image,
-  ScrollView,
-  View,
-  RefreshControl,
-  TouchableOpacity,
-  ActivityIndicator,
-  StyleSheet,
-} from 'react-native';
+import { VStack, HStack, Text, Box, Pressable, useToast, Actionsheet, Radio } from 'native-base';
+import { Image, ScrollView, View, RefreshControl, TouchableOpacity, ActivityIndicator, StyleSheet } from 'react-native';
 import { Store, Minus, Plus, Trash2, ArrowLeft } from 'lucide-react-native';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { MaterialIcons } from '@expo/vector-icons';
 import { useFocusEffect } from '@react-navigation/native';
-import LoadingSpinner from '../../components/Loading'; // Import LoadingSpinner
+import LoadingSpinner from '../../components/Loading'; 
+import { EXPO_PUBLIC_API_URL } from '@env';
 
 const CartScreen = ({ navigation, route }) => {
   const [shopGroups, setShopGroups] = useState([]);
@@ -65,7 +49,7 @@ const CartScreen = ({ navigation, route }) => {
       }
 
       const response = await fetch(
-        'http://192.168.254.105:3000/api/mobile/cart/get-cart-items',
+        `${EXPO_PUBLIC_API_URL}/api/mobile/cart/get-cart-items`,
         {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
@@ -151,7 +135,7 @@ const CartScreen = ({ navigation, route }) => {
   const updateQuantity = async (item, newQuantity) => {
     try {
       await fetch(
-        'http://192.168.254.105:3000/api/mobile/cart/update-cart-item-quantity',
+        `${EXPO_PUBLIC_API_URL}/api/mobile/cart/update-cart-item-quantity`,
         {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
@@ -172,7 +156,7 @@ const CartScreen = ({ navigation, route }) => {
   const deleteCartItem = async (item) => {
     try {
       await fetch(
-        'http://192.168.254.105:3000/api/mobile/cart/delete-cart-item',
+        `${EXPO_PUBLIC_API_URL}/api/mobile/cart/delete-cart-item`,
         {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
@@ -297,7 +281,7 @@ const CartScreen = ({ navigation, route }) => {
       );
 
       const response = await fetch(
-        'http://192.168.254.105:3000/api/mobile/orders/create-order',
+        `${EXPO_PUBLIC_API_URL}/api/mobile/orders/create-order`,
         {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },

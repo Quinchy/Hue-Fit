@@ -49,6 +49,10 @@
         "expo-camera",
         {
           "cameraPermission": "This app uses the camera to allow you to try on virtual outfits."
+        },
+        "expo-image-picker",
+        {
+          "photosPermission": "The app accesses your photos to let you share them with your friends."
         }
       ]
     ],

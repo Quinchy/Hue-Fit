@@ -6,7 +6,7 @@ import Image from "next/image";
 import DashboardLayoutWrapper from "@/components/ui/dashboard-layout";
 import { Card, CardTitle } from "@/components/ui/card";
 import { Upload, Loader2, CheckCircle2, X } from "lucide-react";
-import { Alert, AlertTitle, AlertDescription } from '@/components/ui/alert';
+import { Alert, AlertTitle, AlertDescription } from "@/components/ui/alert";
 import { useRouter } from "next/router";
 
 export default function AiTryOn() {
@@ -14,21 +14,25 @@ export default function AiTryOn() {
   const { pngClotheURL, type } = router.query;
 
   const [modelFile, setModelFile] = useState(null);
-  const [mode, setMode] = useState('balanced');
+  const [mode, setMode] = useState("balanced");
   const [loading, setLoading] = useState(false);
   const [resultImage, setResultImage] = useState(null);
   const [showAlert, setShowAlert] = useState(false);
 
+  const allowedTypes = ["image/png", "image/jpeg", "image/webp"];
+
   const handleFileChange = (e) => {
     const file = e.target.files[0];
-    if (file && file.type === "image/png") {
+    if (file && allowedTypes.includes(file.type)) {
       setModelFile(file);
+    } else {
+      alert("Please upload an image file (PNG, JPG/JPEG, or WEBP).");
     }
   };
 
   const handleSubmit = async () => {
     if (!modelFile) {
-      alert("Please upload a model PNG file.");
+      alert("Please upload a model image file.");
       return;
     }
 
@@ -86,7 +90,7 @@ export default function AiTryOn() {
             className="ml-auto p-2"
             onClick={() => setShowAlert(false)}
           >
-            <X className="scale-150 stroke-primary/50 -translate-x-2"/>
+            <X className="scale-150 stroke-primary/50 -translate-x-2" />
           </Button>
         </Alert>
       )}
@@ -106,8 +110,8 @@ export default function AiTryOn() {
                 <Image
                   src={pngClotheURL}
                   alt="Garment"
-                  layout="fill" // Makes the image fill the parent container
-                  objectFit="contain" // Ensures the image covers the area without distortion
+                  layout="fill"
+                  objectFit="contain"
                   className="rounded-lg p-5"
                 />
               ) : (
@@ -121,42 +125,41 @@ export default function AiTryOn() {
           {/* Column 2: Model Uploading & Preview */}
           <div className="flex flex-col items-center">
             <h2 className="text-lg font-medium mb-2">Model</h2>
-            
             <div className="relative w-full h-full">
               {modelFile && (
                 <Image
                   src={URL.createObjectURL(modelFile)}
                   alt="Model Preview"
-                  layout="fill" // Ensures the image covers the parent container
-                  objectFit="cover" // Adjusts how the image fits
+                  layout="fill"
+                  objectFit="contain"
                   className="absolute inset-0 p-5 object-cover z-20"
                 />
               )}
-              
               <label className="relative border-2 border-dashed p-4 rounded-lg flex flex-col items-center justify-center cursor-pointer w-full h-full z-10">
                 <Upload className="stroke-primary/50 mb-2" />
                 <span className="text-primary/50 font-thin">
-                  {modelFile ? "Model file selected" : "Upload model PNG"}
+                  {modelFile ? "Model file selected" : "Upload model image"}
                 </span>
                 <input
                   type="file"
-                  accept="image/png"
+                  accept="image/png, image/jpeg, image/webp"
                   onChange={handleFileChange}
                   className="hidden"
                 />
               </label>
             </div>
           </div>
+
           {/* Column 3: Result */}
           <div className="flex flex-col items-center w-full">
             <h2 className="text-lg font-medium mb-2">Result</h2>
-            <div className="relative w-full h-full pb-[100%] rounded-lg overflow-hidden">
+            <div className="relative w-full h-full pb-[100%] rounded-lg">
               {resultImage ? (
                 <Image
                   src={resultImage}
                   alt="AI Try-On Result"
-                  layout="fill" // Makes the image fill the parent container
-                  objectFit="cover" // Ensures the image covers the area without distortion
+                  layout="fill"
+                  objectFit="contain"
                   className="rounded-sm"
                 />
               ) : (
@@ -166,16 +169,13 @@ export default function AiTryOn() {
               )}
             </div>
           </div>
-
         </div>
 
         {/* Second Row: Generate Button and Mode Selection */}
         <div className="flex flex-col gap-2 items-end">
-          {/* Generate Button */}
           <Button onClick={handleSubmit} disabled={loading} className="w-[30rem]">
             {loading ? <Loader2 className="animate-spin mr-2" /> : "Try-on"}
           </Button>
-          {/* Mode Selection */}
           <div className="flex flex-row gap-2">
             {modes.map((m) => (
               <Button
