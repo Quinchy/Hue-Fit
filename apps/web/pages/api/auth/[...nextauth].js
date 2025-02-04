@@ -39,7 +39,7 @@ export const authOptions = {
           let profilePicture = "/images/profile-picture.png";
       
           if (user.Role.name === "ADMIN") {
-            profile = await prisma.adminProfile.findUnique({
+            profile = await prisma.adminProfile.findFirst({
               where: { userId: user.id },
             });
             if (profile) {
@@ -48,7 +48,7 @@ export const authOptions = {
               profilePicture = profile.profilePicture || "/images/placeholder-profile-picture.png";
             }
           } else if (user.Role.name === "VENDOR") {
-            profile = await prisma.vendorProfile.findUnique({
+            profile = await prisma.vendorProfile.findFirst({
               where: { userId: user.id },
             });
             if (profile) {
@@ -71,7 +71,7 @@ export const authOptions = {
           };
       
           if (user.Role.name === "VENDOR") {
-            const vendorProfile = await prisma.vendorProfile.findUnique({
+            const vendorProfile = await prisma.vendorProfile.findFirst({
               where: { userId: user.id },
               select: {
                 Shop: {
@@ -133,7 +133,7 @@ export const authOptions = {
       // For subsequent requests for vendors, refresh the token values from the DB
       if (token.role === "VENDOR") {
         try {
-          const updatedUser = await prisma.user.findUnique({
+          const updatedUser = await prisma.user.findFirst({
             where: { id: token.id },
             include: { VendorProfile: { select: { Shop: { select: { id: true } } } } },
           });

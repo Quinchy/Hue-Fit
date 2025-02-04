@@ -1,85 +1,85 @@
 // File: pages/api/dashboard/get-vendor-infos.js
 import prisma from '@/utils/helpers';
+import { getSessionShopId } from "@/utils/helpers";
 
 export default async function handler(req, res) {
+  console.log("Starting handler for get-vendor-infos");
+
   if (req.method !== 'GET') {
-    res.status(405).json({ error: 'Method not allowed' });
-    return;
+    console.log("Method not allowed:", req.method);
+    return res.status(405).json({ error: 'Method not allowed' });
   }
 
-  // Retrieve and validate the shopId from the query parameters
-  const { shopId } = req.query;
+  const shopId = await getSessionShopId(req, res);
+  console.log("Shop ID from session:", shopId);
+
   if (!shopId) {
-    res.status(400).json({ error: 'shopId is required' });
-    return;
+    console.log("No shopId associated with this user");
+    return res.status(400).json({ error: 'No shopId associated with this user' });
   }
 
   const parsedShopId = parseInt(shopId, 10);
+  console.log("Parsed shopId:", parsedShopId);
+
   if (isNaN(parsedShopId)) {
-    res.status(400).json({ error: 'Invalid shopId' });
-    return;
+    console.log("Invalid shopId:", shopId);
+    return res.status(400).json({ error: 'Invalid shopId' });
   }
 
   try {
-    // Execute all the queries concurrently
-    const [
-      productCount,
-      productVariantCount,
-      orderCount,
-      orderItemCount,
-      notifications,
-      types,
-      typeCountsRaw,
-    ] = await Promise.all([
-      // Count products filtered by shop id
-      prisma.product.count({
-        where: { shopId: parsedShopId },
-      }),
-      // Count product variants by filtering on the related product's shop id
-      prisma.productVariant.count({
-        where: { Product: { shopId: parsedShopId } },
-      }),
-      // Count orders filtered by shop id
-      prisma.order.count({
-        where: { shopId: parsedShopId },
-      }),
-      // Count order items by filtering on the related order's shop id
-      prisma.orderItem.count({
-        where: { Order: { shopId: parsedShopId } },
-      }),
-      // Fetch notifications where shopId matches and userId is null
-      prisma.notification.findMany({
-        where: {
-          shopId: parsedShopId,
-          userId: null,
-        },
-      }),
-      // Fetch all product types for this shop
-      prisma.type.findMany({
-        where: { shopId: parsedShopId },
-      }),
-      // Group products by typeId to get the count of products per type
-      prisma.product.groupBy({
-        by: ['typeId'],
-        where: { shopId: parsedShopId },
-        _count: { id: true },
-      }),
-    ]);
+    const productCount = await prisma.product.count({
+      where: { shopId: parsedShopId },
+    });
+    console.log("Product count:", productCount);
 
-    // Create a map for type id to type name
+    const productVariantCount = await prisma.productVariant.count({
+      where: { Product: { shopId: parsedShopId } },
+    });
+    console.log("Product variant count:", productVariantCount);
+
+    const orderCount = await prisma.order.count({
+      where: { shopId: parsedShopId },
+    });
+    console.log("Order count:", orderCount);
+
+    const orderItemCount = await prisma.orderItem.count({
+      where: { Order: { shopId: parsedShopId } },
+    });
+    console.log("Order item count:", orderItemCount);
+
+    const notifications = await prisma.notification.findMany({
+      where: {
+        shopId: parsedShopId,
+        userId: null,
+      },
+    });
+    console.log("Notifications:", notifications);
+
+    const types = await prisma.type.findMany({
+      where: { shopId: parsedShopId },
+    });
+    console.log("Types:", types);
+
+    const typeCountsRaw = await prisma.product.groupBy({
+      by: ['typeId'],
+      where: { shopId: parsedShopId },
+      _count: { id: true },
+    });
+    console.log("Raw type counts:", typeCountsRaw);
+
     const typeMap = {};
     types.forEach((type) => {
       typeMap[type.id] = type.name;
     });
+    console.log("Type map:", typeMap);
 
-    // Format the grouped product counts to include the type name
     const typeCounts = typeCountsRaw.map((group) => ({
       typeId: group.typeId,
       typeName: typeMap[group.typeId] || 'Unknown',
       count: group._count.id,
     }));
+    console.log("Type counts:", typeCounts);
 
-    // Return the aggregated counts and notification data
     res.status(200).json({
       productCount,
       productVariantCount,
@@ -88,7 +88,12 @@ export default async function handler(req, res) {
       notifications,
       typeCounts,
     });
+    console.log("Response sent successfully");
+
   } catch (error) {
+    console.error("Server error:", error);
     res.status(500).json({ error: 'Server error' });
   }
+
+  console.log("Handler finished");
 }
