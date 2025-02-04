@@ -21,7 +21,6 @@ import Animated, {
 import CustomSelect from "../../components/Select";
 import { LinearGradient } from "expo-linear-gradient";
 import { EXPO_PUBLIC_API_URL } from '@env';
-import { RENDER_API_URL } from '@env';
 
 const PlaygroundScreen: React.FC = ({ route, navigation }) => {
   const { outfit_name, upper_wear, lower_wear, footwear, outerwear, color_palette = [], user_inputs,  wardrobeId } =
@@ -33,7 +32,7 @@ const PlaygroundScreen: React.FC = ({ route, navigation }) => {
         setIsFetching(true);
     
         try {
-          const response = await fetch(`http://127.0.0.1:8000/api/mobile/generate/get-wardrobe-details`, {
+          const response = await fetch(`${EXPO_PUBLIC_API_URL}/api/mobile/generate/get-wardrobe-details`, {
             method: 'POST',
             headers: {
               'Content-Type': 'application/json',
@@ -174,7 +173,7 @@ const PlaygroundScreen: React.FC = ({ route, navigation }) => {
     };
 
     try {
-      const response = await fetch(`http://127.0.0.1:8000/generate-outfit?unique=${Date.now()}`, {
+      const response = await fetch(`https://hue-fit-ai.onrender.com/generate-outfit?unique=${Date.now()}`, {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
@@ -297,32 +296,12 @@ const PlaygroundScreen: React.FC = ({ route, navigation }) => {
       <BackgroundProvider>
         <ScrollView>
           <StatusBar backgroundColor="#ffffff01" />
-          <HStack justifyContent="space-between" alignItems="center" mt={50} mb={10} px={4} py={2}>
-            <IconButton
-              icon={<House size={24} color="white" />}
-              onPress={() => navigation.navigate("Home")}
-              _pressed={{ bg: "gray.700" }}
-              borderRadius="full"
-            />
-            <Image
-              source={require("../../assets/icons/hue-fit-logo.png")}
-              style={{ width: 60, height: 60 }}
-              resizeMode="contain"
-            />
-            <IconButton
-              icon={<Menu size={24} color="white" />}
-              onPress={openMenu}
-              _pressed={{ bg: "gray.700" }}
-              borderRadius="full"
-            />
-          </HStack>
-
-          <VStack px={4} py={2}>
+          <VStack px={4} py={2} mt={10}>
             <Text color="white" fontSize="2xl" fontWeight="bold">
               {outfitData.outfit_name || "Unnamed Outfit"}
             </Text>
             <VStack>
-              <Text color="white" fontSize="lg" fontWeight="bold" textTransform="uppercase" mb={2}>
+              <Text color="#C0C0C0" fontSize="md" fontWeight="light" textTransform="uppercase" mb={2}>
                 Recommended Outfit
               </Text>
 

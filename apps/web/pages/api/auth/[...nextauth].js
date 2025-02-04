@@ -14,6 +14,7 @@ export const authOptions = {
       },
       authorize: async (credentials) => {
         try {
+          // Find the user by username, include the Role relation.
           const user = await prisma.user.findFirst({
             where: { username: credentials.username },
             include: { Role: true },
@@ -23,13 +24,28 @@ export const authOptions = {
             throw new Error("Username not found. Please check your credentials.");
           }
 
-          if (user.Role.name === "CUSTOMER") {
-            throw new Error("Unauthorized access. Customer accounts are not allowed.");
-          }
-
+          // Check password validity.
           const isPasswordValid = await bcrypt.compare(credentials.password, user.password);
           if (!isPasswordValid) {
             throw new Error("Incorrect password. Please try again.");
+          }
+
+          // If the stored role is CUSTOMER, check if a vendor or admin profile exists.
+          if (user.Role.name === "CUSTOMER") {
+            const adminProfile = await prisma.adminProfile.findUnique({
+              where: { userId: user.id },
+            });
+            const vendorProfile = await prisma.vendorProfile.findUnique({
+              where: { userId: user.id },
+            });
+            // If either profile exists, override the role.
+            if (adminProfile) {
+              user.Role.name = "ADMIN";
+            } else if (vendorProfile) {
+              user.Role.name = "VENDOR";
+            } else {
+              throw new Error("Unauthorized access. Customer accounts are not allowed.");
+            }
           }
 
           let profile = null;
@@ -113,7 +129,7 @@ export const authOptions = {
       return session;
     },
     async jwt({ token, user }) {
-      // On initial sign in, store values on the token
+      // On initial sign in, store values on the token.
       if (user) {
         token.id = user.id;
         token.role = user.role;
@@ -129,7 +145,7 @@ export const authOptions = {
         }
         return token;
       }
-      // For subsequent requests for vendors, refresh the token values from the DB
+      // For subsequent requests for vendors, refresh the token values from the DB.
       if (token.role === "VENDOR") {
         try {
           const updatedUser = await prisma.user.findUnique({

@@ -36,8 +36,8 @@ model User {
   Cart                Cart[]
   PartnershipRequest  PartnershipRequest[]
   CustomerFeature     CustomerFeature[]
-  Wardrobe            Wardrobe[]
-  Notifications Notification[]
+  Notifications       Notification[]
+  GeneratedOutfits    GeneratedOutfit[]
 
   @@unique([username, roleId])
 }
@@ -278,11 +278,7 @@ model ProductVariant {
   OrderItem                  OrderItem[]
   CartItem                   CartItem[]
   ProductVariantSize         ProductVariantSize[]
-
-  WardrobeUpperWear Wardrobe[] @relation("WardrobeUpperWear")
-  WardrobeLowerWear Wardrobe[] @relation("WardrobeLowerWear")
-  WardrobeFootwear  Wardrobe[] @relation("WardrobeFootwear")
-  WardrobeOuterwear Wardrobe[] @relation("WardrobeOuterwear")
+  GeneratedOutfitItems       GeneratedOutfitItem[]
 }
 
 model ProductVariantSize {
@@ -348,41 +344,6 @@ model Measurement {
   Type                Type                   @relation(fields: [typeId], references: [id])
   
   ProductMeasurements ProductMeasurement[]
-}
-
-model Wardrobe {
-  id                         Int      @id @default(autoincrement())
-  userId                     Int
-  wardrobeCustomerFeaturesId Int      @unique
-  name                       String
-  outfitStyle                String
-  outerwear_id               Int? 
-  upper_wear_id              Int
-  lower_wear_id              Int
-  footwear_id                Int
-  created_at                 DateTime @default(now())
-  updated_at                 DateTime @default(now())
-
-  User                     User                      @relation(fields: [userId], references: [id])
-  WardrobeCustomerFeatures WardrobeCustomerFeatures? @relation("WardrobeFeatures", fields: [wardrobeCustomerFeaturesId], references: [id])
-
-  Outerwear  ProductVariant? @relation("WardrobeOuterwear", fields: [outerwear_id], references: [id])
-  Upperwear  ProductVariant  @relation("WardrobeUpperWear", fields: [upper_wear_id], references: [id])
-  Lowerwear  ProductVariant  @relation("WardrobeLowerWear", fields: [lower_wear_id], references: [id])
-  Footwear   ProductVariant  @relation("WardrobeFootwear", fields: [footwear_id], references: [id])
-}
-
-model WardrobeCustomerFeatures {
-  id         Int      @id @default(autoincrement())
-  height     Float
-  weight     Float
-  age        Int
-  skintone   String
-  bodyShape  String
-  created_at DateTime @default(now())
-  updated_at DateTime @updatedAt
-
-  wardrobe   Wardrobe? @relation("WardrobeFeatures")
 }
 
 model Order {
@@ -482,4 +443,25 @@ model Payment {
   created_at DateTime @default(now())
   
   Order     Order    @relation(fields: [orderId], references: [id])
+}
+
+model GeneratedOutfit {
+  id         Int                     @id @default(autoincrement())
+  userId     Int
+  created_at DateTime                @default(now())
+  updated_at DateTime                @updatedAt
+
+  User       User                    @relation(fields: [userId], references: [id])
+  items      GeneratedOutfitItem[]
+}
+
+model GeneratedOutfitItem {
+  id                Int              @id @default(autoincrement())
+  generatedOutfitId Int
+  productVariantId  Int
+  created_at        DateTime         @default(now())
+  updated_at        DateTime         @updatedAt
+
+  GeneratedOutfit   GeneratedOutfit  @relation(fields: [generatedOutfitId], references: [id])
+  ProductVariant    ProductVariant   @relation(fields: [productVariantId], references: [id])
 }

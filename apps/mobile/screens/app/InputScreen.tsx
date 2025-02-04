@@ -90,7 +90,7 @@ const InputScreen: React.FC = ({ navigation }) => {
 
       // Call the generate-outfit API endpoint
       const response = await fetch(
-        `https://hue-fit-ai.onrender.com/generate-outfit?unique=${Date.now()}`,
+        `http://192.168.254.105:8000/generate-outfit?unique=${Date.now()}`,
         {
           method: "POST",
           headers: {
