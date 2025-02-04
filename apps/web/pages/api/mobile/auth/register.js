@@ -7,11 +7,31 @@ export default async function handler(req, res) {
     return res.status(405).json({ message: "Method not allowed" });
   }
 
-  const { username, password, firstName, lastName, role, customerFeaturesId = 0 } = req.body;
+  // Extract registration fields.
+  // For CUSTOMER role, the additional customer feature fields are required.
+  const {
+    username,
+    password,
+    firstName,
+    lastName,
+    role,
+    height,
+    weight,
+    age,
+    skintone,
+    bodyShape
+  } = req.body;
 
-  // Basic validation
+  // Basic validation for user credentials.
   if (!username || !password || !firstName || !lastName || !role) {
     return res.status(400).json({ message: "All fields are required." });
+  }
+
+  // If role is CUSTOMER, ensure additional customer feature fields are provided.
+  if (role.toUpperCase() === "CUSTOMER") {
+    if (!height || !weight || !age || !skintone || !bodyShape) {
+      return res.status(400).json({ message: "All customer feature fields are required." });
+    }
   }
 
   // Ensure role is valid
@@ -21,13 +41,15 @@ export default async function handler(req, res) {
   }
 
   try {
+    // Find the CUSTOMER role to check for duplicate users.
     const customerRole = await prisma.role.findFirst({
       where: { name: "CUSTOMER" },
     });
+
     const existingUser = await prisma.user.findFirst({
       where: { 
         username,
-        roleId: customerRole.id,
+        roleId: customerRole ? customerRole.id : undefined,
       },
     });
 
@@ -35,14 +57,14 @@ export default async function handler(req, res) {
       return res.status(409).json({ message: "Username is already taken." });
     }
 
-    // Hash the password
+    // Hash the password.
     const hashedPassword = await bcrypt.hash(password, 10);
 
-    // Generate a unique userNo
+    // Generate a unique userNo.
     const userNo = uuidv4().replace(/-/g, '').slice(0, 8);
 
-    // Fetch role ID based on the role name (assumes Roles table is pre-populated)
-    const userRole = await prisma.roles.findFirst({
+    // Fetch role ID based on the role name.
+    const userRole = await prisma.role.findFirst({
       where: { name: role.toUpperCase() },
     });
 
@@ -50,25 +72,38 @@ export default async function handler(req, res) {
       return res.status(400).json({ message: "Role not found." });
     }
 
-    // Create the user
-    const newUser = await prisma.users.create({
+    // Create the user.
+    const newUser = await prisma.user.create({
       data: {
-        userNo,               // Set generated userNo
+        userNo,               // Generated userNo.
         username,
         password: hashedPassword,
         roleId: userRole.id,
-        status: 'ACTIVE',     // Set status to ACTIVE
+        status: 'ACTIVE',     // Set status to ACTIVE.
       },
     });
 
-    // Create associated profile based on role
+    // If the role is CUSTOMER, create the customer feature record and the profile.
     if (role.toUpperCase() === "CUSTOMER") {
-      await prisma.customerProfiles.create({
+      // Create the CustomerFeature record.
+      const newCustomerFeature = await prisma.customerFeature.create({
         data: {
-          userId: newUser.id,          // Use id (PK) of the created user
+          userId: newUser.id,
+          height: parseFloat(height),
+          weight: parseFloat(weight),
+          age: parseInt(age, 10),
+          skintone,
+          bodyShape,
+        },
+      });
+
+      // Create the CustomerProfile record, linking to the new CustomerFeature.
+      await prisma.customerProfile.create({
+        data: {
+          userId: newUser.id,
           firstName,
           lastName,
-          customerFeaturesId,         // Add customerFeaturesId, with a default if not provided
+          customerFeaturesId: newCustomerFeature.id,
         },
       });
     }

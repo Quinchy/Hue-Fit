@@ -1,29 +1,42 @@
+// src/components/Select.tsx
 import React from 'react';
 import { Box, Text, Select, ISelectProps, CheckIcon } from 'native-base';
+import { Asterisk } from 'lucide-react-native';
 
 interface CustomSelectProps extends ISelectProps {
-  label?: string; // Optional label for the selector
-  value: string; // Currently selected value
+  label?: string;           // Optional label for the selector
+  value: string;            // Currently selected value
   onChange: (value: string) => void; // Function to update the selected value
   children?: React.ReactNode; // Allow passing custom Select.Item components
+  required?: boolean;       // If true, show an asterisk beside the label
+  error?: string;           // Optional error message (for red border styling)
 }
 
 const CustomSelect: React.FC<CustomSelectProps> = ({
-    label = 'Select an option',
-    value,
-    onChange,
-    children, // Accept children
-    ...props
-  }) => {
-    return (
-      <Box>
-        <Text fontSize="md" fontWeight={600} color="#C0C0C0" mb={1}>
-          {label}
-        </Text>
+  label = 'Select an option',
+  value,
+  onChange,
+  children,
+  required = false,
+  error,
+  ...props
+}) => {
+  return (
+    <Box>
+      <Text fontSize="md" fontWeight={600} color="#C0C0C0" mb={1} flexDir="row" alignItems="center">
+        {label}
+        {required && (
+          <Asterisk size={12} color="red" style={{ marginLeft: 4 }} />
+        )}
+      </Text>
+      <Box 
+        borderWidth={error ? 2 : 0} 
+        borderColor={error ? "red.500" : "transparent"} 
+        borderRadius="md"
+      >
         <Select
           selectedValue={value}
           minWidth="200"
-          
           accessibilityLabel={`Choose your ${label}`}
           placeholder={`Choose your ${label}`}
           onValueChange={(itemValue) => onChange(itemValue)}
@@ -61,10 +74,11 @@ const CustomSelect: React.FC<CustomSelectProps> = ({
           color="white"
           {...props}
         >
-          {children} {/* Ensure unique children are passed */}
+          {children}
         </Select>
       </Box>
-    );
-  };
-  
+    </Box>
+  );
+};
+
 export default CustomSelect;
