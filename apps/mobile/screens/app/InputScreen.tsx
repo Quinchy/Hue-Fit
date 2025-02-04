@@ -106,7 +106,7 @@ const InputScreen: React.FC = ({ navigation }) => {
           user_inputs: userFeatures,
         };
         console.log("User ID:", userId);
-        await fetch(`http://192.168.254.105:3000/api/mobile/generate/create-wardrobe`, {
+        await fetch(`${EXPO_PUBLIC_API_URL}/api/mobile/generate/create-wardrobe`, {
           method: "POST",
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify({

@@ -62,7 +62,7 @@ function AiTryOnScreen() {
       formData.append('mode', mode);
 
       // Remove manual "Content-Type" header so fetch sets the correct boundary automatically.
-      const response = await fetch(`http://192.168.254.105:3000/api/fashn/try-on`, {
+      const response = await fetch(`${EXPO_PUBLIC_API_URL}/api/fashn/try-on`, {
         method: 'POST',
         body: formData,
       });

@@ -6,6 +6,7 @@ import BackgroundProvider from '../../providers/BackgroundProvider';
 import GradientCard from '../../components/GradientCard';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { ArrowLeft, Bell } from 'lucide-react-native';
+import { EXPO_PUBLIC_API_URL } from "@env";
 
 type Notification = {
   id: number;
@@ -38,7 +39,7 @@ const NotificationScreen: React.FC<NotificationScreenProps> = ({ navigation }) =
           return;
         }
         // Post to your API to fetch notifications filtered by userId
-        const response = await fetch("http://192.168.254.105:3000/api/mobile/notification/get-notification", {
+        const response = await fetch(`${EXPO_PUBLIC_API_URL}/api/mobile/notification/get-notification`, {
           method: "POST",
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify({ userId }),
