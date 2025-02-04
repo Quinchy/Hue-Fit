@@ -21,7 +21,6 @@ import RegisterScreen from "./screens/account/RegisterScreen";
 import Register2Screen from "./screens/account/Register2Screen";
 import ForgetPassword1Screen from "./screens/account/ForgetPassword1Screen";
 import ForgetPassword2Screen from "./screens/account/ForgetPassword2Screen";
-import HomeScreen from "./screens/app/HomeScreen";
 import CartScreen from "./screens/app/CartScreen";
 import VirtualFittingScreen from "./screens/app/VirtualFittingScreen";
 import AiTryOnScreen from "./screens/app/AiTryOnScreen";
@@ -32,8 +31,6 @@ import InputScreen from "./screens/app/InputScreen";
 import ProductView from "./screens/app/ProductViewScreen";
 import PlaygroundScreen from "./screens/app/PlaygroundScreen";
 import NotificationScreen from "./screens/app/NotificationScreen";
-import ShopLocationScreen from "./screens/app/ShopLocationScreen";
-import SettingsScreen from "./screens/app/SettingsScreen";
 import WardrobeScreen from "./screens/app/WardrobeScreen";
 
 // Load Geist Fonts
@@ -131,12 +128,12 @@ const CustomTabBar = ({ state, descriptors, navigation }) => {
               ]}
             >
               {Icon && route.name === "InputStack" ? (
-                <Icon width={30} height={30} />
+                <Icon width={25} height={25} strokeWidth={1} color={isFocused ? "#FFF" : "#999"} />
               ) : (
                 Icon && (
                   <Icon
                     size={25}
-                    strokeWidth={1}
+                    strokeWidth={1.5}
                     color={isFocused ? "#FFF" : "#999"}
                   />
                 )
@@ -161,11 +158,10 @@ const TabNavigator = () => (
     screenOptions={{ headerShown: false }}
     tabBar={(props) => <CustomTabBar {...props} />}
   >
-    <Tab.Screen name="Home" component={HomeScreen} />
     <Tab.Screen name="Shops" component={ShopScreen} />
-    <Tab.Screen name="InputStack" component={InputStack} options={{ tabBarLabel: "Generate" }} />
     <Tab.Screen name="Cart" component={CartScreen} />
     <Tab.Screen name="Profile" component={ProfileSettingsScreen} />
+    <Tab.Screen name="InputStack" component={InputStack} options={{ tabBarLabel: "Generate" }} />
   </Tab.Navigator>
 );
 
@@ -184,9 +180,7 @@ const AppNavigator = ({ initialRoute }) => (
     <Stack.Screen name="AiTryOn" component={AiTryOnScreen} />
     <Stack.Screen name="ProductView" component={ProductView} />
     <Stack.Screen name="Notification" component={NotificationScreen} />
-    <Stack.Screen name="ShopLocation" component={ShopLocationScreen} />
     <Stack.Screen name="Wardrobe" component={WardrobeScreen} />
-    <Stack.Screen name="Settings" component={SettingsScreen} />
   </Stack.Navigator>
 );
 

@@ -8,14 +8,15 @@ import CustomInput from "../../components/Input";
 import CustomSelect from "../../components/Select";
 import DefaultButton from "../../components/Button";
 import GradientCard from "../../components/GradientCard";
-import LoadingSpinner from "../../components/Loading"; // For loading animation
+import LoadingSpinner from "../../components/Loading";
 import * as NavigationBar from "expo-navigation-bar";
 import AsyncStorage from "@react-native-async-storage/async-storage";
+import { View } from "native-base";
 import { EXPO_PUBLIC_API_URL } from "@env";
 
 const InputScreen: React.FC = ({ navigation }) => {
   const [outfitName, setOutfitName] = useState("");
-  const [preference, setPreference] = useState("All Random"); // User preference
+  const [preference, setPreference] = useState("All Random");
   const [loading, setLoading] = useState(false);
   const [userId, setUserId] = useState<number | null>(null);
   const [loadingUser, setLoadingUser] = useState(true);
@@ -38,7 +39,6 @@ const InputScreen: React.FC = ({ navigation }) => {
         setLoadingUser(false);
       }
     };
-
     getUser();
   }, [navigation]);
 
@@ -47,28 +47,21 @@ const InputScreen: React.FC = ({ navigation }) => {
       console.error("User ID is missing. Cannot fetch customer features.");
       return;
     }
-
     setLoading(true);
-
     try {
-      // Fetch customer features from our API
       const featuresResponse = await fetch(
         `${EXPO_PUBLIC_API_URL}/api/mobile/user/get-customer-features`,
         {
           method: "POST",
-          headers: {
-            "Content-Type": "application/json",
-          },
+          headers: { "Content-Type": "application/json" },
           body: JSON.stringify({ userId }),
         }
       );
-
       if (!featuresResponse.ok) {
         console.error("Error fetching customer features:", featuresResponse.statusText);
         setLoading(false);
         return;
       }
-
       const featuresData = await featuresResponse.json();
       const customerFeature = featuresData.customerFeature;
       if (!customerFeature) {
@@ -76,19 +69,15 @@ const InputScreen: React.FC = ({ navigation }) => {
         setLoading(false);
         return;
       }
-
-      // Merge customer features with outfit details
       const userFeatures = {
-        outfit_name: outfitName,       // Provided outfit name
-        category: preference,          // Fashion style
+        outfit_name: outfitName,
+        category: preference,
         height: customerFeature.height,
         weight: customerFeature.weight,
         age: customerFeature.age,
         skintone: customerFeature.skintone,
         bodyshape: customerFeature.bodyShape,
       };
-
-      // Call the generate-outfit API endpoint
       const response = await fetch(
         `http://192.168.254.105:8000/generate-outfit?unique=${Date.now()}`,
         {
@@ -100,49 +89,33 @@ const InputScreen: React.FC = ({ navigation }) => {
           body: JSON.stringify(userFeatures),
         }
       );
-
       if (response.ok) {
         const data = await response.json();
-
-        // Extract necessary data for navigation
         const { outfit_name, best_combination } = data;
         const { upper_wear, lower_wear, footwear, outerwear } = best_combination;
-
-        // Build the color palette from the hexcodes
         const color_palette = [
           { name: "Upperwear", hexcode: upper_wear?.hexcode },
           { name: "Lowerwear", hexcode: lower_wear?.hexcode },
           { name: "Footwear", hexcode: footwear?.hexcode },
           ...(outerwear ? [{ name: "Outerwear", hexcode: outerwear?.hexcode }] : []),
         ].filter((color) => color.hexcode);
-
         const passedData = {
           outfit_name,
-          upper_wear,
-          lower_wear,
-          footwear,
-          ...(outerwear && { outerwear }),
+          ...best_combination, // Use the API-returned best_combination directly
           color_palette,
           user_inputs: userFeatures,
         };
-
         console.log("User ID:", userId);
-
-        // Send generated outfit data to the create-wardrobe API
-        await fetch(`${EXPO_PUBLIC_API_URL}/api/mobile/generate/create-wardrobe`, {
+        await fetch(`http://192.168.254.105:3000/api/mobile/generate/create-wardrobe`, {
           method: "POST",
-          headers: {
-            "Content-Type": "application/json",
-          },
+          headers: { "Content-Type": "application/json" },
           body: JSON.stringify({
             generate_outfit_response: data,
             user_inputs: userFeatures,
             userId: userId,
           }),
         });
-
         setLoading(false);
-        // Navigate to the Playground screen with the passed data
         navigation.navigate("Playground", passedData);
       } else {
         console.error("Error generating outfit:", response.statusText);
@@ -168,59 +141,49 @@ const InputScreen: React.FC = ({ navigation }) => {
       />
     );
   }
-
   NavigationBar.setPositionAsync("absolute");
   NavigationBar.setBackgroundColorAsync("#0f0f0f");
 
   return (
-    <BackgroundProvider>
-      <SafeAreaView edges={["top", "bottom"]} top={20}>
-        <ScrollView>
-          <Center>
-            <GradientCard>
-              <Center mb={6}>
-                <Text fontSize="2xl" fontWeight="bold" color="white">
-                  GENERATE OUTFIT
-                </Text>
-                <Text fontSize="md" color="#C0C0C0" fontWeight="light" textAlign="center">
-                  Select a fashion style and generate outfit.
-                </Text>
-              </Center>
-
-              {/* Input Form */}
-              <VStack space={4}>
-                <CustomInput
-                  label="Outfit Name"
-                  placeholder="Give this outfit a name"
-                  value={outfitName}
-                  onChangeText={setOutfitName}
-                  variant="filled"
-                />
-
-                {/* User Preference Label */}
-                <Text fontSize="lg" fontWeight="bold" color="white" mt={4}>
-                  Your Outfit Preference
-                </Text>
-
-                <CustomSelect
-                  label="Fashion Style"
-                  value={preference}
-                  onChange={(value) => setPreference(value)}
-                >
-                  <Select.Item label="All Random" value="All Random" />
-                  <Select.Item label="Casual" value="Casual" />
-                  <Select.Item label="Smart Casual" value="Smart Casual" />
-                  <Select.Item label="Formal" value="Formal" />
-                </CustomSelect>
-
-                {/* Generate Button */}
-                <DefaultButton mt={10} mb={185} title="GENERATE" onPress={handleGenerate} />
-              </VStack>
-            </GradientCard>
-          </Center>
-        </ScrollView>
-      </SafeAreaView>
-    </BackgroundProvider>
+    <ScrollView style={{ backgroundColor: "#191919" }}>
+      <View style={{ marginTop: 60, marginLeft: 15, marginBottom: 20 }}>
+        <Text fontSize="2xl" fontWeight="bold" color="white">
+          GENERATE OUTFIT
+        </Text>
+      </View>
+      <GradientCard>
+        <VStack space={4}>
+          <CustomInput
+            label="Outfit Name"
+            placeholder="Give this outfit a name"
+            value={outfitName}
+            onChangeText={setOutfitName}
+            variant="filled"
+            required
+          />
+          <View>
+            <Text fontSize="lg" fontWeight="bold" color="white" mt={4}>
+              Your Outfit Preference
+            </Text>
+            <Text fontSize="md" color="#C0C0C0" fontWeight="light">
+              Select a fashion style and generate outfit.
+            </Text>
+          </View>
+          <CustomSelect
+            label="Fashion Style"
+            value={preference}
+            onChange={(value) => setPreference(value)}
+            required
+          >
+            <Select.Item label="All Random" value="All Random" />
+            <Select.Item label="Casual" value="Casual" />
+            <Select.Item label="Smart Casual" value="Smart Casual" />
+            <Select.Item label="Formal" value="Formal" />
+          </CustomSelect>
+          <DefaultButton mt={10} mb={185} title="GENERATE" onPress={handleGenerate} />
+        </VStack>
+      </GradientCard>
+    </ScrollView>
   );
 };
 

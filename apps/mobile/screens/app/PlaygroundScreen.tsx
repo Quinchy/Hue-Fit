@@ -23,91 +23,105 @@ import { LinearGradient } from "expo-linear-gradient";
 import { EXPO_PUBLIC_API_URL } from '@env';
 
 const PlaygroundScreen: React.FC = ({ route, navigation }) => {
-  const { outfit_name, upper_wear, lower_wear, footwear, outerwear, color_palette = [], user_inputs,  wardrobeId } =
-    route.params || {};
-    useEffect(() => {
-      const fetchWardrobeDetails = async () => {
-        if (!wardrobeId) return;
-    
-        setIsFetching(true);
-    
-        try {
-          const response = await fetch(`${EXPO_PUBLIC_API_URL}/api/mobile/generate/get-wardrobe-details`, {
-            method: 'POST',
-            headers: {
-              'Content-Type': 'application/json',
-            },
-            body: JSON.stringify({ wardrobeId }),
-          });
-    
-          if (!response.ok) {
-            console.error('Error fetching wardrobe details:', response.statusText);
-            return;
-          }
-    
-          const data = await response.json();
-          console.log('Wardrobe Details:', data);
-          if (data && data.wardrobe) {
-            const {
-              outfitName,
-              outfitStyle,
-              wardrobeCustomerFeatures,
-              outfitDetails: { upper_wear, lower_wear, footwear, outerwear, color_palette },
-            } = data.wardrobe;
-    
-            setOutfitName(outfitName || "Unnamed Outfit");
-            setPreference(outfitStyle || "");
-            setHeight(wardrobeCustomerFeatures?.height?.toString() || "");
-            setWeight(wardrobeCustomerFeatures?.weight?.toString() || "");
-            setSkinTone(wardrobeCustomerFeatures?.skintone || "");
-            setAge(wardrobeCustomerFeatures?.age?.toString() || "");
-            setBodyShape(wardrobeCustomerFeatures?.bodyShape || "");
-    
-            const colorPalette = [
-              ...(upper_wear?.color ? [{ name: "Upperwear", hexcode: upper_wear.color.hexcode }] : []),
-              ...(lower_wear?.color ? [{ name: "Lowerwear", hexcode: lower_wear.color.hexcode }] : []),
-              ...(footwear?.color ? [{ name: "Footwear", hexcode: footwear.color.hexcode }] : []),
-              ...(outerwear?.color ? [{ name: "Outerwear", hexcode: outerwear.color.hexcode }] : []),
-            ];
-    
-            setOutfitData({
-              outfit_name: outfitName,
-              upper_wear: {
-                ...upper_wear,
-                price: parseFloat(upper_wear?.price || 0),
-                name: `${upper_wear.color?.name || ""} ${upper_wear.name}`,
-              },
-              lower_wear: {
-                ...lower_wear,
-                price: parseFloat(lower_wear?.price || 0),
-                name: `${lower_wear.color?.name || ""} ${lower_wear.name}`,
-              },
-              footwear: {
-                ...footwear,
-                price: parseFloat(footwear?.price || 0),
-                name: `${footwear.color?.name || ""} ${footwear.name}`,
-              },
-              outerwear: outerwear
-                ? {
-                    ...outerwear,
-                    price: parseFloat(outerwear?.price || 0),
-                    name: `${outerwear.color?.name || ""} ${outerwear.name}`,
-                  }
-                : null,
-              color_palette: colorPalette,
-            });            
-          }
-        } catch (error) {
-          console.error('Error fetching wardrobe details:', error);
-        } finally {
-          setIsFetching(false);
+  // Log the passed route parameters immediately upon mount
+  useEffect(() => {
+    console.log("Route Params:", route.params);
+  }, [route.params]);
+
+  // Expecting the API to pass the outfit combination directly
+  const { 
+    outfit_name, 
+    upper_wear, 
+    lower_wear, 
+    footwear, 
+    outerwear, 
+    color_palette = [], 
+    user_inputs, 
+    wardrobeId 
+  } = route.params || {};
+
+  // If a wardrobeId is provided, details can be fetched to update the UI.
+  useEffect(() => {
+    const fetchWardrobeDetails = async () => {
+      if (!wardrobeId) return;
+
+      setIsFetching(true);
+
+      try {
+        const response = await fetch(`${EXPO_PUBLIC_API_URL}/api/mobile/generate/get-wardrobe-details`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ wardrobeId }),
+        });
+
+        if (!response.ok) {
+          console.error('Error fetching wardrobe details:', response.statusText);
+          return;
         }
-      };
-    
-      fetchWardrobeDetails();
-    }, [wardrobeId]);
-    
-  // Ensure default values for user_inputs
+
+        const data = await response.json();
+        console.log('Wardrobe Details:', data);
+        if (data && data.wardrobe) {
+          const {
+            outfitName,
+            outfitStyle,
+            wardrobeCustomerFeatures,
+            outfitDetails: { upper_wear, lower_wear, footwear, outerwear, color_palette },
+          } = data.wardrobe;
+
+          setOutfitName(outfitName || "Unnamed Outfit");
+          setPreference(outfitStyle || "");
+          setHeight(wardrobeCustomerFeatures?.height?.toString() || "");
+          setWeight(wardrobeCustomerFeatures?.weight?.toString() || "");
+          setSkinTone(wardrobeCustomerFeatures?.skintone || "");
+          setAge(wardrobeCustomerFeatures?.age?.toString() || "");
+          setBodyShape(wardrobeCustomerFeatures?.bodyShape || "");
+
+          const colorPalette = [
+            ...(upper_wear?.color ? [{ name: "Upperwear", hexcode: upper_wear.color.hexcode }] : []),
+            ...(lower_wear?.color ? [{ name: "Lowerwear", hexcode: lower_wear.color.hexcode }] : []),
+            ...(footwear?.color ? [{ name: "Footwear", hexcode: footwear.color.hexcode }] : []),
+            ...(outerwear?.color ? [{ name: "Outerwear", hexcode: outerwear.color.hexcode }] : []),
+          ];
+
+          setOutfitData({
+            outfit_name: outfitName,
+            upper_wear: {
+              ...upper_wear,
+              price: parseFloat(upper_wear?.price || 0),
+              name: `${upper_wear.color?.name || ""} ${upper_wear.name}`,
+            },
+            lower_wear: {
+              ...lower_wear,
+              price: parseFloat(lower_wear?.price || 0),
+              name: `${lower_wear.color?.name || ""} ${lower_wear.name}`,
+            },
+            footwear: {
+              ...footwear,
+              price: parseFloat(footwear?.price || 0),
+              name: `${footwear.color?.name || ""} ${footwear.name}`,
+            },
+            outerwear: outerwear
+              ? {
+                  ...outerwear,
+                  price: parseFloat(outerwear?.price || 0),
+                  name: `${outerwear.color?.name || ""} ${outerwear.name}`,
+                }
+              : null,
+            color_palette: colorPalette,
+          });
+        }
+      } catch (error) {
+        console.error('Error fetching wardrobe details:', error);
+      } finally {
+        setIsFetching(false);
+      }
+    };
+
+    fetchWardrobeDetails();
+  }, [wardrobeId]);
+
+  // Default values for user_inputs
   const defaultUserInputs = {
     height: "",
     weight: "",
@@ -116,7 +130,7 @@ const PlaygroundScreen: React.FC = ({ route, navigation }) => {
     bodyshape: "",
     category: "",
   };
-  
+
   const [menuOpen, setMenuOpen] = useState(false);
   const [loading, setLoading] = useState(false);
   const [isFetching, setIsFetching] = useState(false);
@@ -151,11 +165,7 @@ const PlaygroundScreen: React.FC = ({ route, navigation }) => {
   };
 
   const closeMenu = () => {
-    translateX.value = withTiming(
-      300,
-      { duration: 300 },
-      () => runOnJS(setMenuOpen)(false)
-    );
+    translateX.value = withTiming(300, { duration: 300 }, () => runOnJS(setMenuOpen)(false));
   };
 
   const handleRegenerate = async () => {
@@ -216,7 +226,6 @@ const PlaygroundScreen: React.FC = ({ route, navigation }) => {
 
   useEffect(() => {
     if (wardrobeId) {
-      // Fetch wardrobe data using the wardrobeId here
       console.log("Fetching wardrobe details for ID:", wardrobeId);
     }
   }, [wardrobeId]);
@@ -227,70 +236,70 @@ const PlaygroundScreen: React.FC = ({ route, navigation }) => {
     (outfitData.footwear?.price || 0) +
     (outfitData.outerwear?.price || 0);
 
-    const renderOutfitItem = (icon: JSX.Element, item: any, fallback: string) => {
-      if (isFetching) {
-        return (
-          <HStack mb={2} space={2} alignItems="center">
-            <Skeleton w="20%" h={115} borderRadius="md" />
-            <Skeleton.Text flex={1} px={2} lines={3} />
-          </HStack>
-        );
-      }
-    
-      if (!item) {
-        return (
-          <HStack alignItems="center" mb={2} space={2}>
-            <Box bg="gray.800" p={3} borderRadius="md" justifyContent="center" alignItems="center">
-              {icon}
-            </Box>
-            <Box bg="gray.800" flex={1} p={4} borderRadius="md" justifyContent="center">
-              <Text color="white" fontSize="md" fontWeight="light" textAlign="center">
-                {fallback}
-              </Text>
-            </Box>
-          </HStack>
-        );
-      }
-    
+  const renderOutfitItem = (icon: JSX.Element, item: any, fallback: string) => {
+    if (isFetching) {
       return (
-        <HStack bg="#2E2E2E" borderRadius="md" alignItems="center" mb={2} space={1}>
-          <Box paddingLeft={3} py={3} justifyContent="center" alignItems="center">
-            <Image source={{ uri: item.thumbnail }} style={{ width: 115, height: 115, borderRadius: 5 }} />
-          </Box>
-          <VStack flex={1} p={2} justifyContent="space-between">
-            <VStack flexGrow={1}>
-              <Text color="white" fontSize={13} fontWeight="light">
-                {item.name.length > 87 ? `${item.name.substring(0, 87)}...` : item.name}
-              </Text>
-              <Text fontWeight="light" fontSize={12} color="gray.400">
-                ₱{item.price}
-              </Text>
-            </VStack>
-    
-            <OutlineButton
-              title="VIEW PRODUCT"
-              width="fit-content"
-              height={30}
-              fontWeight="light"
-              fontSize={11}
-              py={1}
-              onPress={() => {
-                if (item.productVariantNo) {
-                  console.log(`View product variant: ${item.productVariantNo}`);
-                  navigation.navigate("ProductView", { productVariantNo: item.productVariantNo });
-                } else {
-                  console.error("No productVariantNo available for this item.");
-                }
-              }}
-            />
-          </VStack>
+        <HStack mb={2} space={2} alignItems="center">
+          <Skeleton w="20%" h={115} borderRadius="md" />
+          <Skeleton.Text flex={1} px={2} lines={3} />
         </HStack>
       );
-    };    
-    useEffect(() => {
-      console.log("Outfit Data:", outfitData);
-    }, [outfitData]);
-    
+    }
+
+    if (!item) {
+      return (
+        <HStack alignItems="center" mb={2} space={2}>
+          <Box bg="gray.800" p={3} borderRadius="md" justifyContent="center" alignItems="center">
+            {icon}
+          </Box>
+          <Box bg="gray.800" flex={1} p={4} borderRadius="md" justifyContent="center">
+            <Text color="white" fontSize="md" fontWeight="light" textAlign="center">
+              {fallback}
+            </Text>
+          </Box>
+        </HStack>
+      );
+    }
+
+    return (
+      <HStack bg="#2E2E2E" borderRadius="md" alignItems="center" mb={2} space={1}>
+        <Box paddingLeft={3} py={3} justifyContent="center" alignItems="center">
+          <Image source={{ uri: item.thumbnail }} style={{ width: 115, height: 115, borderRadius: 5 }} />
+        </Box>
+        <VStack flex={1} p={2} justifyContent="space-between">
+          <VStack flexGrow={1}>
+            <Text color="white" fontSize={13} fontWeight="light">
+              {item.name.length > 87 ? `${item.name.substring(0, 87)}...` : item.name}
+            </Text>
+            <Text fontWeight="light" fontSize={12} color="gray.400">
+              ₱{item.price}
+            </Text>
+          </VStack>
+          <OutlineButton
+            title="VIEW PRODUCT"
+            width="fit-content"
+            height={30}
+            fontWeight="light"
+            fontSize={11}
+            py={1}
+            onPress={() => {
+              if (item.productId) {
+                console.log(`View product : ${item.productId}`);
+                navigation.navigate("ProductView", { productId: item.productId });
+              } else {
+                console.error("No productId available for this item.");
+              }
+            }}
+          />
+        </VStack>
+      </HStack>
+    );
+  };
+
+  useEffect(() => {
+    console.log("Outfit Data:", outfitData);
+  }, [outfitData]);
+
   return (
     <View style={{ flex: 1 }}>
       <BackgroundProvider>
@@ -304,7 +313,6 @@ const PlaygroundScreen: React.FC = ({ route, navigation }) => {
               <Text color="#C0C0C0" fontSize="md" fontWeight="light" textTransform="uppercase" mb={2}>
                 Recommended Outfit
               </Text>
-
               <VStack mb={2} alignItems="flex-end">
                 <HStack space={2}>
                   {isFetching ? (
@@ -328,20 +336,15 @@ const PlaygroundScreen: React.FC = ({ route, navigation }) => {
                   )}
                 </HStack>
               </VStack>
-
               {outfitData.outerwear &&
                 renderOutfitItem(
-                  <Image
-                    source={{ uri: outfitData.outerwear.thumbnail }}
-                    style={{ width: 30, height: 30, borderRadius: 8 }}
-                  />,
+                  <Image source={{ uri: outfitData.outerwear.thumbnail }} style={{ width: 30, height: 30, borderRadius: 8 }} />,
                   outfitData.outerwear,
                   "No Outerwear"
                 )}
               {renderOutfitItem(<Shirt width={30} height={30} color="white" />, outfitData.upper_wear, "No Upperwear")}
               {renderOutfitItem(<Pants width={30} height={30} color="white" />, outfitData.lower_wear, "No Lowerwear")}
               {renderOutfitItem(<Sneaker width={30} height={30} color="white" />, outfitData.footwear, "No Footwear")}
-
               <VStack alignItems="flex-end">
                 {isFetching ? (
                   <Skeleton.Text lines={1} px={2} />
@@ -352,162 +355,17 @@ const PlaygroundScreen: React.FC = ({ route, navigation }) => {
                 )}
               </VStack>
             </VStack>
-
             <DefaultButton
               title={loading ? "Generating..." : "RE-GENERATE"}
               mt={20}
               mb={20}
-              onPress={() => handleRegenerate()}
+              onPress={handleRegenerate}
               isDisabled={loading}
               leftIcon={loading ? <Spinner color="white" size="sm" /> : undefined}
             />
           </VStack>
         </ScrollView>
       </BackgroundProvider>
-
-      {menuOpen && (
-        <Animated.View
-          style={[
-            {
-              position: "absolute",
-              width: "80%",
-              height: "100%",
-              right: 0,
-              top: 0,
-              zIndex: 1,
-            },
-            animatedStyle,
-          ]}
-        >
-          <Animated.View
-            style={[
-              {
-                position: "absolute",
-                top: 0,
-                right: 0,
-                width: "120%",
-                height: "100%",
-                zIndex: 1,
-                paddingTop: 50,
-                paddingBottom: 45,
-              },
-              animatedStyle,
-            ]}
-          >
-            <LinearGradient
-              colors={["#FF75C3", "#FFA647", "#FFE83F", "#9FFF5B", "#70E2FF", "#CD93FF"]}
-              start={{ x: 0, y: 0 }}
-              end={{ x: 1, y: 1 }}
-              style={{
-                flex: 1,
-                borderTopLeftRadius: 16,
-                borderBottomLeftRadius: 16,
-                padding: 1,
-              }}
-            >
-              <Box
-                bg="#191919"
-                flex={1}
-                borderTopLeftRadius={16}
-                borderBottomLeftRadius={16}
-                overflow="hidden"
-                style={{
-                  marginRight: -2,
-                }}
-              >
-                <Box alignItems="flex-start" p={3}>
-                  <IconButton
-                    icon={<ChevronRight size={24} color="white" />}
-                    onPress={closeMenu}
-                    _pressed={{ bg: "gray.800" }}
-                    borderRadius="full"
-                  />
-                </Box>
-                <GestureScrollView>
-                  <Center>
-                    <Text fontSize="lg" fontWeight="bold" color="white" mb={4}>
-                      INPUT DETAILS
-                    </Text>
-                  </Center>
-                  <VStack space={4} px={4}>
-                    <CustomInput
-                      label="Outfit Name"
-                      placeholder="Type an Outfit Name"
-                      value={outfitName}
-                      onChangeText={setOutfitName}
-                      variant="filled"
-                    />
-                    <CustomInput
-                      label="Height (in cm)"
-                      placeholder="Type your Height"
-                      value={height}
-                      onChangeText={setHeight}
-                      keyboardType="numeric"
-                      variant="filled"
-                    />
-                    <CustomInput
-                      label="Weight (in kg)"
-                      placeholder="Type your Weight"
-                      value={weight}
-                      onChangeText={setWeight}
-                      keyboardType="numeric"
-                      variant="filled"
-                    />
-                    <CustomSelect
-                      label="Skin Tone"
-                      value={skinTone}
-                      onChange={(value) => setSkinTone(value)}
-                    >
-                      <Select.Item label="Fair" value="Fair" />
-                      <Select.Item label="Light" value="Light" />
-                      <Select.Item label="Medium" value="Medium" />
-                      <Select.Item label="Dark" value="Dark" />
-                      <Select.Item label="Deep" value="Deep" />
-                    </CustomSelect>
-                    <CustomInput
-                      label="Age"
-                      placeholder="Type your Age"
-                      value={age}
-                      onChangeText={setAge}
-                      keyboardType="numeric"
-                      variant="filled"
-                    />
-                    <CustomSelect
-                      label="Body Shape"
-                      value={bodyShape}
-                      onChange={(value) => setBodyShape(value)}
-                    >
-                      <Select.Item label="Bulky" value="Bulky" />
-                      <Select.Item label="Athletic" value="Athletic" />
-                      <Select.Item label="Skinny" value="Skinny" />
-                      <Select.Item label="Fit" value="Fit" />
-                      <Select.Item label="Skinny Fat" value="Skinny Fat" />
-                      <Select.Item label="Chubby" value="Chubby" />
-                    </CustomSelect>
-                    <CustomSelect
-                      label="Style"
-                      value={preference}
-                      onChange={(value) => setPreference(value)}
-                    >
-                      <Select.Item label="All Random" value="All Random" />
-                      <Select.Item label="Casual" value="Casual" />
-                      <Select.Item label="Smart Casual" value="Smart Casual" />
-                      <Select.Item label="Formal" value="Formal" />
-                    </CustomSelect>
-                    <DefaultButton
-                      title={loading ? "Generating..." : "RE-GENERATE"}
-                      isDisabled={loading}
-                      leftIcon={loading ? <Spinner color="white" size="sm" /> : undefined}
-                      my={6}
-                      onPress={handleRegenerate}
-                    />
-                  </VStack>
-                </GestureScrollView>
-              </Box>
-            </LinearGradient>
-          </Animated.View>
-        </Animated.View>
-      )}
     </View>
   );
 };

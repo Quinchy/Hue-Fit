@@ -17,16 +17,11 @@ const CartScreen = ({ navigation, route }) => {
   const [selectedItems, setSelectedItems] = useState({});
   const [refreshing, setRefreshing] = useState(false);
   const [checkoutLoading, setCheckoutLoading] = useState(false);
-
   const toast = useToast();
   const [isPaymentMethodOpen, setIsPaymentMethodOpen] = useState(false);
   const [paymentMethod, setPaymentMethod] = useState('COD');
-
-  // Dialog for "Would you like to reserve this order?"
   const [showReserveDialog, setShowReserveDialog] = useState(false);
   const [reserveItems, setReserveItems] = useState([]);
-
-  // **New State Variables for Delete Confirmation**
   const [itemToDelete, setItemToDelete] = useState(null);
   const [isDeleteConfirmOpen, setIsDeleteConfirmOpen] = useState(false);
 
@@ -210,7 +205,7 @@ const CartScreen = ({ navigation, route }) => {
       const newQty = localQuantity - 1;
       setLocalQuantity(newQty);
       if (newQty < 1) {
-        onDelete(item); // Trigger confirmation before deletion
+        onDelete(item);
       } else {
         updateQuantity(item, newQty);
       }
@@ -226,7 +221,7 @@ const CartScreen = ({ navigation, route }) => {
       <HStack alignItems="center" space={2}>
         {localQuantity === 1 ? (
           <Pressable
-            onPress={() => onDelete(item)} // Trigger confirmation before deletion
+            onPress={() => onDelete(item)}
             style={{ backgroundColor: 'white', borderRadius: 2, padding: 5 }}
             android_ripple={{ color: 'rgba(0, 0, 0, 0.5)', borderless: false }}
           >
@@ -300,7 +295,6 @@ const CartScreen = ({ navigation, route }) => {
       const data = await response.json();
       console.log('Order response:', data);
 
-      // If there are any leftover items that couldn't proceed (notEnoughStock)
       if (data.notEnoughStock && data.notEnoughStock.length > 0 && !reserveMode) {
         setReserveItems(data.notEnoughStock);
         setShowReserveDialog(true);
@@ -350,7 +344,6 @@ const CartScreen = ({ navigation, route }) => {
     setIsPaymentMethodOpen(true);
   };
 
-  // **New Functions for Delete Confirmation**
   const confirmDeleteItem = (item) => {
     setItemToDelete(item);
     setIsDeleteConfirmOpen(true);
@@ -371,7 +364,6 @@ const CartScreen = ({ navigation, route }) => {
 
   return (
     <SafeAreaView style={styles.safeArea}>
-      {/* Loading Spinner */}
       {loading && !hasLoadedOnce ? (
         <View style={styles.loadingContainerFull}>
           <LoadingSpinner size={300} messages="Loading cart..." visible={true} />
@@ -403,17 +395,8 @@ const CartScreen = ({ navigation, route }) => {
           <VStack>
             {shopGroups.length > 0 ? (
               shopGroups.map((group) => (
-                <VStack
-                  key={group.shop.id}
-                  marginBottom={2}
-                  style={styles.shopGroup}
-                >
-                  <HStack
-                    justifyContent="space-between"
-                    alignItems="center"
-                    marginTop={4}
-                    paddingRight={2}
-                  >
+                <VStack key={group.shop.id} marginBottom={2} style={styles.shopGroup}>
+                  <HStack justifyContent="space-between" alignItems="center" marginTop={4} paddingRight={2}>
                     <HStack alignItems="center" space={1}>
                       <Store size={20} strokeWidth={2} color="#fff" />
                       <Text style={styles.shopName}>{group.shop.name}</Text>
@@ -426,19 +409,8 @@ const CartScreen = ({ navigation, route }) => {
                   </HStack>
 
                   {group.items.map((item) => (
-                    <HStack
-                      key={item.id}
-                      borderRadius={4}
-                      padding={2}
-                      style={styles.cartItem}
-                    >
-                      <Pressable
-                        onPress={() => {
-                          navigation.navigate('ProductView', {
-                            productId: item.product.id,
-                          });
-                        }}
-                      >
+                    <HStack key={item.id} borderRadius={4} padding={2} style={styles.cartItem}>
+                      <Pressable onPress={() => navigation.navigate('ProductView', { productId: item.product.id })}>
                         <Image
                           source={{ uri: item.product.thumbnailURL }}
                           style={styles.productImage}
@@ -447,10 +419,7 @@ const CartScreen = ({ navigation, route }) => {
                       </Pressable>
                       <VStack flex={1}>
                         <VStack>
-                          <Text
-                            style={styles.productName}
-                            numberOfLines={1}
-                          >
+                          <Text style={styles.productName} numberOfLines={1}>
                             {item.product.name}
                           </Text>
                           <Text style={styles.productPrice}>
@@ -484,37 +453,6 @@ const CartScreen = ({ navigation, route }) => {
                       />
                     </HStack>
                   ))}
-
-                  <HStack justifyContent="space-between" alignItems="center" paddingY={4}>
-                    <Text style={styles.totalLabel}>Total:</Text>
-                    <Text style={styles.totalAmount}>
-                      PHP {total.toFixed(2)}
-                    </Text>
-                  </HStack>
-
-                  <Box paddingY={4}>
-                    <TouchableOpacity
-                      onPress={handleCheckout}
-                      disabled={checkoutLoading}
-                      style={[
-                        styles.checkoutButton,
-                        { backgroundColor: checkoutLoading ? 'gray' : 'white' },
-                      ]}
-                    >
-                      {checkoutLoading ? (
-                        <HStack space={2} alignItems="center">
-                          <ActivityIndicator color="#191919" />
-                          <Text style={styles.checkoutButtonText}>
-                            Checking-out...
-                          </Text>
-                        </HStack>
-                      ) : (
-                        <Text style={styles.checkoutButtonText}>
-                          Checkout
-                        </Text>
-                      )}
-                    </TouchableOpacity>
-                  </Box>
                 </VStack>
               ))
             ) : (
@@ -528,22 +466,51 @@ const CartScreen = ({ navigation, route }) => {
                   Your cart is empty
                 </Text>
                 <Text style={styles.emptyCartSubtitle}>
-                  Looks like you haven't added any items yet. Explore products and
-                  start shopping!
+                  Looks like you haven't added any items yet. Explore products and start shopping!
                 </Text>
               </VStack>
+            )}
+
+            {shopGroups.length > 0 && (
+              <>
+                <HStack justifyContent="space-between" alignItems="center" paddingY={4}>
+                  <Text style={styles.totalLabel}>Total:</Text>
+                  <Text style={styles.totalAmount}>PHP {total.toFixed(2)}</Text>
+                </HStack>
+                <Box paddingY={4} marginHorizontal={16}>
+                  <TouchableOpacity
+                    onPress={handleCheckout}
+                    disabled={checkoutLoading}
+                    style={[
+                      styles.checkoutButton,
+                      { backgroundColor: checkoutLoading ? 'gray' : 'white' },
+                    ]}
+                  >
+                    {checkoutLoading ? (
+                      <HStack space={2} alignItems="center">
+                        <ActivityIndicator color="#191919" />
+                        <Text style={styles.checkoutButtonText}>
+                          Checking-out...
+                        </Text>
+                      </HStack>
+                    ) : (
+                      <Text style={styles.checkoutButtonText}>
+                        Checkout
+                      </Text>
+                    )}
+                  </TouchableOpacity>
+                </Box>
+              </>
             )}
           </VStack>
         </ScrollView>
       )}
 
-      {/* Payment Method Actionsheet */}
       <Actionsheet isOpen={isPaymentMethodOpen} onClose={() => setIsPaymentMethodOpen(false)}>
         <Actionsheet.Content style={styles.actionsheetContent}>
           <Text style={styles.actionsheetTitle}>
             Select a Payment Method
           </Text>
-
           <Radio.Group
             name="paymentMethod"
             accessibilityLabel="Payment Method"
@@ -558,12 +525,7 @@ const CartScreen = ({ navigation, route }) => {
                   </Text>
                 </Radio>
               </Box>
-              <Box
-                style={[
-                  styles.paymentMethodBox,
-                  { opacity: 0.4 },
-                ]}
-              >
+              <Box style={[styles.paymentMethodBox, { opacity: 0.4 }]}>
                 <Radio value="CARD" isDisabled colorScheme="gray">
                   <Text style={styles.paymentMethodText}>
                     Credit Card
@@ -572,7 +534,6 @@ const CartScreen = ({ navigation, route }) => {
               </Box>
             </VStack>
           </Radio.Group>
-
           <TouchableOpacity
             onPress={() => proceedCheckout(false)}
             disabled={checkoutLoading}
@@ -597,7 +558,6 @@ const CartScreen = ({ navigation, route }) => {
         </Actionsheet.Content>
       </Actionsheet>
 
-      {/* Reserve Dialog */}
       {showReserveDialog && (
         <Actionsheet isOpen={showReserveDialog} onClose={() => setShowReserveDialog(false)}>
           <Actionsheet.Content style={styles.actionsheetContent}>
@@ -606,7 +566,7 @@ const CartScreen = ({ navigation, route }) => {
             </Text>
             <Text style={styles.reserveDialogText}>
               When you choose to reserve your order, it will be placed under a "Reserved" status.
-              "Reserved Items", once are back in stock, will automatically proceed in order.
+              Reserved items, once back in stock, will automatically proceed in order.
             </Text>
             <TouchableOpacity
               onPress={() => {
@@ -615,58 +575,37 @@ const CartScreen = ({ navigation, route }) => {
                   proceedCheckout(true);
                 }, 300);
               }}
-              style={[
-                styles.checkoutButton,
-                { backgroundColor: 'white', marginTop: 5 },
-              ]}
+              style={[styles.checkoutButton, { backgroundColor: 'white', marginTop: 5 }]}
             >
-              <Text style={styles.checkoutButtonText}>
-                Proceed to Reserve
-              </Text>
+              <Text style={styles.checkoutButtonText}>Proceed to Reserve</Text>
             </TouchableOpacity>
-
             <TouchableOpacity
               onPress={() => {
                 setShowReserveDialog(false);
-                // do nothing, user opts not to reserve
               }}
-              style={[
-                styles.checkoutButton,
-                { backgroundColor: '#555', marginTop: 5 },
-              ]}
+              style={[styles.checkoutButton, { backgroundColor: '#555', marginTop: 5 }]}
             >
-              <Text style={styles.cancelButtonText}>
-                Cancel
-              </Text>
+              <Text style={styles.cancelButtonText}>Cancel</Text>
             </TouchableOpacity>
           </Actionsheet.Content>
         </Actionsheet>
       )}
 
-      {/* **Delete Confirmation Actionsheet** */}
       <Actionsheet isOpen={isDeleteConfirmOpen} onClose={handleDeleteCancelled}>
         <Actionsheet.Content style={styles.actionsheetContent}>
           <Text style={styles.actionsheetTitle}>
             Are you sure you want to remove this item?
           </Text>
-
           <HStack space={4} justifyContent="center" marginTop={20}>
             <TouchableOpacity
               onPress={handleDeleteConfirmed}
-              style={[
-                styles.confirmButton,
-                { backgroundColor: 'white' },
-              ]}
+              style={[styles.confirmButton, { backgroundColor: 'white' }]}
             >
               <Text style={styles.confirmButtonText}>Yes</Text>
             </TouchableOpacity>
-
             <TouchableOpacity
               onPress={handleDeleteCancelled}
-              style={[
-                styles.cancelButtonAction,
-                { backgroundColor: '#555' },
-              ]}
+              style={[styles.cancelButtonAction, { backgroundColor: '#555' }]}
             >
               <Text style={styles.cancelButtonText}>No</Text>
             </TouchableOpacity>
@@ -812,7 +751,6 @@ const styles = StyleSheet.create({
     fontSize: 16,
     width: '100%',
   },
-  // **New Styles for Delete Confirmation**
   confirmButton: {
     borderRadius: 5,
     padding: 10,
@@ -825,7 +763,7 @@ const styles = StyleSheet.create({
     fontSize: 16,
     fontWeight: '400',
   },
-  cancelButtonAction: { // Renamed to avoid conflict with existing 'cancelButtonText'
+  cancelButtonAction: {
     borderRadius: 5,
     padding: 10,
     alignItems: 'center',

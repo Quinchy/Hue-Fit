@@ -1,16 +1,65 @@
 // screens/NotificationScreen.tsx
-import React from 'react';
-import { Box, Text, VStack, HStack, IconButton, Icon } from 'native-base';
+import React, { useEffect, useState } from 'react';
+import { Image } from 'react-native';
+import { Box, Text, VStack, HStack, IconButton, Icon, Spinner } from 'native-base';
 import BackgroundProvider from '../../providers/BackgroundProvider';
 import GradientCard from '../../components/GradientCard';
-import { Image } from 'react-native';
+import AsyncStorage from '@react-native-async-storage/async-storage';
 import { ArrowLeft, Bell } from 'lucide-react-native';
 
+type Notification = {
+  id: number;
+  title: string;
+  message: string;
+  read: boolean;
+  created_at: string;
+};
+
 type NotificationScreenProps = {
-  navigation: any; // Replace `any` with specific navigation type if available
+  navigation: any; // Replace with specific navigation type if available
 };
 
 const NotificationScreen: React.FC<NotificationScreenProps> = ({ navigation }) => {
+  const [notifications, setNotifications] = useState<Notification[]>([]);
+  const [loading, setLoading] = useState<boolean>(true);
+
+  useEffect(() => {
+    const fetchNotifications = async () => {
+      try {
+        // Retrieve user from AsyncStorage
+        const storedUser = await AsyncStorage.getItem("user");
+        let userId: number | undefined;
+        if (storedUser) {
+          userId = JSON.parse(storedUser).id;
+        }
+        if (!userId) {
+          console.warn("No user data found in AsyncStorage");
+          setLoading(false);
+          return;
+        }
+        // Post to your API to fetch notifications filtered by userId
+        const response = await fetch("http://192.168.254.105:3000/api/mobile/notification/get-notification", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ userId }),
+        });
+        if (response.ok) {
+          const data = await response.json();
+          // Assumes API returns { notifications: [...] }
+          setNotifications(data.notifications);
+        } else {
+          console.error("Error fetching notifications:", response.statusText);
+        }
+      } catch (error) {
+        console.error("Error fetching notifications:", error);
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    fetchNotifications();
+  }, []);
+
   return (
     <BackgroundProvider>
       <VStack flex={1}>
@@ -25,30 +74,29 @@ const NotificationScreen: React.FC<NotificationScreenProps> = ({ navigation }) =
           </Text>
         </HStack>
 
-        {/* Notification Card */}
-        <GradientCard padding={4} marginX={4}>
-          <HStack alignItems="center" space={3}>
-            {/* HueFit logo */}
-            <Image
-              source={require('../../assets/icons/hue-fit-logo.png')}
-              style={{ width: 40, height: 40 }}
-              resizeMode="contain"
-            />
-
-            {/* Notification content */}
-            <VStack flex={1}>
-              <Text color="white" fontSize="lg" fontWeight="bold">
-                Welcome to Hue-Fit
-              </Text>
-              <Text color="gray.300" fontSize="sm" isTruncated>
-                Discover the power of AI to find your personalized outfit.
-              </Text>
-            </VStack>
-
-            {/* Notification Icon */}
-            <Icon as={<Bell size={24} />} color="white" />
-          </HStack>
-        </GradientCard>
+        {loading ? (
+          <Box flex={1} justifyContent="center" alignItems="center">
+            <Spinner color="white" size="lg" />
+          </Box>
+        ) : (
+          <GradientCard padding={4} marginX={4}>
+            {notifications.slice(0, 5).map((notif) => (
+              <HStack key={notif.id} alignItems="center" space={3} mt={4}>
+                {/* Notification Icon */}
+                <Icon as={<Bell size={24} />} color="white" />
+                {/* Notification Content */}
+                <VStack flex={1}>
+                  <Text color="white" fontSize="lg" fontWeight="bold">
+                    {notif.title}
+                  </Text>
+                  <Text color="gray.300" fontSize="sm" isTruncated>
+                    {notif.message}
+                  </Text>
+                </VStack>
+              </HStack>
+            ))}
+          </GradientCard>
+        )}
       </VStack>
     </BackgroundProvider>
   );
