@@ -316,38 +316,37 @@ export default function VirtualTryOnPage() {
    * Initialize camera stream whenever facingMode changes.
    */
   useEffect(() => {
-    const initCameraStream = async () => {
-      setIsCameraReady(false);
-      try {
-        // Stop any existing stream.
-        if (videoElementRef.current && videoElementRef.current.srcObject) {
-          const tracks = videoElementRef.current.srcObject.getTracks();
-          tracks.forEach((track) => track.stop());
-        }
-        const stream = await navigator.mediaDevices.getUserMedia({
-          video: {
-            width: 640,
-            height: 480,
-            frameRate: { ideal: 15, max: 15 },
-            facingMode: { ideal: facingMode },
-          },
-          audio: false,
-        });
-        videoElementRef.current.srcObject = stream;
-        videoElementRef.current.setAttribute("playsinline", "");
-        videoElementRef.current.onloadedmetadata = async () => {
-          await videoElementRef.current.play();
-          const ratio = window.devicePixelRatio || 1;
-          canvasElementRef.current.width = videoElementRef.current.videoWidth * ratio;
-          canvasElementRef.current.height = videoElementRef.current.videoHeight * ratio;
-          setIsCameraReady(true);
-          setStatusMessage("Camera ready, detecting poses...");
-        };
-      } catch (error) {
-        console.error("Error accessing camera:", error);
-        setStatusMessage("Unable to access camera. Please allow camera permissions.");
+  // Inside VirtualTryOnPage.js, replace the getUserMedia call in initCameraStream with:
+  const initCameraStream = async () => {
+    setIsCameraReady(false);
+    try {
+      // Stop any existing stream.
+      if (videoElementRef.current && videoElementRef.current.srcObject) {
+        const tracks = videoElementRef.current.srcObject.getTracks();
+        tracks.forEach((track) => track.stop());
       }
-    };
+      // Use relaxed constraints for mobile devices.
+      const stream = await navigator.mediaDevices.getUserMedia({
+        video: {
+          facingMode: { ideal: facingMode },
+        },
+        audio: false,
+      });
+      videoElementRef.current.srcObject = stream;
+      videoElementRef.current.setAttribute("playsinline", "");
+      videoElementRef.current.onloadedmetadata = async () => {
+        await videoElementRef.current.play();
+        const ratio = window.devicePixelRatio || 1;
+        canvasElementRef.current.width = videoElementRef.current.videoWidth * ratio;
+        canvasElementRef.current.height = videoElementRef.current.videoHeight * ratio;
+        setIsCameraReady(true);
+        setStatusMessage("Camera ready, detecting poses...");
+      };
+    } catch (error) {
+      console.error("Error accessing camera:", error);
+      setStatusMessage("Unable to access camera. Please allow camera permissions.");
+    }
+  };
     initCameraStream();
   }, [facingMode]);
 

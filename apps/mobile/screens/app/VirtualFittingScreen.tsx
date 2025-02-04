@@ -67,9 +67,7 @@ export default function VirtualFittingScreen({ route }) {
     );
   }
   
-  const onShouldStartLoadWithRequest = (request) => {
-    return true;
-  };
+  const onShouldStartLoadWithRequest = (request) => true;
   
   const onMessage = (event) => {
     // Handle messages from WebView if needed
@@ -107,9 +105,12 @@ export default function VirtualFittingScreen({ route }) {
         decelerationRate="normal"
         contentMode="mobile"
         scalesPageToFit={Platform.OS === 'android'}
-        onError={(syntheticEvent) => {
-          const { nativeEvent } = syntheticEvent;
-          Alert.alert('Error', 'Failed to load virtual fitting room');
+        onError={onError}
+        // Grant camera permission requests automatically on Android
+        onPermissionRequest={event => {
+          if (Platform.OS === 'android') {
+            event.nativeEvent.request.grant(event.nativeEvent.resources);
+          }
         }}
       />
     </View>
@@ -117,12 +118,8 @@ export default function VirtualFittingScreen({ route }) {
 }
 
 const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-  },
-  webview: {
-    flex: 1,
-  },
+  container: { flex: 1 },
+  webview: { flex: 1 },
   loading: {
     position: 'absolute',
     top: '50%',
