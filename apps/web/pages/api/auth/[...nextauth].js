@@ -14,45 +14,30 @@ export const authOptions = {
       },
       authorize: async (credentials) => {
         try {
-          // Find the user by username, include the Role relation.
+          // Only query for ADMIN or VENDOR roles
           const user = await prisma.user.findFirst({
-            where: { username: credentials.username },
+            where: {
+              username: credentials.username,
+              Role: { name: { in: ["ADMIN", "VENDOR"] } },
+            },
             include: { Role: true },
           });
-
+      
           if (!user) {
-            throw new Error("Username not found. Please check your credentials.");
+            throw new Error("Username not found or unauthorized access.");
           }
-
-          // Check password validity.
+      
+          // Password verification
           const isPasswordValid = await bcrypt.compare(credentials.password, user.password);
           if (!isPasswordValid) {
             throw new Error("Incorrect password. Please try again.");
           }
-
-          // If the stored role is CUSTOMER, check if a vendor or admin profile exists.
-          if (user.Role.name === "CUSTOMER") {
-            const adminProfile = await prisma.adminProfile.findUnique({
-              where: { userId: user.id },
-            });
-            const vendorProfile = await prisma.vendorProfile.findUnique({
-              where: { userId: user.id },
-            });
-            // If either profile exists, override the role.
-            if (adminProfile) {
-              user.Role.name = "ADMIN";
-            } else if (vendorProfile) {
-              user.Role.name = "VENDOR";
-            } else {
-              throw new Error("Unauthorized access. Customer accounts are not allowed.");
-            }
-          }
-
+      
           let profile = null;
           let firstName = "First";
           let lastName = "Last";
           let profilePicture = "/images/profile-picture.png";
-
+      
           if (user.Role.name === "ADMIN") {
             profile = await prisma.adminProfile.findUnique({
               where: { userId: user.id },
@@ -72,7 +57,7 @@ export const authOptions = {
               profilePicture = profile.profilePicture || "/images/placeholder-profile-picture.png";
             }
           }
-
+      
           const sessionUser = {
             id: user.id,
             name: user.username,
@@ -84,7 +69,7 @@ export const authOptions = {
             profilePicture,
             status: user.status,
           };
-
+      
           if (user.Role.name === "VENDOR") {
             const vendorProfile = await prisma.vendorProfile.findUnique({
               where: { userId: user.id },
@@ -98,14 +83,14 @@ export const authOptions = {
             sessionUser.shopId = vendorProfile?.Shop?.id || null;
             sessionUser.shopFormSubmitted = Boolean(vendorProfile?.Shop?.id);
           }
-
+      
           return sessionUser;
         } catch (error) {
           throw new Error(error.message);
         } finally {
           await disconnectPrisma();
         }
-      },
+      },      
     }),
   ],
   session: { strategy: "jwt" },
@@ -129,7 +114,7 @@ export const authOptions = {
       return session;
     },
     async jwt({ token, user }) {
-      // On initial sign in, store values on the token.
+      // On initial sign in, store values on the token
       if (user) {
         token.id = user.id;
         token.role = user.role;
@@ -145,7 +130,7 @@ export const authOptions = {
         }
         return token;
       }
-      // For subsequent requests for vendors, refresh the token values from the DB.
+      // For subsequent requests for vendors, refresh the token values from the DB
       if (token.role === "VENDOR") {
         try {
           const updatedUser = await prisma.user.findUnique({
