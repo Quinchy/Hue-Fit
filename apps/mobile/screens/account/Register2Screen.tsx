@@ -1,7 +1,14 @@
 // src/screens/account/Register2Screen.tsx
 import React from 'react';
 import { ScrollView, Alert } from 'react-native';
-import { VStack, Text, Center, Select, HStack, IconButton } from 'native-base';
+import {
+  VStack,
+  Text,
+  Center,
+  Select,
+  HStack,
+  IconButton,
+} from 'native-base';
 import BackgroundProvider from '../../providers/BackgroundProvider';
 import CustomInput from '../../components/Input';
 import DefaultButton from '../../components/Button';
@@ -63,13 +70,17 @@ export default function Register2Screen({ navigation, route }) {
                 bodyShape: '',
               }}
               validationSchema={Register2Schema}
-              onSubmit={async (values) => {
+              onSubmit={async (values, { setSubmitting }) => {
                 // Safely convert numeric fields
                 const heightNumber = parseFloat(values.height);
                 const weightNumber = parseFloat(values.weight);
                 const ageNumber = parseInt(values.age, 10);
                 if (isNaN(heightNumber) || isNaN(weightNumber) || isNaN(ageNumber)) {
-                  Alert.alert("Error", "Please enter valid numeric values for Height, Weight, and Age.");
+                  Alert.alert(
+                    "Error",
+                    "Please enter valid numeric values for Height, Weight, and Age."
+                  );
+                  setSubmitting(false);
                   return;
                 }
 
@@ -102,10 +113,19 @@ export default function Register2Screen({ navigation, route }) {
                   console.error("Registration error:", error);
                   Alert.alert("Error", "An error occurred during registration.");
                 }
+                setSubmitting(false);
               }}
             >
-              {({ handleChange, handleBlur, handleSubmit, values, errors, touched }) => (
-                <VStack space={4} alignItems="center">
+              {({
+                handleChange,
+                handleBlur,
+                handleSubmit,
+                values,
+                errors,
+                touched,
+                isSubmitting,
+              }) => (
+                <VStack space={4} alignItems="center" opacity={isSubmitting ? 0.5 : 1}>
                   {/* Height Field */}
                   <VStack width="100%">
                     <CustomInput
@@ -211,7 +231,12 @@ export default function Register2Screen({ navigation, route }) {
                     )}
                   </VStack>
 
-                  <DefaultButton mt={10} title="REGISTER" onPress={handleSubmit} />
+                  <DefaultButton
+                    mt={10}
+                    title={isSubmitting ? "Registering..." : "REGISTER"}
+                    onPress={handleSubmit}
+                    isDisabled={isSubmitting}
+                  />
                 </VStack>
               )}
             </Formik>

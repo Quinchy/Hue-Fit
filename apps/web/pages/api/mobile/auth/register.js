@@ -8,7 +8,7 @@ export default async function handler(req, res) {
   }
 
   // Extract registration fields.
-  // For CUSTOMER role, the additional customer feature fields are required.
+  // Note: For the CUSTOMER role, the client sends "bodyshape" (all lowercase)
   const {
     username,
     password,
@@ -19,22 +19,34 @@ export default async function handler(req, res) {
     weight,
     age,
     skintone,
-    bodyShape
+    bodyshape
   } = req.body;
 
   // Basic validation for user credentials.
-  if (!username || !password || !firstName || !lastName || !role) {
+  if (
+    !username?.trim() ||
+    !password ||
+    !firstName?.trim() ||
+    !lastName?.trim() ||
+    !role?.trim()
+  ) {
     return res.status(400).json({ message: "All fields are required." });
   }
 
   // If role is CUSTOMER, ensure additional customer feature fields are provided.
   if (role.toUpperCase() === "CUSTOMER") {
-    if (!height || !weight || !age || !skintone || !bodyShape) {
+    if (
+      height === undefined || height === '' ||
+      weight === undefined || weight === '' ||
+      age === undefined || age === '' ||
+      !skintone?.trim() ||
+      !bodyshape?.trim()
+    ) {
       return res.status(400).json({ message: "All customer feature fields are required." });
     }
   }
 
-  // Ensure role is valid
+  // Ensure role is valid.
   const allowedRoles = ["CUSTOMER", "VENDOR", "ADMIN"];
   if (!allowedRoles.includes(role.toUpperCase())) {
     return res.status(400).json({ message: "Invalid role specified." });
@@ -75,11 +87,11 @@ export default async function handler(req, res) {
     // Create the user.
     const newUser = await prisma.user.create({
       data: {
-        userNo,               // Generated userNo.
+        userNo, // Generated userNo.
         username,
         password: hashedPassword,
         roleId: userRole.id,
-        status: 'ACTIVE',     // Set status to ACTIVE.
+        status: 'ACTIVE', // Set status to ACTIVE.
       },
     });
 
@@ -93,7 +105,7 @@ export default async function handler(req, res) {
           weight: parseFloat(weight),
           age: parseInt(age, 10),
           skintone,
-          bodyShape,
+          bodyShape: bodyshape, // Use the destructured field "bodyshape"
         },
       });
 

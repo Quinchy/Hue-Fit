@@ -26,7 +26,7 @@ const CustomSelect: React.FC<CustomSelectProps> = ({
       <Text fontSize="md" fontWeight={600} color="#C0C0C0" mb={1} flexDir="row" alignItems="center">
         {label}
         {required && (
-          <Asterisk size={12} color="red" style={{ marginLeft: 4 }} />
+          <Asterisk size={12} color="#C0C0C0" style={{ marginLeft: 4 }} />
         )}
       </Text>
       <Box 
