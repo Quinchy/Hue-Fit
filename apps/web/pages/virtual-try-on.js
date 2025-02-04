@@ -122,7 +122,7 @@ export default function VirtualTryOnPage() {
    */
   const initializePoseDetector = async () => {
     try {
-      await tf.setBackend("webgl");
+      await tf.setBackend("wasm");
       await tf.ready();
       const detectionModel = posedetection.SupportedModels.MoveNet;
       const detectorConfig = {

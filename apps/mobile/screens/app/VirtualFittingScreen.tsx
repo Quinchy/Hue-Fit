@@ -86,6 +86,9 @@ export default function VirtualFittingScreen({ route }) {
         source={{ uri: webViewUrl }}
         style={styles.webview}
         startInLoadingState
+        injectedJavaScriptBeforeContentLoaded={`
+          navigator.mediaDevices.getUserMedia({ video: true }).then(console.log).catch(console.error);
+        `}
         renderLoading={() => (
           <ActivityIndicator
             color="#009b88"
