@@ -1,8 +1,7 @@
-// File: "@/components/ui/dashboard/vendor.js"
 import DashboardLayoutWrapper from "@/components/ui/dashboard-layout";
 import { Label } from "@/components/ui/label";
 import { useSession } from "next-auth/react";
-import { useEffect, useState, useMemo } from "react";
+import { useMemo } from "react";
 import { Shirt, Tag, BellRing } from "lucide-react";
 import { Pie, PieChart } from "recharts";
 import {
@@ -17,28 +16,62 @@ import {
   ChartTooltip,
   ChartTooltipContent,
 } from "@/components/ui/chart";
+import { Skeleton } from "@/components/ui/skeleton";
+import useSWR from "swr";
+
+function formatRelativeTime(dateString) {
+  const date = new Date(dateString);
+  const diff = Date.now() - date.getTime();
+  const seconds = diff / 1000;
+  if (seconds < 60) return "Just Now";
+  const minutes = seconds / 60;
+  if (minutes < 60) {
+    const m = Math.floor(minutes);
+    return `Last ${m} minute${m > 1 ? "s" : ""} ago`;
+  }
+  const hours = minutes / 60;
+  if (hours < 24) {
+    const h = Math.floor(hours);
+    return `Last ${h} hour${h > 1 ? "s" : ""} ago`;
+  }
+  const days = hours / 24;
+  if (days < 7) {
+    const d = Math.floor(days);
+    return `Last ${d} day${d > 1 ? "s" : ""} ago`;
+  }
+  const weeks = days / 7;
+  if (days < 365) {
+    const w = Math.floor(weeks);
+    return `Last ${w} week${w > 1 ? "s" : ""} ago`;
+  }
+  const years = days / 365;
+  const y = Math.floor(years);
+  return `Last ${y} year${y > 1 ? "s" : ""} ago`;
+}
+
+const fetcher = (url) => fetch(url).then((res) => res.json());
 
 export default function VendorDashboard() {
   const { data: session } = useSession();
-  const [dashboardData, setDashboardData] = useState(null);
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState(null);
+  const { data: dashboardData, error } = useSWR(
+    session ? "/api/dashboard/get-vendor-infos" : null,
+    fetcher,
+    { refreshInterval: 5000, revalidateOnFocus: true }
+  );
 
-  // Map product type names to specific hex colors matching your Tailwind classes.
   const typeColorMapping = {
-    UPPERWEAR: "#3b82f6", // bg-blue-500
-    LOWERWEAR: "#14b8a6", // bg-teal-500
-    FOOTWEAR: "#8b5cf6",  // bg-purple-500
-    OUTERWEAR: "#06b6d4", // bg-cyan-500
+    UPPERWEAR: "#3b82f6",
+    LOWERWEAR: "#14b8a6",
+    FOOTWEAR: "#8b5cf6",
+    OUTERWEAR: "#06b6d4",
   };
 
-  // Build chart data dynamically from dashboardData.typeCounts.
   const chartData = useMemo(
     () =>
       dashboardData && dashboardData.typeCounts
         ? dashboardData.typeCounts.map((type) => {
             const fillColor =
-              typeColorMapping[type.typeName.toUpperCase()] || "#facc15"; // fallback color if not mapped
+              typeColorMapping[type.typeName.toUpperCase()] || "#facc15";
             return {
               browser: type.typeName,
               visitors: type.count,
@@ -49,36 +82,11 @@ export default function VendorDashboard() {
     [dashboardData, typeColorMapping]
   );
 
-  // Minimal chart config that maps the count to a label.
   const chartConfig = {
     visitors: { label: "Count" },
   };
 
-  useEffect(() => {
-    if (!session) return;
-
-    const fetchDashboardData = async () => {
-      try {
-        const res = await fetch(`/api/dashboard/get-vendor-infos`, {
-          method: "GET",
-          headers: {
-            "Content-Type": "application/json",
-          },
-        });
-        if (!res.ok) {
-          throw new Error("Failed to fetch dashboard information");
-        }
-        const data = await res.json();
-        setDashboardData(data);
-      } catch (err) {
-        setError(err.message);
-      } finally {
-        setLoading(false);
-      }
-    };
-
-    fetchDashboardData();
-  }, [session]);
+  const isLoading = !dashboardData && !error;
 
   return (
     <DashboardLayoutWrapper>
@@ -104,9 +112,20 @@ export default function VendorDashboard() {
         )}
       </p>
       <div className="flex flex-col gap-4">
-        {loading && <p>Loading dashboard information...</p>}
-        {error && <p>Error: {error}</p>}
-        {dashboardData && (
+        {isLoading ? (
+          <div className="flex flex-row gap-4 h-[47rem]">
+            <div className="flex flex-col gap-4 w-full h-full">
+              <div className="flex flex-row gap-4">
+                <Skeleton className="w-full h-48 p-6" />
+                <Skeleton className="w-full h-48 p-6" />
+              </div>
+              <Skeleton className="w-full h-full p-6" />
+            </div>
+            <Skeleton className="w-full p-6" />
+          </div>
+        ) : error ? (
+          <p>Error: {error.message}</p>
+        ) : (
           <>
             <div className="flex flex-row gap-4 h-[47rem]">
               <div className="flex flex-col gap-4 w-full h-full">
@@ -192,30 +211,32 @@ export default function VendorDashboard() {
                     Notifications:
                   </Label>
                 </div>
-                {dashboardData.notifications.length ? (
-                  dashboardData.notifications.map((notification) => (
-                    <div
-                      key={notification.id}
-                      className="flex flex-col gap-1 p-2 border-l-4 bg-muted rounded-lg rounded-ss-none rounded-es-none"
-                    >
-                      <div className="flex flex-col items-start gap-0 ml-1">
-                        <p className="text-base uppercase font-bold">
-                          {notification.title}
-                        </p>
-                        <p className="text-base font-extralight">
-                          {notification.message}
+                <div className="flex flex-col gap-2 overflow-y-auto max-h-[660px]">
+                  {dashboardData.notifications.length ? (
+                    dashboardData.notifications.map((notification) => (
+                      <div
+                        key={notification.id}
+                        className="flex flex-col p-2 border-l-4 bg-muted rounded-lg rounded-ss-none mr-2 rounded-es-none"
+                      >
+                        <div className="flex flex-col items-start gap-2 ml-1">
+                          <p className="text-base uppercase font-bold">
+                            {notification.title}
+                          </p>
+                          <p className="text-base font-extralight">
+                            {notification.message}
+                          </p>
+                        </div>
+                        <p className="font-thin text-sm text-primary/50 text-end">
+                          {formatRelativeTime(notification.created_at)}
                         </p>
                       </div>
-                      <p className="font-thin text-sm text-primary/50 text-end">
-                        {new Date(notification.created_at).toLocaleString()}
-                      </p>
-                    </div>
-                  ))
-                ) : (
-                  <p className="text-lg text-center font-extralight text-primary/50">
-                    No notifications
-                  </p>
-                )}
+                    ))
+                  ) : (
+                    <p className="text-lg text-center font-extralight text-primary/50">
+                      No notifications
+                    </p>
+                  )}
+                </div>
               </Card>
             </div>
           </>

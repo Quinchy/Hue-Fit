@@ -5,11 +5,6 @@ import VendorDashboard from "@/components/ui/dashboard/vendor";
 
 export default function Dashboard() {
   const { data: session } = useSession();
-
-  if (!session) {
-    return <div>Loading...</div>;
-  }
-
   const userRole = session?.user?.role;
 
   if (userRole === "ADMIN") {
@@ -17,6 +12,4 @@ export default function Dashboard() {
   } else if (userRole === "VENDOR") {
     return <VendorDashboard />;
   }
-
-  return <div>Unauthorized</div>;
 }
