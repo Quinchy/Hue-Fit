@@ -210,9 +210,11 @@ export default function VirtualTryOnPage() {
           overlayWidth = shoulderWidth * 1.2;
           overlayHeight = overlayWidth / aspectRatio;
         }
-
+        // Apply a fixed stretch value for upperwear (1.2)
+        overlayWidth = overlayWidth * 1.3;
+        // Recalculate the X position after stretching
         overlayX = shoulderCenterX - overlayWidth / 2;
-        overlayY = shoulderCenterY - overlayHeight * 0.08;
+        overlayY = shoulderCenterY - overlayHeight * 0.1;
       } else if (type === "LOWERWEAR") {
         if (!leftHip || !rightHip) {
           setStatusMessage("Lower body not fully detected (hips). Please move back to show hips.");
@@ -253,11 +255,14 @@ export default function VirtualTryOnPage() {
           overlayWidth = hipWidth * 1.1;
           overlayHeight = overlayWidth / aspectRatio;
         }
-
+        // Apply a fixed stretch value for lowerwear (1.1)
+        overlayWidth = overlayWidth * 1.1;
+        // Recalculate the X position after stretching
         overlayX = hipCenterX - overlayWidth / 2;
         overlayY = hipCenterY;
       }
 
+      // Ensure overlay values are within canvas boundaries.
       overlayX = Math.max(0, overlayX);
       overlayY = Math.max(0, overlayY);
       overlayWidth = Math.min(canvasContext.canvas.width - overlayX, overlayWidth);
@@ -316,37 +321,36 @@ export default function VirtualTryOnPage() {
    * Initialize camera stream whenever facingMode changes.
    */
   useEffect(() => {
-  // Inside VirtualTryOnPage.js, replace the getUserMedia call in initCameraStream with:
-  const initCameraStream = async () => {
-    setIsCameraReady(false);
-    try {
-      // Stop any existing stream.
-      if (videoElementRef.current && videoElementRef.current.srcObject) {
-        const tracks = videoElementRef.current.srcObject.getTracks();
-        tracks.forEach((track) => track.stop());
+    const initCameraStream = async () => {
+      setIsCameraReady(false);
+      try {
+        // Stop any existing stream.
+        if (videoElementRef.current && videoElementRef.current.srcObject) {
+          const tracks = videoElementRef.current.srcObject.getTracks();
+          tracks.forEach((track) => track.stop());
+        }
+        // Use relaxed constraints for mobile devices.
+        const stream = await navigator.mediaDevices.getUserMedia({
+          video: {
+            facingMode: { ideal: facingMode },
+          },
+          audio: false,
+        });
+        videoElementRef.current.srcObject = stream;
+        videoElementRef.current.setAttribute("playsinline", "");
+        videoElementRef.current.onloadedmetadata = async () => {
+          await videoElementRef.current.play();
+          const ratio = window.devicePixelRatio || 1;
+          canvasElementRef.current.width = videoElementRef.current.videoWidth * ratio;
+          canvasElementRef.current.height = videoElementRef.current.videoHeight * ratio;
+          setIsCameraReady(true);
+          setStatusMessage("Camera ready, detecting poses...");
+        };
+      } catch (error) {
+        console.error("Error accessing camera:", error);
+        setStatusMessage("Unable to access camera. Please allow camera permissions.");
       }
-      // Use relaxed constraints for mobile devices.
-      const stream = await navigator.mediaDevices.getUserMedia({
-        video: {
-          facingMode: { ideal: facingMode },
-        },
-        audio: false,
-      });
-      videoElementRef.current.srcObject = stream;
-      videoElementRef.current.setAttribute("playsinline", "");
-      videoElementRef.current.onloadedmetadata = async () => {
-        await videoElementRef.current.play();
-        const ratio = window.devicePixelRatio || 1;
-        canvasElementRef.current.width = videoElementRef.current.videoWidth * ratio;
-        canvasElementRef.current.height = videoElementRef.current.videoHeight * ratio;
-        setIsCameraReady(true);
-        setStatusMessage("Camera ready, detecting poses...");
-      };
-    } catch (error) {
-      console.error("Error accessing camera:", error);
-      setStatusMessage("Unable to access camera. Please allow camera permissions.");
-    }
-  };
+    };
     initCameraStream();
   }, [facingMode]);
 
@@ -402,13 +406,7 @@ export default function VirtualTryOnPage() {
     <div style={styles.container} ref={containerRef}>
       <div style={styles.cameraContainer}>
         {/* Video element shows the live camera feed */}
-        <video
-          ref={videoElementRef}
-          style={styles.video}
-          muted
-          playsInline
-          autoPlay
-        />
+        <video ref={videoElementRef} style={styles.video} muted playsInline autoPlay />
         {/* Canvas is positioned on top to show only the clothing overlay */}
         <canvas ref={canvasElementRef} style={styles.canvas} />
         <button style={styles.toggleButton} onClick={toggleCamera}>

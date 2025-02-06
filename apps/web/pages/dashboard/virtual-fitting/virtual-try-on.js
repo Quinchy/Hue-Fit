@@ -21,8 +21,9 @@ export default function VirtualTryOnPage() {
   const [isDetectionRunning, setIsDetectionRunning] = useState(false);
   const [statusMessage, setStatusMessage] = useState("");
   const [mounted, setMounted] = useState(false);
+  const [upperwearStretch, setUpperwearStretch] = useState(1.2);
+  const [lowerwearStretch, setLowerwearStretch] = useState(1.1);
 
-  // The cropped <img> to draw & its ImageData (if needed for future usage)
   const clothingImageElementRef = useRef(null);
   const clothingPixelDataRef = useRef(null);
 
@@ -30,9 +31,6 @@ export default function VirtualTryOnPage() {
     setMounted(true);
   }, []);
 
-  /**
-   * Crop transparent edges from the loaded PNG image.
-   */
   function cropTransparentImage(img) {
     const w = img.naturalWidth;
     const h = img.naturalHeight;
@@ -62,7 +60,6 @@ export default function VirtualTryOnPage() {
       }
     }
     if (right < left || bottom < top) {
-      // Entire image is transparent
       return { croppedImg: img, imageData };
     }
 
@@ -85,19 +82,13 @@ export default function VirtualTryOnPage() {
       croppedHeight
     );
 
-    // We'll keep the smaller region's ImageData
     const croppedImageData = croppedCtx.getImageData(0, 0, croppedWidth, croppedHeight);
-
-    // Create <img> element for final drawing
     const croppedImg = new Image();
     croppedImg.src = croppedCanvas.toDataURL();
 
     return { croppedImg, imageData: croppedImageData };
   }
 
-  /**
-   * Load and crop the clothing PNG once the URL is known.
-   */
   useEffect(() => {
     if (!router.isReady) return;
     if (pngClotheURL) {
@@ -112,9 +103,6 @@ export default function VirtualTryOnPage() {
     }
   }, [router.isReady, pngClotheURL]);
 
-  /**
-   * Initialize Pose Detector with tf.js MoveNet (WASM).
-   */
   const initializePoseDetector = async () => {
     let retriesRemaining = 3;
     while (retriesRemaining > 0) {
@@ -140,10 +128,6 @@ export default function VirtualTryOnPage() {
     }
   };
 
-  /**
-   * Draw clothing overlay based on the user's pose & type of garment.
-   * All keypoints/skeleton lines are removed — only the clothing is drawn.
-   */
   const renderClothingOverlay = useCallback(
     (poses, canvasContext) => {
       if (!poses || poses.length === 0) return;
@@ -157,16 +141,14 @@ export default function VirtualTryOnPage() {
 
       const videoWidth = videoElementRef.current.videoWidth;
       const videoHeight = videoElementRef.current.videoHeight;
-      const scaleX = 640 / videoWidth; // final canvas is 640 wide
-      const scaleY = 480 / videoHeight; // final canvas is 480 high
+      const scaleX = 640 / videoWidth;
+      const scaleY = 480 / videoHeight;
 
-      // Common Keypoints
       const leftShoulder = keypoints.find((kp) => kp.name === "left_shoulder" && kp.score > 0.5);
       const rightShoulder = keypoints.find((kp) => kp.name === "right_shoulder" && kp.score > 0.5);
       const leftHip = keypoints.find((kp) => kp.name === "left_hip" && kp.score > 0.5);
       const rightHip = keypoints.find((kp) => kp.name === "right_hip" && kp.score > 0.5);
 
-      // Additional lowerbody Keypoints
       const leftKnee = keypoints.find((kp) => kp.name === "left_knee" && kp.score > 0.5);
       const rightKnee = keypoints.find((kp) => kp.name === "right_knee" && kp.score > 0.5);
       const leftAnkle = keypoints.find((kp) => kp.name === "left_ankle" && kp.score > 0.5);
@@ -180,9 +162,7 @@ export default function VirtualTryOnPage() {
         overlayWidth = 0,
         overlayHeight = 0;
 
-      // ----- LOGIC SPLIT BY TYPE -----
       if (type === "UPPERWEAR" || type === "OUTERWEAR") {
-        // Shoulders -> Hips
         if (!leftShoulder || !rightShoulder) {
           setStatusMessage(
             "Upper body not fully detected. Move into frame and ensure good lighting."
@@ -206,7 +186,6 @@ export default function VirtualTryOnPage() {
           overlayHeight = torsoHeight * 1.15;
           overlayWidth = overlayHeight * aspectRatio;
         } else {
-          // fallback if hips not found
           overlayWidth = shoulderWidth * 1.2;
           overlayHeight = (overlayWidth / aspectRatio) * 1.15;
         }
@@ -216,10 +195,10 @@ export default function VirtualTryOnPage() {
           overlayHeight = overlayWidth / aspectRatio;
         }
 
+        overlayWidth = overlayWidth * upperwearStretch;
         overlayX = shoulderCenterX - overlayWidth / 2;
-        overlayY = shoulderCenterY - overlayHeight * 0.08;
+        overlayY = shoulderCenterY - overlayHeight * 0.13;
       } else if (type === "LOWERWEAR") {
-        // Hips -> knee or ankle
         if (!leftHip || !rightHip) {
           setStatusMessage("Lower body not fully detected (hips). Please move back to show hips.");
           return;
@@ -239,7 +218,7 @@ export default function VirtualTryOnPage() {
           }
           const leftKneeY = leftKnee.y * scaleY;
           const rightKneeY = rightKnee.y * scaleY;
-          lowerPointY = (leftKneeY + rightKneeY) / 2; // center between knees
+          lowerPointY = (leftKneeY + rightKneeY) / 2;
         } else {
           if (!leftAnkle || !rightAnkle) {
             setStatusMessage("Ankles not detected. Move back to show full lower body.");
@@ -247,7 +226,7 @@ export default function VirtualTryOnPage() {
           }
           const leftAnkleY = leftAnkle.y * scaleY;
           const rightAnkleY = rightAnkle.y * scaleY;
-          lowerPointY = (leftAnkleY + rightAnkleY) / 2; // center between ankles
+          lowerPointY = (leftAnkleY + rightAnkleY) / 2;
         }
 
         const lowerBodyHeight = lowerPointY - hipCenterY;
@@ -259,24 +238,20 @@ export default function VirtualTryOnPage() {
           overlayWidth = hipWidth * 1.1;
           overlayHeight = overlayWidth / aspectRatio;
         }
-
+        overlayWidth = overlayWidth * lowerwearStretch;
         overlayX = hipCenterX - overlayWidth / 2;
         overlayY = hipCenterY;
       }
 
-      // Draw the clothing only
       canvasContext.drawImage(clothingImage, overlayX, overlayY, overlayWidth, overlayHeight);
 
       setStatusMessage(
         `Clothing applied. Type: ${type}${type === "LOWERWEAR" ? ", Tag: " + tag : ""}`
       );
     },
-    [type, tag]
+    [type, tag, upperwearStretch, lowerwearStretch]
   );
 
-  /**
-   * Perform a single detection & draw.
-   */
   const performPoseDetection = useCallback(async () => {
     if (
       !videoElementRef.current ||
@@ -298,10 +273,8 @@ export default function VirtualTryOnPage() {
       canvasElement.height = 480;
       canvasContext.clearRect(0, 0, canvasElement.width, canvasElement.height);
 
-      // Draw the camera feed as background
       canvasContext.drawImage(videoElement, 0, 0, canvasElement.width, canvasElement.height);
 
-      // Estimate poses
       const detectedPoses = await poseDetector.estimatePoses(videoElement, {
         flipHorizontal: false,
       });
@@ -320,9 +293,6 @@ export default function VirtualTryOnPage() {
     }
   }, [isCameraReady, poseDetector, renderClothingOverlay]);
 
-  /**
-   * Initialize camera + start detection loop.
-   */
   useEffect(() => {
     let cameraStream;
     let detectionInterval;
@@ -346,7 +316,7 @@ export default function VirtualTryOnPage() {
     const startPoseDetection = () => {
       if (!isDetectionRunning) {
         setIsDetectionRunning(true);
-        detectionInterval = setInterval(performPoseDetection, 1000 / 30); // 30 fps
+        detectionInterval = setInterval(performPoseDetection, 1000 / 30);
       }
     };
 
@@ -376,8 +346,8 @@ export default function VirtualTryOnPage() {
       <div
         style={{
           position: "relative",
-          width: "1500px",
-          height: "800px",
+          width: "640px",
+          height: "480px",
           margin: "0 auto",
         }}
       >
@@ -387,8 +357,8 @@ export default function VirtualTryOnPage() {
             position: "absolute",
             top: 0,
             left: 0,
-            width: "1500px",
-            height: "800px",
+            width: "640px",
+            height: "480px",
             objectFit: "cover",
           }}
           muted
@@ -401,10 +371,21 @@ export default function VirtualTryOnPage() {
             position: "absolute",
             top: 0,
             left: 0,
-            width: "1500px",
-            height: "800px",
+            width: "640px",
+            height: "480px",
           }}
         />
+                <div
+          style={{
+            position: "absolute",
+            top: "60px",
+            left: "10px",
+            zIndex: 10,
+            display: "flex",
+            flexDirection: "column"
+          }}
+        >
+        </div>
         <div
           style={{
             position: "absolute",
