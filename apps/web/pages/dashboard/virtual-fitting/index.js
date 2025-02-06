@@ -16,6 +16,7 @@ import {
   DropdownMenuItem, DropdownMenuTrigger
 } from '@/components/ui/dropdown-menu';
 import { Alert, AlertTitle, AlertDescription } from '@/components/ui/alert';
+import { Skeleton } from "@/components/ui/skeleton";  // <-- Import the Skeleton component
 import routes from '@/routes';
 
 const fetcher = (url) => fetch(url).then((res) => res.json());
@@ -38,6 +39,7 @@ export default function VirtualFitting() {
   const [showAlert, setShowAlert] = useState(false);
 
   const NAME_LIMIT = 60;
+  const ITEMS_PER_PAGE = 7;
 
   // 1. SWR for products
   const { data: productsData, isLoading: productsLoading } = useSWR(
@@ -116,13 +118,11 @@ export default function VirtualFitting() {
 
       if (response.ok) {
         setShowAlert(true);
-        // Remove the local file preview from state
         setUploadedFiles((prev) => {
           const newState = { ...prev };
           delete newState[variantId];
           return newState;
         });
-        // Revalidate the variant data to reflect updated pngClotheURL
         mutateVariants();
       } else {
         alert("Upload failed: " + data.error);
@@ -136,7 +136,6 @@ export default function VirtualFitting() {
 
   // 4. Open Virtual Try-On with type & tag
   const openVirtualTryOn = (pngClotheURL, typeName, tagName) => {
-    // Only pass the tag if type is LOWERWEAR
     const url = `${routes.virtualTryOn}?pngClotheURL=${encodeURIComponent(
       pngClotheURL
     )}&type=${encodeURIComponent(typeName)}${
@@ -144,13 +143,11 @@ export default function VirtualFitting() {
         ? `&tag=${encodeURIComponent(tagName)}`
         : ''
     }`;
-  
     window.open(url, '_blank');
-  };  
+  };
 
   // 5. Open AI Try-On with type & tag
   const openAITryOn = (pngClotheURL, typeName, tagName) => {
-    // Only pass the tag if type is LOWERWEAR
     const url = `${routes.aiTryOn}?pngClotheURL=${encodeURIComponent(
       pngClotheURL
     )}&type=${encodeURIComponent(typeName)}${
@@ -158,7 +155,6 @@ export default function VirtualFitting() {
         ? `&tag=${encodeURIComponent(tagName)}`
         : ''
     }`;
-  
     window.open(url, '_blank');
   };
 
@@ -168,7 +164,6 @@ export default function VirtualFitting() {
   ) || [];
 
   const totalPages = productsData?.totalPages || 1;
-  const ITEMS_PER_PAGE = 7;
 
   return (
     <DashboardLayoutWrapper>
@@ -238,10 +233,7 @@ export default function VirtualFitting() {
             <div className="flex flex-col gap-2">
               {productsLoading
                 ? Array.from({ length: ITEMS_PER_PAGE }).map((_, index) => (
-                    <div
-                      key={index}
-                      className="mb-2 p-2 bg-accent rounded animate-pulse"
-                    />
+                    <Skeleton key={index} className="mt-1 mb-1 h-[5rem] rounded" />
                   ))
                 : filteredProducts.length === 0 ? (
                     <div className="flex items-center justify-center h-[46rem] text-primary/50 text-lg font-thin tracking-wide">
@@ -285,7 +277,6 @@ export default function VirtualFitting() {
                             <p>Product Number:</p>
                             <p className="text-sm font-thin">{product.productNo}</p>
                           </div>
-                          {/* Hidden usage of tag if needed: product.Tag?.name */}
                         </div>
                       </div>
                     ))
@@ -323,7 +314,12 @@ export default function VirtualFitting() {
                 To set a Virtual Fitting, you need to upload a PNG photo of that product variant.
               </h2>
               {variantsLoading || !variantsData ? (
-                <div>Loading variants...</div>
+                // Use multiple skeletons to simulate loading variants
+                <div className="flex flex-col gap-2">
+                  <Skeleton className="h-10 w-full rounded" />
+                  <Skeleton className="h-10 w-full rounded" />
+                  <Skeleton className="h-10 w-full rounded" />
+                </div>
               ) : variantsData.length === 0 ? (
                 <div>No variants found for this product.</div>
               ) : (
@@ -356,7 +352,6 @@ export default function VirtualFitting() {
                             openVirtualTryOn(
                               variant.pngClotheURL,
                               selectedProduct.Type.name,
-                              // Only pass Tag if LOWERWEAR
                               selectedProduct.Type.name === 'LOWERWEAR'
                                 ? selectedProduct.Tag?.name || ''
                                 : ''
@@ -373,7 +368,6 @@ export default function VirtualFitting() {
                             openAITryOn(
                               variant.pngClotheURL,
                               selectedProduct.Type.name,
-                              // Only pass Tag if LOWERWEAR
                               selectedProduct.Type.name === 'LOWERWEAR'
                                 ? selectedProduct.Tag?.name || ''
                                 : ''
@@ -420,7 +414,6 @@ export default function VirtualFitting() {
                           disabled={!!variant.pngClotheURL}
                         />
                       </label>
-                      {/* Local Preview + Submit Button */}
                       {uploadedFiles[variant.id] && (
                         <div className="mt-2 w-full flex flex-col items-center">
                           <Image

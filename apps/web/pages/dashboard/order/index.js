@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from "react";
+import React, { useState } from "react";
 import { useRouter } from "next/router";
 import DashboardLayoutWrapper from "@/components/ui/dashboard-layout";
 import { Card, CardTitle } from "@/components/ui/card";
@@ -6,50 +6,78 @@ import { Input } from "@/components/ui/input";
 import DashboardPagesNavigation from "@/components/ui/dashboard-pages-navigation";
 import routes from "@/routes";
 import { Button } from "@/components/ui/button";
-import { Table, TableHead, TableHeader, TableBody, TableCell, TableRow } from "@/components/ui/table";
-import { DropdownMenu, DropdownMenuContent, DropdownMenuGroup, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
-import { Pagination, PaginationPrevious, PaginationContent, PaginationItem, PaginationNext, PaginationLink } from "@/components/ui/pagination";
+import {
+  Table,
+  TableHead,
+  TableHeader,
+  TableBody,
+  TableCell,
+  TableRow,
+} from "@/components/ui/table";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuGroup,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
+import {
+  Pagination,
+  PaginationPrevious,
+  PaginationContent,
+  PaginationItem,
+  PaginationNext,
+  PaginationLink,
+} from "@/components/ui/pagination";
 import { Pencil, Search, ChevronDown } from "lucide-react";
 import { Skeleton } from "@/components/ui/skeleton";
+import useSWR from "swr";
+
+// A simple fetcher function that returns JSON
+const fetcher = (url) => fetch(url).then((res) => res.json());
 
 export default function Orders() {
   const router = useRouter();
-  const [orders, setOrders] = useState([]);
   const [currentPage, setCurrentPage] = useState(1);
-  const [totalPages, setTotalPages] = useState(1);
   const [search, setSearch] = useState("");
   const [status, setStatus] = useState("");
-  const [loading, setLoading] = useState(false);
 
   const navItems = [
     { label: "Orders", href: routes.order },
     { label: "Reserves", href: routes.orderReserve },
   ];
 
-  const fetchOrders = async (page = 1, searchQuery = "", statusFilter = "") => {
-    setLoading(true);
-    try {
-      const response = await fetch(
-        `/api/orders/get-orders?page=${page}&search=${searchQuery}&status=${statusFilter}`
-      );
-      const data = await response.json();
-      setOrders(data.orders || []);
-      setCurrentPage(data.currentPage || 1);
-      setTotalPages(data.totalPages || 1);
-    } catch (error) {
-      console.error("Error fetching orders:", error);
-    } finally {
-      setLoading(false);
+  // Use SWR to fetch orders. The options:
+  // - refreshInterval: polls the API every 5000ms (5 seconds)
+  // - revalidateOnFocus: disabled to avoid re-fetching when the window regains focus
+  // - keepPreviousData: retains current data until new data is fetched
+  const { data, isLoading } = useSWR(
+    `/api/orders/get-orders?page=${currentPage}&search=${search}&status=${status}`,
+    fetcher,
+    {
+      refreshInterval: 5000,
+      revalidateOnFocus: false,
+      keepPreviousData: true,
     }
-  };
+  );
 
-  useEffect(() => {
-    fetchOrders(currentPage, search, status);
-  }, [currentPage, search, status]);
+  // Fallbacks in case data is not yet loaded
+  const orders = data?.orders || [];
+  const totalPages = data?.totalPages || 1;
 
   const handleUpdateClick = (orderNo) => {
-    // Navigation for editing/updating an order
+    // Navigate to the order update/edit page
     router.push(`/dashboard/order/edit/${orderNo}`);
+  };
+
+  const handleStatusFilter = (filterStatus) => {
+    setStatus(filterStatus);
+    setCurrentPage(1); // Reset to first page when filter changes
+  };
+
+  const handleSearchChange = (e) => {
+    setSearch(e.target.value);
+    setCurrentPage(1); // Reset to first page when search changes
   };
 
   return (
@@ -64,7 +92,7 @@ export default function Orders() {
             variant="icon"
             icon={Search}
             value={search}
-            onChange={(e) => setSearch(e.target.value)}
+            onChange={handleSearchChange}
           />
           <DropdownMenu>
             <DropdownMenuTrigger asChild>
@@ -75,13 +103,23 @@ export default function Orders() {
             </DropdownMenuTrigger>
             <DropdownMenuContent className="w-48">
               <DropdownMenuGroup>
-                {["Processing", "Preparing", "Packaging"].map((filterStatus) => (
-                  <DropdownMenuItem key={filterStatus}>
-                    <Button variant="none" onClick={() => setStatus(filterStatus)}>
-                      {filterStatus}
-                    </Button>
-                  </DropdownMenuItem>
-                ))}
+                {["Processing", "Preparing", "Packaging"].map(
+                  (filterStatus) => (
+                    <DropdownMenuItem key={filterStatus}>
+                      <Button
+                        variant="none"
+                        onClick={() => handleStatusFilter(filterStatus)}
+                      >
+                        {filterStatus}
+                      </Button>
+                    </DropdownMenuItem>
+                  )
+                )}
+                <DropdownMenuItem key="All">
+                  <Button variant="none" onClick={() => handleStatusFilter("")}>
+                    All Status
+                  </Button>
+                </DropdownMenuItem>
               </DropdownMenuGroup>
             </DropdownMenuContent>
           </DropdownMenu>
@@ -104,7 +142,8 @@ export default function Orders() {
               </TableRow>
             </TableHeader>
             <TableBody>
-              {loading ? (
+              {isLoading ? (
+                // While loading, show 8 rows of Skeleton placeholders
                 Array.from({ length: 8 }).map((_, index) => (
                   <TableRow key={index}>
                     <TableCell>
@@ -132,7 +171,7 @@ export default function Orders() {
                 ))
               ) : orders.length > 0 ? (
                 orders.map((order) => {
-                  // Limit to only 2 items
+                  // Limit displayed order items to two per order
                   const maxItemsToShow = 2;
                   const items = order.OrderItems || [];
                   const limitedItems = items.slice(0, maxItemsToShow);
@@ -158,39 +197,36 @@ export default function Orders() {
                     return `PHP ${p}`;
                   });
 
-                  // Check if more items beyond what we displayed
+                  // Indicate if there are more items not shown
                   const hasMoreItems = items.length > maxItemsToShow;
 
                   return (
                     <TableRow key={order.id}>
                       <TableCell>{order.orderNo}</TableCell>
-
                       <TableCell className="overflow-hidden whitespace-pre-line">
-                        {productNames.length > 0 ? productNames.join("\n") : "No items"}
-                        {hasMoreItems && `\n... +${items.length - maxItemsToShow} more`}
+                        {productNames.length > 0
+                          ? productNames.join("\n")
+                          : "No items"}
+                        {hasMoreItems &&
+                          `\n... +${items.length - maxItemsToShow} more`}
                       </TableCell>
-
                       <TableCell className="text-center whitespace-pre-line">
                         {sizes.join("\n")}
                         {hasMoreItems && "\n..."}
                       </TableCell>
-
                       <TableCell className="text-center whitespace-pre-line">
                         {quantities.join("\n")}
                         {hasMoreItems && "\n..."}
                       </TableCell>
-
                       <TableCell className="text-center whitespace-pre-line">
                         {prices.join("\n")}
                         {hasMoreItems && "\n..."}
                       </TableCell>
-
                       <TableCell className="text-center">
                         <p className="py-1 w-full rounded font-bold text-card bg-yellow-500 uppercase">
                           {order.status}
                         </p>
                       </TableCell>
-
                       <TableCell className="text-center">
                         <DropdownMenu>
                           <DropdownMenuTrigger asChild>
@@ -210,7 +246,6 @@ export default function Orders() {
                                   Update
                                 </Button>
                               </DropdownMenuItem>
-                              {/* Removed View & Delete */}
                             </DropdownMenuGroup>
                           </DropdownMenuContent>
                         </DropdownMenu>
