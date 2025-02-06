@@ -35,6 +35,7 @@ model User {
   Order               Order[]
   Cart                Cart[]
   PartnershipRequest  PartnershipRequest[]
+  CustomerAddress     CustomerAddress[]
   CustomerFeature     CustomerFeature[]
   Notifications       Notification[]
   GeneratedOutfits    GeneratedOutfit[]
@@ -59,7 +60,6 @@ model AdminProfile {
 model CustomerProfile {
   id                 Int      @id @default(autoincrement())
   userId             Int      @unique
-  customerFeaturesId Int?
   profilePicture     String?
   email              String?  
   firstName          String
@@ -80,6 +80,21 @@ model CustomerFeature {
   bodyShape  String
   created_at DateTime @default(now())
   updated_at DateTime @updatedAt
+
+  User User @relation(fields: [userId], references: [id])
+}
+
+model CustomerAddress {
+  id           Int      @id @default(autoincrement())
+  userId       Int
+  buildingNo   String?
+  street       String?
+  barangay     String
+  municipality String
+  province     String
+  postalCode   String
+  created_at   DateTime @default(now())
+  updated_at   DateTime @updatedAt
 
   User User @relation(fields: [userId], references: [id])
 }
@@ -466,4 +481,13 @@ model GeneratedOutfitItem {
 
   GeneratedOutfit   GeneratedOutfit  @relation(fields: [generatedOutfitId], references: [id])
   ProductVariant    ProductVariant   @relation(fields: [productVariantId], references: [id])
+}
+
+model InquiryMessage {
+  id                Int              @id @default(autoincrement())
+  email             String
+  subject           String
+  message           String
+  created_at        DateTime         @default(now())
+  updated_at        DateTime         @updatedAt
 }

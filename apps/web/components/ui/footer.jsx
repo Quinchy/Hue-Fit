@@ -1,10 +1,11 @@
 // components/Footer.js
-import React from 'react';
-import Link from 'next/link';
-import { motion } from 'framer-motion';
-import routes from '@/routes';
-import HueFitLogo from '@/public/images/HueFitLogo';
-import { Facebook, Twitter, Instagram } from 'lucide-react';
+import React from "react";
+import Link from "next/link";
+import { motion } from "framer-motion";
+import routes from "@/routes";
+import HueFitLogo from "@/public/images/HueFitLogo";
+import { Facebook, Twitter, Instagram } from "lucide-react";
+import XIcon from "@/public/images/Xicon"; // Import the SVG Component
 
 const MotionLink = motion(Link);
 
@@ -22,6 +23,7 @@ const Footer = ({ bgClass = "bg-card", className = "" }) => {
           <Link href={routes.home}>
             <HueFitLogo height={50} className="fill-primary" />
           </Link>
+
           <MotionLink
             href=""
             className={socialLinkClasses}
@@ -33,6 +35,7 @@ const Footer = ({ bgClass = "bg-card", className = "" }) => {
           >
             <Facebook className="stroke-1" />
           </MotionLink>
+
           <MotionLink
             href=""
             className={socialLinkClasses}
@@ -42,8 +45,9 @@ const Footer = ({ bgClass = "bg-card", className = "" }) => {
               transition: { type: 'spring', stiffness: 300, damping: 10 },
             }}
           >
-            <Twitter className="stroke-1" />
+            <XIcon size={25} strokeWidth={2} strokeColor="white" className="stroke-primary/75" />
           </MotionLink>
+
           <MotionLink
             href=""
             className={socialLinkClasses}
@@ -56,53 +60,23 @@ const Footer = ({ bgClass = "bg-card", className = "" }) => {
             <Instagram className="stroke-1" />
           </MotionLink>
         </div>
+
         <div className="flex flex-row justify-center gap-5">
-          <MotionLink
-            href={routes.home}
-            className={navLinkClasses}
-            whileHover={{ scale: 1.05 }}
-            whileTap={{ 
-              scale: 1.15,
-              transition: { type: 'spring', stiffness: 300, damping: 10 },
-            }}
-          >
+          <MotionLink href={routes.home} className={navLinkClasses} whileHover={{ scale: 1.05 }} whileTap={{ scale: 1.15, transition: { type: 'spring', stiffness: 300, damping: 10 } }}>
             Home
           </MotionLink>
-          <MotionLink
-            href={routes.about}
-            className={navLinkClasses}
-            whileHover={{ scale: 1.05 }}
-            whileTap={{ 
-              scale: 1.15,
-              transition: { type: 'spring', stiffness: 300, damping: 10 },
-            }}
-          >
+          <MotionLink href={routes.about} className={navLinkClasses} whileHover={{ scale: 1.05 }} whileTap={{ scale: 1.15, transition: { type: 'spring', stiffness: 300, damping: 10 } }}>
             About
           </MotionLink>
-          <MotionLink
-            href={routes.contact}
-            className={navLinkClasses}
-            whileHover={{ scale: 1.05 }}
-            whileTap={{ 
-              scale: 1.15,
-              transition: { type: 'spring', stiffness: 300, damping: 10 },
-            }}
-          >
+          <MotionLink href={routes.contact} className={navLinkClasses} whileHover={{ scale: 1.05 }} whileTap={{ scale: 1.15, transition: { type: 'spring', stiffness: 300, damping: 10 } }}>
             Contact
           </MotionLink>
-          <MotionLink
-            href={routes.partnership}
-            className={navLinkClasses}
-            whileHover={{ scale: 1.05 }}
-            whileTap={{ 
-              scale: 1.15,
-              transition: { type: 'spring', stiffness: 300, damping: 10 },
-            }}
-          >
+          <MotionLink href={routes.partnership} className={navLinkClasses} whileHover={{ scale: 1.05 }} whileTap={{ scale: 1.15, transition: { type: 'spring', stiffness: 300, damping: 10 } }}>
             Partnership
           </MotionLink>
         </div>
       </div>
+
       <div className="flex gap-5 text-xs text-primary/50">
         <p>© 2024 Hue-Fit Technology Inc and Other Affiliates. All Rights Reserved.</p>
         <p>Terms of Use</p>
