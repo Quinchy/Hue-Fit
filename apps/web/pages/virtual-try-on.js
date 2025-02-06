@@ -211,10 +211,10 @@ export default function VirtualTryOnPage() {
           overlayHeight = overlayWidth / aspectRatio;
         }
         // Apply a fixed stretch value for upperwear (1.2)
-        overlayWidth = overlayWidth * 1.3;
+        overlayWidth = overlayWidth * 1.5;
         // Recalculate the X position after stretching
         overlayX = shoulderCenterX - overlayWidth / 2;
-        overlayY = shoulderCenterY - overlayHeight * 0.1;
+        overlayY = shoulderCenterY - overlayHeight * 0.12;
       } else if (type === "LOWERWEAR") {
         if (!leftHip || !rightHip) {
           setStatusMessage("Lower body not fully detected (hips). Please move back to show hips.");
@@ -256,7 +256,7 @@ export default function VirtualTryOnPage() {
           overlayHeight = overlayWidth / aspectRatio;
         }
         // Apply a fixed stretch value for lowerwear (1.1)
-        overlayWidth = overlayWidth * 1.1;
+        overlayWidth = overlayWidth * 1.3;
         // Recalculate the X position after stretching
         overlayX = hipCenterX - overlayWidth / 2;
         overlayY = hipCenterY;
