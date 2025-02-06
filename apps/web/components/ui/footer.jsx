@@ -5,7 +5,7 @@ import { motion } from "framer-motion";
 import routes from "@/routes";
 import HueFitLogo from "@/public/images/HueFitLogo";
 import { Facebook, Twitter, Instagram } from "lucide-react";
-import XIcon from "@/public/images/Xicon"; // Import the SVG Component
+import XIcon from "@/public/images/XIcon"; // Import the SVG Component
 
 const MotionLink = motion(Link);
 
