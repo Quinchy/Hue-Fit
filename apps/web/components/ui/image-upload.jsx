@@ -98,7 +98,7 @@ export default function ImageUpload({
               Browse
             </button>
             <p className="mt-3 text-base text-primary/50 font-medium">
-              PLEASE UPLOAD YOUR SHOP'S LOGO
+              {"PLEASE UPLOAD YOUR SHOP'S LOGO"}
             </p>
             <p className="text-xs font-light text-primary/35 text-center">
               FILES SUPPORTED: JPEG, PNG, WEBP

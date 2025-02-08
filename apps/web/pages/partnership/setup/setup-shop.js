@@ -644,8 +644,8 @@ export default function SetupShopForm() {
                     Business License <Asterisk className="w-4" />
                   </Label>
                   <p className="font-light text-primary/75">
-                    Please add a copy of your shop's business license. Example documents include:{" "}
-                    <span className="italic">Business Registration Certificate, Mayor's Permit, or Business Permit.</span>
+                    {"Please add a copy of your shop's business license. Example documents include:"}
+                    <span className="italic">{"Business Registration Certificate, Mayor's Permit, or Business Permit."}</span>
                   </p>
                 </div>
                 <FileUpload
@@ -804,13 +804,13 @@ export default function SetupShopForm() {
               </CardTitle>
               {editMode && (
                 <p className="font-light text-primary/75">
-                  Pinpoint your shop's exact location on the map.
+                  {"Pinpoint your shop's exact location on the map."}
                 </p>
               )}
             </div>
             <div ref={(el) => (fieldRefs.current["latitude"] = el)} className="flex flex-col gap-2">
               <Label className="font-bold flex flex-row items-center">
-                Your Shop's Google Map Location <Asterisk className="w-4" />
+                {"Your Shop's Google Map Location"} <Asterisk className="w-4" />
               </Label>
               <MapPicker
                 onLocationSelect={handleLocationSelect}

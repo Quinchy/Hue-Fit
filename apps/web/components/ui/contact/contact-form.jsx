@@ -163,7 +163,7 @@ export default function ContactForm() {
               <div>
                 <CardTitle className="text-3xl">Get In Touch</CardTitle>
                 <p className="font-light text-primary/75">
-                  Have a question or need assistance? Reach out to us and we'll respond promptly!
+                  {"Have a question or need assistance? Reach out to us and we'll respond promptly!"}
                 </p>
               </div>
               <div className="flex flex-col gap-5">
