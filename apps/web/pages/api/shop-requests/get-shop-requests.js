@@ -1,32 +1,41 @@
-import prisma from '@/utils/helpers';
+// 4) pages/api/shop-requests/get-shop-requests.js
+import prisma, { disconnectPrisma } from "@/utils/helpers";
 
 export default async function handler(req, res) {
-  const { page = 1, perPage = 7, status = "PENDING" } = req.query;
+  const { page = 1, perPage = 7, status = "PENDING", search = "" } = req.query;
 
   try {
-    // Step 1: Calculate total requests matching the status
+    const whereClause = { status };
+    if (status === "ALL") {
+      delete whereClause.status;
+    }
+
+    if (search) {
+      whereClause.OR = [
+        { requestNo: { contains: search, mode: "insensitive" } },
+        {
+          Shop: {
+            name: { contains: search, mode: "insensitive" },
+          },
+        },
+      ];
+    }
+
     const totalRequests = await prisma.partnershipRequest.count({
-      where: { status },
+      where: whereClause,
     });
 
-    // Step 2: Calculate total pages
     const totalPages = totalRequests === 0 ? 1 : Math.ceil(totalRequests / perPage);
+    const currentPage = Math.max(1, Math.min(page, totalPages));
 
-    // Step 3: Ensure the page number is within valid bounds
-    const currentPage = Math.max(1, Math.min(page, totalPages)); // Clamp page to valid range
-
-    // Step 4: Fetch the requests with pagination and related data
-    const requests = await prisma.partnershipRequest.findMany({
-      skip: (currentPage - 1) * perPage, // Pagination offset
-      take: perPage, // Pagination limit
-      where: { status },
+    const requestsData = await prisma.partnershipRequest.findMany({
+      skip: (currentPage - 1) * perPage,
+      take: parseInt(perPage),
+      where: whereClause,
       include: {
         Shop: {
           select: {
-            shopNo: true,
             name: true,
-            contactNo: true,
-            addressId: true, // Fetch the related addressId
             ShopAddress: {
               select: {
                 buildingNo: true,
@@ -41,29 +50,28 @@ export default async function handler(req, res) {
       },
     });
 
-    // Step 5: Format the data for the response
-    const formattedRequests = requests.map((request) => {
-      const address = request.Shop?.ShopAddress
-        ? `${request.Shop.ShopAddress.buildingNo || ''} ${request.Shop.ShopAddress.street || ''}, ${request.Shop.ShopAddress.barangay || ''}, ${request.Shop.ShopAddress.municipality || ''}, ${request.Shop.ShopAddress.province || ''}`
+    const formattedRequests = requestsData.map((req) => {
+      const address = req.Shop?.ShopAddress
+        ? `${req.Shop.ShopAddress.buildingNo || ""} ${req.Shop.ShopAddress.street || ""}, ${req.Shop.ShopAddress.barangay || ""}, ${req.Shop.ShopAddress.municipality || ""}, ${req.Shop.ShopAddress.province || ""}`
         : "No Address Provided";
 
       return {
-        requestNo: request.requestNo,
-        shopName: request.Shop?.name || "Unknown Shop",
-        shopContactNo: request.Shop?.contactNo || "No Contact Info",
-        address: address,
-        status: request.status,
+        requestNo: req.requestNo,
+        shopName: req.Shop?.name || "Unknown Shop",
+        address: address.trim(),
+        status: req.status,
       };
     });
 
-    // Step 6: Send the response
     res.status(200).json({
       requests: formattedRequests,
-      totalPages: totalPages,
-      currentPage: currentPage,
+      totalPages,
+      currentPage,
     });
   } catch (error) {
     console.error("Error fetching shop requests:", error);
-    res.status(500).json({ message: 'Internal server error' });
+    res.status(500).json({ message: "Internal server error" });
+  } finally {
+    await disconnectPrisma();
   }
 }

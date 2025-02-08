@@ -48,13 +48,30 @@ export const authOptions = {
               profilePicture = profile.profilePicture || "/images/placeholder-profile-picture.png";
             }
           } else if (user.Role.name === "VENDOR") {
+            // Fetch the vendorProfile and associated shop status
             profile = await prisma.vendorProfile.findFirst({
               where: { userId: user.id },
+              include: {
+                Shop: {
+                  select: {
+                    id: true,
+                    status: true,  // <-- The missing piece: we retrieve the shop status
+                  },
+                },
+              },
             });
             if (profile) {
               firstName = profile.firstName;
               lastName = profile.lastName;
               profilePicture = profile.profilePicture || "/images/placeholder-profile-picture.png";
+            }
+
+            // If the shop is INACTIVE, prevent login and throw an error
+            if (profile?.Shop?.status === "INACTIVE") {
+              throw new Error(
+                "We regret to inform you that your shop has been closed by the administrator. " +
+                "You cannot reopen it yourself. If you would like to restore access, please contact our support team."
+              );
             }
           }
       

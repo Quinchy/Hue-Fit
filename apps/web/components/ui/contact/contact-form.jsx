@@ -1,14 +1,21 @@
 "use client";
 
+import { useState, useRef } from "react";
+import { useFormik } from "formik";
+import * as Yup from "yup";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Label } from "@/components/ui/label";
 import { Button } from "@/components/ui/button";
 import { Card, CardTitle } from "@/components/ui/card";
-import Link from 'next/link';
-import { motion } from 'framer-motion';
-import { Mail, MapPin, Phone, Facebook, Twitter, Instagram, Asterisk } from "lucide-react";
+import { InputErrorMessage, InputErrorStyle } from "@/components/ui/error-message";
+import { LoadingMessage } from "@/components/ui/loading-message";
+import { Alert, AlertTitle, AlertDescription } from "@/components/ui/alert";
+import { motion } from "framer-motion";
+import Link from "next/link";
+import { Mail, MapPin, Phone, Facebook, Twitter, Instagram, Asterisk, CheckCircle2 } from "lucide-react";
 import { Gloock } from "next/font/google";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 
 const gloock = Gloock({
   style: ["normal"],
@@ -16,67 +23,251 @@ const gloock = Gloock({
   subsets: ["latin"],
 });
 
-const MotionLink = motion(Link);
+// Use motion("a") for external links.
+const MotionLink = motion("a");
 
-const socialLinkClasses = 
+const socialLinkClasses =
   "border-[1px] p-3 border-primary/50 rounded-full flex flex-col items-center justify-center transition-colors duration-300 hover:border-primary";
 
-const navLinkClasses =
-  "transition-colors duration-300 hover:text-primary";
+const subjectOptions = [
+  { value: "VENDOR_SUSPENSION", label: "Vendor Account Suspension" },
+  { value: "CUSTOMER_SUSPENSION", label: "Customer Account Suspension" },
+  { value: "TECHNICAL_HELP", label: "Technical Assistance" },
+  { value: "OTHERS", label: "Other" },
+];
+
+const inquirySchema = Yup.object().shape({
+  email: Yup.string().email("Invalid email").required("Email is required"),
+  subjectOption: Yup.string().required("Subject is required"),
+  customSubject: Yup.string().when("subjectOption", {
+    is: (val) => val === "OTHERS",
+    then: () => Yup.string().required("Please enter the title of your concern"),
+    otherwise: () => Yup.string().nullable(),
+  }),
+  message: Yup.string().required("Message is required"),
+});
 
 export default function ContactForm() {
+  // Alert state
+  const [showSuccessAlert, setShowSuccessAlert] = useState(false);
+  const [successMessage, setSuccessMessage] = useState("");
+
+  // Create field references for scrolling to the first error.
+  const fieldRefs = {
+    email: useRef(null),
+    subjectOption: useRef(null),
+    customSubject: useRef(null),
+    message: useRef(null),
+  };
+
+  // Function to scroll to the first error field.
+  const scrollToFirstError = () => {
+    const errorFields = Object.keys(formik.errors);
+    if (errorFields.length > 0) {
+      const firstErrorField = errorFields[0];
+      const fieldRef = fieldRefs[firstErrorField];
+      if (fieldRef && fieldRef.current) {
+        fieldRef.current.scrollIntoView({ behavior: "smooth", block: "center" });
+      }
+    }
+  };
+
+  const formik = useFormik({
+    initialValues: {
+      email: "",
+      subjectOption: "",
+      customSubject: "",
+      message: "",
+    },
+    validationSchema: inquirySchema,
+    validateOnChange: true,
+    validateOnBlur: true,
+    onSubmit: async (values, { setSubmitting, resetForm }) => {
+      const subject =
+        values.subjectOption === "OTHERS"
+          ? values.customSubject
+          : subjectOptions.find((opt) => opt.value === values.subjectOption)?.label;
+      const payload = {
+        email: values.email,
+        subject,
+        message: values.message,
+      };
+      try {
+        const res = await fetch("/api/contact/send-inquiry", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify(payload),
+        });
+        if (res.ok) {
+          setSuccessMessage("Your inquiry has been submitted successfully!");
+          setShowSuccessAlert(true);
+          resetForm();
+        } else {
+          console.error("Error submitting inquiry");
+        }
+      } catch (error) {
+        console.error("Submission error", error);
+      } finally {
+        setSubmitting(false);
+      }
+    },
+  });
+
+  // Custom handleSubmit that sets touched fields and scrolls to the first error.
+  const handleSubmit = async (e) => {
+    e.preventDefault();
+    // Mark all fields as touched.
+    formik.setTouched({
+      email: true,
+      subjectOption: true,
+      customSubject: true,
+      message: true,
+    });
+    await formik.handleSubmit();
+    if (Object.keys(formik.errors).length > 0) {
+      scrollToFirstError();
+    }
+  };
+
   return (
     <div className="flex flex-col gap-20 relative px-[15rem]">
+      {/* Success Alert */}
+      {showSuccessAlert && (
+        <Alert className="fixed z-50 w-[30rem] right-10 bottom-10 flex items-center shadow-lg rounded-lg">
+          <CheckCircle2 className="h-10 w-10 stroke-green-500" />
+          <div className="ml-7">
+            <AlertTitle className="text-green-400 text-base font-semibold">
+              Inquiry Submitted
+            </AlertTitle>
+            <AlertDescription className="text-green-300">
+              {successMessage}
+            </AlertDescription>
+          </div>
+          <button
+            className="ml-auto mr-4 hover:text-primary/50 focus:outline-none"
+            onClick={() => setShowSuccessAlert(false)}
+          >
+            ✕
+          </button>
+        </Alert>
+      )}
       <div className="flex flex-col gap-20">
-        <h1 className={`text-[8rem] text-primary font-black subpixel-antialiased tracking-tight text-start leading-[7rem] ${gloock.className}`}>
-          {"QUESTIONS ON STYLE? ASK AWAY!"}
+        <h1
+          className={`text-[8rem] text-primary font-black subpixel-antialiased tracking-tight text-start leading-[7rem] ${gloock.className}`}
+        >
+          QUESTIONS ON STYLE? ASK AWAY!
         </h1>
         <div className="flex flex-col md:flex-row justify-between gap-10">
           <Card className="w-[55%]">
-            <form>
-              <div className="flex flex-col gap-10">
-                <div>
-                  <CardTitle className="text-3xl">{"Get In Touch"}</CardTitle>
-                  <p className="font-light text-primary/75">{"Have a question or need help? Contact us, and we'll respond shortly!"}</p>
-                </div>
-                <div className="flex flex-col gap-5">
-                  <div className="flex flex-col gap-1">
-                    <Label htmlFor="email" className="font-bold flex flex-row items-center">
-                      Email <Asterisk className="w-4" />
-                    </Label>
-                    <Input id="email" type="email" placeholder="Your Email" />
-                  </div>
-                  <div className="flex flex-col gap-1"> 
-                    <Label htmlFor="subject" className="font-bold flex flex-row items-center">
-                      Subject <Asterisk className="w-4" />
-                    </Label>
-                    <Input id="subject" type="text" placeholder="Your Subject" />
-                  </div>
-                  <div className="flex flex-col gap-1">
-                    <Label htmlFor="message" className="font-bold flex flex-row items-center">
-                      Message <Asterisk className="w-4" />
-                    </Label>
-                    <Textarea id="message" rows={5} placeholder="Your Message" />
-                  </div>
-                </div>
-                <Button type="submit">
-                  Submit
-                </Button>
+            <form onSubmit={handleSubmit} className="flex flex-col gap-10 p-5">
+              <div>
+                <CardTitle className="text-3xl">Get In Touch</CardTitle>
+                <p className="font-light text-primary/75">
+                  Have a question or need assistance? Reach out to us and we'll respond promptly!
+                </p>
               </div>
+              <div className="flex flex-col gap-5">
+                {/* Email Field */}
+                <div className="flex flex-col gap-1" ref={fieldRefs.email}>
+                  <Label htmlFor="email" className="font-bold flex flex-row items-center">
+                    Email <Asterisk className="w-4" />
+                  </Label>
+                  <Input
+                    id="email"
+                    type="email"
+                    placeholder="Your Email"
+                    {...formik.getFieldProps("email")}
+                    className={InputErrorStyle(formik.errors.email, formik.touched.email)}
+                  />
+                  {formik.touched.email && formik.errors.email && (
+                    <InputErrorMessage error={formik.errors.email} touched={formik.touched.email} />
+                  )}
+                </div>
+                {/* Subject Field */}
+                <div className="flex flex-col gap-1" ref={fieldRefs.subjectOption}>
+                  <Label htmlFor="subject" className="font-bold flex flex-row items-center">
+                    Subject <Asterisk className="w-4" />
+                  </Label>
+                  <Select
+                    onValueChange={(value) => formik.setFieldValue("subjectOption", value)}
+                    value={formik.values.subjectOption}
+                  >
+                    <SelectTrigger
+                      className={`w-full ${InputErrorStyle(
+                        formik.errors.subjectOption,
+                        formik.touched.subjectOption
+                      )}`}
+                    >
+                      <SelectValue placeholder="Select your concern" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {subjectOptions.map((option) => (
+                        <SelectItem key={option.value} value={option.value}>
+                          {option.label}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                  {formik.touched.subjectOption && formik.errors.subjectOption && (
+                    <InputErrorMessage
+                      error={formik.errors.subjectOption}
+                      touched={formik.touched.subjectOption}
+                    />
+                  )}
+                  {formik.values.subjectOption === "OTHERS" && (
+                    <div className="mt-2" ref={fieldRefs.customSubject}>
+                      <Input
+                        id="customSubject"
+                        type="text"
+                        placeholder="Enter title of your concern"
+                        value={formik.values.customSubject}
+                        onChange={formik.handleChange}
+                        onBlur={formik.handleBlur}
+                        className={InputErrorStyle(formik.errors.customSubject, formik.touched.customSubject)}
+                      />
+                      {formik.touched.customSubject && formik.errors.customSubject && (
+                        <InputErrorMessage
+                          error={formik.errors.customSubject}
+                          touched={formik.touched.customSubject}
+                        />
+                      )}
+                    </div>
+                  )}
+                </div>
+                {/* Message Field */}
+                <div className="flex flex-col gap-1" ref={fieldRefs.message}>
+                  <Label htmlFor="message" className="font-bold flex flex-row items-center">
+                    Message <Asterisk className="w-4" />
+                  </Label>
+                  <Textarea
+                    id="message"
+                    rows={5}
+                    placeholder="Your Message"
+                    {...formik.getFieldProps("message")}
+                    className={InputErrorStyle(formik.errors.message, formik.touched.message)}
+                  />
+                  {formik.touched.message && formik.errors.message && (
+                    <InputErrorMessage error={formik.errors.message} touched={formik.touched.message} />
+                  )}
+                </div>
+              </div>
+              <Button type="submit" disabled={formik.isSubmitting}>
+                {formik.isSubmitting ? <LoadingMessage message="Submitting..." /> : "Submit"}
+              </Button>
             </form>
           </Card>
           <div className="w-[45%] flex flex-col gap-10">
-            <div className="flex flex-col gap-5">            
+            <div className="flex flex-col gap-5">
               <div className="flex items-center gap-4">
-                <MapPin width={30} height={30} className="stroke-1"/>
+                <MapPin width={30} height={30} className="stroke-1" />
                 <CardTitle className="text-xl">BONIFACIO GLOBAL CITY, TAGUIG</CardTitle>
               </div>
               <div className="flex items-center gap-4">
-                <Phone width={30} height={30} className="stroke-1"/>
+                <Phone width={30} height={30} className="stroke-1" />
                 <CardTitle className="text-xl">+63 917 123 4567</CardTitle>
               </div>
               <div className="flex items-center gap-4">
-                <Mail width={30} height={30} className="stroke-1"/>
+                <Mail width={30} height={30} className="stroke-1" />
                 <CardTitle className="text-xl">inquiries@huefitstyle.com</CardTitle>
               </div>
             </div>
@@ -85,9 +276,9 @@ export default function ContactForm() {
                 href=""
                 className={socialLinkClasses}
                 whileHover={{ scale: 1.05 }}
-                whileTap={{ 
+                whileTap={{
                   scale: 1.15,
-                  transition: { type: 'spring', stiffness: 300, damping: 10 },
+                  transition: { type: "spring", stiffness: 300, damping: 10 },
                 }}
               >
                 <Facebook className="stroke-1" />
@@ -96,9 +287,9 @@ export default function ContactForm() {
                 href=""
                 className={socialLinkClasses}
                 whileHover={{ scale: 1.05 }}
-                whileTap={{ 
+                whileTap={{
                   scale: 1.15,
-                  transition: { type: 'spring', stiffness: 300, damping: 10 },
+                  transition: { type: "spring", stiffness: 300, damping: 10 },
                 }}
               >
                 <Twitter className="stroke-1" />
@@ -107,9 +298,9 @@ export default function ContactForm() {
                 href=""
                 className={socialLinkClasses}
                 whileHover={{ scale: 1.05 }}
-                whileTap={{ 
+                whileTap={{
                   scale: 1.15,
-                  transition: { type: 'spring', stiffness: 300, damping: 10 },
+                  transition: { type: "spring", stiffness: 300, damping: 10 },
                 }}
               >
                 <Instagram className="stroke-1" />
@@ -122,7 +313,7 @@ export default function ContactForm() {
       <div
         className="absolute inset-0 pointer-events-none -z-10"
         style={{
-          background: 'linear-gradient(to top, hsl(var(--pure)) 0%, transparent 100%)'
+          background: "linear-gradient(to top, hsl(var(--pure)) 0%, transparent 100%)",
         }}
       />
     </div>

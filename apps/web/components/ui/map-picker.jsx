@@ -1,6 +1,5 @@
-// components/ui/map-picker.jsx
 import React, { useState, useEffect, useRef } from "react";
-import { GoogleMap, useJsApiLoader, Marker } from "@react-google-maps/api";
+import { GoogleMap, useJsApiLoader, MarkerF } from "@react-google-maps/api";
 import { Skeleton } from "@/components/ui/skeleton";
 
 const libraries = ["places"];
@@ -13,28 +12,35 @@ const MapPicker = ({
   initialPlaceName = "None",
   center = DEFAULT_CENTER,
 }) => {
-  const [selectedPosition, setSelectedPosition] = useState(initialPosition);
+  // Helper: convert a position object to numbers if provided.
+  const convertPosition = (pos) => {
+    if (pos && pos.lat != null && pos.lng != null) {
+      return { lat: Number(pos.lat), lng: Number(pos.lng) };
+    }
+    return null;
+  };
+
+  // Initialize state with the converted initial position.
+  const [selectedPosition, setSelectedPosition] = useState(convertPosition(initialPosition));
   const [placeName, setPlaceName] = useState(initialPlaceName);
   const mapRef = useRef(null);
+
+  // Update state if initial props change.
+  useEffect(() => {
+    setSelectedPosition(convertPosition(initialPosition));
+    setPlaceName(initialPlaceName);
+  }, [initialPosition, initialPlaceName]);
 
   const { isLoaded, loadError } = useJsApiLoader({
     googleMapsApiKey: process.env.NEXT_PUBLIC_GOOGLE_MAPS_API_KEY,
     libraries,
   });
 
-  useEffect(() => {
-    if (initialPosition) {
-      setSelectedPosition(initialPosition);
-    }
-    if (initialPlaceName) {
-      setPlaceName(initialPlaceName);
-    }
-  }, [initialPosition, initialPlaceName]);
-
   const handleMapClick = (event) => {
     if (disabled) return;
     const lat = event.latLng.lat();
     const lng = event.latLng.lng();
+    console.log("MapPicker clicked coordinates:", lat, lng);
     const clickedLocation = { lat, lng };
     setSelectedPosition(clickedLocation);
     setPlaceName("None");
@@ -47,6 +53,7 @@ const MapPicker = ({
         { placeId: event.placeId, fields: ["name"] },
         (place, status) => {
           if (status === window.google.maps.places.PlacesServiceStatus.OK && place?.name) {
+            console.log("Retrieved place name:", place.name);
             setPlaceName(place.name);
             if (onLocationSelect) {
               onLocationSelect(clickedLocation, place.name);
@@ -71,6 +78,7 @@ const MapPicker = ({
       </div>
     );
 
+  // If no position is selected, fall back to the provided center.
   const mapCenter = selectedPosition ? selectedPosition : center;
 
   return (
@@ -81,10 +89,12 @@ const MapPicker = ({
       >
         <h3 className="text-lg font-bold uppercase">Location Details:</h3>
         <p className="text-sm font-light">
-          <strong className="font-bold">Latitude:</strong> {selectedPosition?.lat || "N/A"}
+          <strong className="font-bold">Latitude:</strong>{" "}
+          {selectedPosition?.lat ?? "N/A"}
         </p>
         <p className="text-sm font-light">
-          <strong className="font-bold">Longitude:</strong> {selectedPosition?.lng || "N/A"}
+          <strong className="font-bold">Longitude:</strong>{" "}
+          {selectedPosition?.lng ?? "N/A"}
         </p>
         <p className="text-sm font-light">
           <strong className="font-bold">Place Name:</strong> {placeName}
@@ -98,7 +108,7 @@ const MapPicker = ({
         onLoad={handleMapLoad}
         options={{ disableDefaultUI: false, mapTypeControl: true }}
       >
-        {selectedPosition && <Marker position={selectedPosition} />}
+        {selectedPosition && <MarkerF position={selectedPosition} />}
       </GoogleMap>
     </div>
   );

@@ -122,6 +122,8 @@ model PartnershipRequest {
   userId     Int   
   shopId     Int     
   status     String   @default("PENDING")
+  message    String?
+  isSeen     Boolean  @default(false)
   created_at DateTime @default(now())
   updated_at DateTime @updatedAt
 
@@ -485,9 +487,11 @@ model GeneratedOutfitItem {
 
 model InquiryMessage {
   id                Int              @id @default(autoincrement())
+  inquiryNo         String           @unique
   email             String
   subject           String
   message           String
+  read              Boolean          @default(false)
   created_at        DateTime         @default(now())
   updated_at        DateTime         @updatedAt
 }

@@ -1,56 +1,101 @@
-import { useState, useEffect } from "react";
+// 1) pages/dashboard/shop/index.js
+import React, { useState } from "react";
+import useSWR from "swr";
+import { useRouter } from "next/router";
 import DashboardLayoutWrapper from "@/components/ui/dashboard-layout";
 import { Card, CardTitle } from "@/components/ui/card";
 import DashboardPagesNavigation from "@/components/ui/dashboard-pages-navigation";
-import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
-import { Pagination, PaginationContent, PaginationItem, PaginationLink, PaginationNext } from "@/components/ui/pagination";
+import {
+  Table,
+  TableHeader,
+  TableBody,
+  TableRow,
+  TableCell,
+  TableHead,
+} from "@/components/ui/table";
+import {
+  Pagination,
+  PaginationContent,
+  PaginationItem,
+  PaginationLink,
+  PaginationNext,
+  PaginationPrevious,
+} from "@/components/ui/pagination";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
-import { Eye, Pencil, CircleMinus, Plus, Search, ChevronDown } from "lucide-react";
-import { DropdownMenu, DropdownMenuContent, DropdownMenuGroup, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
-import { NotepadText } from 'lucide-react';
+import { Eye, Search, ChevronDown, Lock, Unlock } from "lucide-react";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuGroup,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
+import { NotepadText } from "lucide-react";
 import { Skeleton } from "@/components/ui/skeleton";
-import Link from "next/link";
-import { buttonVariants } from "@/components/ui/button";
 import routes from "@/routes";
-import { useRouter } from "next/router";
+
+const fetcher = (url) => fetch(url).then((res) => res.json());
 
 export default function Shop() {
-  const [shops, setShops] = useState([]);
-  const [loading, setLoading] = useState(true);
-  const [currentPage, setCurrentPage] = useState(1);
-  const [totalPages, setTotalPages] = useState(1);
   const router = useRouter();
   const navItems = [
     { label: "Shops", href: routes.shop },
     { label: "Requests", href: routes.shopRequest },
   ];
 
-  const fetchShops = async (page = 1) => {
-    setLoading(true);
-    try {
-      const response = await fetch(`/api/shops/get-shops?page=${page}&limit=7`);
-      const data = await response.json();
-      setShops(data.shops);
-      setCurrentPage(data.currentPage);
-      setTotalPages(data.totalPages);
-    } catch (error) {
-      console.error("Error fetching shops:", error);
-    } finally {
-      setLoading(false);
-    }
-  };
+  const [currentPage, setCurrentPage] = useState(1);
+  const [statusFilter, setStatusFilter] = useState("ALL");
+  const [searchQuery, setSearchQuery] = useState("");
 
-  useEffect(() => {
-    fetchShops(currentPage);
-  }, [currentPage]);
+  const apiUrl = `/api/shops/get-shops?page=${currentPage}&limit=7&status=${statusFilter}&search=${encodeURIComponent(
+    searchQuery
+  )}`;
+
+  const { data, isValidating } = useSWR(apiUrl, fetcher, {
+    refreshInterval: 5000,
+    revalidateOnFocus: false,
+    keepPreviousData: true,
+  });
+
+  const shops = data?.shops || [];
+  const totalPages = data?.totalPages || 1;
 
   const handleViewClick = (shopNo) => {
     router.push(routes.shopView.replace("[shopNo]", shopNo));
-  };  
+  };
 
-  const handleEditClick = (shopNo) => {
-    router.push(routes.shopEdit.replace("[shopNo]", shopNo));
+  const handleOpenClick = async (shopNo) => {
+    await updateShopStatus(shopNo, "ACTIVE");
+  };
+
+  const handleCloseClick = async (shopNo) => {
+    await updateShopStatus(shopNo, "INACTIVE");
+  };
+
+  const updateShopStatus = async (shopNo, status) => {
+    try {
+      const response = await fetch("/api/shops/manage-shop-status", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ shopNo, status }),
+      });
+      if (!response.ok) {
+        console.error("Error updating shop status");
+      }
+    } catch (error) {
+      console.error("Error updating shop status:", error);
+    }
+  };
+
+  const handleStatusFilter = (status) => {
+    setStatusFilter(status);
+    setCurrentPage(1);
+  };
+
+  const handleSearchChange = (e) => {
+    setSearchQuery(e.target.value);
+    setCurrentPage(1);
   };
 
   return (
@@ -58,29 +103,54 @@ export default function Shop() {
       <div className="flex flex-row justify-between">
         <CardTitle className="text-4xl">Shops</CardTitle>
         <div className="flex flex-row gap-5">
-          <Input type="text" className="min-w-[30rem]" placeholder="Search shop" variant="icon" icon={Search} />
+          <Input
+            type="text"
+            className="min-w-[30rem]"
+            placeholder="Search by shop name or shop number"
+            variant="icon"
+            icon={Search}
+            value={searchQuery}
+            onChange={handleSearchChange}
+          />
           <DropdownMenu>
             <DropdownMenuTrigger asChild>
               <Button variant="outline" className="font-normal">
                 <NotepadText className="scale-125" />
-                Filter by Status 
+                Filter by Status
               </Button>
             </DropdownMenuTrigger>
             <DropdownMenuContent className="w-48">
               <DropdownMenuGroup>
                 <DropdownMenuItem className="justify-center uppercase text-base tracking-wide font-semibold">
-                  <Button variant="none" className="text-base">Active</Button>
+                  <Button
+                    variant="none"
+                    className="text-base"
+                    onClick={() => handleStatusFilter("ALL")}
+                  >
+                    All
+                  </Button>
+                </DropdownMenuItem>
+                <DropdownMenuItem className="justify-center uppercase text-base tracking-wide font-semibold">
+                  <Button
+                    variant="none"
+                    className="text-base"
+                    onClick={() => handleStatusFilter("ACTIVE")}
+                  >
+                    Active
+                  </Button>
                 </DropdownMenuItem>
                 <DropdownMenuItem className="justify-center">
-                  <Button variant="none" className="text-base">Terminated</Button>
+                  <Button
+                    variant="none"
+                    className="text-base"
+                    onClick={() => handleStatusFilter("INACTIVE")}
+                  >
+                    Inactive
+                  </Button>
                 </DropdownMenuItem>
               </DropdownMenuGroup>
             </DropdownMenuContent>
-          </DropdownMenu> 
-          <Link className={buttonVariants({ variant: "default" })} href={routes.shopAdd}>
-            <Plus className="scale-110 stroke-[3px]" />
-            Add Shop
-          </Link>
+          </DropdownMenu>
         </div>
       </div>
       <Card className="flex flex-col p-5 gap-4 min-h-[49rem]">
@@ -97,26 +167,46 @@ export default function Shop() {
               </TableRow>
             </TableHeader>
             <TableBody>
-            {loading
-              ? Array.from({ length: 7 }).map((_, index) => (
-                  <TableRow key={index}>
-                    <TableCell className="max-w-[1rem]"><Skeleton className="h-14 w-full" /></TableCell>
-                    <TableCell className="max-w-[3rem]"><Skeleton className="h-14 w-full" /></TableCell>
-                    <TableCell className="max-w-[4rem]"><Skeleton className="h-14 w-full" /></TableCell>
-                    <TableCell className="max-w-[1rem] text-center"><Skeleton className="h-14 w-full" /></TableCell>
-                    <TableCell className="max-w-[1rem] text-center"><Skeleton className="h-14 w-full" /></TableCell>
-                  </TableRow>
-                ))
-              : shops.length > 0
-                ? shops.map((shop) => (
-                    <TableRow key={shop.shopNo}>
-                      <TableCell className="max-w-[1rem] font-medium">{shop.shopNo}</TableCell>
-                      <TableCell className="max-w-[3rem] overflow-hidden whitespace-nowrap text-ellipsis">{shop.name}</TableCell>
-                      <TableCell className="max-w-[4rem] overflow-hidden whitespace-nowrap text-ellipsis">
-                        {`${shop.ShopAddress.buildingNo}, ${shop.ShopAddress.street}, ${shop.ShopAddress.barangay}, ${shop.ShopAddress.municipality}, ${shop.ShopAddress.province}, ${shop.ShopAddress.postalCode}`}
+              {isValidating
+                ? Array.from({ length: 7 }).map((_, index) => (
+                    <TableRow key={index}>
+                      <TableCell className="max-w-[1rem]">
+                        <Skeleton className="h-14 w-full" />
+                      </TableCell>
+                      <TableCell className="max-w-[3rem]">
+                        <Skeleton className="h-14 w-full" />
+                      </TableCell>
+                      <TableCell className="max-w-[4rem]">
+                        <Skeleton className="h-14 w-full" />
                       </TableCell>
                       <TableCell className="max-w-[1rem] text-center">
-                        <p className={`py-1 w-full rounded font-bold text-card ${shop.status === "ACTIVE" ? "bg-green-500" : "bg-red-500"} uppercase`}>
+                        <Skeleton className="h-14 w-full" />
+                      </TableCell>
+                      <TableCell className="max-w-[1rem] text-center">
+                        <Skeleton className="h-14 w-full" />
+                      </TableCell>
+                    </TableRow>
+                  ))
+                : shops.length > 0
+                ? shops.map((shop) => (
+                    <TableRow key={shop.shopNo}>
+                      <TableCell className="max-w-[1rem] font-medium">
+                        {shop.shopNo}
+                      </TableCell>
+                      <TableCell className="max-w-[3rem] overflow-hidden whitespace-nowrap text-ellipsis">
+                        {shop.name}
+                      </TableCell>
+                      <TableCell className="max-w-[4rem] overflow-hidden whitespace-nowrap text-ellipsis">
+                        {`${shop.ShopAddress.buildingNo} ${shop.ShopAddress.street} ${shop.ShopAddress.barangay}, ${shop.ShopAddress.municipality}, ${shop.ShopAddress.province}, ${shop.ShopAddress.postalCode}`}
+                      </TableCell>
+                      <TableCell className="max-w-[1rem] text-center">
+                        <p
+                          className={`py-1 w-full rounded font-bold text-card ${
+                            shop.status === "ACTIVE"
+                              ? "bg-green-500"
+                              : "bg-red-500"
+                          } uppercase`}
+                        >
                           {shop.status}
                         </p>
                       </TableCell>
@@ -124,64 +214,88 @@ export default function Shop() {
                         <DropdownMenu>
                           <DropdownMenuTrigger asChild>
                             <Button variant="outline" className="font-normal">
-                              Action  
+                              Action
                               <ChevronDown className="scale-125" />
                             </Button>
                           </DropdownMenuTrigger>
                           <DropdownMenuContent className="w-50">
                             <DropdownMenuGroup>
                               <DropdownMenuItem className="justify-center uppercase text-base tracking-wide font-semibold">
-                                <Button variant="none" className="text-base" onClick={() => handleViewClick(shop.shopNo)}>
-                                  <Eye className="scale-125" />
+                                <Button
+                                  variant="none"
+                                  className="text-base"
+                                  onClick={() => handleViewClick(shop.shopNo)}
+                                >
+                                  <Eye className="scale-125 mr-2" />
                                   View
                                 </Button>
                               </DropdownMenuItem>
                               <DropdownMenuItem className="justify-center">
-                                <Button variant="none" className="text-base" onClick={() => handleEditClick(shop.shopNo)}>
-                                  <Pencil className="scale-125"/>
-                                  Edit
+                                <Button
+                                  variant="none"
+                                  className="text-base flex items-center"
+                                  disabled={shop.status === "ACTIVE"}
+                                  onClick={() => handleOpenClick(shop.shopNo)}
+                                >
+                                  <Unlock className="scale-125 mr-2" />
+                                  Open
                                 </Button>
                               </DropdownMenuItem>
                               <DropdownMenuItem className="justify-center">
-                                <Button variant="none" className="font-bold text-base text-red-500">
-                                  <CircleMinus className="scale-125 stroke-red-500" />
-                                  Closed
+                                <Button
+                                  variant="none"
+                                  className="font-bold text-base text-red-500 flex items-center"
+                                  disabled={shop.status === "INACTIVE"}
+                                  onClick={() => handleCloseClick(shop.shopNo)}
+                                >
+                                  <Lock className="scale-125 mr-2" />
+                                  Close
                                 </Button>
                               </DropdownMenuItem>
                             </DropdownMenuGroup>
                           </DropdownMenuContent>
-                        </DropdownMenu> 
+                        </DropdownMenu>
                       </TableCell>
                     </TableRow>
                   ))
                 : (
                   <TableRow>
-                    <TableCell colSpan={5} className="text-center align-middle h-[35rem] text-primary/50 text-lg font-thin tracking-wide">
-                      There are no partnered shop yet. 
+                    <TableCell
+                      colSpan={5}
+                      className="text-center align-middle h-[35rem] text-primary/50 text-lg font-thin tracking-wide"
+                    >
+                      There are no partnered shop yet.
                     </TableCell>
                   </TableRow>
-                )
-            }
+                )}
             </TableBody>
           </Table>
-          <Pagination className="flex flex-col items-end">
-            <PaginationContent>
-              {Array.from({ length: totalPages }).map((_, index) => (
-                <PaginationItem key={index}>
-                  <PaginationLink
+          {shops.length > 0 && (
+            <Pagination className="flex flex-col items-end">
+              <PaginationContent>
+                {currentPage > 1 && (
+                  <PaginationPrevious onClick={() => setCurrentPage(currentPage - 1)} />
+                )}
+                {Array.from({ length: totalPages }).map((_, index) => (
+                  <PaginationItem key={index}>
+                    <PaginationLink
+                      href="#"
+                      isActive={index + 1 === currentPage}
+                      onClick={() => setCurrentPage(index + 1)}
+                    >
+                      {index + 1}
+                    </PaginationLink>
+                  </PaginationItem>
+                ))}
+                {currentPage < totalPages && (
+                  <PaginationNext
                     href="#"
-                    isActive={index + 1 === currentPage}
-                    onClick={() => setCurrentPage(index + 1)}
-                  >
-                    {index + 1}
-                  </PaginationLink>
-                </PaginationItem>
-              ))}
-              {currentPage < totalPages && (
-                <PaginationNext href="#" onClick={() => setCurrentPage(currentPage + 1)} />
-              )}
-            </PaginationContent>
-          </Pagination>
+                    onClick={() => setCurrentPage(currentPage + 1)}
+                  />
+                )}
+              </PaginationContent>
+            </Pagination>
+          )}
         </div>
       </Card>
     </DashboardLayoutWrapper>

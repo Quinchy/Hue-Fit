@@ -1,66 +1,73 @@
-import { useState, useEffect } from 'react';
-import { useRouter } from 'next/router';
+// 3) pages/dashboard/shop/requests/index.js
+import React, { useState } from "react";
+import useSWR from "swr";
+import { useRouter } from "next/router";
 import DashboardLayoutWrapper from "@/components/ui/dashboard-layout";
-import DashboardPagesNavigation from "@/components/ui/dashboard-pages-navigation";
-import routes from '@/routes';
-import { Input } from "@/components/ui/input";
-import { Search } from 'lucide-react';
-import { Skeleton } from "@/components/ui/skeleton";
-import { DropdownMenu, DropdownMenuContent, DropdownMenuGroup, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
-import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
-import { Pagination, PaginationContent, PaginationItem, PaginationLink, PaginationNext, PaginationPrevious } from "@/components/ui/pagination";
 import { Card, CardTitle } from "@/components/ui/card";
+import DashboardPagesNavigation from "@/components/ui/dashboard-pages-navigation";
+import {
+  Table,
+  TableBody,
+  TableCell,
+  TableHead,
+  TableHeader,
+  TableRow,
+} from "@/components/ui/table";
+import {
+  Pagination,
+  PaginationContent,
+  PaginationItem,
+  PaginationLink,
+  PaginationNext,
+  PaginationPrevious,
+} from "@/components/ui/pagination";
+import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
-import { Pencil, CircleSlash2, ChevronDown, NotepadText } from 'lucide-react';
-import { MailCheck,  MailMinus } from 'lucide-react';
+import { Pencil, ChevronDown, NotepadText, Search } from "lucide-react";
+import { DropdownMenu, DropdownMenuContent, DropdownMenuGroup, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
+import { Skeleton } from "@/components/ui/skeleton";
+import routes from "@/routes";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
+import { MailCheck, MailMinus } from "lucide-react";
+
+const fetcher = (url) => fetch(url).then((res) => res.json());
 
 export default function ShopRequests() {
-  const [loading, setLoading] = useState(true);
-  const [requests, setRequests] = useState([]);
-  const [currentPage, setCurrentPage] = useState(1);
-  const [totalPages, setTotalPages] = useState(1);
-  const [statusFilter, setStatusFilter] = useState("PENDING"); 
   const router = useRouter();
-  const { alert } = router.query; // Read the alert query parameter
-  const [showAlert, setShowAlert] = useState(false);
   const navItems = [
     { label: "Shops", href: routes.shop },
     { label: "Requests", href: routes.shopRequest },
   ];
 
-  useEffect(() => {
+  const [currentPage, setCurrentPage] = useState(1);
+  const [statusFilter, setStatusFilter] = useState("PENDING");
+  const [searchQuery, setSearchQuery] = useState("");
+  const { alert } = router.query;
+  const [showAlert, setShowAlert] = useState(Boolean(alert));
+
+  const apiUrl = `/api/shop-requests/get-shop-requests?page=${currentPage}&status=${statusFilter}&search=${encodeURIComponent(
+    searchQuery
+  )}`;
+
+  const { data, isValidating } = useSWR(apiUrl, fetcher, {
+    refreshInterval: 5000,
+    revalidateOnFocus: false,
+    keepPreviousData: true,
+  });
+
+  const requests = data?.requests || [];
+  const totalPages = data?.totalPages || 1;
+
+  React.useEffect(() => {
     if (alert) {
       setShowAlert(true);
-
-      // Automatically hide the alert after 5 seconds
       const timeout = setTimeout(() => {
         setShowAlert(false);
-        router.replace(routes.shopRequest, undefined, { shallow: true }); // Remove query parameter
+        router.replace(routes.shopRequest, undefined, { shallow: true });
       }, 5000);
-
       return () => clearTimeout(timeout);
     }
   }, [alert, router]);
-
-  useEffect(() => {
-    const fetchRequests = async () => {
-      setLoading(true);
-      try {
-        const response = await fetch(`/api/shop-requests/get-shop-requests?page=${currentPage}&status=${statusFilter}`);
-        const data = await response.json();
-        setRequests(data.requests || []); // Ensure requests is always an array
-        setTotalPages(data.totalPages || 1); // Default to at least 1 page
-        setCurrentPage(data.currentPage || 1); // Default to at least 1 page
-      } catch (error) {
-        console.error("Error fetching shop requests:", error);
-      }
-      setLoading(false);
-    };
-  
-    fetchRequests();
-  }, [currentPage, statusFilter]);
-  
 
   const handlePageChange = (page) => {
     if (page >= 1 && page <= totalPages) {
@@ -72,30 +79,20 @@ export default function ShopRequests() {
     router.push(routes.shopRequestManage.replace("[requestNo]", requestNo));
   };
 
-  const getStatusBgColor = (status) => {
-    switch (status) {
-      case "PENDING":
-        return "bg-yellow-500";
-      case "REJECTED":
-        return "bg-red-500";
-      case "DONE":
-        return "bg-green-500";
-      default:
-        return "bg-gray-200";
-    }
-  };
-  
   const handleStatusFilterChange = (status) => {
-    setStatusFilter(status); // Update the filter state
-    setCurrentPage(1); // Reset to the first page for a new filter
+    setStatusFilter(status);
+    setCurrentPage(1);
+  };
+
+  const handleSearchChange = (e) => {
+    setSearchQuery(e.target.value);
+    setCurrentPage(1);
   };
 
   return (
     <DashboardLayoutWrapper>
       {showAlert && (
-        <Alert
-          className="fixed z-50 w-[30rem] right-10 bottom-10 flex items-center shadow-accent shadow-lg rounded-lg"
-        >
+        <Alert className="fixed z-50 w-[30rem] right-10 bottom-10 flex items-center shadow-accent shadow-lg rounded-lg">
           {alert === "accepted" ? (
             <>
               <MailCheck className="h-10 w-10 stroke-green-500" />
@@ -129,33 +126,52 @@ export default function ShopRequests() {
           </button>
         </Alert>
       )}
+
       <div className="flex flex-row justify-between">
         <CardTitle className="text-4xl">Shop Requests</CardTitle>
         <div className="flex flex-row gap-5">
-          <Input type="text" className="min-w-[30rem]" placeholder="Search shop request" variant="icon" icon={Search} />
+          <Input
+            type="text"
+            className="min-w-[30rem]"
+            placeholder="Search by shop name or request number"
+            variant="icon"
+            icon={Search}
+            value={searchQuery}
+            onChange={handleSearchChange}
+          />
           <DropdownMenu>
             <DropdownMenuTrigger asChild>
               <Button variant="outline" className="font-normal">
                 <NotepadText className="scale-125" />
-                Filter by Status 
+                Filter by Status
               </Button>
             </DropdownMenuTrigger>
             <DropdownMenuContent className="w-48">
               <DropdownMenuGroup>
-                <DropdownMenuItem onClick={() => handleStatusFilterChange("PENDING")} className="justify-center uppercase text-base tracking-wide font-semibold">
+                <DropdownMenuItem
+                  onClick={() => handleStatusFilterChange("PENDING")}
+                  className="justify-center uppercase text-base tracking-wide font-semibold"
+                >
                   PENDING
                 </DropdownMenuItem>
-                <DropdownMenuItem onClick={() => handleStatusFilterChange("DONE")} className="justify-center uppercase text-base tracking-wide font-semibold">
+                <DropdownMenuItem
+                  onClick={() => handleStatusFilterChange("DONE")}
+                  className="justify-center uppercase text-base tracking-wide font-semibold"
+                >
                   DONE
                 </DropdownMenuItem>
-                <DropdownMenuItem onClick={() => handleStatusFilterChange("REJECTED")} className="justify-center uppercase text-base tracking-wide font-semibold">
+                <DropdownMenuItem
+                  onClick={() => handleStatusFilterChange("REJECTED")}
+                  className="justify-center uppercase text-base tracking-wide font-semibold"
+                >
                   REJECTED
                 </DropdownMenuItem>
               </DropdownMenuGroup>
             </DropdownMenuContent>
-          </DropdownMenu> 
+          </DropdownMenu>
         </div>
       </div>
+
       <Card className="flex flex-col p-5 gap-4 min-h-[49rem]">
         <DashboardPagesNavigation items={navItems} />
         <div className="flex flex-col justify-between min-h-[42rem] gap-4">
@@ -170,81 +186,87 @@ export default function ShopRequests() {
               </TableRow>
             </TableHeader>
             <TableBody>
-              {loading ? (
-                Array.from({ length: 7 }).map((_, index) => (
-                  <TableRow key={index}>
-                    <TableCell><Skeleton className="h-14 w-full" /></TableCell>
-                    <TableCell><Skeleton className="h-14 w-full" /></TableCell>
-                    <TableCell><Skeleton className="h-14 w-full" /></TableCell>
-                    <TableCell><Skeleton className="h-14 w-full" /></TableCell>
-                    <TableCell><Skeleton className="h-14 w-full" /></TableCell>
+              {isValidating
+                ? Array.from({ length: 7 }).map((_, index) => (
+                    <TableRow key={index}>
+                      <TableCell><Skeleton className="h-14 w-full" /></TableCell>
+                      <TableCell><Skeleton className="h-14 w-full" /></TableCell>
+                      <TableCell><Skeleton className="h-14 w-full" /></TableCell>
+                      <TableCell><Skeleton className="h-14 w-full" /></TableCell>
+                      <TableCell><Skeleton className="h-14 w-full" /></TableCell>
+                    </TableRow>
+                  ))
+                : requests.length > 0
+                ? requests.map((request) => (
+                    <TableRow key={request.requestNo}>
+                      <TableCell className="max-w-[1.2rem] font-medium">
+                        {request.requestNo}
+                      </TableCell>
+                      <TableCell className="max-w-[3rem] overflow-hidden whitespace-nowrap text-ellipsis">
+                        {request.shopName}
+                      </TableCell>
+                      <TableCell className="max-w-[4rem] overflow-hidden whitespace-nowrap text-ellipsis">
+                        {request.address}
+                      </TableCell>
+                      <TableCell className="max-w-[1rem] text-center">
+                        <p
+                          className={`py-1 w-full rounded font-bold text-card ${
+                            request.status === "PENDING"
+                              ? "bg-yellow-500"
+                              : request.status === "REJECTED"
+                              ? "bg-red-500"
+                              : "bg-green-500"
+                          }`}
+                        >
+                          {request.status}
+                        </p>
+                      </TableCell>
+                      <TableCell className="max-w-[1rem] text-center">
+                        <DropdownMenu>
+                          <DropdownMenuTrigger asChild>
+                            <Button variant="outline" className="font-normal">
+                              Action
+                              <ChevronDown className="scale-125" />
+                            </Button>
+                          </DropdownMenuTrigger>
+                          <DropdownMenuContent className="w-50">
+                            <DropdownMenuGroup>
+                              <DropdownMenuItem className="justify-center">
+                                <Button
+                                  variant="none"
+                                  className="text-base"
+                                  onClick={() => handleManageClick(request.requestNo)}
+                                >
+                                  <Pencil className="scale-125" />
+                                  Manage
+                                </Button>
+                              </DropdownMenuItem>
+                            </DropdownMenuGroup>
+                          </DropdownMenuContent>
+                        </DropdownMenu>
+                      </TableCell>
+                    </TableRow>
+                  ))
+                : (
+                  <TableRow>
+                    <TableCell
+                      colSpan={5}
+                      className="text-center align-middle h-[35rem] text-primary/50 text-lg font-thin tracking-wide"
+                    >
+                      There are no shop-partnership requests yet.
+                    </TableCell>
                   </TableRow>
-                ))
-              ) : requests && requests.length > 0 ? (
-                requests.map((request) => (
-                  <TableRow key={request.id}>
-                    <TableCell className="max-w-[1.2rem] font-medium">{request.requestNo}</TableCell>
-                    <TableCell className="max-w-[3rem] overflow-hidden whitespace-nowrap text-ellipsis">{request.shopName}</TableCell>
-                    <TableCell className="max-w-[4rem] overflow-hidden whitespace-nowrap text-ellipsis">
-                      {request.address} {/* Use the full address string from the API */}
-                    </TableCell>
-                    <TableCell className="max-w-[1rem] text-center">
-                      <p className={`py-1 w-full rounded font-bold text-card ${getStatusBgColor(request.status)}`}>{request.status}</p>
-                    </TableCell>
-                    <TableCell className="max-w-[1rem] text-center">
-                      <DropdownMenu>
-                        <DropdownMenuTrigger asChild>
-                          <Button variant="outline" className="font-normal">
-                            Action                       
-                            <ChevronDown className="scale-125" />
-                          </Button>
-                        </DropdownMenuTrigger>
-                        <DropdownMenuContent className="w-50">
-                          <DropdownMenuGroup>
-                            <DropdownMenuItem className="justify-center">
-                              <Button 
-                                variant="none" 
-                                className="text-base"
-                                onClick={() => handleManageClick(request.requestNo)}
-                              >
-                                <Pencil className="scale-125" />
-                                Manage
-                              </Button>
-                            </DropdownMenuItem>
-                          </DropdownMenuGroup>
-                        </DropdownMenuContent>
-                      </DropdownMenu> 
-                    </TableCell>
-                  </TableRow>
-                ))
-              ) : (
-                <TableRow>
-                  <TableCell colSpan={5} className="text-center align-middle h-[35rem] text-primary/50 text-lg font-thin tracking-wide">
-                    There are no shop-partnership requests yet.
-                  </TableCell>
-                </TableRow>
-              )}
+                )}
             </TableBody>
           </Table>
-          <Pagination className="flex flex-col items-end">
-            <PaginationContent>
-              {/* Previous button, disabled on the first page */}
-              {currentPage > 1 && (
-                <PaginationPrevious
-                  onClick={() => handlePageChange(currentPage - 1)}
-                />
-              )}
-
-              {/* Page numbers with ellipsis */}
-              {Array.from({ length: totalPages }).map((_, index) => {
-                const page = index + 1;
-
-                // Always show the first, last, and current page, along with pages adjacent to the current page
-                if (
-                  page === 1 || 
-                  page === totalPages || 
-                  (page >= currentPage - 1 && page <= currentPage + 1)
-                ) {
+          {requests.length > 0 && (
+            <Pagination className="flex flex-col items-end">
+              <PaginationContent>
+                {currentPage > 1 && (
+                  <PaginationPrevious onClick={() => handlePageChange(currentPage - 1)} />
+                )}
+                {Array.from({ length: totalPages }).map((_, index) => {
+                  const page = index + 1;
                   return (
                     <PaginationItem key={page}>
                       <PaginationLink
@@ -256,32 +278,13 @@ export default function ShopRequests() {
                       </PaginationLink>
                     </PaginationItem>
                   );
-                }
-
-                // Show ellipsis when necessary
-                if (
-                  (page === currentPage - 2 && currentPage > 3) || 
-                  (page === currentPage + 2 && currentPage < totalPages - 2)
-                ) {
-                  return (
-                    <PaginationItem key={page} disabled>
-                      <span className="px-2">...</span>
-                    </PaginationItem>
-                  );
-                }
-
-                return null; // Skip other pages
-              })}
-
-              {/* Next button, disabled on the last page */}
-              {currentPage < totalPages && (
-                <PaginationNext
-                  href="#"
-                  onClick={() => handlePageChange(currentPage + 1)}
-                />
-              )}
-            </PaginationContent>
-          </Pagination>
+                })}
+                {currentPage < totalPages && (
+                  <PaginationNext onClick={() => handlePageChange(currentPage + 1)} />
+                )}
+              </PaginationContent>
+            </Pagination>
+          )}
         </div>
       </Card>
     </DashboardLayoutWrapper>

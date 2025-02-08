@@ -87,7 +87,10 @@
   body {
     @apply bg-background text-foreground;
   }
-
+  .grecaptcha-badge {
+    visibility: hidden !important;
+  }
+  
   input:-webkit-autofill {
     -webkit-box-shadow: 0 0 0 50px hsl(var(--accent)) inset;
   }

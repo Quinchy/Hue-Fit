@@ -1,15 +1,11 @@
+// File: components/VendorDashboard.jsx
 import DashboardLayoutWrapper from "@/components/ui/dashboard-layout";
 import { Label } from "@/components/ui/label";
 import { useSession } from "next-auth/react";
-import { useMemo } from "react";
-import { Shirt, Tag, BellRing } from "lucide-react";
+import { useMemo, useState, useEffect } from "react";
+import { Shirt, Tag, BellRing, Store } from "lucide-react";
 import { Pie, PieChart } from "recharts";
-import {
-  Card,
-  CardContent,
-  CardHeader,
-  CardTitle,
-} from "@/components/ui/card";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import {
   ChartConfig,
   ChartContainer,
@@ -18,6 +14,14 @@ import {
 } from "@/components/ui/chart";
 import { Skeleton } from "@/components/ui/skeleton";
 import useSWR from "swr";
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+  DialogDescription,
+  DialogTrigger,
+} from "@/components/ui/dialog";
 
 function formatRelativeTime(dateString) {
   const date = new Date(dateString);
@@ -58,6 +62,13 @@ export default function VendorDashboard() {
     fetcher,
     { refreshInterval: 5000, revalidateOnFocus: true }
   );
+  const [showWelcomeDialog, setShowWelcomeDialog] = useState(false);
+
+  useEffect(() => {
+    if (dashboardData && dashboardData.partnershipRequestIsSeen === false) {
+      setShowWelcomeDialog(true);
+    }
+  }, [dashboardData]);
 
   const typeColorMapping = {
     UPPERWEAR: "#3b82f6",
@@ -88,117 +99,112 @@ export default function VendorDashboard() {
 
   const isLoading = !dashboardData && !error;
 
+  const handleMarkSeen = async () => {
+    try {
+      await fetch("/api/partnership/mark-seen", { method: "POST" });
+      setShowWelcomeDialog(false);
+    } catch (err) {
+      console.error("Error marking as seen:", err);
+    }
+  };
+
   return (
     <DashboardLayoutWrapper>
-      <p className="uppercase">
-        {session?.user?.firstName ? (
-          <div className="flex items-center gap-2">
-            <p className="font-medium text-[2.50rem] leading-[2.5rem] tracking-tight">
-              {"Welcome, "}
-            </p>
-            <CardTitle className="text-[2.35rem] leading-[2.5rem] tracking-widest">
-              {session.user.firstName}
-            </CardTitle>
-          </div>
-        ) : (
-          <div className="flex items-center gap-2">
-            <p className="font-medium text-[2.50rem] leading-[2.5rem] tracking-tight">
-              {"Welcome, "}
-            </p>
-            <CardTitle className="text-[2.35rem] leading-[2.5rem] tracking-widest">
-              {"User"}
-            </CardTitle>
-          </div>
-        )}
-      </p>
-      <div className="flex flex-col gap-4">
-        {isLoading ? (
-          <div className="flex flex-row gap-4 h-[47rem]">
-            <div className="flex flex-col gap-4 w-full h-full">
-              <div className="flex flex-row gap-4">
-                <Skeleton className="w-full h-48 p-6" />
-                <Skeleton className="w-full h-48 p-6" />
+      {showWelcomeDialog && (
+        <Dialog
+          open={true}
+          onOpenChange={(open) => {
+            if (!open) {
+              handleMarkSeen();
+            }
+          }}
+        >
+          <DialogContent className="sm:max-w-[525px]">
+            <DialogHeader>
+              <DialogTitle className="flex items-center gap-2 uppercase mb-5">
+                <Store className="stroke-[2px] mr-2" /> Welcome to Your Shop Dashboard!
+              </DialogTitle>
+              <DialogDescription className="text-base font-thin italic">
+                You can now start adding products, efficiently manage your orders, and customize your shop to maximize your business growth.
+              </DialogDescription>
+            </DialogHeader>
+            <button
+              onClick={handleMarkSeen}
+              className="mt-4 px-4 py-2 bg-primary text-pure font-semibold rounded hover:bg-primary/70 duration-500 ease-in-out"
+            >
+              Got it!
+            </button>
+          </DialogContent>
+        </Dialog>
+      )}
+      {isLoading ? (
+        <Skeleton className="w-full h-full" />
+      ) : error ? (
+        <p>Error: {error.message}</p>
+      ) : (
+        <>
+          <p className="uppercase">
+            {session?.user?.firstName ? (
+              <div className="flex items-center gap-2">
+                <p className="font-medium text-[2.50rem] leading-[2.5rem] tracking-tight">
+                  {"Welcome, "}
+                </p>
+                <CardTitle className="text-[2.35rem] leading-[2.5rem] tracking-widest">
+                  {session.user.firstName}
+                </CardTitle>
               </div>
-              <Skeleton className="w-full h-full p-6" />
-            </div>
-            <Skeleton className="w-full p-6" />
-          </div>
-        ) : error ? (
-          <p>Error: {error.message}</p>
-        ) : (
-          <>
+            ) : (
+              <div className="flex items-center gap-2">
+                <p className="font-medium text-[2.50rem] leading-[2.5rem] tracking-tight">
+                  {"Welcome, "}
+                </p>
+                <CardTitle className="text-[2.35rem] leading-[2.5rem] tracking-widest">
+                  {"User"}
+                </CardTitle>
+              </div>
+            )}
+          </p>
+          <div className="flex flex-col gap-4">
             <div className="flex flex-row gap-4 h-[47rem]">
               <div className="flex flex-col gap-4 w-full h-full">
                 <div className="flex flex-row gap-4">
                   <Card className="w-full flex flex-col justify-center p-6">
                     <Shirt width={30} height={30} className="mb-2 stroke-2" />
                     <div className="flex flex-col">
-                      <Label className="uppercase font-medium">
-                        {"Products"}
-                      </Label>
-                      <p className="text-6xl font-bold">
-                        {dashboardData.productCount}
-                      </p>
+                      <Label className="uppercase font-medium">Products</Label>
+                      <p className="text-6xl font-bold">{dashboardData.productCount}</p>
                     </div>
                     <div className="flex flex-row items-center gap-2">
-                      <p className="uppercase font-extralight text-base">
-                        {"Total of"}
-                      </p>
-                      <p className="text-base font-bold">
-                        {dashboardData.productVariantCount}
-                      </p>
-                      <Label className="uppercase font-extralight text-base">
-                        {"Product Items"}
-                      </Label>
+                      <p className="uppercase font-extralight text-base">Total of</p>
+                      <p className="text-base font-bold">{dashboardData.productVariantCount}</p>
+                      <Label className="uppercase font-extralight text-base">Product Items</Label>
                     </div>
                   </Card>
                   <Card className="w-full flex flex-col justify-center p-6">
                     <Tag width={30} height={30} className="mb-2 stroke-2" />
                     <div className="flex flex-col">
-                      <Label className="uppercase font-medium">
-                        {"Orders"}
-                      </Label>
-                      <p className="text-6xl font-bold">
-                        {dashboardData.orderCount}
-                      </p>
+                      <Label className="uppercase font-medium">Orders</Label>
+                      <p className="text-6xl font-bold">{dashboardData.orderCount}</p>
                     </div>
                     <div className="flex flex-row items-center gap-2">
-                      <p className="uppercase font-extralight text-base">
-                        {"Total of"}
-                      </p>
-                      <p className="text-base font-bold">
-                        {dashboardData.orderItemCount}
-                      </p>
-                      <Label className="uppercase font-extralight text-base">
-                        {"Order Items"}
-                      </Label>
+                      <p className="uppercase font-extralight text-base">Total of</p>
+                      <p className="text-base font-bold">{dashboardData.orderItemCount}</p>
+                      <Label className="uppercase font-extralight text-base">Order Items</Label>
                     </div>
                   </Card>
                 </div>
                 <Card className="flex flex-col items-start h-full p-3">
                   <CardHeader className="items-start pb-0">
-                    <Label className="uppercase font-medium">
-                      {"PRODUCT TYPE"}
-                    </Label>
+                    <Label className="uppercase font-medium">PRODUCT TYPE</Label>
                     <div className="leading-none text-muted-foreground">
-                      {
-                        "Showing all product types that are available in your shop."
-                      }
+                      Showing all product types available in your shop.
                     </div>
                   </CardHeader>
                   <CardContent className="flex-1 w-full">
                     <ChartContainer config={chartConfig} className="w-full h-full">
                       <PieChart width="100%" height="100%">
-                        <ChartTooltip
-                          cursor={false}
-                          content={<ChartTooltipContent hideLabel />}
-                        />
-                        <Pie
-                          data={chartData}
-                          dataKey="visitors"
-                          nameKey="browser"
-                          innerRadius={130}
-                        />
+                        <ChartTooltip cursor={false} content={<ChartTooltipContent hideLabel />} />
+                        <Pie data={chartData} dataKey="visitors" nameKey="browser" innerRadius={130} />
                       </PieChart>
                     </ChartContainer>
                   </CardContent>
@@ -207,9 +213,7 @@ export default function VendorDashboard() {
               <Card className="w-full h-full p-5">
                 <div className="flex flex-row items-center gap-2 mb-3">
                   <BellRing />
-                  <Label className="uppercase font-medium text-lg">
-                    Notifications:
-                  </Label>
+                  <Label className="uppercase font-medium text-lg">Notifications:</Label>
                 </div>
                 <div className="flex flex-col gap-2 overflow-y-auto max-h-[660px]">
                   {dashboardData.notifications.length ? (
@@ -219,12 +223,8 @@ export default function VendorDashboard() {
                         className="flex flex-col p-2 border-l-4 bg-muted rounded-lg rounded-ss-none mr-2 rounded-es-none"
                       >
                         <div className="flex flex-col items-start gap-2 ml-1">
-                          <p className="text-base uppercase font-bold">
-                            {notification.title}
-                          </p>
-                          <p className="text-base font-extralight">
-                            {notification.message}
-                          </p>
+                          <p className="text-base uppercase font-bold">{notification.title}</p>
+                          <p className="text-base font-extralight">{notification.message}</p>
                         </div>
                         <p className="font-thin text-sm text-primary/50 text-end">
                           {formatRelativeTime(notification.created_at)}
@@ -232,16 +232,14 @@ export default function VendorDashboard() {
                       </div>
                     ))
                   ) : (
-                    <p className="text-lg text-center font-extralight text-primary/50">
-                      No notifications
-                    </p>
+                    <p className="text-lg text-center font-extralight text-primary/50">No notifications</p>
                   )}
                 </div>
               </Card>
             </div>
-          </>
-        )}
-      </div>
+          </div>
+        </>
+      )}
     </DashboardLayoutWrapper>
   );
 }

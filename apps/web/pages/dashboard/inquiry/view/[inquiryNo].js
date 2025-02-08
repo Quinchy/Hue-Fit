@@ -1,17 +1,76 @@
+// File: pages/dashboard/inquiry/view/[inquiryNo].js
+import { useState, useEffect } from "react";
+import { useRouter } from "next/router";
 import DashboardLayoutWrapper from "@/components/ui/dashboard-layout";
 import { Card, CardTitle } from "@/components/ui/card";
 import { Label } from "@/components/ui/label";
-import routes from '@/routes';
 import { Button } from "@/components/ui/button";
-import { MoveLeft } from 'lucide-react';
-import { useRouter } from 'next/router';
+import { MoveLeft } from "lucide-react";
+import routes from "@/routes";
+import Loading from "@/components/ui/loading";
 
 export default function ViewInquiry() {
   const router = useRouter();
+  const { inquiryNo } = router.query;
+  const [inquiry, setInquiry] = useState(null);
+  const [loading, setLoading] = useState(true);
+
+  const fetchInquiryDetails = async () => {
+    if (!inquiryNo) return;
+    setLoading(true);
+    try {
+      const response = await fetch(`/api/inquiry/get-inquiry-details?inquiryNo=${inquiryNo}`);
+      const data = await response.json();
+      setInquiry(data);
+    } catch (error) {
+      console.error("Error fetching inquiry details:", error);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const markInquiryRead = async () => {
+    if (!inquiryNo) return;
+    try {
+      await fetch("/api/inquiry/mark-inquiry-read", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ inquiryNo }),
+      });
+    } catch (error) {
+      console.error("Error marking inquiry as read:", error);
+    }
+  };
+
+  useEffect(() => {
+    if (inquiryNo) {
+      fetchInquiryDetails();
+      markInquiryRead();
+    }
+  }, [inquiryNo]);
 
   const handleGoBack = () => {
     router.push(routes.inquiry);
   };
+
+  if (loading) {
+    return (
+      <DashboardLayoutWrapper>
+        <Loading message="Loading inquiry details..." />
+      </DashboardLayoutWrapper>
+    );
+  }
+
+  if (!inquiry) {
+    return (
+      <DashboardLayoutWrapper>
+        <div className="flex justify-center items-center h-full text-lg text-primary/70">
+          Inquiry not found.
+        </div>
+      </DashboardLayoutWrapper>
+    );
+  }
+
   return (
     <DashboardLayoutWrapper>
       {/* Header with Back Button */}
@@ -27,38 +86,25 @@ export default function ViewInquiry() {
       <Card className="flex flex-col gap-5 p-6 rounded-lg shadow-md">
         <div className="flex flex-row gap-3 items-center">
           <Label className="font-bold">Email:</Label>
-          Email
+          <span className="text-primary/80">{inquiry.email}</span>
         </div>
         <div className="flex flex-row gap-3 items-center">
           <Label className="font-bold">Subject:</Label>
-          Subject
+          <span className="text-primary/80">{inquiry.subject}</span>
         </div>
         <div className="flex flex-col gap-3">
           <Label className="font-bold">Message:</Label>
-          Lorem ipsum odor amet, consectetuer adipiscing elit. Nulla libero euismod at aptent blandit amet auctor. 
-          Natoque varius posuere vehicula scelerisque pulvinar iaculis augue. Litora semper suspendisse porttitor 
-          inceptos pellentesque venenatis tortor cras. Hendrerit interdum ipsum egestas sed suscipit cubilia. 
-          Facilisis cubilia malesuada arcu eleifend sit. Mollis tortor dictum vel; tempor dignissim mus pulvinar sodales pretium.
-          Ac dapibus vehicula fames venenatis ac.
-          Lorem ipsum odor amet, consectetuer adipiscing elit. Nulla libero euismod at aptent blandit amet auctor. 
-          Natoque varius posuere vehicula scelerisque pulvinar iaculis augue. Litora semper suspendisse porttitor 
-          inceptos pellentesque venenatis tortor cras. Hendrerit interdum ipsum egestas sed suscipit cubilia. 
-          Facilisis cubilia malesuada arcu eleifend sit. Mollis tortor dictum vel; tempor dignissim mus pulvinar sodales pretium.
-          Ac dapibus vehicula fames venenatis ac.
-          Lorem ipsum odor amet, consectetuer adipiscing elit. Nulla libero euismod at aptent blandit amet auctor. 
-          Natoque varius posuere vehicula scelerisque pulvinar iaculis augue. Litora semper suspendisse porttitor 
-          inceptos pellentesque venenatis tortor cras. Hendrerit interdum ipsum egestas sed suscipit cubilia. 
-          Facilisis cubilia malesuada arcu eleifend sit. Mollis tortor dictum vel; tempor dignissim mus pulvinar sodales pretium.
-          Ac dapibus vehicula fames venenatis ac.
-          Lorem ipsum odor amet, consectetuer adipiscing elit. Nulla libero euismod at aptent blandit amet auctor. 
-          Natoque varius posuere vehicula scelerisque pulvinar iaculis augue. Litora semper suspendisse porttitor 
-          inceptos pellentesque venenatis tortor cras. Hendrerit interdum ipsum egestas sed suscipit cubilia. 
-          Facilisis cubilia malesuada arcu eleifend sit. Mollis tortor dictum vel; tempor dignissim mus pulvinar sodales pretium.
-          Ac dapibus vehicula fames venenatis ac.
+          <p className="whitespace-pre-line break-words bg-muted p-3 rounded-lg font-light text-primary/80">
+            {inquiry.message}
+          </p>
+        </div>
+        <div className="flex flex-row gap-3 items-center">
+          <Label className="font-bold">Status:</Label>
+          <span className="text-primary/80">{inquiry.read ? "READ" : "Unread"}</span>
         </div>
         <div className="flex flex-row gap-3 items-center">
           <Label className="font-bold">Date:</Label>
-          Date
+          <span className="text-primary/80">{new Date(inquiry.created_at).toLocaleString()}</span>
         </div>
       </Card>
     </DashboardLayoutWrapper>

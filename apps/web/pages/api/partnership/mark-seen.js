@@ -3,7 +3,7 @@ import { getServerSession } from "next-auth/next";
 import { authOptions } from "../auth/[...nextauth]";
 
 export default async function handler(req, res) {
-  if (req.method !== 'GET') {
+  if (req.method !== 'POST') {
     return res.status(405).json({ message: "Method not allowed" });
   }
   try {
@@ -12,31 +12,21 @@ export default async function handler(req, res) {
       return res.status(401).json({ message: "Unauthorized" });
     }
     const userId = session.user.id;
+    // Find the partnership request for the current user
     const partnershipRequest = await prisma.partnershipRequest.findFirst({
       where: { userId },
-      include: {
-        Shop: {
-          include: {
-            ShopAddress: {
-              include: { GoogleMapLocation: true }
-            },
-            BusinessLicense: true
-          }
-        }
-      }
     });
-    if (!partnershipRequest || partnershipRequest.status === "REJECTED") {
+    if (!partnershipRequest) {
       return res.status(404).json({ message: "No partnership request found" });
     }
-    res.status(200).json({
-      status: partnershipRequest.status,
-      message: partnershipRequest.message,
-      isSeen: partnershipRequest.isSeen,
-      shop: partnershipRequest.Shop,
-      address: partnershipRequest.Shop?.ShopAddress,
+    // Update the request to mark it as seen
+    const updatedRequest = await prisma.partnershipRequest.update({
+      where: { id: partnershipRequest.id },
+      data: { isSeen: true },
     });
+    res.status(200).json(updatedRequest);
   } catch (error) {
-    console.error("Error fetching partnership request:", error);
+    console.error("Error marking partnership request as seen:", error);
     res.status(500).json({ message: "Internal server error" });
   }
 }

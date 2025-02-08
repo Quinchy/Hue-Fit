@@ -1,28 +1,24 @@
-// components/ui/file-upload.jsx
-import React, { useState, useEffect, useRef } from "react";
+// components/FileUpload.jsx
+import React, { useState, useEffect } from "react";
 import Image from "next/image";
 import { Upload, X, FileText } from "lucide-react";
 import { Button } from "@/components/ui/button";
 
 const FileUpload = ({
   onFileSelect,
+  onFileRemove,
   maxFiles = 5,
   className = "",
   initialFiles = [],
   disabled = false,
+  resetSignal,
 }) => {
-  const [fileMap, setFileMap] = useState({});
-  const allowedTypes = ["image/jpeg", "image/png", "image/webp", "application/pdf"];
-  const previewSize = 96;
-  const maxFileNameLength = 15;
-  const initialFilesLoaded = useRef(false);
-
-  useEffect(() => {
-    if (!initialFilesLoaded.current && initialFiles.length > 0) {
-      const updatedFileMap = {};
+  const [fileMap, setFileMap] = useState(() => {
+    const map = {};
+    if (Array.isArray(initialFiles)) {
       initialFiles.forEach((file, index) => {
-        const uniqueKey = `file${Date.now()}-${index}`;
-        updatedFileMap[uniqueKey] = {
+        const key = `initial-${index}`;
+        map[key] = {
           file: file instanceof File ? file : null,
           previewUrl:
             typeof file === "string"
@@ -30,53 +26,77 @@ const FileUpload = ({
               : file instanceof File
               ? URL.createObjectURL(file)
               : null,
-          // Use the file's name if it's a File; if it's a URL, leave it empty.
           fileName: file instanceof File ? file.name : "",
         };
       });
-      setFileMap(updatedFileMap);
-      initialFilesLoaded.current = true;
     }
-  }, [initialFiles]);
+    return map;
+  });
 
-  const handleFileChange = async (event) => {
+  useEffect(() => {
+    const map = {};
+    if (Array.isArray(initialFiles)) {
+      initialFiles.forEach((file, index) => {
+        const key = `initial-${index}`;
+        map[key] = {
+          file: file instanceof File ? file : null,
+          previewUrl:
+            typeof file === "string"
+              ? file
+              : file instanceof File
+              ? URL.createObjectURL(file)
+              : null,
+          fileName: file instanceof File ? file.name : "",
+        };
+      });
+    }
+    setFileMap(map);
+  }, [resetSignal]);
+
+  const allowedTypes = ["image/jpeg", "image/png", "image/webp", "application/pdf"];
+  const previewSize = 96;
+  const maxFileNameLength = 15;
+
+  const handleFileChange = (event) => {
     if (disabled) return;
-    const files = Array.from(event.target.files).slice(0, maxFiles - Object.keys(fileMap).length);
-    const updatedFileMap = { ...fileMap };
+    const files = Array.from(event.target.files);
+    const availableSlots = maxFiles - Object.keys(fileMap).length;
+    const filesToAdd = files.slice(0, availableSlots);
+    const newFileMap = { ...fileMap };
 
-    for (const file of files) {
-      const uniqueKey = `file${Date.now()}-${Object.keys(updatedFileMap).length}`;
-      if (file.type === "application/pdf") {
-        const pdfPreview = await generatePdfPreview(file);
-        updatedFileMap[uniqueKey] = { file, previewUrl: pdfPreview, fileName: file.name };
-      } else if (file.type.startsWith("image/")) {
-        updatedFileMap[uniqueKey] = { file, previewUrl: URL.createObjectURL(file), fileName: file.name };
-      }
-    }
+    filesToAdd.forEach((file, idx) => {
+      const key = `new-${Date.now()}-${idx}`;
+      newFileMap[key] = {
+        file,
+        previewUrl: URL.createObjectURL(file),
+        fileName: file.name,
+      };
+    });
 
-    setFileMap(updatedFileMap);
+    setFileMap(newFileMap);
     if (onFileSelect) {
-      onFileSelect(Object.values(updatedFileMap).map((item) => item.file));
+      onFileSelect(Object.values(newFileMap).map((item) => item.file));
     }
   };
 
-  const handleRemoveFile = (event, fileKey) => {
+  const handleRemoveFile = (event, key) => {
     if (disabled) return;
     event.preventDefault();
-    const updatedFileMap = { ...fileMap };
-    delete updatedFileMap[fileKey];
-    setFileMap(updatedFileMap);
-    if (onFileSelect) {
-      onFileSelect(Object.values(updatedFileMap).map((item) => item.file));
-    }
-  };
+    const newFileMap = { ...fileMap };
+    const removedFileData = newFileMap[key];
 
-  const generatePdfPreview = async (file) => {
-    try {
-      return URL.createObjectURL(file);
-    } catch (error) {
-      console.error("Error generating PDF preview:", error);
-      return null;
+    if (removedFileData && !removedFileData.file && removedFileData.previewUrl) {
+      if (onFileRemove) {
+        onFileRemove(removedFileData.previewUrl);
+      }
+    }
+    if (removedFileData?.file instanceof File && removedFileData.previewUrl) {
+      URL.revokeObjectURL(removedFileData.previewUrl);
+    }
+    delete newFileMap[key];
+    setFileMap(newFileMap);
+    if (onFileSelect) {
+      onFileSelect(Object.values(newFileMap).map((item) => item.file));
     }
   };
 
@@ -108,8 +128,8 @@ const FileUpload = ({
         </div>
         <p className="mt-5 mb-2 text-primary/50 font-medium">Uploaded Files:</p>
         <div className="flex flex-wrap gap-10 h-full justify-center">
-          {Object.keys(fileMap).map((fileKey) => {
-            const fileData = fileMap[fileKey];
+          {Object.keys(fileMap).map((key) => {
+            const fileData = fileMap[key];
             if (!fileData || !fileData.previewUrl) return null;
             const { file, previewUrl, fileName } = fileData;
             const isImage = file
@@ -119,38 +139,40 @@ const FileUpload = ({
               ? file.type === "application/pdf"
               : previewUrl.match(/\.pdf$/i);
             return (
-              <div key={fileKey} className="flex flex-col items-center w-[96px] h-[96px]">
-                {isImage ? (
-                  <Image
-                    width={previewSize}
-                    height={previewSize}
-                    src={previewUrl}
-                    alt={fileName}
-                    className="object-cover w-full h-full border border-primary/25 border-dashed p-1 rounded-lg"
-                  />
-                ) : isPdf ? (
-                  <div className="w-full h-full border border-primary/25 border-dashed p-1 rounded-lg">
-                    <embed src={previewUrl} type="application/pdf" className="w-full h-full" />
-                  </div>
-                ) : (
-                  <div className="w-full h-full flex items-center justify-center border border-primary/25 border-dashed p-1 rounded-lg">
-                    <FileText className="text-primary w-10 h-10" />
-                  </div>
-                )}
-                <div className="flex items-center justify-between mt-2 w-full">
-                  {fileName && (
-                    <p className="text-sm font-thin text-primary/85 truncate w-3/4">
-                      {truncateFileName(fileName)}
-                    </p>
+              <div key={key} className="relative flex flex-col items-center w-[96px] h-[96px]">
+                <div className="relative min-w-[6rem] min-h-[6rem] max-w-[6rem] max-h-[6rem]">
+                  {isImage ? (
+                    <Image
+                      width={previewSize}
+                      height={previewSize}
+                      src={previewUrl}
+                      alt={fileName}
+                      className="object-cover min-w-[6rem] min-h-[6rem] max-w-[6rem] max-h-[6rem] border border-primary/25 border-dashed p-1 rounded-lg"
+                    />
+                  ) : isPdf ? (
+                    <div className="min-w-[6rem] min-h-[6rem] max-w-[6rem] max-h-[6rem] border border-primary/25 border-dashed p-1 rounded-lg">
+                      <embed src={previewUrl} type="application/pdf" className="min-w-[5.4rem] min-h-[5.4rem] max-w-[5.4rem] max-h-[5.4rem]" />
+                    </div>
+                  ) : (
+                    <div className="w-full h-full flex items-center justify-center border border-primary/25 border-dashed p-1 rounded-lg">
+                      <FileText className="text-primary w-10 h-10" />
+                    </div>
                   )}
                   {!disabled && (
                     <Button
                       variant="none"
-                      className="z-40 scale-115 hover:bg-accent w-7 h-7 rounded-full"
-                      onClick={(e) => handleRemoveFile(e, fileKey)}
+                      className="absolute top-1 right-1 shadow-md shadow-pure z-40 bg-primary text-white w-6 h-6 rounded-full flex items-center justify-center hover:bg-muted-foreground"
+                      onClick={(e) => handleRemoveFile(e, key)}
                     >
-                      <X />
+                      <X className="w-4 h-4 stroke-pure" />
                     </Button>
+                  )}
+                </div>
+                <div className="mt-2 w-full">
+                  {fileName && (
+                    <p className="text-sm font-thin text-primary/85 truncate text-center">
+                      {truncateFileName(fileName)}
+                    </p>
                   )}
                 </div>
               </div>

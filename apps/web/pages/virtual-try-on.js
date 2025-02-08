@@ -26,6 +26,8 @@ export default function VirtualTryOnPage() {
   const [isPortrait, setIsPortrait] = useState(true);
   // New state for controlling the camera facing mode.
   const [facingMode, setFacingMode] = useState("environment");
+  // New state for the subtle card flip rotation effect.
+  const [cardRotation, setCardRotation] = useState(0);
 
   // The cropped <img> to draw & its ImageData (if needed for future usage)
   const clothingImageElementRef = useRef(null);
@@ -394,6 +396,24 @@ export default function VirtualTryOnPage() {
   }, []);
 
   /**
+   * Listen for device orientation events and update cardRotation.
+   * Adjust the gamma value to a subtle rotation (e.g., maximum ±5°)
+   * and use a larger perspective to reduce foreshortening.
+   */
+  useEffect(() => {
+    const handleDeviceOrientation = (event) => {
+      // gamma: left-to-right tilt (in degrees)
+      // Dividing by 6 and clamping to ±5° gives a more subtle effect.
+      const { gamma } = event;
+      const rotation = Math.max(-5, Math.min(5, gamma / 6));
+      setCardRotation(rotation);
+    };
+
+    window.addEventListener("deviceorientation", handleDeviceOrientation);
+    return () => window.removeEventListener("deviceorientation", handleDeviceOrientation);
+  }, []);
+
+  /**
    * Initialize pose detector on mount.
    */
   useEffect(() => {
@@ -404,7 +424,18 @@ export default function VirtualTryOnPage() {
 
   return (
     <div style={styles.container} ref={containerRef}>
-      <div style={styles.cameraContainer}>
+      {/* 
+          Apply a 3D perspective and dynamic rotateY to create a subtle card flip effect.
+          Increasing the perspective value to 3000px reduces the foreshortening that makes
+          the PNG clothing appear smaller.
+      */}
+      <div
+        style={{
+          ...styles.cameraContainer,
+          transform: `perspective(3000px) rotateY(${cardRotation}deg)`,
+          transition: "transform 0.2s ease-out",
+        }}
+      >
         {/* Video element shows the live camera feed */}
         <video ref={videoElementRef} style={styles.video} muted playsInline autoPlay />
         {/* Canvas is positioned on top to show only the clothing overlay */}

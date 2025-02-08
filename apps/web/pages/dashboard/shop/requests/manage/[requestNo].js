@@ -178,9 +178,9 @@ export default function ManageShopRequest() {
                 <div className='flex flex-row gap-4'>
                   <div className="border-2 border-dashed border-primary/20 p-2 flex rounded-lg">
                     {request.shopLogo ? (
-                      <Image src={request.shopLogo} alt="Shop Logo" width={150} height={150} />
+                      <Image src={request.shopLogo} alt="Shop Logo" width={150} height={150} className='min-w-[9.375rem] min-h-[9.375rem] max-w-[9.375rem] max-h-[9.375rem]' />
                     ) : (
-                      <Image src="/images/placeholder-picture.png" alt="Shop Logo" width={150} height={150} />
+                      <Image src="/images/placeholder-picture.png" alt="Shop Logo" width={150} height={150} className='min-w-[9.375rem] min-h-[9.375rem] max-w-[9.375rem] max-h-[9.375rem]' />
                     )}
                   </div>
                   <div className='flex flex-col gap-1 bg-muted p-2 rounded-lg w-full'>

@@ -8,7 +8,7 @@ export default async function handler(req, res) {
   }
 
   try {
-    // Fetch the shop's details based on shopNo, including address, owner, and licenses
+    // Fetch the shop's details including its address, licenses, and owner details.
     const shop = await prisma.shop.findUnique({
       where: { shopNo },
       include: {
@@ -24,12 +24,12 @@ export default async function handler(req, res) {
               select: {
                 latitude: true,
                 longitude: true,
-                placeName: true,
+                name: true, // Use 'name' as defined in the schema
               },
             },
           },
         },
-        BusinessLicense: {
+        BusinessLicense: { // Relation defined in the schema as ShopBusinessLicense[]
           select: {
             licenseUrl: true,
           },
@@ -56,20 +56,21 @@ export default async function handler(req, res) {
       return res.status(404).json({ message: "Shop not found" });
     }
 
-    // Format the response data for frontend use
+    // Format the response data for the frontend.
     const formattedShop = {
       shopNo: shop.shopNo,
       name: shop.name,
       contactNo: shop.contactNo,
       status: shop.status,
       description: shop.description,
+      logo: shop.logo, // Include logo for image rendering
       address: shop.ShopAddress
         ? `${shop.ShopAddress.buildingNo || ''} ${shop.ShopAddress.street || ''}, ${shop.ShopAddress.barangay || ''}, ${shop.ShopAddress.municipality || ''}, ${shop.ShopAddress.province || ''}, ${shop.ShopAddress.postalCode || ''}`
         : "No Address Provided",
-      latitude: shop.ShopAddress?.GoogleMapLocation?.latitude || 'N/A',
-      longitude: shop.ShopAddress?.GoogleMapLocation?.longitude || 'N/A',
-      googleMapPlaceName: shop.ShopAddress?.GoogleMapLocation?.placeName || 'N/A',
-      businessLicense: shop.BusinessLicense.map((license) => license.licenseUrl),
+      latitude: shop.ShopAddress?.GoogleMapLocation?.latitude ?? 'N/A',
+      longitude: shop.ShopAddress?.GoogleMapLocation?.longitude ?? 'N/A',
+      googleMapPlaceName: shop.ShopAddress?.GoogleMapLocation?.name ?? 'N/A', // Correct field name
+      businessLicenses: shop.BusinessLicense.map((license) => license.licenseUrl), // Plural to match client code
       contactPerson: shop.Owner?.VendorProfile
         ? {
             firstName: shop.Owner.VendorProfile.firstName,

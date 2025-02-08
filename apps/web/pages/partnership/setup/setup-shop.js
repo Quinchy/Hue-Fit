@@ -10,8 +10,8 @@ import { Button } from "@/components/ui/button";
 import { InputErrorMessage, InputErrorStyle, ErrorMessage } from "@/components/ui/error-message";
 import FileUpload from "@/components/ui/file-upload";
 import ImageUpload from "@/components/ui/image-upload";
-import { Asterisk, Phone, Mail, Info, LogOut, Store } from "lucide-react";
-import HueFitLogo from '@/public/images/HueFitLogo';
+import { Asterisk, Phone, Mail, Info, LogOut, Store, Search, Pencil, CheckCircle2 } from "lucide-react";
+import HueFitLogo from "@/public/images/HueFitLogo";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import provincesData from "./data/province.json";
 import municipalitiesData from "./data/municipality.json";
@@ -21,20 +21,69 @@ import { LoadingMessage } from "@/components/ui/loading-message";
 import { signOut } from "next-auth/react";
 import { useSession } from "next-auth/react";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogTrigger } from "@/components/ui/dialog";
+import { Skeleton } from "@/components/ui/skeleton";
+import { Alert, AlertTitle, AlertDescription } from "@/components/ui/alert";
 
 const MapPicker = dynamic(() => import("@/components/ui/map-picker"), { ssr: false });
+const MapView = dynamic(() => import("@/components/ui/map-view"), { ssr: false });
+
+function SkeletonForm() {
+  return (
+    <div className="mt-24 mb-24 flex flex-col w-full justify-center items-center gap-3">
+      <div className="flex flex-row items-center justify-between gap-3 w-full max-w-[75rem] mb-10">
+        <Skeleton className="h-12 w-40" />
+        <Skeleton className="h-12 w-32" />
+      </div>
+      <div className="flex flex-row justify-end gap-3 w-full max-w-[75rem] mb-10">
+        <Skeleton className="h-12 w-40" />
+        <Skeleton className="h-12 w-96" />
+      </div>
+      <Skeleton className="h-12 w-full max-w-[75rem]" />
+      <Card className="w-full max-w-[75rem] p-5">
+        <div className="animate-pulse space-y-6">
+          <div>
+            <Skeleton className="h-8 w-40" />
+            <div className="grid grid-cols-2 gap-4 mt-4">
+              <Skeleton className="h-10 w-full" />
+              <Skeleton className="h-10 w-full" />
+            </div>
+          </div>
+          <div>
+            <Skeleton className="h-8 w-56" />
+            <div className="grid grid-cols-2 gap-4 mt-4">
+              <Skeleton className="h-10 w-full" />
+              <Skeleton className="h-10 w-full" />
+            </div>
+          </div>
+          <div className="flex flex-col gap-5">
+            <Skeleton className="h-8 w-64" />
+            <Skeleton className="h-56 w-full" />
+          </div>
+          <Skeleton className="h-10 w-full mt-6" />
+        </div>
+      </Card>
+    </div>
+  );
+}
 
 export default function SetupShopForm() {
   const router = useRouter();
+  const [removedBusinessLicenseUrls, setRemovedBusinessLicenseUrls] = useState([]);
   const { data: session } = useSession();
   const [provinces, setProvinces] = useState([]);
   const [municipalities, setMunicipalities] = useState([]);
   const [barangays, setBarangays] = useState([]);
   const [loading, setLoading] = useState(false);
+  const [fetchLoading, setFetchLoading] = useState(true);
   const [errorMessage, setErrorMessage] = useState("");
   const [partnershipRequest, setPartnershipRequest] = useState(null);
   const [editMode, setEditMode] = useState(false);
+  const [retrievedValues, setRetrievedValues] = useState(null);
+  const [resetSignal, setResetSignal] = useState(0);
+  const [showRejectedDialog, setShowRejectedDialog] = useState(false);
   const [statusDialogOpen, setStatusDialogOpen] = useState(false);
+  const [showSuccessAlert, setShowSuccessAlert] = useState(false);
+  const [successMessage, setSuccessMessage] = useState("");
 
   const timeOptions = useMemo(
     () => [
@@ -76,7 +125,7 @@ export default function SetupShopForm() {
     }, {})
   );
 
-  const initialValues = {
+  const initialFormValues = {
     shopName: "",
     shopContactNo: "",
     shopEmail: "",
@@ -96,9 +145,8 @@ export default function SetupShopForm() {
   };
 
   const formik = useFormik({
-    initialValues,
+    initialValues: initialFormValues,
     validationSchema: shopInfoSchema,
-    enableReinitialize: true,
     onSubmit: async (values) => {
       setLoading(true);
       setErrorMessage("");
@@ -120,6 +168,12 @@ export default function SetupShopForm() {
           }
         });
       }
+      if (removedBusinessLicenseUrls.length > 0) {
+        formDataToSend.append("removedBusinessLicenseUrls", JSON.stringify(removedBusinessLicenseUrls));
+      }
+      if (values.shopLogo === null) {
+        formDataToSend.append("removeShopLogo", "true");
+      }
       try {
         const response = await fetch("/api/partnership/send-shop-request", {
           method: "POST",
@@ -129,6 +183,8 @@ export default function SetupShopForm() {
         if (response.ok) {
           setPartnershipRequest(data);
           setEditMode(false);
+          setSuccessMessage(data.message);
+          setShowSuccessAlert(true);
         } else {
           setErrorMessage(data.message || "An error occurred");
         }
@@ -152,12 +208,18 @@ export default function SetupShopForm() {
         (option) => option.name === values.province
       );
       if (selectedProvince) {
-        const selectedProvinceCode = selectedProvince.code;
         const filteredMunicipalities = municipalitiesData.filter(
-          (municipality) => municipality.provinceCode === selectedProvinceCode
+          (municipality) => municipality.provinceCode === selectedProvince.code
         );
         setMunicipalities(filteredMunicipalities);
-        setBarangays([]);
+        if (
+          !filteredMunicipalities.some((m) =>
+            m.name.trim().toLowerCase() === (values.municipality || "").trim().toLowerCase()
+          )
+        ) {
+          setFieldValue("municipality", "");
+          setFieldValue("barangay", "");
+        }
       } else {
         setMunicipalities([]);
         setBarangays([]);
@@ -166,7 +228,7 @@ export default function SetupShopForm() {
       setMunicipalities([]);
       setBarangays([]);
     }
-  }, [values.province, provinces]);
+  }, [values.province, provinces, setFieldValue]);
 
   useEffect(() => {
     if (values.municipality) {
@@ -174,18 +236,26 @@ export default function SetupShopForm() {
         (municipality) => municipality.name === values.municipality
       );
       if (selectedMunicipality) {
-        const selectedMunicipalityCode = selectedMunicipality.code;
         const filteredBarangays = barangaysData.filter(
-          (barangay) => barangay.municipalityCode === selectedMunicipalityCode
+          (barangay) => barangay.municipalityCode === selectedMunicipality.code
         );
         setBarangays(filteredBarangays);
+        if (
+          !filteredBarangays.some((b) =>
+            b.name.trim().toLowerCase() === (values.barangay || "").trim().toLowerCase()
+          )
+        ) {
+          setFieldValue("barangay", "");
+        }
       } else {
         setBarangays([]);
+        setFieldValue("barangay", "");
       }
     } else {
       setBarangays([]);
+      setFieldValue("barangay", "");
     }
-  }, [values.municipality]);
+  }, [values.municipality, setFieldValue]);
 
   useEffect(() => {
     if (loading) return;
@@ -205,34 +275,73 @@ export default function SetupShopForm() {
 
   useEffect(() => {
     async function fetchPartnershipRequest() {
-      const res = await fetch("/api/partnership/get-request");
-      if (res.ok) {
-        const data = await res.json();
-        setPartnershipRequest(data);
-        formik.setValues({
-          shopName: data.shop?.name || "",
-          shopContactNo: data.shop?.contactNo || "",
-          shopEmail: data.shop?.email || "",
-          buildingNo: data.address?.buildingNo || "",
-          street: data.address?.street || "",
-          barangay: data.address?.barangay || "",
-          municipality: data.address?.municipality || "",
-          province: data.address?.province || "",
-          postalNumber: data.address?.postalCode || "",
-          openingTime: data.shop?.openingTime || "",
-          closingTime: data.shop?.closingTime || "",
-          businessLicense: data.shop?.BusinessLicense 
-          ? data.shop.BusinessLicense.map(item => item.licenseUrl)
-          : [],
-          shopLogo: data.shop?.logo || "",
-          googleMapPlaceName: data.address?.googleMapLocation ? (data.address.googleMapLocation.name || "") : "",
-          latitude: data.address?.googleMapLocation ? data.address.googleMapLocation.latitude : null,
-          longitude: data.address?.googleMapLocation ? data.address.googleMapLocation.longitude : null,
-        });
+      setFetchLoading(true);
+      try {
+        const res = await fetch("/api/partnership/get-request");
+        if (res.ok) {
+          const data = await res.json();
+          setPartnershipRequest(data);
+          const newValues = {
+            shopName: data.shop?.name || "",
+            shopContactNo: data.shop?.contactNo || "",
+            shopEmail: data.shop?.email || "",
+            buildingNo: data.address?.buildingNo || "",
+            street: data.address?.street || "",
+            barangay: data.address?.barangay || "",
+            municipality: data.address?.municipality || "",
+            province: data.address?.province || "",
+            postalNumber: data.address?.postalCode || "",
+            openingTime: data.shop?.openingTime || "",
+            closingTime: data.shop?.closingTime || "",
+            businessLicense: data.shop?.BusinessLicense
+              ? data.shop.BusinessLicense.map(item => item.licenseUrl)
+              : [],
+            shopLogo: data.shop?.logo ? [data.shop.logo] : [],
+            googleMapPlaceName: data.address?.GoogleMapLocation?.name || "",
+            latitude: data.address?.GoogleMapLocation?.latitude || null,
+            longitude: data.address?.GoogleMapLocation?.longitude || null,
+          };
+          console.log(
+            "Retrieved latitude:", newValues.latitude,
+            "Retrieved longitude:", newValues.longitude,
+            "Retrieved place name:", newValues.googleMapPlaceName
+          );
+          formik.setValues(newValues);
+          setRetrievedValues(newValues);
+          if (newValues.province) {
+            const selectedProvince = provinces.find(opt => opt.name === newValues.province);
+            if (selectedProvince) {
+              const filteredMunicipalities = municipalitiesData.filter(
+                (m) => m.provinceCode === selectedProvince.code
+              );
+              setMunicipalities(filteredMunicipalities);
+            }
+          }
+          if (newValues.municipality) {
+            const selectedMunicipality = municipalitiesData.find(
+              (m) => m.name === newValues.municipality
+            );
+            if (selectedMunicipality) {
+              const filteredBarangays = barangaysData.filter(
+                (b) => b.municipalityCode === selectedMunicipality.code
+              );
+              setBarangays(filteredBarangays);
+            }
+          }
+          await fetch("/api/partnership/mark-seen", { method: "POST" });
+          // Only show the rejection dialog if the request is rejected and isSeen is false.
+          console.log("Data status:", data.status, "Data isSeen:", data.isSeen);
+          if (data.status === "REJECTED" && data.isSeen !== true) {
+            setShowRejectedDialog(true);
+          }
+        }
+      } catch (error) {
+        console.error("Error fetching partnership request:", error);
+      } finally {
+        setFetchLoading(false);
       }
     }
     fetchPartnershipRequest();
-    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   const handleLocationSelect = useCallback(
@@ -246,45 +355,152 @@ export default function SetupShopForm() {
 
   const isFormDisabled = partnershipRequest && !editMode;
   const initialMapPosition =
-    values.latitude && values.longitude ? { lat: values.latitude, lng: values.longitude } : null;
+    values.latitude !== null && values.longitude !== null
+      ? { lat: Number(values.latitude), lng: Number(values.longitude) }
+      : null;
+
+  if (fetchLoading) {
+    return <SkeletonForm />;
+  }
+
+  const handleEdit = () => {
+    setEditMode(true);
+  };
+
+  const handleCancelEdit = () => {
+    if (retrievedValues) {
+      formik.resetForm({ values: retrievedValues });
+      setResetSignal(prev => prev + 1);
+    }
+    setEditMode(false);
+  };
 
   return (
     <div className="mt-24 mb-24 flex flex-col w-full justify-center items-center gap-3">
+      {showSuccessAlert && (
+        <Alert className="fixed z-50 w-[30rem] right-10 bottom-10 flex items-center shadow-lg rounded-lg">
+          <CheckCircle2 className="h-10 w-10 stroke-green-500" />
+          <div className="ml-7">
+            <AlertTitle className="text-green-400 text-base font-semibold">
+              Partnership Request {partnershipRequest ? "Updated" : "Submitted"}
+            </AlertTitle>
+            <AlertDescription className="text-green-300">
+              {successMessage}
+            </AlertDescription>
+          </div>
+          <button
+            className="ml-auto mr-4 hover:text-primary/50 focus:outline-none"
+            onClick={() => setShowSuccessAlert(false)}
+          >
+            ✕
+          </button>
+        </Alert>
+      )}
+
       <div className="flex flex-row items-center justify-between gap-3 w-full max-w-[75rem] mb-10">
         <HueFitLogo height={75} className="fill-primary" />
         <button
           onClick={() => signOut({ callbackUrl: "/" })}
-          className="border px-10 py-3 flex gap-2 rounded-lg border-primary font-medium hover:border-primary/50 hover:text-primary/50 hover:stroke-primary/50 duration-300 ease-in-out"
+          className="border min-w-[12rem] px-10 py-4 flex gap-2 rounded-lg border-primary/60 font-medium hover:border-primary/50 hover:text-primary/50 hover:stroke-primary/50 duration-300 ease-in-out"
         >
           <LogOut />
-          Logout
+          LOGOUT
         </button>
       </div>
+
       {partnershipRequest && (
         <div className="flex flex-row gap-4 w-full max-w-[75rem] justify-end">
-          <Button variant="outline" onClick={() => setEditMode(true)}>
-            Edit
-          </Button>
+          {editMode ? (
+            <>
+              <Button variant="outline" className="min-w-[12rem]" disabled>
+                <Pencil />
+                Edit Infos
+              </Button>
+              <Button variant="outline" className="min-w-[12rem]" onClick={handleCancelEdit}>
+                Cancel
+              </Button>
+            </>
+          ) : (
+            <Button variant="outline" className="min-w-[12rem]" onClick={handleEdit}>
+              <Pencil />
+              Edit Infos
+            </Button>
+          )}
           <Dialog open={statusDialogOpen} onOpenChange={setStatusDialogOpen}>
             <DialogTrigger asChild>
-              <Button variant="outline">View Status</Button>
+              <Button className="min-w-[12rem]">
+                <Search /> View Status
+              </Button>
             </DialogTrigger>
             <DialogContent className="sm:max-w-[425px]">
               <DialogHeader>
-                <DialogTitle>
-                  <Store className="stroke-[2.5px] mr-2" />
+                <DialogTitle className="flex items-center gap-2 uppercase">
+                  <Store className="stroke-[2px] mr-2" />
                   Partnership Request Status
                 </DialogTitle>
                 <DialogDescription>
-                  {partnershipRequest.status === "PENDING"
-                    ? "Your shop is being processed. Please keep an eye on your email for updates."
-                    : `Your request status is: ${partnershipRequest.status}`}
+                  <div className="flex flex-col gap-0 mt-5 bg-muted p-5 rounded-lg">
+                    <div className="text-base text-primary/80">
+                      Status:{" "}
+                      <b className="bg-amber-600 p-1 rounded">
+                        {partnershipRequest.status}
+                      </b>
+                    </div>
+                    <div className="text-base text-primary/80">
+                      Message:{" "}
+                      <b>
+                        {partnershipRequest.message || "No message provided"}
+                      </b>
+                    </div>
+                  </div>
+                  {partnershipRequest.status === "PENDING" && (
+                    <div className="italic text-sm mt-5">
+                      Your shop is being processed. Please keep an eye on your email for updates.
+                    </div>
+                  )}
                 </DialogDescription>
               </DialogHeader>
             </DialogContent>
           </Dialog>
         </div>
       )}
+
+      {showRejectedDialog && (
+        <Dialog
+          open={true}
+          onOpenChange={(open) => {
+            if (!open) {
+              setShowRejectedDialog(false);
+              setPartnershipRequest(null);
+            }
+          }}
+        >
+          <DialogContent className="sm:max-w-[425px]">
+            <DialogHeader>
+              <DialogTitle className="flex items-center gap-2 uppercase mb-5">
+                <Store className="stroke-[2px] mr-2" /> Partnership Request Rejected
+              </DialogTitle>
+              <DialogDescription className="mt-5 italic">
+                Your partnership request has been rejected.
+                {partnershipRequest?.message && (
+                  <div className="text-base mt-5 not-italic bg-muted p-2 rounded">
+                    Message: <b>{partnershipRequest.message}</b>
+                  </div>
+                )}
+              </DialogDescription>
+            </DialogHeader>
+            <Button
+              onClick={() => {
+                setShowRejectedDialog(false);
+                setPartnershipRequest(null);
+              }}
+            >
+              OK
+            </Button>
+          </DialogContent>
+        </Dialog>
+      )}
+
       <Card className="flex flex-row gap-3 w-full max-w-[75rem] p-3">
         <Info />
         <p>
@@ -296,7 +512,6 @@ export default function SetupShopForm() {
       </Card>
       <Card className="w-full max-w-[75rem]">
         <form onSubmit={formik.handleSubmit} className="flex flex-col gap-20 p-5">
-          {/* Shop Information */}
           <div className="flex flex-col gap-5">
             <CardTitle className="text-2xl">Shop Information</CardTitle>
             <div className="flex flex-col gap-3">
@@ -308,7 +523,12 @@ export default function SetupShopForm() {
                   <ImageUpload
                     inputId="shopLogoFile"
                     onFileSelect={(files) => setFieldValue("shopLogo", files)}
-                    initialFiles={values.shopLogo}
+                    onFileRemove={() => setFieldValue("shopLogo", null)}
+                    initialFiles={
+                      Array.isArray(values.shopLogo) && values.shopLogo.length > 0
+                        ? values.shopLogo[0]
+                        : ""
+                    }
                     disabled={isFormDisabled}
                     className={`${
                       errors.shopLogo && touched.shopLogo ? "border-red-500" : "border-border"
@@ -424,14 +644,14 @@ export default function SetupShopForm() {
                     Business License <Asterisk className="w-4" />
                   </Label>
                   <p className="font-light text-primary/75">
-                    {"Please add a copy of your shop's business license. Example documents include:"}
-                    <span className="italic">
-                      {"Business Registration Certificate, Mayor's Permit, or Business Permit."}
-                    </span>
+                    Please add a copy of your shop's business license. Example documents include:{" "}
+                    <span className="italic">Business Registration Certificate, Mayor's Permit, or Business Permit.</span>
                   </p>
                 </div>
                 <FileUpload
+                  resetSignal={resetSignal}
                   onFileSelect={(files) => setFieldValue("businessLicense", files)}
+                  onFileRemove={(url) => setRemovedBusinessLicenseUrls((prev) => [...prev, url])}
                   initialFiles={values.businessLicense}
                   disabled={isFormDisabled}
                   className={`w-full h-[400px] ${errors.businessLicense && touched.businessLicense ? "border-red-500" : "border-border"}`}
@@ -441,7 +661,6 @@ export default function SetupShopForm() {
               </div>
             </div>
           </div>
-          {/* Shop Address Information */}
           <div className="flex flex-col gap-5">
             <CardTitle className="text-2xl">Shop Address Information</CardTitle>
             <div className="grid grid-cols-2 gap-4">
@@ -455,6 +674,8 @@ export default function SetupShopForm() {
                     const selectedProvince = provinces.find((option) => option.code === value);
                     if (selectedProvince) {
                       setFieldValue("province", selectedProvince.name);
+                      setFieldValue("municipality", "");
+                      setFieldValue("barangay", "");
                     }
                   }}
                   value={provinces.find((option) => option.name === values.province)?.code || ""}
@@ -478,7 +699,11 @@ export default function SetupShopForm() {
                   Municipality <Asterisk className="w-4" />
                 </Label>
                 <Select
-                  onValueChange={(value) => setFieldValue("municipality", value)}
+                  key={`municipality-${values.municipality}`}
+                  onValueChange={(value) => {
+                    setFieldValue("municipality", value);
+                    setFieldValue("barangay", "");
+                  }}
                   aria-labelledby="municipality"
                   value={values.municipality}
                   disabled={values.province === "" || isFormDisabled}
@@ -501,6 +726,7 @@ export default function SetupShopForm() {
                   Barangay <Asterisk className="w-4" />
                 </Label>
                 <Select
+                  key={`barangay-${values.barangay}`}
                   onValueChange={(value) => {
                     const selectedBarangay = barangays.find((option) => option.code === value);
                     if (selectedBarangay) {
@@ -571,17 +797,20 @@ export default function SetupShopForm() {
               </div>
             </div>
           </div>
-          {/* Google Map Location Information */}
           <div className="flex flex-col gap-5">
             <div className="flex flex-col gap-1">
-              <CardTitle className="text-2xl">Google Map Location Information</CardTitle>
-              <p className="font-light text-primary/75">
-                {"Pinpoint your shop's exact location on the map. You can search for a location or manually select it."}
-              </p>
+              <CardTitle className="text-2xl">
+                {editMode ? "Select your Shop Location" : "Shop Location"}
+              </CardTitle>
+              {editMode && (
+                <p className="font-light text-primary/75">
+                  Pinpoint your shop's exact location on the map.
+                </p>
+              )}
             </div>
             <div ref={(el) => (fieldRefs.current["latitude"] = el)} className="flex flex-col gap-2">
               <Label className="font-bold flex flex-row items-center">
-                {"Your Shop's Google Map Location"} <Asterisk className="w-4" />
+                Your Shop's Google Map Location <Asterisk className="w-4" />
               </Label>
               <MapPicker
                 onLocationSelect={handleLocationSelect}

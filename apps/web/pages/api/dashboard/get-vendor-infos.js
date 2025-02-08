@@ -1,4 +1,4 @@
-// File: pages/api/dashboard/get-vendor-infos.js
+// pages/api/dashboard/get-vendor-infos.js
 import prisma from '@/utils/helpers';
 import { getSessionShopId } from "@/utils/helpers";
 
@@ -8,13 +8,10 @@ export default async function handler(req, res) {
   }
 
   const shopId = await getSessionShopId(req, res);
-
   if (!shopId) {
     return res.status(400).json({ error: 'No shopId associated with this user' });
   }
-
   const parsedShopId = parseInt(shopId, 10);
-
   if (isNaN(parsedShopId)) {
     console.log("Invalid shopId:", shopId);
     return res.status(400).json({ error: 'Invalid shopId' });
@@ -50,6 +47,7 @@ export default async function handler(req, res) {
     const types = await prisma.type.findMany({
       where: { shopId: parsedShopId },
     });
+
     const typeCountsRaw = await prisma.product.groupBy({
       by: ['typeId'],
       where: { shopId: parsedShopId },
@@ -67,6 +65,12 @@ export default async function handler(req, res) {
       count: group._count.id,
     }));
 
+    // Only fetch partnership request if it is pending.
+    const partnershipRequest = await prisma.partnershipRequest.findFirst({
+      where: { shopId: parsedShopId, status: "DONE" },
+      select: { isSeen: true }
+    });
+
     res.status(200).json({
       productCount,
       productVariantCount,
@@ -74,12 +78,12 @@ export default async function handler(req, res) {
       orderItemCount,
       notifications,
       typeCounts,
+      partnershipRequestIsSeen: partnershipRequest ? partnershipRequest.isSeen : true,
     });
-
   } catch (error) {
     console.error("Server error:", error);
     res.status(500).json({ error: 'Server error' });
   }
-
+  
   console.log("Handler finished");
 }

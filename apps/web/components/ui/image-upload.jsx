@@ -1,30 +1,27 @@
 // components/ui/image-upload.jsx
 import React, { useState, useEffect } from "react";
-import { Upload } from "lucide-react";
+import { Upload, X } from "lucide-react";
 import Image from "next/image";
 
 export default function ImageUpload({
   onFileSelect,
+  onFileRemove,
   className = "",
-  initialFiles = "", // now expecting a string URL instead of an array
+  initialFiles = "",
   inputId = "fileInput",
   disabled = false,
 }) {
   const [file, setFile] = useState(null);
   const [previewUrl, setPreviewUrl] = useState(null);
   const allowedTypes = ["image/jpeg", "image/png", "image/webp"];
-
-  // Disable further uploads if there's already a file or URL provided.
   const isInputDisabled = disabled || !!file;
 
-  // Initialize file state from initialFiles prop (a URL string).
   useEffect(() => {
     if (typeof initialFiles === "string" && initialFiles.trim() !== "") {
       setFile(initialFiles);
     }
   }, [initialFiles]);
 
-  // Update preview URL depending on file type.
   useEffect(() => {
     if (!file) {
       setPreviewUrl(null);
@@ -44,7 +41,7 @@ export default function ImageUpload({
     const selectedFile = event.target.files?.[0];
     if (selectedFile && allowedTypes.includes(selectedFile.type)) {
       setFile(selectedFile);
-      onFileSelect?.(selectedFile); // passing the file directly (not in an array)
+      onFileSelect?.(selectedFile);
     }
   };
 
@@ -53,6 +50,9 @@ export default function ImageUpload({
     event.preventDefault();
     setFile(null);
     onFileSelect?.(null);
+    if (onFileRemove) {
+      onFileRemove();
+    }
   };
 
   return (
@@ -78,9 +78,9 @@ export default function ImageUpload({
             {!disabled && (
               <button
                 onClick={handleRemoveFile}
-                className="absolute top-1 right-1 bg-primary text-card text-xl rounded-full w-7 h-7 hover:bg-primary/75 flex items-center justify-center z-10"
+                className="absolute top-1 right-1 bg-primary text-card text-xl shadow shadow-pure rounded-full w-7 h-7 hover:bg-muted-foreground flex items-center justify-center z-10"
               >
-                &times;
+                <X className="w-4 h-4 stroke-pure" />
               </button>
             )}
           </div>
@@ -98,10 +98,10 @@ export default function ImageUpload({
               Browse
             </button>
             <p className="mt-3 text-base text-primary/50 font-medium">
-              {"PLEASE UPLOAD YOUR SHOP'S LOGO"}
+              PLEASE UPLOAD YOUR SHOP'S LOGO
             </p>
             <p className="text-xs font-light text-primary/35 text-center">
-              {"FILES SUPPORTED: JPEG, PNG, WEBP"}
+              FILES SUPPORTED: JPEG, PNG, WEBP
             </p>
           </div>
         )}

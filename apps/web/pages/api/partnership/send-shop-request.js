@@ -1,7 +1,7 @@
 // pages/api/partnership/send-shop-request.js
-import { v4 as uuidv4 } from 'uuid';
-import prisma from '@/utils/helpers';
-import { parseFormData, uploadFileToSupabase } from '@/utils/helpers';
+import { v4 as uuidv4 } from "uuid";
+import prisma from "@/utils/helpers";
+import { parseFormData, uploadFileToSupabase } from "@/utils/helpers";
 import { getServerSession } from "next-auth/next";
 import { authOptions } from "../auth/[...nextauth]";
 
@@ -12,7 +12,7 @@ export const config = {
 };
 
 export default async function handler(req, res) {
-  if (req.method !== 'POST') {
+  if (req.method !== "POST") {
     return res.status(405).json({ message: "Method not allowed" });
   }
   try {
@@ -24,9 +24,8 @@ export default async function handler(req, res) {
     const { fields, files } = await parseFormData(req);
     const requestNo = uuidv4().slice(0, 8);
 
-    // Process business license files
     const businessLicenseFiles = Object.keys(files).filter(key =>
-      key.startsWith('businessLicense[')
+      key.startsWith("businessLicense[")
     );
     const businessLicensesURL = [];
     for (const key of businessLicenseFiles) {
@@ -37,13 +36,12 @@ export default async function handler(req, res) {
           file.filepath,
           file.originalFilename,
           requestNo,
-          'business-licenses/licenses'
+          "business-licenses/licenses"
         );
         businessLicensesURL.push(fileURL);
       }
     }
 
-    // Process shop logo (single image file)
     let shopLogoURL = null;
     if (files.shopLogo) {
       const logoFiles = files.shopLogo;
@@ -53,13 +51,12 @@ export default async function handler(req, res) {
           file.filepath,
           file.originalFilename,
           requestNo,
-          'shop/logo'
+          "shop/logo"
         );
         break;
       }
     }
 
-    // Extract fields
     const shopName = fields.shopName[0];
     const shopContactNo = fields.shopContactNo[0];
     const shopEmail = fields.shopEmail[0];
@@ -74,8 +71,8 @@ export default async function handler(req, res) {
     const googleMapPlaceName = fields.googleMapPlaceName[0];
     const latitude = parseFloat(fields.latitude[0]);
     const longitude = parseFloat(fields.longitude[0]);
+    const removeShopLogo = fields.removeShopLogo ? fields.removeShopLogo[0] === "true" : false;
 
-    // Check for existing partnership request
     const existingRequest = await prisma.partnershipRequest.findFirst({
       where: { userId },
       include: {
@@ -90,13 +87,11 @@ export default async function handler(req, res) {
     });
 
     if (existingRequest) {
-      // Update existing records
-      const updatedGoogleMap = await prisma.googleMapLocation.update({
+      await prisma.googleMapLocation.update({
         where: { id: existingRequest.Shop.ShopAddress.googleMapId },
         data: { name: googleMapPlaceName, latitude, longitude },
       });
-
-      const updatedAddress = await prisma.shopAddress.update({
+      await prisma.shopAddress.update({
         where: { id: existingRequest.Shop.addressId },
         data: {
           buildingNo,
@@ -107,38 +102,46 @@ export default async function handler(req, res) {
           postalCode: postalNumber,
         },
       });
-
+      const shopUpdateData = {
+        name: shopName,
+        contactNo: shopContactNo,
+        email: shopEmail,
+        openingTime,
+        closingTime,
+      };
+      if (removeShopLogo) {
+        shopUpdateData.logo = null;
+      } else if (shopLogoURL) {
+        shopUpdateData.logo = shopLogoURL;
+      }
       const updatedShop = await prisma.shop.update({
         where: { id: existingRequest.Shop.id },
-        data: {
-          name: shopName,
-          contactNo: shopContactNo,
-          email: shopEmail,
-          openingTime,
-          closingTime,
-          logo: shopLogoURL || existingRequest.Shop.logo,
-        },
+        data: shopUpdateData,
       });
-
-      // If new business license files are provided, add them
-      for (const url of businessLicensesURL) {
-        await prisma.shopBusinessLicense.create({
-          data: { shopId: updatedShop.id, licenseUrl: url },
-        });
+      if (businessLicensesURL.length > 0) {
+        for (const url of businessLicensesURL) {
+          await prisma.shopBusinessLicense.create({
+            data: { shopId: updatedShop.id, licenseUrl: url },
+          });
+        }
       }
-
-      res.status(200).json({
-        message: "Shop request updated successfully",
+      if (fields.removedBusinessLicenseUrls) {
+        const removedUrls = JSON.parse(fields.removedBusinessLicenseUrls[0]);
+        for (const url of removedUrls) {
+          await prisma.shopBusinessLicense.deleteMany({
+            where: { shopId: updatedShop.id, licenseUrl: url }
+          });
+        }
+      }
+      return res.status(200).json({
+        message: "You updated the request.",
         status: existingRequest.status,
         shop: updatedShop,
-        address: updatedAddress,
       });
     } else {
-      // Create new records
       const newGoogleMapLocation = await prisma.googleMapLocation.create({
         data: { name: googleMapPlaceName, latitude, longitude },
       });
-
       const newAddress = await prisma.shopAddress.create({
         data: {
           buildingNo,
@@ -150,7 +153,6 @@ export default async function handler(req, res) {
           googleMapId: newGoogleMapLocation.id,
         },
       });
-
       const newShop = await prisma.shop.create({
         data: {
           shopNo: uuidv4().slice(0, 8),
@@ -165,12 +167,10 @@ export default async function handler(req, res) {
           logo: shopLogoURL,
         },
       });
-
       await prisma.vendorProfile.update({
         where: { userId: userId },
         data: { shopId: newShop.id },
       });
-
       await prisma.partnershipRequest.create({
         data: {
           requestNo,
@@ -179,19 +179,20 @@ export default async function handler(req, res) {
           status: "PENDING",
         },
       });
-
       for (const url of businessLicensesURL) {
         await prisma.shopBusinessLicense.create({
           data: { shopId: newShop.id, licenseUrl: url },
         });
       }
-
-      await prisma.user.update({
-        where: { id: userId },
-        data: { status: "SHOP_SETUP" },
-      });
-
-      res.status(201).json({
+      if (fields.removedBusinessLicenseUrls) {
+        const removedUrls = JSON.parse(fields.removedBusinessLicenseUrls[0]);
+        for (const url of removedUrls) {
+          await prisma.shopBusinessLicense.deleteMany({
+            where: { shopId: newShop.id, licenseUrl: url }
+          });
+        }
+      }
+      return res.status(201).json({
         message: "Shop request submitted successfully",
         status: "PENDING",
         shop: newShop,
@@ -199,9 +200,9 @@ export default async function handler(req, res) {
     }
   } catch (error) {
     console.error("Error processing shop request:", error);
-    if (error.code === 'P2002') {
+    if (error.code === "P2002") {
       const field = error.meta?.target?.[0];
-      const errorMessage = field === 'shopName'
+      const errorMessage = field === "shopName"
         ? "The shop name is already registered. Please choose another."
         : `Duplicate value detected for the field '${field}'.`;
       return res.status(409).json({ message: errorMessage });

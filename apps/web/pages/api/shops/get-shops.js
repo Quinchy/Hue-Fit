@@ -1,19 +1,33 @@
-// /pages/api/shops/get-shops.js
+// 2) pages/api/shops/get-shops.js
 import prisma, { disconnectPrisma } from "@/utils/helpers";
 
 export default async function handler(req, res) {
-  const { page = 1, limit = 7 } = req.query;
+  const { page = 1, limit = 7, status = "ALL", search = "" } = req.query;
+  const offset = (page - 1) * limit;
 
   try {
-    const offset = (page - 1) * limit;
-    const activeShops = await prisma.shop.findMany({
-      where: { status: "ACTIVE" },
+    let whereClause = {};
+
+    if (status === "ALL") {
+      whereClause.status = { in: ["ACTIVE", "INACTIVE"] };
+    } else {
+      whereClause.status = status;
+    }
+
+    if (search) {
+      whereClause.OR = [
+        { shopNo: { contains: search, mode: "insensitive" } },
+        { name: { contains: search, mode: "insensitive" } },
+      ];
+    }
+
+    const shops = await prisma.shop.findMany({
+      where: whereClause,
       skip: offset,
       take: parseInt(limit),
       select: {
         shopNo: true,
         name: true,
-        // Correct relation for the ShopAddress model
         ShopAddress: {
           select: {
             buildingNo: true,
@@ -26,21 +40,19 @@ export default async function handler(req, res) {
         },
         status: true,
       },
-      orderBy: { created_at: "desc" },
+      orderBy: [{ status: "asc" }, { created_at: "desc" }],
     });
 
-    const totalShops = await prisma.shop.count({
-      where: { status: "ACTIVE" },
-    });
+    const totalShops = await prisma.shop.count({ where: whereClause });
 
     res.status(200).json({
-      shops: activeShops,
+      shops,
       totalPages: Math.ceil(totalShops / limit),
       currentPage: parseInt(page),
     });
   } catch (error) {
-    console.error("Error fetching active shops:", error);
-    res.status(500).json({ error: "Failed to fetch active shops" });
+    console.error("Error fetching shops:", error);
+    res.status(500).json({ error: "Failed to fetch shops" });
   } finally {
     await disconnectPrisma();
   }

@@ -32,11 +32,11 @@ const BusinessLicense = ({ imageUrl }) => {
     <div className="relative flex flex-col items-center">
       {/* Render preview for images or PDFs */}
       {isPdf ? (
-        <div className="relative w-[10rem] h-[12rem] rounded border-2 border-dashed border-primary/20 p-2">
+        <div className="relative min-w-[10rem] min-h-[12rem] max-w-[10rem] max-h-[12rem] rounded border-2 border-dashed border-primary/20 p-2">
           <embed
             src={previewUrl || placeholderImage}
             type="application/pdf"
-            className="w-full h-full rounded"
+            className="max-w-[8.9rem] min-h-[10.9rem] min-w-[8.9rem] max-h-[10.9rem] rounded"
           />
           {/* Invisible button positioned over the PDF */}
           <button
@@ -47,15 +47,14 @@ const BusinessLicense = ({ imageUrl }) => {
           ></button>
         </div>
       ) : (
-        <div className="relative">
+        <div className="relative min-w-[10rem] min-h-[12rem] max-w-[10rem] max-h-[12rem]">
           <Image
             src={previewUrl || placeholderImage}
             alt="Business License"
-            width={128}
-            height={128}
+            fill
             quality={100}
             onClick={() => setIsModalOpen(true)} // Open modal for images
-            className="cursor-pointer object-cover rounded min-h-[12rem] min-w-[10rem] border-2 border-dashed border-primary/20 p-2"
+            className="cursor-pointer object-cover rounded min-h-[12rem] min-w-[10rem] max-w-[10rem] max-h-[12rem] border-2 border-dashed border-primary/20 p-2"
           />
         </div>
       )}

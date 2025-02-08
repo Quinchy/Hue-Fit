@@ -1,3 +1,4 @@
+// File: pages/api/partnership/update-request.js
 import prisma from "@/utils/helpers";
 import nodemailer from "nodemailer";
 
@@ -5,9 +6,9 @@ export default async function handler(req, res) {
   console.log("Request Body:", req.body);
   let { requestNo, status, email, message } = req.body;
 
-  if (status === "ACCEPTED") {
-    status = "ACTIVE";
-  }
+  // If the UI sends "ACCEPTED", then for user and shop we use ACTIVE status,
+  // but for the partnership request we set status to DONE.
+  const partnershipRequestStatus = status === "ACCEPTED" ? "DONE" : status;
 
   try {
     console.log("Request No:", requestNo);
@@ -23,27 +24,35 @@ export default async function handler(req, res) {
     console.log("Shop Id:", shopId);
 
     if (status === "ACTIVE") {
-      // Update user, shop, and partnership request statuses
+      // For an approved partnership:
+      // Update user and shop statuses to ACTIVE
       await prisma.user.update({
         where: { id: partnershipRequest.userId },
-        data: { status },
+        data: { status: "ACTIVE" },
       });
 
       await prisma.shop.update({
         where: { id: partnershipRequest.shopId },
-        data: { status },
+        data: { status: "ACTIVE" },
       });
 
+      // Update the partnership request status to DONE and set the message.
       await prisma.partnershipRequest.update({
         where: { requestNo },
-        data: { status: "DONE" },
+        data: { status: partnershipRequestStatus, message },
       });
 
-      // Add predefined values
+      // Add predefined values for an approved shop
       await addPredefinedValues(shopId);
+    } else {
+      // For REJECTED or PENDING statuses, update the partnership request with the provided status and message.
+      await prisma.partnershipRequest.update({
+        where: { requestNo },
+        data: { status: partnershipRequestStatus, message },
+      });
     }
 
-    // Send notification email
+    // Send notification email with the provided message.
     await sendNotificationEmail(email, status, message);
 
     res.status(200).json({
@@ -81,7 +90,7 @@ async function addPredefinedValues(shopId) {
     ],
   });
 
-  // Add tags
+  // Add tags based on the types created above
   const types = await prisma.type.findMany({
     where: { shopId },
     select: { id: true },
@@ -118,25 +127,24 @@ async function addPredefinedValues(shopId) {
 function generateTagsData(types, shopId) {
   const typeIds = types.map((type) => type.id);
   return [
-    { typeId: typeIds[0], shopId, name: 'BLAZERS' },
-    { typeId: typeIds[0], shopId, name: 'COATS' },
-    { typeId: typeIds[0], shopId, name: 'CARDIGANS' },
-    { typeId: typeIds[0], shopId, name: 'VESTS' },
-    { typeId: typeIds[1], shopId, name: 'HENLEY SHIRT' },
-    { typeId: typeIds[1], shopId, name: 'T-SHIRTS' },
-    { typeId: typeIds[1], shopId, name: 'POLO SHIRT' },
-    { typeId: typeIds[1], shopId, name: 'SHORT SLEEVES' },
-    { typeId: typeIds[2], shopId, name: 'SHORTS' },
-    { typeId: typeIds[2], shopId, name: 'JEANS' },
-    { typeId: typeIds[2], shopId, name: 'CHINOS' },
-    { typeId: typeIds[2], shopId, name: 'TROUSERS' },
-    { typeId: typeIds[2], shopId, name: 'SLACKS' },
-    { typeId: typeIds[3], shopId, name: 'SANDALS' },
-    { typeId: typeIds[3], shopId, name: 'LOAFERS' },
-    { typeId: typeIds[3], shopId, name: 'BOOTS' },
-    { typeId: typeIds[3], shopId, name: 'SNEAKERS' },
-    { typeId: typeIds[3], shopId, name: 'OXFORD' },
-    // Add more tags as needed...
+    { typeId: typeIds[0], shopId, name: "BLAZERS" },
+    { typeId: typeIds[0], shopId, name: "COATS" },
+    { typeId: typeIds[0], shopId, name: "CARDIGANS" },
+    { typeId: typeIds[0], shopId, name: "VESTS" },
+    { typeId: typeIds[1], shopId, name: "HENLEY SHIRT" },
+    { typeId: typeIds[1], shopId, name: "T-SHIRTS" },
+    { typeId: typeIds[1], shopId, name: "POLO SHIRT" },
+    { typeId: typeIds[1], shopId, name: "SHORT SLEEVES" },
+    { typeId: typeIds[2], shopId, name: "SHORTS" },
+    { typeId: typeIds[2], shopId, name: "JEANS" },
+    { typeId: typeIds[2], shopId, name: "CHINOS" },
+    { typeId: typeIds[2], shopId, name: "TROUSERS" },
+    { typeId: typeIds[2], shopId, name: "SLACKS" },
+    { typeId: typeIds[3], shopId, name: "SANDALS" },
+    { typeId: typeIds[3], shopId, name: "LOAFERS" },
+    { typeId: typeIds[3], shopId, name: "BOOTS" },
+    { typeId: typeIds[3], shopId, name: "SNEAKERS" },
+    { typeId: typeIds[3], shopId, name: "OXFORD" },
   ];
 }
 
@@ -154,7 +162,6 @@ async function addSizes(shopId) {
     select: { id: true },
   });
 
-  // Link sizes to each other
   await prisma.size.updateMany({
     where: { id: sizes[0].id },
     data: { nextId: sizes[1].id },
@@ -185,7 +192,8 @@ function generateMeasurementData(types, shopId) {
 async function sendNotificationEmail(email, status, message) {
   const defaultMessage =
     status === "ACTIVE"
-      ? `Congratulations! Your partnership request has been approved. You can now access the vendor dashboard at https://hue-fit-web.vercel.app/account/login.`
+      ? `Congratulations! Your partnership request has been approved.
+You can now access the vendor dashboard at https://hue-fit-web.vercel.app/account/login.`
       : `We regret to inform you that your partnership request has not been approved.`;
 
   const transporter = nodemailer.createTransport({

@@ -2,10 +2,9 @@ import { getToken } from "next-auth/jwt";
 import { NextResponse } from "next/server";
 
 // Inline only the minimal route paths needed by the middleware.
-// This avoids importing the external "routes" file that may pull in problematic modules.
 const routes = {
-  shopSuccess: "/shop/success",
-  shopSetup: "/shop/setup",
+  shopSuccess: "/partnership/setup/success",
+  shopSetup: "/partnership/setup/setup-shop",
 };
 
 // Helper to remove trailing slashes (except for the root "/")
@@ -19,13 +18,18 @@ export async function middleware(req) {
   const { pathname } = url;
   const normalizedPath = normalizePath(pathname);
 
-  // 0. Redirect vendors accessing shopSuccess to shopSetup if status is PENDING or SHOP_SETUP.
+  // Remove token.status if it is "SHOP_SETUP"
+  if (token && token.status === "SHOP_SETUP") {
+    delete token.status;
+  }
+
+  // 0. Redirect vendors accessing shopSuccess to shopSetup if status is PENDING.
   if (
     token &&
     token.role === "VENDOR" &&
     normalizedPath === normalizePath(routes.shopSuccess)
   ) {
-    if (token.status === "PENDING" || token.status === "SHOP_SETUP") {
+    if (token.status === "PENDING") {
       return NextResponse.redirect(new URL(routes.shopSetup, url));
     }
     return NextResponse.next();
@@ -48,14 +52,20 @@ export async function middleware(req) {
   // 3. Role & Status Based Access Control.
   if (token) {
     if (token.role === "VENDOR") {
-      // Vendors with PENDING or SHOP_SETUP status must remain on shopSetup.
-      if (token.status === "PENDING" || token.status === "SHOP_SETUP") {
+      // If the vendor's shop is inactive, block access to the dashboard and redirect to login.
+      if (token.status === "INACTIVE") {
+        // You can redirect them to a custom page if you prefer:
+        // e.g. "/account/login?shop=inactive"
+        return NextResponse.redirect(new URL("/account/login", url));
+      }
+
+      // Vendors with a PENDING status must remain on shopSetup.
+      if (token.status === "PENDING") {
         if (normalizedPath !== normalizePath(routes.shopSetup)) {
           return NextResponse.redirect(new URL(routes.shopSetup, url));
         }
-      }
-      // ACTIVE vendors are allowed only specific routes.
-      else if (token.status === "ACTIVE") {
+      } else {
+        // For vendors with ACTIVE status (or no status), allow only certain routes.
         const vendorAllowedRoutes = [
           "/dashboard",
           "/dashboard/product",
@@ -69,10 +79,6 @@ export async function middleware(req) {
         if (!allowed) {
           return NextResponse.redirect(new URL("/dashboard", url));
         }
-      }
-      // Fallback: any other vendor status redirects to dashboard.
-      else {
-        return NextResponse.redirect(new URL("/dashboard", url));
       }
     } else if (token.role === "ADMIN") {
       const adminAllowedRoutes = [
