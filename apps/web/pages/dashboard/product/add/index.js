@@ -1,5 +1,4 @@
-// index.js
-
+// index.js (Product Component)
 import { useState, useRef, useEffect } from "react";
 import { useRouter } from "next/router";
 import DashboardLayoutWrapper from "@/components/ui/dashboard-layout";
@@ -13,7 +12,7 @@ import {
   SelectGroup,
   SelectItem,
   SelectTrigger,
-  SelectValue
+  SelectValue,
 } from "@/components/ui/select";
 import Image from "next/image";
 import { Label } from "@/components/ui/label";
@@ -22,7 +21,7 @@ import { productSchema } from "@/utils/validation-schema";
 import {
   ErrorMessage,
   InputErrorMessage,
-  InputErrorStyle
+  InputErrorStyle,
 } from "@/components/ui/error-message";
 import { LoadingMessage } from "@/components/ui/loading-message";
 import { ToggleGroup, ToggleGroupItem } from "@/components/ui/toggle-group";
@@ -73,17 +72,14 @@ export default function AddProduct() {
   const fileInputRef = useRef(null);
   const [submitting, setSubmitting] = useState(false);
 
-  // States for product info fetch
   const [productData, setProductData] = useState(null);
   const [productLoading, setProductLoading] = useState(true);
   const [productError, setProductError] = useState(false);
 
-  // States for measurement fetch
   const [measurementData, setMeasurementData] = useState(null);
   const [measurementLoading, setMeasurementLoading] = useState(false);
   const [measurementError, setMeasurementError] = useState(false);
 
-  // Fetch product-related info on mount
   useEffect(() => {
     async function fetchProductRelatedInfo() {
       try {
@@ -102,7 +98,6 @@ export default function AddProduct() {
     fetchProductRelatedInfo();
   }, []);
 
-  // Formik setup
   const formik = useFormik({
     initialValues: {
       thumbnail: null,
@@ -113,7 +108,7 @@ export default function AddProduct() {
       tags: "",
       sizes: [],
       variants: [],
-      measurements: []
+      measurements: [],
     },
     validationSchema: productSchema,
     onSubmit: async (values, { setTouched }) => {
@@ -132,7 +127,6 @@ export default function AddProduct() {
         );
 
       try {
-        // Append thumbnail
         if (values.thumbnail && values.thumbnail.file) {
           formData.append("thumbnail", values.thumbnail.file);
         }
@@ -147,7 +141,6 @@ export default function AddProduct() {
           formData.append("sizes", values.sizes.join(","));
         }
 
-        // Build variants
         await Promise.race([
           new Promise((resolve) => {
             values.variants.forEach((variant, variantIndex) => {
@@ -173,13 +166,18 @@ export default function AddProduct() {
                   );
                 });
               }
+              if (variant.pngClothe && variant.pngClothe.file) {
+                formData.append(
+                  `variants[${variantIndex}][pngClothe]`,
+                  variant.pngClothe.file
+                );
+              }
             });
             resolve();
           }),
-          timeout(5000)
+          timeout(5000),
         ]);
 
-        // Build measurements
         if (Array.isArray(values.measurements)) {
           const transformedMeasurements = [];
           values.measurements.forEach((measurement) => {
@@ -187,17 +185,16 @@ export default function AddProduct() {
               transformedMeasurements.push({
                 size: val.size,
                 measurementName: measurement.measurementName,
-                value: val.value
+                value: val.value,
               });
             });
           });
           formData.append("measurements", JSON.stringify(transformedMeasurements));
         }
 
-        // Final submission
         const response = await fetch("/api/products/add-product", {
           method: "POST",
-          body: formData
+          body: formData,
         });
         const result = await response.json();
 
@@ -215,7 +212,7 @@ export default function AddProduct() {
     validateOnMount: true,
     validateOnBlur: true,
     validateOnChange: true,
-    validateOnSubmit: true
+    validateOnSubmit: true,
   });
 
   const {
@@ -224,28 +221,23 @@ export default function AddProduct() {
     touched,
     setFieldValue,
     handleBlur,
-    handleChange
+    handleChange,
   } = formik;
 
-  // Derived from productData
   const types = productData?.types || [];
   const categories = productData?.categories || [];
   const tags = productData?.tags || [];
   const sizeList = productData?.sizes || [];
   const colors = productData?.colors || [];
 
-  // Filter tags by selected type
   const filteredTags = tags.filter((tag) => tag.typeId === parseInt(values.type));
-  // Order sizes
   const orderedSizes = orderSizes(sizeList);
 
-  // Helper to get type's name
   const getTypeNameById = (id) => {
     const found = types.find((t) => t.id === parseInt(id));
     return found ? found.name : "";
   };
 
-  // Once user selects a type, we fetch measurements
   const typeName = getTypeNameById(values.type);
   useEffect(() => {
     async function fetchMeasurements() {
@@ -271,25 +263,22 @@ export default function AddProduct() {
     fetchMeasurements();
   }, [typeName]);
 
-  // Size add / remove
   const addSize = (sizeAbbreviation) => {
     const newSizes = [...values.sizes, sizeAbbreviation];
     setFieldValue("sizes", newSizes);
 
-    // if no measurements yet, create initial
     if (values.measurements.length === 0) {
       const initialMeasurementValues = [{ size: sizeAbbreviation, value: "" }];
       setFieldValue("measurements", [
-        { measurementName: "", values: initialMeasurementValues }
+        { measurementName: "", values: initialMeasurementValues },
       ]);
     } else {
-      // update existing measurements
       const updatedMeasurements = values.measurements.map((m) => {
         const existing = m.values.find((v) => v.size === sizeAbbreviation);
         if (!existing) {
           return {
             ...m,
-            values: [...m.values, { size: sizeAbbreviation, value: "" }]
+            values: [...m.values, { size: sizeAbbreviation, value: "" }],
           };
         }
         return m;
@@ -297,7 +286,6 @@ export default function AddProduct() {
       setFieldValue("measurements", updatedMeasurements);
     }
 
-    // also update variant quantities
     values.variants.forEach((variant, index) => {
       const existing = variant.quantities?.find((q) => q.size === sizeAbbreviation);
       if (!existing) {
@@ -361,13 +349,11 @@ export default function AddProduct() {
 
   return (
     <DashboardLayoutWrapper>
-      {/* Display product info error */}
       {productError && (
         <div className="mb-3 bg-red-600 text-white p-3 rounded">
           Failed to load product information
         </div>
       )}
-      {/* Display measurement error */}
       {measurementError && (
         <div className="mb-3 bg-red-600 text-white p-3 rounded">
           Failed to load measurements information
@@ -645,7 +631,6 @@ export default function AddProduct() {
             <div className="h-[1px] w-full bg-primary/25"></div>
           </div>
 
-          {/* For measurement data */}
           {measurementLoading && (
             <div className="flex justify-center items-center">
               <Loader className="animate-spin" />
@@ -678,7 +663,7 @@ export default function AddProduct() {
                     <ProductVariantCard
                       key={index}
                       variant={variant}
-                      productType={values.type}
+                      productType={getTypeNameById(values.type)}
                       onRemove={() => remove(index)}
                       variantIndex={index}
                       colors={productData?.colors || []}
@@ -697,7 +682,8 @@ export default function AddProduct() {
                       color: "",
                       sizes: [...values.sizes],
                       images: [],
-                      quantities: []
+                      quantities: [],
+                      pngClothe: null,
                     };
                     values.sizes.forEach((sizeAbbr) => {
                       newVariant.quantities.push({ size: sizeAbbr, quantity: "" });

@@ -32,63 +32,49 @@ import { Search, NotepadText, ChevronDown, Eye } from "lucide-react";
 import { Skeleton } from "@/components/ui/skeleton";
 import routes from "@/routes";
 
-// The basic fetcher for useSWR
 const fetcher = (url) => fetch(url).then((res) => res.json());
 
 export default function Inquiries() {
   const router = useRouter();
-
-  // Local states for page, status filter, search
   const [currentPage, setCurrentPage] = useState(1);
   const [statusFilter, setStatusFilter] = useState("ALL");
   const [searchQuery, setSearchQuery] = useState("");
 
-  // Build our query URL
   const apiUrl = `/api/inquiry/get-inquiry?page=${currentPage}&limit=8&status=${statusFilter}&search=${encodeURIComponent(
     searchQuery
   )}`;
 
-  // useSWR for data fetching
-  // - refreshInterval: polls every 5s
-  // - revalidateOnFocus: false => no re-fetch when user focuses the browser tab
-  // - keepPreviousData: true => keeps old data on screen while fetching new
-  const { data, isLoading } = useSWR(apiUrl, fetcher, {
+  const { data, isValidating } = useSWR(apiUrl, fetcher, {
     refreshInterval: 5000,
     revalidateOnFocus: false,
     keepPreviousData: true,
   });
 
-  // Extract data or use fallback
   const inquiries = data?.inquiries || [];
   const totalPages = data?.totalPages || 1;
 
-  // Handler: Searching
   const handleSearch = (e) => {
     setSearchQuery(e.target.value);
-    setCurrentPage(1); // reset to page 1 for new search
+    setCurrentPage(1);
   };
 
-  // Handler: Press Enter in search
   const handleKeyDown = (e) => {
     if (e.key === "Enter") {
       setCurrentPage(1);
     }
   };
 
-  // Handler: Filter status
   const handleStatusFilter = (status) => {
     setStatusFilter(status);
     setCurrentPage(1);
   };
 
-  // Handler: navigate to detail view
   const handleViewClick = (inquiryNo) => {
     router.push(routes.inquiryView.replace("[inquiryNo]", inquiryNo));
   };
 
   return (
     <DashboardLayoutWrapper>
-      {/* Page Header */}
       <div className="flex flex-row justify-between">
         <CardTitle className="text-4xl">Inquiries</CardTitle>
         <div className="flex flex-row gap-5">
@@ -133,7 +119,6 @@ export default function Inquiries() {
       </div>
 
       <Card className="flex flex-col p-5 gap-4 min-h-[49rem]">
-        {/* Inquiries Table */}
         <div className="flex flex-col gap-4 justify-between min-h-[42rem]">
           <Table>
             <TableHeader>
@@ -146,15 +131,24 @@ export default function Inquiries() {
               </TableRow>
             </TableHeader>
             <TableBody>
-              {isLoading ? (
-                // Skeleton placeholders while loading
+              {!data ? (
                 Array.from({ length: 8 }).map((_, index) => (
                   <TableRow key={index}>
-                    <TableCell><Skeleton className="h-14 w-full" /></TableCell>
-                    <TableCell><Skeleton className="h-14 w-full" /></TableCell>
-                    <TableCell><Skeleton className="h-14 w-full" /></TableCell>
-                    <TableCell><Skeleton className="h-14 w-full" /></TableCell>
-                    <TableCell><Skeleton className="h-14 w-full" /></TableCell>
+                    <TableCell>
+                      <Skeleton className="h-14 w-full" />
+                    </TableCell>
+                    <TableCell>
+                      <Skeleton className="h-14 w-full" />
+                    </TableCell>
+                    <TableCell>
+                      <Skeleton className="h-14 w-full" />
+                    </TableCell>
+                    <TableCell>
+                      <Skeleton className="h-14 w-full" />
+                    </TableCell>
+                    <TableCell>
+                      <Skeleton className="h-14 w-full" />
+                    </TableCell>
                   </TableRow>
                 ))
               ) : inquiries.length > 0 ? (
@@ -217,7 +211,6 @@ export default function Inquiries() {
             </TableBody>
           </Table>
 
-          {/* Pagination */}
           {inquiries.length > 0 && (
             <Pagination className="flex flex-col items-end">
               <PaginationContent>

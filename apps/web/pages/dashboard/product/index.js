@@ -7,11 +7,43 @@ import DashboardLayoutWrapper from '@/components/ui/dashboard-layout';
 import { Card, CardTitle } from '@/components/ui/card';
 import Link from 'next/link';
 import Image from 'next/image';
-import { X, Plus, NotepadText, Search, ChevronDown, Eye, Pencil, Package, Copy, CheckCircle2 } from 'lucide-react';
+import {
+  X,
+  Plus,
+  NotepadText,
+  Search,
+  ChevronDown,
+  Eye,
+  Pencil,
+  Package,
+  Copy,
+  CheckCircle2,
+  CircleAlert,
+} from 'lucide-react';
 import { buttonVariants, Button } from '@/components/ui/button';
-import { Pagination, PaginationPrevious, PaginationContent, PaginationItem, PaginationNext, PaginationLink } from '@/components/ui/pagination';
-import { Table, TableHead, TableHeader, TableBody, TableCell, TableRow } from '@/components/ui/table';
-import { DropdownMenu, DropdownMenuContent, DropdownMenuGroup, DropdownMenuItem, DropdownMenuTrigger } from '@/components/ui/dropdown-menu';
+import {
+  Pagination,
+  PaginationPrevious,
+  PaginationContent,
+  PaginationItem,
+  PaginationNext,
+  PaginationLink,
+} from '@/components/ui/pagination';
+import {
+  Table,
+  TableHead,
+  TableHeader,
+  TableBody,
+  TableCell,
+  TableRow,
+} from '@/components/ui/table';
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuGroup,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from '@/components/ui/dropdown-menu';
 import { Alert, AlertTitle, AlertDescription } from '@/components/ui/alert';
 import { Skeleton } from '@/components/ui/skeleton';
 import useSWR from 'swr';
@@ -50,7 +82,6 @@ export default function ProductsPage() {
     router.push(routes.productEdit.replace('[productNo]', productNo));
   };
 
-  // New handler for Stock action
   const handleStockClick = (productNo) => {
     router.push(routes.productStock.replace('[productNo]', productNo));
   };
@@ -221,6 +252,19 @@ export default function ProductsPage() {
                         <TableCell>{product.name}</TableCell>
                         <TableCell className="text-center">
                           {product.totalQuantity}
+                          {product.ProductVariant &&
+                            product.ProductVariant.some(
+                              (variant) =>
+                                variant.ProductVariantSize &&
+                                variant.ProductVariantSize.some(
+                                  (pvs) => pvs.quantity <= 5
+                                )
+                            ) && (
+                              <CircleAlert
+                                width={15}
+                                className="text-red-500/75 inline-block ml-1 mb-[0.10rem]"
+                              />
+                            )}
                         </TableCell>
                         <TableCell className="text-center">
                           <p
@@ -271,7 +315,6 @@ export default function ProductsPage() {
                                     Edit
                                   </Button>
                                 </DropdownMenuItem>
-                                {/* New Stock Action */}
                                 <DropdownMenuItem className="justify-center">
                                   <Button
                                     variant="none"
@@ -297,7 +340,9 @@ export default function ProductsPage() {
           <Pagination className="flex flex-col items-end">
             <PaginationContent>
               {currentPage > 1 && (
-                <PaginationPrevious onClick={() => handlePageChange(currentPage - 1)} />
+                <PaginationPrevious
+                  onClick={() => handlePageChange(currentPage - 1)}
+                />
               )}
               {Array.from({ length: productsData.totalPages }, (_, i) => i + 1).map(
                 (page) => (
@@ -309,7 +354,9 @@ export default function ProductsPage() {
                 )
               )}
               {currentPage < productsData.totalPages && (
-                <PaginationNext onClick={() => handlePageChange(currentPage + 1)} />
+                <PaginationNext
+                  onClick={() => handlePageChange(currentPage + 1)}
+                />
               )}
             </PaginationContent>
           </Pagination>

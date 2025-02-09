@@ -33,8 +33,9 @@ import {
   PaginationNext,
   PaginationLink,
 } from "@/components/ui/pagination";
-import { Pencil, Search, ChevronDown } from "lucide-react";
+import { Pencil, Search, ChevronDown, Wrench } from "lucide-react";
 import { Skeleton } from "@/components/ui/skeleton";
+
 
 export default function Reserves() {
   const router = useRouter();
@@ -89,27 +90,13 @@ export default function Reserves() {
             value={search}
             onChange={(e) => setSearch(e.target.value)}
           />
-          <DropdownMenu>
-            <DropdownMenuTrigger asChild>
-              <Button variant="outline" className="font-normal">
-                <ChevronDown className="scale-125" />
-                Filter by Status
-              </Button>
-            </DropdownMenuTrigger>
-            <DropdownMenuContent className="w-48">
-              <DropdownMenuGroup>
-                {/* Some possible statuses for filtering,
-                    but default is RESERVED (already set in state) */}
-                {["RESERVED", "TERMINATED"].map((filterStatus) => (
-                  <DropdownMenuItem key={filterStatus}>
-                    <Button variant="none" onClick={() => setStatus(filterStatus)}>
-                      {filterStatus}
-                    </Button>
-                  </DropdownMenuItem>
-                ))}
-              </DropdownMenuGroup>
-            </DropdownMenuContent>
-          </DropdownMenu>
+          <Link
+            className={`${buttonVariants({ variant: "default" })} px-8 align-middle`}
+            href={routes.manageFee}
+          >
+            <Wrench />
+            Configuration
+          </Link>
         </div>
       </div>
 

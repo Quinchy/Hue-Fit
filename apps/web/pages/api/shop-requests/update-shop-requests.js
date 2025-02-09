@@ -42,7 +42,7 @@ export default async function handler(req, res) {
         data: { status: partnershipRequestStatus, message },
       });
 
-      // Add predefined values for an approved shop
+      // Add predefined values for an approved shop, including a global delivery fee.
       await addPredefinedValues(shopId);
     } else {
       // For REJECTED or PENDING statuses, update the partnership request with the provided status and message.
@@ -67,7 +67,7 @@ export default async function handler(req, res) {
   }
 }
 
-// Function to add predefined values
+// Function to add predefined values (now including a global delivery fee)
 async function addPredefinedValues(shopId) {
   console.log("Adding predefined values...");
 
@@ -122,6 +122,20 @@ async function addPredefinedValues(shopId) {
   // Add measurements
   const measurementData = generateMeasurementData(types, shopId);
   await prisma.measurement.createMany({ data: measurementData });
+
+  // Add global delivery fee with a fixed rate of 10 by default
+  await prisma.deliveryFee.upsert({
+    where: { shopId },
+    create: {
+      shopId,
+      feeType: "FIXED",
+      feeAmount: 10,
+    },
+    update: {
+      feeType: "FIXED",
+      feeAmount: 10,
+    },
+  });
 }
 
 function generateTagsData(types, shopId) {

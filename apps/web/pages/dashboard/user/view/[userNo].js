@@ -1,48 +1,87 @@
-import { useRouter } from 'next/router';
+// File: pages/dashboard/users/[userNo].js
+import { useState, useEffect } from "react";
+import { useRouter } from "next/router";
 import DashboardLayoutWrapper from "@/components/ui/dashboard-layout";
-import { CardTitle } from "@/components/ui/card";
+import { Card, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import routes from '@/routes';
-import Image from 'next/image';
-import { MoveLeft } from 'lucide-react';
+import { MoveLeft } from "lucide-react";
+import routes from "@/routes";
+import Image from "next/image";
+import Loading from "@/components/ui/loading";
 
-// Import the role-based components
+// Import role-based sub-components
 import ViewAdminInfo from "../components/view-admin-info";
 import ViewVendorInfo from "../components/view-vendor-info";
 import ViewCustomerInfo from "../components/view-customer-info";
 
-export default function UserProfilePage() {
+async function fetchUserInfo(userNo) {
+  const response = await fetch(`/api/users/get-user-info?userNo=${userNo}`);
+  if (!response.ok) throw new Error("Error fetching user info");
+  return response.json();
+}
+
+export default function UsersDetailPage() {
   const router = useRouter();
+  const { userNo } = router.query;
+  
+  const [userData, setUserData] = useState(null);
+  const [loading, setLoading] = useState(true);
 
-  // Simulating the user data here. In actual implementation, replace this with data fetching or props.
-  const user = {
-    firstName: 'Carl Andrei',
-    lastName: 'Tailorin',
-    username: 'Shabu',
-    status: 'Active',
-    role: 'Admin', // Change this to "Vendor" or "Customer" to test other components
-    dateCreated: 'October 15, 2024'
-  };
+  useEffect(() => {
+    if (userNo) {
+      (async () => {
+        try {
+          setLoading(true);
+          const data = await fetchUserInfo(userNo);
+          setUserData(data);
+        } catch (err) {
+          console.error(err);
+        } finally {
+          setLoading(false);
+        }
+      })();
+    }
+  }, [userNo]);
 
-  // Determine which component to render based on the user role
   const renderUserInfo = () => {
-    switch (user.role) {
-      case 'Admin':
-        return <ViewAdminInfo user={user} />;
-      case 'Vendor':
-        return <ViewVendorInfo user={user} />;
-      case 'Customer':
-        return <ViewCustomerInfo user={user} />;
+    if (!userData) return null;
+    switch (userData.role) {
+      case "ADMIN":
+        // Show Admin profile details
+        return <ViewAdminInfo user={userData} />;
+      case "VENDOR":
+        // Show Vendor profile details along with shop name
+        return <ViewVendorInfo user={userData} />;
+      case "CUSTOMER":
+        // Show Customer profile, features, and addresses
+        return <ViewCustomerInfo user={userData} />;
       default:
         return <p>Invalid role</p>;
     }
   };
 
+  if (loading) {
+    return (
+      <DashboardLayoutWrapper>
+        <Loading message="Loading user details..." />
+      </DashboardLayoutWrapper>
+    );
+  }
+
+  if (!userData) {
+    return (
+      <DashboardLayoutWrapper>
+        <div className="flex justify-center items-center h-full">
+          User not found.
+        </div>
+      </DashboardLayoutWrapper>
+    );
+  }
+
   return (
     <DashboardLayoutWrapper>
-      {/* Header with Back to Users Button */}
       <div className="flex flex-col gap-10">
-        <div className='flex flex-row justify-between'>
+        <div className="flex flex-row justify-between">
           <CardTitle className="text-4xl font-bold">User Profile</CardTitle>
           <Button variant="outline" onClick={() => router.push(routes.user)}>
             <MoveLeft className="scale-125" />
@@ -50,15 +89,25 @@ export default function UserProfilePage() {
           </Button>
         </div>
 
-        {/* Profile Picture and User Information Section */}
-        <div className='flex flex-row items-start gap-5'>
-          {/* Profile Picture */}
+        <div className="flex flex-row items-start gap-5">
           <div className="bg-accent rounded border-8 border-card">
-            <Image src="/images/placeholder-profile-picture.png" alt="Profile" width={320} height={320} className='max-w-[30rem]'  />
+            <Image
+              src={userData.profilePicture || "/images/placeholder-profile-picture.png"}
+              alt="Profile"
+              width={320}
+              height={320}
+              className="max-w-[30rem]"
+            />
           </div>
-
-          {/* Conditionally Rendered User Information Section */}
-          <div className="w-full">
+          <div className="w-full flex flex-col gap-5">
+            <Card className="p-5">
+              <CardTitle className="text-xl font-semibold mb-4">General Information</CardTitle>
+              <div className="space-y-1">
+                <p className="font-thin"><strong>User No:</strong> {userData.userNo}</p>
+                <p className="font-thin"><strong>Username:</strong> {userData.username}</p>
+                <p className="font-thin"><strong>Role:</strong> {userData.role}</p>
+              </div>
+            </Card>
             {renderUserInfo()}
           </div>
         </div>

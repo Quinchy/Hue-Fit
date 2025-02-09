@@ -1,4 +1,4 @@
-// /api/products/add-product
+// /api/products/add-product.js
 import prisma, {
   getSessionShopId,
   uploadFileToSupabase,
@@ -55,7 +55,7 @@ export default async function handler(req, res) {
         description,
         thumbnailURL,
         totalQuantity: 0,
-        shopId, // Directly pass shopId as foreign key
+        shopId,
         typeId,
         categoryId,
         tagId,
@@ -192,6 +192,24 @@ export default async function handler(req, res) {
               },
             });
           }
+        }
+      }
+
+      const variantPngClothe = files[`variants[${idx}][pngClothe]`];
+      if (variantPngClothe && variantPngClothe.length > 0) {
+        const fileObj = variantPngClothe[0];
+        const pngClotheURL = await uploadFileToSupabase(
+          fileObj,
+          fileObj.filepath,
+          fileObj.originalFilename,
+          productVariantNo,
+          "products/product-virtual-fitting"
+        );
+        if (pngClotheURL) {
+          await prisma.productVariant.update({
+            where: { id: productVariant.id },
+            data: { pngClotheURL },
+          });
         }
       }
     }

@@ -1,5 +1,3 @@
-// components/StockProduct.jsx
-
 import { useState, useEffect } from 'react';
 import { useRouter } from 'next/router';
 import routes from '@/routes';
@@ -36,6 +34,7 @@ export default function StockProduct() {
   const [orderedSizes, setOrderedSizes] = useState([]);
   const [filteredTags, setFilteredTags] = useState([]);
   const [alert, setAlert] = useState({ message: "", type: "", title: "" });
+  const [reservedQuantitiesMap, setReservedQuantitiesMap] = useState({});
 
   useEffect(() => {
     if (data?.product) {
@@ -99,6 +98,54 @@ export default function StockProduct() {
 
     return orderedSizes;
   }
+
+  // Once the product is loaded, fetch reserved quantities for each productVariantSize that has stock ≤ threshold.
+  useEffect(() => {
+    const threshold = 5;
+    if (product && product.ProductVariant) {
+      const variantSizeIds = [];
+      product.ProductVariant.forEach((variant) => {
+        if (Array.isArray(variant.ProductVariantSize)) {
+          variant.ProductVariantSize.forEach((vps) => {
+            if (vps.quantity <= threshold) {
+              variantSizeIds.push(vps.id);
+            }
+          });
+        }
+      });
+  
+      console.log('[DEBUG][UI] Variant Size IDs with stock ≤ 5:', variantSizeIds);
+  
+      if (variantSizeIds.length > 0) {
+        Promise.all(
+          variantSizeIds.map((id) => {
+            console.log(`[DEBUG][UI] Fetching reserved quantity for productVariantSizeId: ${id}`);
+            return fetch(`/api/products/get-reserved-quantity?productVariantSizeId=${id}`)
+              .then((res) => {
+                console.log(`[DEBUG][UI] Raw response for productVariantSizeId ${id}:`, res);
+                return res.json();
+              })
+              .then((data) => {
+                console.log(`[DEBUG][UI] Data received for productVariantSizeId ${id}:`, data);
+                return { id, reservedQuantity: data.reservedQuantity };
+              });
+          })
+        )
+          .then((results) => {
+            console.log('[DEBUG][UI] All reserved quantity results:', results);
+            const newMap = {};
+            results.forEach((item) => {
+              newMap[item.id] = item.reservedQuantity;
+            });
+            console.log('[DEBUG][UI] New reserved quantities map:', newMap);
+            setReservedQuantitiesMap(newMap);
+          })
+          .catch((error) => {
+            console.error("[DEBUG][UI] Error fetching reserved quantities:", error);
+          });
+      }
+    }
+  }, [product]);
 
   if (isLoading || productInfoLoading || !product) {
     return (
@@ -178,15 +225,16 @@ export default function StockProduct() {
       <div className="flex flex-col gap-3 mb-10">
         <div className="flex flex-row items-center gap-5 w-full">
           <CardTitle className="text-2xl min-w-[9rem]">Variations</CardTitle>
-          <div className='h-[1px] w-full bg-primary/25'></div>
+          <div className="h-[1px] w-full bg-primary/25"></div>
         </div>
-        <div className='flex flex-col gap-3'>
+        <div className="flex flex-col gap-3">
           {product?.ProductVariant?.map((variant, index) => (
             <StockProductVariantCard
               key={variant.id} // Use a unique identifier if available
               variant={variant}
               variantIndex={index}
               sizes={orderedSizes}
+              reservedQuantitiesMap={reservedQuantitiesMap} // Pass reserved quantities map
               onAlert={handleAlert} // Pass the alert handler
             />
           ))}

@@ -1,9 +1,17 @@
 import { Card, CardTitle } from "@/components/ui/card";
 import DashboardLayoutWrapper from "@/components/ui/dashboard-layout";
-import { Table, TableHead, TableHeader, TableBody, TableCell, TableRow } from "@/components/ui/table";
+import {
+  Table,
+  TableHead,
+  TableHeader,
+  TableBody,
+  TableCell,
+  TableRow,
+} from "@/components/ui/table";
 import Link from "next/link";
 import { buttonVariants } from "@/components/ui/button";
 import routes from "@/routes";
+import { Plus } from "lucide-react";
 
 import AddTypeDialog from "./types/components/add-type";
 import AddCategoryDialog from "./categories/components/add-category";
@@ -23,7 +31,7 @@ export default function Maintenance() {
   const {
     data: totals, // "totals" will hold our fetched data
     error,
-    isLoading,  // in SWR v2+, you have isLoading; otherwise use (!data && !error) 
+    isLoading, // in SWR v2+, you have isLoading; otherwise use (!data && !error)
   } = useSWR("/api/maintenance/get-items-total", fetcher);
 
   // Handle any errors

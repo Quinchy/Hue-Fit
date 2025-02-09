@@ -38,6 +38,7 @@ const routes = {
   orderReserveAdd: '/dashboard/order/reserve/add/[orderNo]',
   orderReserveEdit: '/dashboard/order/reserve/edit/[orderNo]',
   orderReserveView: '/dashboard/order/reserve/view/[orderNo]',
+  manageFee: '/dashboard/order/manage-fee',
   user: '/dashboard/user',
   userAdd: '/dashboard/user/add',
   userEdit: '/dashboard/user/edit/[userNo]',

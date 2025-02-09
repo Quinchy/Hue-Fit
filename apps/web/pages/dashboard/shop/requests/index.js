@@ -186,77 +186,80 @@ export default function ShopRequests() {
               </TableRow>
             </TableHeader>
             <TableBody>
-              {isValidating
-                ? Array.from({ length: 7 }).map((_, index) => (
-                    <TableRow key={index}>
-                      <TableCell><Skeleton className="h-14 w-full" /></TableCell>
-                      <TableCell><Skeleton className="h-14 w-full" /></TableCell>
-                      <TableCell><Skeleton className="h-14 w-full" /></TableCell>
-                      <TableCell><Skeleton className="h-14 w-full" /></TableCell>
-                      <TableCell><Skeleton className="h-14 w-full" /></TableCell>
-                    </TableRow>
-                  ))
-                : requests.length > 0
-                ? requests.map((request) => (
-                    <TableRow key={request.requestNo}>
-                      <TableCell className="max-w-[1.2rem] font-medium">
-                        {request.requestNo}
-                      </TableCell>
-                      <TableCell className="max-w-[3rem] overflow-hidden whitespace-nowrap text-ellipsis">
-                        {request.shopName}
-                      </TableCell>
-                      <TableCell className="max-w-[4rem] overflow-hidden whitespace-nowrap text-ellipsis">
-                        {request.address}
-                      </TableCell>
-                      <TableCell className="max-w-[1rem] text-center">
-                        <p
-                          className={`py-1 w-full rounded font-bold text-card ${
-                            request.status === "PENDING"
-                              ? "bg-yellow-500"
-                              : request.status === "REJECTED"
-                              ? "bg-red-500"
-                              : "bg-green-500"
-                          }`}
-                        >
-                          {request.status}
-                        </p>
-                      </TableCell>
-                      <TableCell className="max-w-[1rem] text-center">
-                        <DropdownMenu>
-                          <DropdownMenuTrigger asChild>
-                            <Button variant="outline" className="font-normal">
-                              Action
-                              <ChevronDown className="scale-125" />
-                            </Button>
-                          </DropdownMenuTrigger>
-                          <DropdownMenuContent className="w-50">
-                            <DropdownMenuGroup>
-                              <DropdownMenuItem className="justify-center">
-                                <Button
-                                  variant="none"
-                                  className="text-base"
-                                  onClick={() => handleManageClick(request.requestNo)}
-                                >
-                                  <Pencil className="scale-125" />
-                                  Manage
-                                </Button>
-                              </DropdownMenuItem>
-                            </DropdownMenuGroup>
-                          </DropdownMenuContent>
-                        </DropdownMenu>
-                      </TableCell>
-                    </TableRow>
-                  ))
-                : (
-                  <TableRow>
-                    <TableCell
-                      colSpan={5}
-                      className="text-center align-middle h-[35rem] text-primary/50 text-lg font-thin tracking-wide"
-                    >
-                      There are no shop-partnership requests yet.
+              {!data ? (
+                // No data available yet, show skeletons (initial loading state)
+                Array.from({ length: 7 }).map((_, index) => (
+                  <TableRow key={index}>
+                    <TableCell><Skeleton className="h-14 w-full" /></TableCell>
+                    <TableCell><Skeleton className="h-14 w-full" /></TableCell>
+                    <TableCell><Skeleton className="h-14 w-full" /></TableCell>
+                    <TableCell><Skeleton className="h-14 w-full" /></TableCell>
+                    <TableCell><Skeleton className="h-14 w-full" /></TableCell>
+                  </TableRow>
+                ))
+              ) : requests.length > 0 ? (
+                // Data available: render the actual requests
+                requests.map((request) => (
+                  <TableRow key={request.requestNo}>
+                    <TableCell className="max-w-[1.2rem] font-medium">
+                      {request.requestNo}
+                    </TableCell>
+                    <TableCell className="max-w-[3rem] overflow-hidden whitespace-nowrap text-ellipsis">
+                      {request.shopName}
+                    </TableCell>
+                    <TableCell className="max-w-[4rem] overflow-hidden whitespace-nowrap text-ellipsis">
+                      {request.address}
+                    </TableCell>
+                    <TableCell className="max-w-[1rem] text-center">
+                      <p
+                        className={`py-1 w-full rounded font-bold text-card ${
+                          request.status === "PENDING"
+                            ? "bg-yellow-500"
+                            : request.status === "REJECTED"
+                            ? "bg-red-500"
+                            : "bg-green-500"
+                        }`}
+                      >
+                        {request.status}
+                      </p>
+                    </TableCell>
+                    <TableCell className="max-w-[1rem] text-center">
+                      <DropdownMenu>
+                        <DropdownMenuTrigger asChild>
+                          <Button variant="outline" className="font-normal">
+                            Action
+                            <ChevronDown className="scale-125" />
+                          </Button>
+                        </DropdownMenuTrigger>
+                        <DropdownMenuContent className="w-50">
+                          <DropdownMenuGroup>
+                            <DropdownMenuItem className="justify-center">
+                              <Button
+                                variant="none"
+                                className="text-base"
+                                onClick={() => handleManageClick(request.requestNo)}
+                              >
+                                <Pencil className="scale-125" />
+                                Manage
+                              </Button>
+                            </DropdownMenuItem>
+                          </DropdownMenuGroup>
+                        </DropdownMenuContent>
+                      </DropdownMenu>
                     </TableCell>
                   </TableRow>
-                )}
+                ))
+              ) : (
+                // Data fetched but the list is empty
+                <TableRow>
+                  <TableCell
+                    colSpan={5}
+                    className="text-center align-middle h-[35rem] text-primary/50 text-lg font-thin tracking-wide"
+                  >
+                    There are no shop-partnership requests yet.
+                  </TableCell>
+                </TableRow>
+              )}
             </TableBody>
           </Table>
           {requests.length > 0 && (

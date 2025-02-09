@@ -29,9 +29,11 @@ import {
   PaginationNext,
   PaginationLink,
 } from "@/components/ui/pagination";
-import { Pencil, Search, ChevronDown } from "lucide-react";
+import { Pencil, Search, ChevronDown, Wrench } from "lucide-react";
 import { Skeleton } from "@/components/ui/skeleton";
 import useSWR from "swr";
+import Link from "next/link";
+import { buttonVariants } from "@/components/ui/button";
 
 // A simple fetcher function that returns JSON
 const fetcher = (url) => fetch(url).then((res) => res.json());
@@ -123,6 +125,13 @@ export default function Orders() {
               </DropdownMenuGroup>
             </DropdownMenuContent>
           </DropdownMenu>
+          <Link
+            className={`${buttonVariants({ variant: "default" })} px-8 align-middle`}
+            href={routes.manageFee}
+          >
+            <Wrench />
+            Configuration
+          </Link>
         </div>
       </div>
 

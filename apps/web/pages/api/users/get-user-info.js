@@ -1,5 +1,7 @@
-// [userNo].js
-import prisma, { getSessionUser, disconnectPrisma } from '@/utils/helpers';
+// File: pages/api/users/get-user-info.js
+import prisma, { disconnectPrisma } from "@/utils/helpers";
+import { getServerSession } from "next-auth/next";
+import { authOptions } from "@/pages/api/auth/[...nextauth]";
 
 export default async function handler(req, res) {
   if (req.method !== "GET") {
@@ -7,50 +9,109 @@ export default async function handler(req, res) {
   }
 
   try {
-    const sessionUser = await getSessionUser(req, res);
+    let userNo = req.query.userNo;
+    if (!userNo) {
+      const session = await getServerSession(req, res, authOptions);
+      if (!session || !session.user) {
+        return res.status(401).json({ error: "Unauthorized" });
+      }
+      userNo = session.user.userNo;
+    }
 
-    const user = await prisma.user.findFirst({
-      where: { id: sessionUser.id },
-      include: { Role: true, AdminProfile: true, VendorProfile: true },
+    const user = await prisma.user.findUnique({
+      where: { userNo },
+      include: {
+        Role: true,
+        AdminProfile: true,
+        VendorProfile: {
+          include: {
+            Shop: {
+              select: {
+                shopNo: true,
+                name: true,
+                status: true,
+                contactNo: true,
+                email: true,
+              },
+            },
+          },
+        },
+        CustomerProfile: true,
+        CustomerFeature: true,
+        CustomerAddress: true,
+      },
     });
 
     if (!user) {
       return res.status(404).json({ error: "User not found" });
     }
 
-    if (user.Role.name === "ADMIN") {
+    // Base response with general information always returned
+    const baseResponse = {
+      userNo: user.userNo,
+      username: user.username,
+      role: user.Role?.name || "UNKNOWN",
+    };
+
+    // Return role-specific data without overriding empty or falsey values
+    if (user.Role?.name === "ADMIN") {
       return res.status(200).json({
-        userNo: user.userNo,
-        username: user.username,
-        role: user.Role.name,
-        profilePicture: user.AdminProfile?.profilePicture || null,
-        firstName: user.AdminProfile?.firstName || null,
-        lastName: user.AdminProfile?.lastName || null,
-        profilePicture: user.AdminProfile?.profilePicture || null,
+        ...baseResponse,
+        profilePicture: user.AdminProfile?.profilePicture,
+        firstName: user.AdminProfile?.firstName,
+        lastName: user.AdminProfile?.lastName,
+        email: user.AdminProfile?.email,
+        contactNo: user.AdminProfile?.contactNo,
       });
-    } 
-    else if (user.Role.name === "VENDOR") {
+    } else if (user.Role?.name === "VENDOR") {
       return res.status(200).json({
-        userNo: user.userNo,
-        username: user.username,
-        role: user.Role.name,
-        firstName: user.VendorProfile?.firstName || null,
-        lastName: user.VendorProfile?.lastName || null,
-        profilePicture: user.VendorProfile?.profilePicture || null,
-        contactNo: user.VendorProfile?.contactNo || null,
-        email: user.VendorProfile?.email || null,
-        position: user.VendorProfile?.position || null,
+        ...baseResponse,
+        firstName: user.VendorProfile?.firstName,
+        lastName: user.VendorProfile?.lastName,
+        profilePicture: user.VendorProfile?.profilePicture,
+        contactNo: user.VendorProfile?.contactNo,
+        email: user.VendorProfile?.email,
+        position: user.VendorProfile?.position,
+        shop: user.VendorProfile?.Shop
+          ? {
+              shopNo: user.VendorProfile.Shop.shopNo,
+              name: user.VendorProfile.Shop.name,
+              status: user.VendorProfile.Shop.status,
+              contactNo: user.VendorProfile.Shop.contactNo,
+              email: user.VendorProfile.Shop.email,
+            }
+          : undefined,
       });
-    } 
-    else {
+    } else if (user.Role?.name === "CUSTOMER") {
       return res.status(200).json({
-        userNo: user.userNo,
-        username: user.username,
-        role: user.Role.name,
+        ...baseResponse,
+        firstName: user.CustomerProfile?.firstName,
+        lastName: user.CustomerProfile?.lastName,
+        profilePicture: user.CustomerProfile?.profilePicture,
+        email: user.CustomerProfile?.email,
+        addresses: user.CustomerAddress.map((addr) => ({
+          buildingNo: addr.buildingNo,
+          street: addr.street,
+          barangay: addr.barangay,
+          municipality: addr.municipality,
+          province: addr.province,
+          postalCode: addr.postalCode,
+        })),
+        features: user.CustomerFeature.map((feat) => ({
+          height: feat.height,
+          weight: feat.weight,
+          age: feat.age,
+          skintone: feat.skintone,
+          bodyShape: feat.bodyShape,
+        })),
       });
+    } else {
+      return res.status(200).json(baseResponse);
     }
-  } 
-  finally {
+  } catch (error) {
+    console.error("Error fetching user info:", error);
+    return res.status(500).json({ error: "Internal server error" });
+  } finally {
     await disconnectPrisma();
   }
 }

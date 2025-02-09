@@ -1,3 +1,4 @@
+// File: pages/profile.js
 import React, { useState, useEffect, useRef } from "react";
 import DashboardLayoutWrapper from "@/components/ui/dashboard-layout";
 import { Card, CardTitle } from "@/components/ui/card";
@@ -53,16 +54,18 @@ const getCroppedImg = async (imageSrc, crop, croppedAreaPixels) => {
 const editUserSchema = (role) =>
   Yup.object().shape({
     username: Yup.string().required("Username is required."),
-    email: role === "VENDOR"
-      ? Yup.string().email("Invalid email format").required("Email is required.")
-      : Yup.string().email("Invalid email format"),
+    email:
+      role === "VENDOR"
+        ? Yup.string().email("Invalid email format").required("Email is required.")
+        : Yup.string().email("Invalid email format"),
     firstName: Yup.string().required("First name is required."),
     lastName: Yup.string().required("Last name is required."),
-    contactNo: role === "VENDOR"
-      ? Yup.string()
-          .matches(/^\d+$/, "Contact number must be numeric.")
-          .required("Contact number is required.")
-      : Yup.string().matches(/^\d+$/, "Contact number must be numeric."),
+    contactNo:
+      role === "VENDOR"
+        ? Yup.string()
+            .matches(/^\d+$/, "Contact number must be numeric.")
+            .required("Contact number is required.")
+        : Yup.string().matches(/^\d+$/, "Contact number must be numeric."),
   });
 
 export default function Profile() {
@@ -328,9 +331,7 @@ export default function Profile() {
                 value={formik.values.username}
                 onChange={formik.handleChange}
                 disabled={!isEditing}
-                className={
-                  formik.touched.username && formik.errors.username ? "border-red-500" : ""
-                }
+                className={formik.touched.username && formik.errors.username ? "border-red-500" : ""}
               />
               {formik.touched.username && formik.errors.username && (
                 <span className="text-red-500 text-sm">{formik.errors.username}</span>
@@ -343,9 +344,7 @@ export default function Profile() {
                 value={formik.values.email}
                 onChange={formik.handleChange}
                 disabled={!isEditing}
-                className={
-                  formik.touched.email && formik.errors.email ? "border-red-500" : ""
-                }
+                className={formik.touched.email && formik.errors.email ? "border-red-500" : ""}
               />
               {formik.touched.email && formik.errors.email && (
                 <span className="text-red-500 text-sm">{formik.errors.email}</span>
@@ -358,11 +357,7 @@ export default function Profile() {
                 value={formik.values.firstName}
                 onChange={formik.handleChange}
                 disabled={!isEditing}
-                className={
-                  formik.touched.firstName && formik.errors.firstName
-                    ? "border-red-500"
-                    : ""
-                }
+                className={formik.touched.firstName && formik.errors.firstName ? "border-red-500" : ""}
               />
               {formik.touched.firstName && formik.errors.firstName && (
                 <span className="text-red-500 text-sm">{formik.errors.firstName}</span>
@@ -375,9 +370,7 @@ export default function Profile() {
                 value={formik.values.lastName}
                 onChange={formik.handleChange}
                 disabled={!isEditing}
-                className={
-                  formik.touched.lastName && formik.errors.lastName ? "border-red-500" : ""
-                }
+                className={formik.touched.lastName && formik.errors.lastName ? "border-red-500" : ""}
               />
               {formik.touched.lastName && formik.errors.lastName && (
                 <span className="text-red-500 text-sm">{formik.errors.lastName}</span>
@@ -390,9 +383,7 @@ export default function Profile() {
                 value={formik.values.contactNo}
                 onChange={formik.handleChange}
                 disabled={!isEditing}
-                className={
-                  formik.touched.contactNo && formik.errors.contactNo ? "border-red-500" : ""
-                }
+                className={formik.touched.contactNo && formik.errors.contactNo ? "border-red-500" : ""}
               />
               {formik.touched.contactNo && formik.errors.contactNo && (
                 <span className="text-red-500 text-sm">{formik.errors.contactNo}</span>

@@ -162,6 +162,7 @@ model Shop {
   Order               Order[]
   CartItem            CartItem[]
   Notification        Notification[]
+  DeliveryFee         DeliveryFee[]
 }
 
 model ShopAddress {
@@ -494,4 +495,15 @@ model InquiryMessage {
   read              Boolean          @default(false)
   created_at        DateTime         @default(now())
   updated_at        DateTime         @updatedAt
+}
+
+model DeliveryFee {
+  id                Int      @id @default(autoincrement())
+  shopId            Int      @unique
+  feeType           String   // "FIXED" or "PERCENTAGE"
+  feeAmount         Decimal  @db.Decimal(10, 2)
+  created_at        DateTime @default(now())
+  updated_at        DateTime @updatedAt
+
+  Shop              Shop     @relation(fields: [shopId], references: [id])
 }

@@ -1,5 +1,3 @@
-// pages/api/products/update-product-stocks.js
-
 import prisma from '@/utils/helpers';
 
 export default async function handler(req, res) {
@@ -69,7 +67,9 @@ export default async function handler(req, res) {
               },
             });
           } else {
-            return res.status(400).json({ message: `Size abbreviation "${sizeAbbr}" not found.` });
+            return res
+              .status(400)
+              .json({ message: `Size abbreviation "${sizeAbbr}" not found.` });
           }
         }
       }
@@ -112,6 +112,35 @@ export default async function handler(req, res) {
         totalQuantity: newProductTotalQuantity,
       },
     });
+
+    // Update orders: For all orders in RESERVED status that contain order items referencing
+    // updated ProductVariantSize entries, update their status to PROCESSING.
+    const updatedSizes = [];
+    for (const [sizeAbbr, increment] of Object.entries(increments)) {
+      if (increment > 0) {
+        const pvs = productVariant.ProductVariantSize.find(
+          (p) => p.Size.abbreviation === sizeAbbr
+        );
+        if (pvs) {
+          updatedSizes.push(pvs.id);
+        }
+      }
+    }
+    if (updatedSizes.length > 0) {
+      await prisma.order.updateMany({
+        where: {
+          status: "RESERVED",
+          OrderItems: {
+            some: {
+              productVariantSizeId: { in: updatedSizes },
+            },
+          },
+        },
+        data: {
+          status: "PROCESSING",
+        },
+      });
+    }
 
     return res.status(200).json({ message: "Stock updated successfully." });
   } catch (error) {

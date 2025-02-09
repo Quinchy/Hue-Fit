@@ -52,7 +52,7 @@ export default function Shop() {
     searchQuery
   )}`;
 
-  const { data, isValidating } = useSWR(apiUrl, fetcher, {
+  const { data } = useSWR(apiUrl, fetcher, {
     refreshInterval: 5000,
     revalidateOnFocus: false,
     keepPreviousData: true,
@@ -167,107 +167,105 @@ export default function Shop() {
               </TableRow>
             </TableHeader>
             <TableBody>
-              {isValidating
-                ? Array.from({ length: 7 }).map((_, index) => (
-                    <TableRow key={index}>
-                      <TableCell className="max-w-[1rem]">
-                        <Skeleton className="h-14 w-full" />
-                      </TableCell>
-                      <TableCell className="max-w-[3rem]">
-                        <Skeleton className="h-14 w-full" />
-                      </TableCell>
-                      <TableCell className="max-w-[4rem]">
-                        <Skeleton className="h-14 w-full" />
-                      </TableCell>
-                      <TableCell className="max-w-[1rem] text-center">
-                        <Skeleton className="h-14 w-full" />
-                      </TableCell>
-                      <TableCell className="max-w-[1rem] text-center">
-                        <Skeleton className="h-14 w-full" />
-                      </TableCell>
-                    </TableRow>
-                  ))
-                : shops.length > 0
-                ? shops.map((shop) => (
-                    <TableRow key={shop.shopNo}>
-                      <TableCell className="max-w-[1rem] font-medium">
-                        {shop.shopNo}
-                      </TableCell>
-                      <TableCell className="max-w-[3rem] overflow-hidden whitespace-nowrap text-ellipsis">
-                        {shop.name}
-                      </TableCell>
-                      <TableCell className="max-w-[4rem] overflow-hidden whitespace-nowrap text-ellipsis">
-                        {`${shop.ShopAddress.buildingNo} ${shop.ShopAddress.street} ${shop.ShopAddress.barangay}, ${shop.ShopAddress.municipality}, ${shop.ShopAddress.province}, ${shop.ShopAddress.postalCode}`}
-                      </TableCell>
-                      <TableCell className="max-w-[1rem] text-center">
-                        <p
-                          className={`py-1 w-full rounded font-bold text-card ${
-                            shop.status === "ACTIVE"
-                              ? "bg-green-500"
-                              : "bg-red-500"
-                          } uppercase`}
-                        >
-                          {shop.status}
-                        </p>
-                      </TableCell>
-                      <TableCell className="max-w-[1rem] text-center">
-                        <DropdownMenu>
-                          <DropdownMenuTrigger asChild>
-                            <Button variant="outline" className="font-normal">
-                              Action
-                              <ChevronDown className="scale-125" />
-                            </Button>
-                          </DropdownMenuTrigger>
-                          <DropdownMenuContent className="w-50">
-                            <DropdownMenuGroup>
-                              <DropdownMenuItem className="justify-center uppercase text-base tracking-wide font-semibold">
-                                <Button
-                                  variant="none"
-                                  className="text-base"
-                                  onClick={() => handleViewClick(shop.shopNo)}
-                                >
-                                  <Eye className="scale-125 mr-2" />
-                                  View
-                                </Button>
-                              </DropdownMenuItem>
-                              <DropdownMenuItem className="justify-center">
-                                <Button
-                                  variant="none"
-                                  className="text-base flex items-center"
-                                  disabled={shop.status === "ACTIVE"}
-                                  onClick={() => handleOpenClick(shop.shopNo)}
-                                >
-                                  <Unlock className="scale-125 mr-2" />
-                                  Open
-                                </Button>
-                              </DropdownMenuItem>
-                              <DropdownMenuItem className="justify-center">
-                                <Button
-                                  variant="none"
-                                  className="font-bold text-base text-red-500 flex items-center"
-                                  disabled={shop.status === "INACTIVE"}
-                                  onClick={() => handleCloseClick(shop.shopNo)}
-                                >
-                                  <Lock className="scale-125 mr-2" />
-                                  Close
-                                </Button>
-                              </DropdownMenuItem>
-                            </DropdownMenuGroup>
-                          </DropdownMenuContent>
-                        </DropdownMenu>
-                      </TableCell>
-                    </TableRow>
-                  ))
-                : (
-                  <TableRow>
-                    <TableCell
-                      colSpan={5}
-                      className="text-center align-middle h-[35rem] text-primary/50 text-lg font-thin tracking-wide"
-                    >
-                      There are no partnered shop yet.
+              {!data ? (
+                Array.from({ length: 7 }).map((_, index) => (
+                  <TableRow key={index}>
+                    <TableCell className="max-w-[1rem]">
+                      <Skeleton className="h-14 w-full" />
+                    </TableCell>
+                    <TableCell className="max-w-[3rem]">
+                      <Skeleton className="h-14 w-full" />
+                    </TableCell>
+                    <TableCell className="max-w-[4rem]">
+                      <Skeleton className="h-14 w-full" />
+                    </TableCell>
+                    <TableCell className="max-w-[1rem] text-center">
+                      <Skeleton className="h-14 w-full" />
+                    </TableCell>
+                    <TableCell className="max-w-[1rem] text-center">
+                      <Skeleton className="h-14 w-full" />
                     </TableCell>
                   </TableRow>
-                )}
+                ))
+              ) : shops.length > 0 ? (
+                shops.map((shop) => (
+                  <TableRow key={shop.shopNo}>
+                    <TableCell className="max-w-[1rem] font-medium">
+                      {shop.shopNo}
+                    </TableCell>
+                    <TableCell className="max-w-[3rem] overflow-hidden whitespace-nowrap text-ellipsis">
+                      {shop.name}
+                    </TableCell>
+                    <TableCell className="max-w-[4rem] overflow-hidden whitespace-nowrap text-ellipsis">
+                      {`${shop.ShopAddress.buildingNo} ${shop.ShopAddress.street} ${shop.ShopAddress.barangay}, ${shop.ShopAddress.municipality}, ${shop.ShopAddress.province}, ${shop.ShopAddress.postalCode}`}
+                    </TableCell>
+                    <TableCell className="max-w-[1rem] text-center">
+                      <p
+                        className={`py-1 w-full rounded font-bold text-card ${
+                          shop.status === "ACTIVE" ? "bg-green-500" : "bg-red-500"
+                        } uppercase`}
+                      >
+                        {shop.status}
+                      </p>
+                    </TableCell>
+                    <TableCell className="max-w-[1rem] text-center">
+                      <DropdownMenu>
+                        <DropdownMenuTrigger asChild>
+                          <Button variant="outline" className="font-normal">
+                            Action
+                            <ChevronDown className="scale-125" />
+                          </Button>
+                        </DropdownMenuTrigger>
+                        <DropdownMenuContent className="w-50">
+                          <DropdownMenuGroup>
+                            <DropdownMenuItem className="justify-center uppercase text-base tracking-wide font-semibold">
+                              <Button
+                                variant="none"
+                                className="text-base"
+                                onClick={() => handleViewClick(shop.shopNo)}
+                              >
+                                <Eye className="scale-125 mr-2" />
+                                View
+                              </Button>
+                            </DropdownMenuItem>
+                            <DropdownMenuItem className="justify-center">
+                              <Button
+                                variant="none"
+                                className="text-base flex items-center"
+                                disabled={shop.status === "ACTIVE"}
+                                onClick={() => handleOpenClick(shop.shopNo)}
+                              >
+                                <Unlock className="scale-125 mr-2" />
+                                Open
+                              </Button>
+                            </DropdownMenuItem>
+                            <DropdownMenuItem className="justify-center">
+                              <Button
+                                variant="none"
+                                className="font-bold text-base text-red-500 flex items-center"
+                                disabled={shop.status === "INACTIVE"}
+                                onClick={() => handleCloseClick(shop.shopNo)}
+                              >
+                                <Lock className="scale-125 mr-2" />
+                                Close
+                              </Button>
+                            </DropdownMenuItem>
+                          </DropdownMenuGroup>
+                        </DropdownMenuContent>
+                      </DropdownMenu>
+                    </TableCell>
+                  </TableRow>
+                ))
+              ) : (
+                <TableRow>
+                  <TableCell
+                    colSpan={5}
+                    className="text-center align-middle h-[35rem] text-primary/50 text-lg font-thin tracking-wide"
+                  >
+                    There are no partnered shop yet.
+                  </TableCell>
+                </TableRow>
+              )}
             </TableBody>
           </Table>
           {shops.length > 0 && (

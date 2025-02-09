@@ -31,7 +31,7 @@ export default function ProductVariantPictures({ variantIndex }) {
   };
 
   return (
-    <div className="flex flex-col w-full gap-2">
+    <div className="flex flex-col min-w-full max-w-[71rem] gap-2">
       <Label className="font-bold flex flex-row items-center">
         Product Variant Pictures <Asterisk className="w-4" />
       </Label>

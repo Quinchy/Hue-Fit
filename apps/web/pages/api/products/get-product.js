@@ -14,7 +14,7 @@ export default async function handler(req, res) {
     const ITEMS_PER_PAGE = 9;
 
     const baseWhere = {
-      shopId: shopId,
+      shopId,
       ...(type && { Type: { name: type } }),
     };
 
@@ -46,12 +46,15 @@ export default async function handler(req, res) {
       where: combinedWhere,
       skip: (pageNumber - 1) * ITEMS_PER_PAGE,
       take: ITEMS_PER_PAGE,
-      orderBy: {
-        created_at: 'desc',
-      },
+      orderBy: { created_at: 'desc' },
       include: {
         Type: true,
         Category: true,
+        ProductVariant: {
+          include: {
+            ProductVariantSize: true,
+          },
+        },
       },
     });
 
@@ -60,12 +63,8 @@ export default async function handler(req, res) {
     });
 
     const types = await prisma.type.findMany({
-      where: {
-        shopId: shopId,
-      },
-      select: {
-        name: true,
-      },
+      where: { shopId },
+      select: { name: true },
     });
 
     const totalPages = Math.ceil(totalCount / ITEMS_PER_PAGE);
