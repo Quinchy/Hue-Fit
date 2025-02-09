@@ -17,7 +17,7 @@ import { InputErrorMessage, InputErrorStyle } from "@/components/ui/error-messag
 import { Alert, AlertTitle, AlertDescription } from "@/components/ui/alert";
 import { LoadingMessage } from "@/components/ui/loading-message";
 
-export default function EditVendorForm({ form, onChange }) {
+export default function EditVendorForm({ form = {}, onChange }) {
   // State for available shops.
   const [shops, setShops] = useState([]);
   const [showSuccessAlert, setShowSuccessAlert] = useState(false);

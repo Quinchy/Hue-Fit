@@ -6,7 +6,7 @@ import { Label } from "@/components/ui/label";
 import { Button } from "@/components/ui/button";
 import { InputErrorMessage, InputErrorStyle } from "@/components/ui/error-message";
 
-export default function EditCustomerForm({ form, onChange }) {
+export default function EditCustomerForm({ form = {}, onChange }) {
   // Prepare initial values for address and features.
   const initialAddress =
     form.addresses && form.addresses.length > 0
@@ -273,7 +273,7 @@ export default function EditCustomerForm({ form, onChange }) {
             <Input
               name="features.height"
               placeholder="Enter height"
-              value={formik.values.features.height}
+              value={formik.values.features?.height || ""}
               onChange={formik.handleChange}
               onBlur={formik.handleBlur}
               className={InputErrorStyle(formik.errors.features?.height, formik.touched.features?.height)}
@@ -287,7 +287,7 @@ export default function EditCustomerForm({ form, onChange }) {
             <Input
               name="features.weight"
               placeholder="Enter weight"
-              value={formik.values.features.weight}
+              value={formik.values.features?.weight || ""}
               onChange={formik.handleChange}
               onBlur={formik.handleBlur}
               className={InputErrorStyle(formik.errors.features?.weight, formik.touched.features?.weight)}
@@ -301,7 +301,7 @@ export default function EditCustomerForm({ form, onChange }) {
             <Input
               name="features.age"
               placeholder="Enter age"
-              value={formik.values.features.age}
+              value={formik.values.features?.age || ""}
               onChange={formik.handleChange}
               onBlur={formik.handleBlur}
               className={InputErrorStyle(formik.errors.features?.age, formik.touched.features?.age)}
@@ -315,7 +315,7 @@ export default function EditCustomerForm({ form, onChange }) {
             <Input
               name="features.skintone"
               placeholder="Enter skintone"
-              value={formik.values.features.skintone}
+              value={formik.values.features?.skintone || ""}
               onChange={formik.handleChange}
               onBlur={formik.handleBlur}
               className={InputErrorStyle(formik.errors.features?.skintone, formik.touched.features?.skintone)}
@@ -329,7 +329,7 @@ export default function EditCustomerForm({ form, onChange }) {
             <Input
               name="features.bodyShape"
               placeholder="Enter body shape"
-              value={formik.values.features.bodyShape}
+              value={formik.values.features?.bodyShape || ""}
               onChange={formik.handleChange}
               onBlur={formik.handleBlur}
               className={InputErrorStyle(formik.errors.features?.bodyShape, formik.touched.features?.bodyShape)}
