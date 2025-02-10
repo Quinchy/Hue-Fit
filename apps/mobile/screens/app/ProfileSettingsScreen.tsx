@@ -8,6 +8,7 @@ import {
   Image,
   StyleSheet,
   SafeAreaView,
+  Pressable,
 } from "react-native";
 import {
   Archive,
@@ -25,7 +26,7 @@ import GradientCard from "../../components/GradientCard";
 
 const ProfileSettingsScreen = () => {
   const navigation = useNavigation();
-  const [userData, setUserData] = useState(null);
+  const [userData, setUserData] = useState<any>(null);
   const [pressedItem, setPressedItem] = useState(null);
 
   useEffect(() => {
@@ -55,13 +56,13 @@ const ProfileSettingsScreen = () => {
 
   // Tabs array
   const tabs = [
-    { name: "Processing", icon: MonitorCog },
-    { name: "Packaging", icon: Package },
+    { name: "Pending", icon: MonitorCog },
+    { name: "Processing", icon: Package },
     { name: "Delivering", icon: Truck },
   ];
 
   // Navigate to OrderTransactionScreen with initialTab param
-  const handleNavigate = (tabName) => {
+  const handleNavigate = (tabName: string) => {
     navigation.navigate("OrderTransactionScreen", { initialTab: tabName });
   };
 
@@ -90,7 +91,11 @@ const ProfileSettingsScreen = () => {
         {/* Order Tabs */}
         <View style={styles.tabsContainer}>
           {tabs.map(({ name, icon: IconComponent }) => (
-            <TouchableOpacity key={name} onPress={() => handleNavigate(name)} style={styles.tab}>
+            <TouchableOpacity
+              key={name}
+              onPress={() => handleNavigate(name)}
+              style={styles.tab}
+            >
               <IconComponent size={24} stroke="white" strokeWidth={2} />
               <Text style={styles.tabText}>{name}</Text>
             </TouchableOpacity>
@@ -99,7 +104,10 @@ const ProfileSettingsScreen = () => {
 
         {/* Settings Options */}
         <GradientCard style={styles.settingsCard}>
-          <TouchableOpacity style={styles.menuItem}>
+          <TouchableOpacity
+            style={styles.menuItem}
+            onPress={() => navigation.navigate("EditProfile")}
+          >
             <Pencil size={24} stroke="white" strokeWidth={2} />
             <Text style={styles.menuText}>Edit Profile</Text>
           </TouchableOpacity>
@@ -121,19 +129,49 @@ const ProfileSettingsScreen = () => {
   );
 };
 
-// Styles
 const styles = StyleSheet.create({
   safeArea: { flex: 1, backgroundColor: "transparent" },
-  title: { color: "white", fontSize: 22, marginBottom: 20, marginTop: 50, fontWeight: "bold", textAlign: "center" },
+  title: {
+    color: "white",
+    fontSize: 22,
+    marginBottom: 20,
+    marginTop: 50,
+    fontWeight: "bold",
+    textAlign: "center",
+  },
   userInfoContainer: { alignItems: "center", marginBottom: 30 },
   profileImage: { width: 100, height: 100, borderRadius: 50, marginBottom: 10 },
   name: { color: "white", fontSize: 18, fontWeight: "bold" },
   username: { color: "gray", fontSize: 14, marginTop: 4 },
-  tabsContainer: { flexDirection: "row", justifyContent: "space-between", width: "100%", marginBottom: 40 },
-  tab: { backgroundColor: "#333", padding: 15, borderRadius: 10, alignItems: "center", flex: 1, marginHorizontal: 5 },
+  tabsContainer: {
+    flexDirection: "row",
+    justifyContent: "space-between",
+    width: "100%",
+    marginBottom: 40,
+  },
+  tab: {
+    backgroundColor: "#333",
+    padding: 15,
+    borderRadius: 10,
+    alignItems: "center",
+    flex: 1,
+    marginHorizontal: 5,
+  },
   tabText: { color: "white", marginTop: 8, fontSize: 14 },
-  settingsCard: { width: "100%", padding: 15, borderRadius: 10, marginBottom: 20, backgroundColor: "#222" },
-  menuItem: { flexDirection: "row", alignItems: "center", paddingVertical: 14, borderRadius: 10, paddingHorizontal: 10 },
+  settingsCard: {
+    width: "100%",
+    padding: 15,
+    borderRadius: 10,
+    marginBottom: 20,
+    backgroundColor: "#222",
+  },
+  menuItem: {
+    flexDirection: "row",
+    alignItems: "center",
+    paddingVertical: 14,
+    borderRadius: 10,
+    paddingHorizontal: 10,
+  },
   menuText: { color: "white", fontSize: 16, marginLeft: 14 },
 });
 

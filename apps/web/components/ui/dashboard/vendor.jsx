@@ -4,8 +4,15 @@ import { Label } from "@/components/ui/label";
 import { useSession } from "next-auth/react";
 import { useMemo, useState, useEffect } from "react";
 import { Shirt, Tag, BellRing, Store } from "lucide-react";
-import { Pie, PieChart } from "recharts";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Pie, PieChart, Bar, BarChart, CartesianGrid, XAxis } from "recharts";
+import {
+  Card,
+  CardContent,
+  CardHeader,
+  CardTitle,
+  CardDescription,
+  CardFooter,
+} from "@/components/ui/card";
 import {
   ChartConfig,
   ChartContainer,
@@ -20,7 +27,6 @@ import {
   DialogHeader,
   DialogTitle,
   DialogDescription,
-  DialogTrigger,
 } from "@/components/ui/dialog";
 
 function formatRelativeTime(dateString) {
@@ -90,11 +96,19 @@ export default function VendorDashboard() {
             };
           })
         : [],
-    [dashboardData, typeColorMapping]
+    [dashboardData]
   );
 
   const chartConfig = {
     visitors: { label: "Count" },
+  };
+
+  // Using the same primary color as the pie chart slices.
+  const paymentChartConfig = {
+    total: {
+      label: "Payments",
+      color: "#3b82f6",
+    },
   };
 
   const isLoading = !dashboardData && !error;
@@ -147,7 +161,7 @@ export default function VendorDashboard() {
             {session?.user?.firstName ? (
               <div className="flex items-center gap-2">
                 <p className="font-medium text-[2.50rem] leading-[2.5rem] tracking-tight">
-                  {"Welcome, "}
+                  Welcome,{" "}
                 </p>
                 <CardTitle className="text-[2.35rem] leading-[2.5rem] tracking-widest">
                   {session.user.firstName}
@@ -156,10 +170,10 @@ export default function VendorDashboard() {
             ) : (
               <div className="flex items-center gap-2">
                 <p className="font-medium text-[2.50rem] leading-[2.5rem] tracking-tight">
-                  {"Welcome, "}
+                  Welcome,{" "}
                 </p>
                 <CardTitle className="text-[2.35rem] leading-[2.5rem] tracking-widest">
-                  {"User"}
+                  User
                 </CardTitle>
               </div>
             )}
@@ -210,32 +224,61 @@ export default function VendorDashboard() {
                   </CardContent>
                 </Card>
               </div>
-              <Card className="w-full h-full p-5">
-                <div className="flex flex-row items-center gap-2 mb-3">
-                  <BellRing />
-                  <Label className="uppercase font-medium text-lg">Notifications:</Label>
-                </div>
-                <div className="flex flex-col gap-2 overflow-y-auto max-h-[660px]">
-                  {dashboardData.notifications.length ? (
-                    dashboardData.notifications.map((notification) => (
-                      <div
-                        key={notification.id}
-                        className="flex flex-col p-2 border-l-4 bg-muted rounded-lg rounded-ss-none mr-2 rounded-es-none"
-                      >
-                        <div className="flex flex-col items-start gap-2 ml-1">
-                          <p className="text-base uppercase font-bold">{notification.title}</p>
-                          <p className="text-base font-extralight">{notification.message}</p>
+              <div className="flex flex-col gap-4 w-full">
+                <Card className="flex-[2] w-full h-1/2 p-5">
+                  <CardHeader>
+                    <Label className="uppercase font-medium">Payments</Label>
+                    <div className="leading-none text-muted-foreground">Total payments per month</div>
+                  </CardHeader>
+                  <CardContent>
+                    <ChartContainer config={paymentChartConfig} className="w-full h-64">
+                      <BarChart data={dashboardData.paymentChartData} width={400} height={250}>
+                        <CartesianGrid vertical={false} />
+                        <XAxis
+                          dataKey="month"
+                          tickLine={false}
+                          tickMargin={10}
+                          axisLine={false}
+                          tickFormatter={(value) => value.slice(0, 3)}
+                        />
+                        <ChartTooltip
+                          cursor={false}
+                          content={<ChartTooltipContent indicator="dashed" />}
+                        />
+                        <Bar dataKey="total" fill="#3b82f6" radius={4} />
+                      </BarChart>
+                    </ChartContainer>
+                  </CardContent>
+                </Card>
+                <Card className="flex-1 w-full h-1/2 p-5">
+                  <div className="flex flex-row items-center gap-2 mb-3">
+                    <BellRing />
+                    <Label className="uppercase font-medium text-lg">Notifications:</Label>
+                  </div>
+                  <div className="flex flex-col gap-2 overflow-y-auto max-h-[275px]">
+                    {dashboardData.notifications.length ? (
+                      dashboardData.notifications.map((notification) => (
+                        <div
+                          key={notification.id}
+                          className="flex flex-col p-2 border-l-4 bg-muted rounded-lg rounded-ss-none mr-2 rounded-es-none"
+                        >
+                          <div className="flex flex-col items-start gap-2 ml-1">
+                            <p className="text-base uppercase font-bold">{notification.title}</p>
+                            <p className="text-base font-extralight">{notification.message}</p>
+                          </div>
+                          <p className="font-thin text-sm text-primary/50 text-end">
+                            {formatRelativeTime(notification.created_at)}
+                          </p>
                         </div>
-                        <p className="font-thin text-sm text-primary/50 text-end">
-                          {formatRelativeTime(notification.created_at)}
-                        </p>
-                      </div>
-                    ))
-                  ) : (
-                    <p className="text-lg text-center font-extralight text-primary/50">No notifications</p>
-                  )}
-                </div>
-              </Card>
+                      ))
+                    ) : (
+                      <p className="text-lg text-center font-extralight text-primary/50">
+                        No notifications
+                      </p>
+                    )}
+                  </div>
+                </Card>
+              </div>
             </div>
           </div>
         </>

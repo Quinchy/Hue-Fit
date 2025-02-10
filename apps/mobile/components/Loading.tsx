@@ -1,3 +1,4 @@
+// src/components/Loading.tsx
 import React, { useEffect, useState } from 'react';
 import { StyleSheet, ImageBackground, Text } from 'react-native';
 import LottieView from 'lottie-react-native';
@@ -18,35 +19,31 @@ const LoadingSpinner: React.FC<LoadingSpinnerProps> = ({
 }) => {
   const [currentMessage, setCurrentMessage] = useState(
     Array.isArray(messages) ? messages[0] : messages
-  ); // Initialize message
-  const opacity = useSharedValue(visible ? 1 : 0); // Start with 1 (visible) if `visible` is true
+  );
+  const opacity = useSharedValue(visible ? 1 : 0);
 
   useEffect(() => {
     let messageInterval: NodeJS.Timeout | null = null;
-
     if (Array.isArray(messages) && messages.length > 1) {
       let index = 0;
       messageInterval = setInterval(() => {
         index = (index + 1) % messages.length;
-        setCurrentMessage(messages[index]); // Rotate through messages
-      }, 2000); // Change message every 2 seconds
+        setCurrentMessage(messages[index]);
+      }, 2000);
     }
-
     return () => {
       if (messageInterval) clearInterval(messageInterval);
-    }; // Cleanup interval
+    };
   }, [messages]);
 
   useEffect(() => {
     if (!visible) {
-      // Trigger fade-out animation when `visible` changes to false
       opacity.value = withTiming(0, { duration: 500 }, () => {
         if (onFinish) {
-          runOnJS(onFinish)(); // Trigger the callback after fade-out
+          runOnJS(onFinish)();
         }
       });
     } else {
-      // Reset opacity to 1 when `visible` is true
       opacity.value = withTiming(1, { duration: 500 });
     }
   }, [visible, opacity, onFinish]);
@@ -57,13 +54,13 @@ const LoadingSpinner: React.FC<LoadingSpinnerProps> = ({
 
   return (
     <ImageBackground
-      source={require('../assets/tile-pattern.png')} // Replace with your background image
+      source={require('../assets/tile-pattern.png')}
       style={styles.background}
       resizeMode="repeat"
     >
       <Animated.View style={[styles.container, animatedStyle]}>
         <LottieView
-          source={require('../assets/animations/loading.json')} // Default animation file
+          source={require('../assets/animations/loading.json')}
           autoPlay
           loop
           style={{ width: size, height: size }}
@@ -76,7 +73,7 @@ const LoadingSpinner: React.FC<LoadingSpinnerProps> = ({
 
 const styles = StyleSheet.create({
   background: {
-    flex: 1,
+    ...StyleSheet.absoluteFillObject, // ensures full-screen coverage
     justifyContent: 'center',
     alignItems: 'center',
     backgroundColor: '#191919',
@@ -91,7 +88,7 @@ const styles = StyleSheet.create({
     fontSize: 12,
     color: 'white',
     textAlign: 'center',
-    fontWeight: 'ultralight',
+    fontWeight: '300',
   },
 });
 

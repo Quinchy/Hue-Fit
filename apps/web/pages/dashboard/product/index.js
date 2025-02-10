@@ -78,10 +78,6 @@ export default function ProductsPage() {
     router.push(routes.productView.replace('[productNo]', productNo));
   };
 
-  const handleEditClick = (productNo) => {
-    router.push(routes.productEdit.replace('[productNo]', productNo));
-  };
-
   const handleStockClick = (productNo) => {
     router.push(routes.productStock.replace('[productNo]', productNo));
   };
@@ -302,17 +298,6 @@ export default function ProductsPage() {
                                   >
                                     <Eye className="scale-125" />
                                     View
-                                  </Button>
-                                </DropdownMenuItem>
-                                <DropdownMenuItem className="justify-center">
-                                  <Button
-                                    variant="none"
-                                    onClick={() =>
-                                      handleEditClick(product.productNo)
-                                    }
-                                  >
-                                    <Pencil className="scale-125" />
-                                    Edit
                                   </Button>
                                 </DropdownMenuItem>
                                 <DropdownMenuItem className="justify-center">

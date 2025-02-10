@@ -1,4 +1,5 @@
-import prisma from "@/utils/helpers";
+// pages/api/orders/update-order.js
+import prisma from "@/utils/helpers"; // Ensure this imports your Prisma client instance
 
 export default async function handler(req, res) {
   if (req.method !== "POST") {
@@ -14,7 +15,7 @@ export default async function handler(req, res) {
     // Uppercase the status for consistency
     const upperStatus = status.toUpperCase();
 
-    // Update the order status
+    // Update the order status and include related Shop (with DeliveryFee) and OrderItems
     const updatedOrder = await prisma.order.update({
       where: { orderNo },
       data: { status: upperStatus },
@@ -23,6 +24,11 @@ export default async function handler(req, res) {
         OrderItems: {
           include: {
             ProductVariant: true,
+          },
+        },
+        Shop: {
+          include: {
+            DeliveryFee: true,
           },
         },
       },
@@ -38,19 +44,34 @@ export default async function handler(req, res) {
       },
     });
 
-    // If the order is completed, record the payment
+    // If the order is completed, record the payment.
+    // Here, apply the delivery fee (if available) to the order total.
     if (upperStatus === "COMPLETED") {
-      // Calculate the total amount from order items
-      const amount = updatedOrder.OrderItems.reduce((sum, item) => {
-        const price = Number(item.ProductVariant.price || 0);
+      // Calculate the base amount from order items
+      const baseAmount = updatedOrder.OrderItems.reduce((sum, item) => {
+        const price = Number(item.ProductVariant?.price || 0);
         return sum + price * (item.quantity || 0);
       }, 0);
 
-      // Record payment using the Payment model
+      // Calculate the delivery fee from the shop's global fee (if exists)
+      let deliveryFee = 0;
+      if (updatedOrder.Shop?.DeliveryFee && updatedOrder.Shop.DeliveryFee.length > 0) {
+        const feeRecord = updatedOrder.Shop.DeliveryFee[0];
+        if (feeRecord.feeType.toUpperCase() === "FIXED") {
+          deliveryFee = Number(feeRecord.feeAmount);
+        } else if (feeRecord.feeType.toUpperCase() === "PERCENTAGE") {
+          deliveryFee = baseAmount * (Number(feeRecord.feeAmount) / 100);
+        }
+      }
+
+      const totalPayment = baseAmount + deliveryFee;
+
+      // Record payment using the Payment model including shopId.
       await prisma.payment.create({
         data: {
           orderId: updatedOrder.id,
-          amount,
+          amount: totalPayment,
+          shopId: updatedOrder.shopId,
         },
       });
     }

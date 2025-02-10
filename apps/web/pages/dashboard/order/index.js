@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import { useState } from "react";
 import { useRouter } from "next/router";
 import DashboardLayoutWrapper from "@/components/ui/dashboard-layout";
 import { Card, CardTitle } from "@/components/ui/card";
@@ -29,7 +29,7 @@ import {
   PaginationNext,
   PaginationLink,
 } from "@/components/ui/pagination";
-import { Pencil, Search, ChevronDown, Wrench } from "lucide-react";
+import { Pencil, Search, ChevronDown, Wrench, Plus } from "lucide-react";
 import { Skeleton } from "@/components/ui/skeleton";
 import useSWR from "swr";
 import Link from "next/link";
@@ -49,10 +49,16 @@ export default function Orders() {
     { label: "Reserves", href: routes.orderReserve },
   ];
 
-  // Use SWR to fetch orders. The options:
-  // - refreshInterval: polls the API every 5000ms (5 seconds)
-  // - revalidateOnFocus: disabled to avoid re-fetching when the window regains focus
-  // - keepPreviousData: retains current data until new data is fetched
+  // Define status color mapping using shadcn colors
+  const statusColors = {
+    PENDING: "bg-blue-400",
+    PROCESSING: "bg-amber-500",
+    DELIVERING: "bg-purple-400",
+    COMPLETED: "bg-green-400",
+    CANCELLED: "bg-red-500",
+  };
+
+  // Use SWR to fetch orders.
   const { data, isLoading } = useSWR(
     `/api/orders/get-orders?page=${currentPage}&search=${search}&status=${status}`,
     fetcher,
@@ -63,12 +69,27 @@ export default function Orders() {
     }
   );
 
-  // Fallbacks in case data is not yet loaded
+  // Fallbacks
   const orders = data?.orders || [];
   const totalPages = data?.totalPages || 1;
 
+  // Sort orders: for example, pending orders come first and completed orders last.
+  const sortedOrders = orders.slice().sort((a, b) => {
+    // Define custom ordering: lower number means higher priority in the list.
+    const orderPriority = {
+      PENDING: 1,
+      PROCESSING: 2,
+      DELIVERING: 3,
+      COMPLETED: 4,
+      CANCELLED: 5,
+    };
+
+    const aPriority = orderPriority[a.status.toUpperCase()] || 99;
+    const bPriority = orderPriority[b.status.toUpperCase()] || 99;
+    return aPriority - bPriority;
+  });
+
   const handleUpdateClick = (orderNo) => {
-    // Navigate to the order update/edit page
     router.push(`/dashboard/order/edit/${orderNo}`);
   };
 
@@ -105,9 +126,14 @@ export default function Orders() {
             </DropdownMenuTrigger>
             <DropdownMenuContent className="w-48">
               <DropdownMenuGroup>
-                {["Processing", "Preparing", "Packaging"].map(
+                <DropdownMenuItem key="All" className="justify-center">
+                  <Button variant="none" onClick={() => handleStatusFilter("")}>
+                    All Status
+                  </Button>
+                </DropdownMenuItem>
+                {["PENDING", "PROCESSING", "DELIVERING", "COMPLETED", "CANCELLED"].map(
                   (filterStatus) => (
-                    <DropdownMenuItem key={filterStatus}>
+                    <DropdownMenuItem className="justify-center" key={filterStatus}>
                       <Button
                         variant="none"
                         onClick={() => handleStatusFilter(filterStatus)}
@@ -117,11 +143,6 @@ export default function Orders() {
                     </DropdownMenuItem>
                   )
                 )}
-                <DropdownMenuItem key="All">
-                  <Button variant="none" onClick={() => handleStatusFilter("")}>
-                    All Status
-                  </Button>
-                </DropdownMenuItem>
               </DropdownMenuGroup>
             </DropdownMenuContent>
           </DropdownMenu>
@@ -152,7 +173,6 @@ export default function Orders() {
             </TableHeader>
             <TableBody>
               {isLoading ? (
-                // While loading, show 8 rows of Skeleton placeholders
                 Array.from({ length: 8 }).map((_, index) => (
                   <TableRow key={index}>
                     <TableCell>
@@ -178,9 +198,8 @@ export default function Orders() {
                     </TableCell>
                   </TableRow>
                 ))
-              ) : orders.length > 0 ? (
-                orders.map((order) => {
-                  // Limit displayed order items to two per order
+              ) : sortedOrders.length > 0 ? (
+                sortedOrders.map((order) => {
                   const maxItemsToShow = 2;
                   const items = order.OrderItems || [];
                   const limitedItems = items.slice(0, maxItemsToShow);
@@ -206,7 +225,6 @@ export default function Orders() {
                     return `PHP ${p}`;
                   });
 
-                  // Indicate if there are more items not shown
                   const hasMoreItems = items.length > maxItemsToShow;
 
                   return (
@@ -232,7 +250,11 @@ export default function Orders() {
                         {hasMoreItems && "\n..."}
                       </TableCell>
                       <TableCell className="text-center">
-                        <p className="py-1 w-full rounded font-bold text-card bg-yellow-500 uppercase">
+                        <p
+                          className={`py-1 w-full rounded font-bold uppercase text-white ${
+                            statusColors[order.status.toUpperCase()] || "bg-gray-500"
+                          }`}
+                        >
                           {order.status}
                         </p>
                       </TableCell>

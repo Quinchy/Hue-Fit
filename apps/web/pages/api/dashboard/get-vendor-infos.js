@@ -1,4 +1,4 @@
-// pages/api/dashboard/get-vendor-infos.js
+// File: pages/api/dashboard/get-vendor-infos.js
 import prisma from '@/utils/helpers';
 import { getSessionShopId } from "@/utils/helpers";
 
@@ -65,11 +65,44 @@ export default async function handler(req, res) {
       count: group._count.id,
     }));
 
-    // Only fetch partnership request if it is pending.
     const partnershipRequest = await prisma.partnershipRequest.findFirst({
       where: { shopId: parsedShopId, status: "DONE" },
       select: { isSeen: true }
     });
+
+    const payments = await prisma.payment.findMany({
+      where: { shopId: parsedShopId },
+    });
+
+    const monthNames = [
+      "January", "February", "March", "April", "May", "June",
+      "July", "August", "September", "October", "November", "December"
+    ];
+    const paymentMap = {};
+    payments.forEach((payment) => {
+      const date = new Date(payment.created_at);
+      const year = date.getFullYear();
+      const monthIndex = date.getMonth();
+      const key = `${year}-${monthIndex}`;
+      if (!paymentMap[key]) {
+        paymentMap[key] = {
+          year,
+          month: monthNames[monthIndex],
+          total: 0,
+          monthIndex,
+        };
+      }
+      paymentMap[key].total += parseFloat(payment.amount);
+    });
+    const paymentChartData = Object.values(paymentMap)
+      .sort((a, b) => {
+        if (a.year !== b.year) return a.year - b.year;
+        return a.monthIndex - b.monthIndex;
+      })
+      .map(({ year, month, total }) => ({
+        month: `${month} ${year}`,
+        total,
+      }));
 
     res.status(200).json({
       productCount,
@@ -79,6 +112,7 @@ export default async function handler(req, res) {
       notifications,
       typeCounts,
       partnershipRequestIsSeen: partnershipRequest ? partnershipRequest.isSeen : true,
+      paymentChartData,
     });
   } catch (error) {
     console.error("Server error:", error);

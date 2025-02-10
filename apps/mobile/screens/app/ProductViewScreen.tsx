@@ -16,7 +16,7 @@ import * as Yup from 'yup';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import BackgroundProvider from '../../providers/BackgroundProvider';
 import LoadingSpinner from '../../components/Loading';
-import { ShoppingCart, ArrowLeft, Camera, Cpu } from 'lucide-react-native';
+import { ShoppingCart, ArrowLeft, Camera, Cpu, Loader2 } from 'lucide-react-native';
 import { Actionsheet, useToast } from 'native-base';
 import { EXPO_PUBLIC_API_URL } from '@env';
 
@@ -36,6 +36,7 @@ const ProductViewScreen = ({ route, navigation }) => {
   const [selectedVariant, setSelectedVariant] = useState(null);
   const [selectedSize, setSelectedSize] = useState(null);
   const [quantity, setQuantity] = useState(1);
+  const [addingToCart, setAddingToCart] = useState(false);
 
   const toast = useToast();
 
@@ -48,6 +49,29 @@ const ProductViewScreen = ({ route, navigation }) => {
 
   const [showReserveWarning, setShowReserveWarning] = useState(false);
   const [pendingCartValues, setPendingCartValues] = useState(null);
+
+  // Spinner animation ref
+  const spinValue = useRef(new Animated.Value(0)).current;
+  const spin = spinValue.interpolate({
+    inputRange: [0, 1],
+    outputRange: ['0deg', '360deg'],
+  });
+
+  useEffect(() => {
+    if (addingToCart) {
+      Animated.loop(
+        Animated.timing(spinValue, {
+          toValue: 1,
+          duration: 1000,
+          easing: Easing.linear,
+          useNativeDriver: true,
+        })
+      ).start();
+    } else {
+      spinValue.stopAnimation();
+      spinValue.setValue(0);
+    }
+  }, [addingToCart, spinValue]);
 
   // 1) Fetch product details from your API
   const fetchProductDetails = async () => {
@@ -174,8 +198,8 @@ const ProductViewScreen = ({ route, navigation }) => {
             setShowReserveWarning(true);
             setPendingCartValues(values);
           } else {
-            // Add to cart directly
             try {
+              setAddingToCart(true);
               await handleAddToCart(values);
               animateAddToCart(values);
               toast.show({
@@ -185,6 +209,8 @@ const ProductViewScreen = ({ route, navigation }) => {
               });
             } catch (error) {
               console.error(error);
+            } finally {
+              setAddingToCart(false);
             }
           }
         }}
@@ -227,7 +253,6 @@ const ProductViewScreen = ({ route, navigation }) => {
                   ]}
                   onPress={() => {
                     if (values.selectedVariant?.pngClotheURL) {
-                      // Pass type & tag from parentProduct (typeName, tagName)
                       navigation.navigate('VirtualFitting', {
                         pngClotheURL: values.selectedVariant.pngClotheURL,
                         type: parentProduct?.typeName ?? '',
@@ -518,8 +543,24 @@ const ProductViewScreen = ({ route, navigation }) => {
 
             {/* Bottom bar: "Add to Cart" */}
             <View style={styles.stickyButtonContainer}>
-              <TouchableOpacity style={styles.addToCartButton} onPress={handleSubmit}>
-                <Text style={styles.buttonText}>Add to Cart</Text>
+              <TouchableOpacity
+                style={[
+                  styles.addToCartButton,
+                  addingToCart && { opacity: 0.7 }
+                ]}
+                onPress={handleSubmit}
+                disabled={addingToCart}
+              >
+                {addingToCart ? (
+                  <View style={{ flexDirection: 'row', alignItems: 'center' }}>
+                    <Animated.View style={{ transform: [{ rotate: spin }] }}>
+                      <Loader2 size={24} color="#191919" style={{ marginRight: 8 }} />
+                    </Animated.View>
+                    <Text style={styles.buttonText}>Adding to Cart...</Text>
+                  </View>
+                ) : (
+                  <Text style={styles.buttonText}>Add to Cart</Text>
+                )}
               </TouchableOpacity>
             </View>
 
@@ -546,6 +587,7 @@ const ProductViewScreen = ({ route, navigation }) => {
                     setShowReserveWarning(false);
                     if (pendingCartValues) {
                       try {
+                        setAddingToCart(true);
                         await handleAddToCart(pendingCartValues);
                         animateAddToCart(pendingCartValues);
                         toast.show({
@@ -555,6 +597,8 @@ const ProductViewScreen = ({ route, navigation }) => {
                         });
                       } catch (err) {
                         console.error(err);
+                      } finally {
+                        setAddingToCart(false);
                       }
                     }
                   }}

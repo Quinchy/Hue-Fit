@@ -114,7 +114,7 @@ export default async function handler(req, res) {
     });
 
     // Update orders: For all orders in RESERVED status that contain order items referencing
-    // updated ProductVariantSize entries, update their status to PROCESSING.
+    // updated ProductVariantSize entries, update their status to PENDING.
     const updatedSizes = [];
     for (const [sizeAbbr, increment] of Object.entries(increments)) {
       if (increment > 0) {
@@ -137,7 +137,7 @@ export default async function handler(req, res) {
           },
         },
         data: {
-          status: "PROCESSING",
+          status: "PENDING",
         },
       });
     }

@@ -78,7 +78,7 @@ const createOrder = async (req, res) => {
       const orderNo = `ORD-${Date.now()}-${shopIdInt}`;
 
       // Determine status based on reserve mode
-      const status = isReserveMode ? 'RESERVED' : 'PROCESSING';
+      const status = isReserveMode ? 'RESERVED' : 'PENDING';
 
       // Create the order + order items
       const newOrder = await prisma.order.create({

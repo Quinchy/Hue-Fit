@@ -163,6 +163,7 @@ model Shop {
   CartItem            CartItem[]
   Notification        Notification[]
   DeliveryFee         DeliveryFee[]
+  Payment             Payment[]
 }
 
 model ShopAddress {
@@ -365,14 +366,16 @@ model Measurement {
 }
 
 model Order {
-  id             Int       @id @default(autoincrement())
-  orderNo        String    @unique(map: "Unique_OrderNo")
-  shopId         Int       // This order is for a single shop
-  userId         Int
-  paymentMethod  String    // e.g. 'COD', 'CARD'
-  status         String    @default("PROCESSING") // e.g. 'PROCESSING', 'PACKAGING', 'DELIVERING', ...
-  created_at     DateTime  @default(now())
-  updated_at     DateTime  @updatedAt
+  id              Int       @id @default(autoincrement())
+  orderNo         String    @unique(map: "Unique_OrderNo")
+  shopId          Int       // This order is for a single shop
+  userId          Int
+  paymentMethod   String    // e.g. 'COD', 'CARD'
+  status          String    @default("PENDING") // e.g. 'PENDING', 'PROCESSING', 'DELIVERING', ...
+  askingForCancel Boolean   @default(false)
+  cancelReason    String?
+  created_at      DateTime  @default(now())
+  updated_at      DateTime  @updatedAt
 
   User  User @relation(fields: [userId], references: [id])
   Shop  Shop @relation(fields: [shopId], references: [id])
@@ -456,11 +459,13 @@ model Notification {
 
 model Payment {
   id        Int      @id @default(autoincrement())
+  shopId    Int?
   orderId   Int
   amount    Decimal  @db.Decimal(10, 2)
   created_at DateTime @default(now())
   
   Order     Order    @relation(fields: [orderId], references: [id])
+  Shop      Shop?    @relation(fields: [shopId], references: [id])
 }
 
 model GeneratedOutfit {
