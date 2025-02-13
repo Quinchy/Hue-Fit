@@ -14,6 +14,7 @@ const routes = {
   login: '/account/login',
   forgotPassword: '/account/forgot-password',
   dashboard: '/dashboard',
+  notification: '/dashboard/notification',
   profile: '/dashboard/profile',
   shopProfile: '/dashboard/shop-profile',
   settings: '/dashboard/settings',

@@ -7,7 +7,7 @@ import { getSession } from "next-auth/react";
  * 1) allShopsCount: total number of ACTIVE shops
  * 2) allShopRequestsCount: total number of partnership requests with status = "PENDING"
  * 3) usersPerMonth: array of { month, count } for newly created users in the last year
- * 4) notifications: all notifications with userId = null and shopId = null (admin-level)
+ * 4) notifications: all notifications with userId = null and shopId = null (admin-level, take 7)
  */
 export default async function handler(req, res) {
   if (req.method !== "GET") {
@@ -15,7 +15,6 @@ export default async function handler(req, res) {
   }
 
   try {
-    // We can validate if the user is ADMIN by checking session if needed
     const session = await getSession({ req });
     if (!session || session?.user?.role !== "ADMIN") {
       return res.status(403).json({ error: "Forbidden" });
@@ -37,7 +36,7 @@ export default async function handler(req, res) {
 
     // For bar chart: new users per month in the last year
     const currentYear = new Date().getFullYear();
-    const earliestDate = new Date(currentYear - 1, 0, 1); // last year january 1
+    const earliestDate = new Date(currentYear - 1, 0, 1); // last year January 1
 
     const groupedUsers = await prisma.user.groupBy({
       by: ["created_at"],
@@ -52,7 +51,7 @@ export default async function handler(req, res) {
       },
     });
 
-    const monthsMap = {}; // e.g. { "2023-07": 5, "2023-08": 8, ... }
+    const monthsMap = {}; // e.g. { "2023-7": 5, "2023-8": 8, ... }
     groupedUsers.forEach((group) => {
       const dateObj = new Date(group.created_at);
       const monthKey = `${dateObj.getFullYear()}-${dateObj.getMonth()}`;
@@ -85,13 +84,14 @@ export default async function handler(req, res) {
       }
     }
 
-    // Admin notifications: userId=null, shopId=null
+    // Admin notifications: userId = null, shopId = null, take 7
     const notifications = await prisma.notification.findMany({
       where: {
         userId: null,
         shopId: null,
       },
       orderBy: { created_at: "desc" },
+      take: 7,
     });
 
     res.status(200).json({
@@ -99,7 +99,7 @@ export default async function handler(req, res) {
       allShopRequestsCount,
       usersPerMonth,
       notifications,
-      showAdminWelcome: false, // or true if you want to show a welcome dialog
+      showAdminWelcome: false,
     });
   } catch (error) {
     console.error("Error on get-admin-infos:", error);

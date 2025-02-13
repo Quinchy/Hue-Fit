@@ -1,4 +1,3 @@
-// src/components/Select.tsx
 import React from 'react';
 import { Box, Text, Select, ISelectProps, CheckIcon } from 'native-base';
 import { Asterisk } from 'lucide-react-native';
@@ -21,19 +20,25 @@ const CustomSelect: React.FC<CustomSelectProps> = ({
   error,
   ...props
 }) => {
+  const borderWidth = error ? 2 : 1;
+  const borderColor = error ? "red.500" : "#C0C0C035";
+
   return (
     <Box>
-      <Text fontSize="md" fontWeight={600} color="#C0C0C0" mb={1} flexDir="row" alignItems="center">
+      <Text
+        fontSize="md"
+        fontWeight={600}
+        color="#C0C0C0"
+        mb={1}
+        flexDir="row"
+        alignItems="center"
+      >
         {label}
         {required && (
           <Asterisk size={12} color="#C0C0C0" style={{ marginLeft: 4 }} />
         )}
       </Text>
-      <Box 
-        borderWidth={error ? 2 : 0} 
-        borderColor={error ? "red.500" : "transparent"} 
-        borderRadius="md"
-      >
+      <Box borderWidth={borderWidth} borderColor={borderColor} borderRadius="md">
         <Select
           selectedValue={value}
           minWidth="200"

@@ -27,6 +27,13 @@ export default async function handler(req, res) {
     }
 
     if (action === "REJECT") {
+      await prisma.order.update({
+        where: { id: orderId },
+        data: {
+          askingForCancel: false,
+          cancelReason: null,
+        },
+      });
       await prisma.notification.create({
         data: {
           title: "Order Cancellation Rejected",
@@ -65,8 +72,6 @@ export default async function handler(req, res) {
         where: { id: orderId },
         data: {
           status: "CANCELLED",
-          askingForCancel: false,
-          cancelReason: null,
         },
       });
       await prisma.notification.create({

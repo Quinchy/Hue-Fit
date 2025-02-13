@@ -10,6 +10,8 @@ export default function Dashboard() {
   if (userRole === "ADMIN") {
     return <AdminDashboard />;
   } else if (userRole === "VENDOR") {
-    return <VendorDashboard />;
+    return <VendorDashboard />;  
+  } else {
+    return <p>User role not recognized.</p>;
   }
 }

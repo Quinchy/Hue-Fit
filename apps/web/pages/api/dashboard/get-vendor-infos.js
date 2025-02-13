@@ -42,6 +42,7 @@ export default async function handler(req, res) {
       orderBy: {
         created_at: "desc",
       },
+      take: 7
     });
     
     const types = await prisma.type.findMany({

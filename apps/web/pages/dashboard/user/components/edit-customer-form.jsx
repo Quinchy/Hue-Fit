@@ -1,3 +1,5 @@
+// File: components/edit-customer-form.js
+import { useEffect } from "react";
 import { useFormik } from "formik";
 import * as Yup from "yup";
 import { Card, CardTitle } from "@/components/ui/card";
@@ -5,9 +7,10 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Button } from "@/components/ui/button";
 import { InputErrorMessage, InputErrorStyle } from "@/components/ui/error-message";
+import { LoadingMessage } from "@/components/ui/loading-message";
+import { Asterisk } from "lucide-react";
 
 export default function EditCustomerForm({ form = {}, onChange }) {
-  // Prepare initial values for address and features.
   const initialAddress =
     form.addresses && form.addresses.length > 0
       ? form.addresses[0]
@@ -31,15 +34,14 @@ export default function EditCustomerForm({ form = {}, onChange }) {
           bodyShape: "",
         };
 
-  // Define validation schema.
   const validationSchema = Yup.object().shape({
     firstName: Yup.string().required("Required"),
     lastName: Yup.string().required("Required"),
     email: Yup.string().email("Invalid email").required("Required"),
     username: Yup.string().required("Required"),
     address: Yup.object().shape({
-      buildingNo: Yup.string().required("Required"),
-      street: Yup.string().required("Required"),
+      buildingNo: Yup.string(),
+      street: Yup.string(),
       barangay: Yup.string().required("Required"),
       municipality: Yup.string().required("Required"),
       province: Yup.string().required("Required"),
@@ -54,7 +56,6 @@ export default function EditCustomerForm({ form = {}, onChange }) {
     }),
   });
 
-  // Initialize Formik.
   const formik = useFormik({
     initialValues: {
       firstName: form.firstName || "",
@@ -80,11 +81,12 @@ export default function EditCustomerForm({ form = {}, onChange }) {
     validationSchema,
     onSubmit: async (values, { setSubmitting }) => {
       try {
-        // Simulate an API call delay.
         await new Promise((resolve) => setTimeout(resolve, 1000));
-        // Convert nested address and features objects into arrays.
         const payload = {
-          ...values,
+          firstName: values.firstName,
+          lastName: values.lastName,
+          email: values.email,
+          username: values.username,
           addresses: [values.address],
           features: [values.features],
         };
@@ -98,16 +100,30 @@ export default function EditCustomerForm({ form = {}, onChange }) {
     enableReinitialize: true,
   });
 
+  // Propagate changes to parent on every value change
+  useEffect(() => {
+    const payload = {
+      firstName: formik.values.firstName,
+      lastName: formik.values.lastName,
+      email: formik.values.email,
+      username: formik.values.username,
+      addresses: [formik.values.address],
+      features: [formik.values.features],
+    };
+    if (onChange) onChange(payload);
+  }, [formik.values, onChange]);
+
   return (
     <Card className="p-6">
       <form onSubmit={formik.handleSubmit} className="space-y-6">
-        {/* Customer Information Section */}
         <CardTitle className="text-2xl mb-4 font-semibold">
           Customer Information
         </CardTitle>
         <div className="grid grid-cols-2 gap-4">
           <div>
-            <Label className="font-semibold">First Name</Label>
+            <Label className="font-semibold flex items-center">
+              First Name <Asterisk className="w-4" />
+            </Label>
             <Input
               name="firstName"
               placeholder="Enter the customer's first name"
@@ -121,7 +137,9 @@ export default function EditCustomerForm({ form = {}, onChange }) {
             )}
           </div>
           <div>
-            <Label className="font-semibold">Last Name</Label>
+            <Label className="font-semibold flex items-center">
+              Last Name <Asterisk className="w-4" />
+            </Label>
             <Input
               name="lastName"
               placeholder="Enter the customer's last name"
@@ -135,7 +153,9 @@ export default function EditCustomerForm({ form = {}, onChange }) {
             )}
           </div>
           <div className="col-span-2">
-            <Label className="font-semibold">Email</Label>
+            <Label className="font-semibold flex items-center">
+              Email <Asterisk className="w-4" />
+            </Label>
             <Input
               name="email"
               type="email"
@@ -151,7 +171,6 @@ export default function EditCustomerForm({ form = {}, onChange }) {
           </div>
         </div>
 
-        {/* Address Section */}
         <CardTitle className="text-2xl my-4 font-semibold">
           Address
         </CardTitle>
@@ -185,7 +204,9 @@ export default function EditCustomerForm({ form = {}, onChange }) {
             )}
           </div>
           <div>
-            <Label className="font-semibold">Barangay</Label>
+            <Label className="font-semibold flex items-center">
+              Barangay <Asterisk className="w-4" />
+            </Label>
             <Input
               name="address.barangay"
               placeholder="Enter barangay"
@@ -199,7 +220,9 @@ export default function EditCustomerForm({ form = {}, onChange }) {
             )}
           </div>
           <div>
-            <Label className="font-semibold">Municipality</Label>
+            <Label className="font-semibold flex items-center">
+              Municipality <Asterisk className="w-4" />
+            </Label>
             <Input
               name="address.municipality"
               placeholder="Enter municipality"
@@ -213,7 +236,9 @@ export default function EditCustomerForm({ form = {}, onChange }) {
             )}
           </div>
           <div>
-            <Label className="font-semibold">Province</Label>
+            <Label className="font-semibold flex items-center">
+              Province <Asterisk className="w-4" />
+            </Label>
             <Input
               name="address.province"
               placeholder="Enter province"
@@ -227,7 +252,9 @@ export default function EditCustomerForm({ form = {}, onChange }) {
             )}
           </div>
           <div>
-            <Label className="font-semibold">Postal Code</Label>
+            <Label className="font-semibold flex items-center">
+              Postal Code <Asterisk className="w-4" />
+            </Label>
             <Input
               name="address.postalCode"
               placeholder="Enter postal code"
@@ -242,13 +269,14 @@ export default function EditCustomerForm({ form = {}, onChange }) {
           </div>
         </div>
 
-        {/* Account Information Section */}
         <CardTitle className="text-2xl my-4 font-semibold">
           Account Information
         </CardTitle>
         <div className="grid grid-cols-2 gap-4">
           <div>
-            <Label className="font-semibold">Username</Label>
+            <Label className="font-semibold flex items-center">
+              Username <Asterisk className="w-4" />
+            </Label>
             <Input
               name="username"
               placeholder="Create the customer's username"
@@ -262,87 +290,6 @@ export default function EditCustomerForm({ form = {}, onChange }) {
             )}
           </div>
         </div>
-
-        {/* Customer Features Section */}
-        <CardTitle className="text-2xl my-4 font-semibold">
-          Customer Features
-        </CardTitle>
-        <div className="grid grid-cols-2 gap-4">
-          <div>
-            <Label className="font-semibold">Height</Label>
-            <Input
-              name="features.height"
-              placeholder="Enter height"
-              value={formik.values.features?.height || ""}
-              onChange={formik.handleChange}
-              onBlur={formik.handleBlur}
-              className={InputErrorStyle(formik.errors.features?.height, formik.touched.features?.height)}
-            />
-            {formik.touched.features?.height && formik.errors.features?.height && (
-              <InputErrorMessage error={formik.errors.features.height} touched={formik.touched.features.height} />
-            )}
-          </div>
-          <div>
-            <Label className="font-semibold">Weight</Label>
-            <Input
-              name="features.weight"
-              placeholder="Enter weight"
-              value={formik.values.features?.weight || ""}
-              onChange={formik.handleChange}
-              onBlur={formik.handleBlur}
-              className={InputErrorStyle(formik.errors.features?.weight, formik.touched.features?.weight)}
-            />
-            {formik.touched.features?.weight && formik.errors.features?.weight && (
-              <InputErrorMessage error={formik.errors.features.weight} touched={formik.touched.features.weight} />
-            )}
-          </div>
-          <div>
-            <Label className="font-semibold">Age</Label>
-            <Input
-              name="features.age"
-              placeholder="Enter age"
-              value={formik.values.features?.age || ""}
-              onChange={formik.handleChange}
-              onBlur={formik.handleBlur}
-              className={InputErrorStyle(formik.errors.features?.age, formik.touched.features?.age)}
-            />
-            {formik.touched.features?.age && formik.errors.features?.age && (
-              <InputErrorMessage error={formik.errors.features.age} touched={formik.touched.features.age} />
-            )}
-          </div>
-          <div>
-            <Label className="font-semibold">Skintone</Label>
-            <Input
-              name="features.skintone"
-              placeholder="Enter skintone"
-              value={formik.values.features?.skintone || ""}
-              onChange={formik.handleChange}
-              onBlur={formik.handleBlur}
-              className={InputErrorStyle(formik.errors.features?.skintone, formik.touched.features?.skintone)}
-            />
-            {formik.touched.features?.skintone && formik.errors.features?.skintone && (
-              <InputErrorMessage error={formik.errors.features.skintone} touched={formik.touched.features.skintone} />
-            )}
-          </div>
-          <div>
-            <Label className="font-semibold">Body Shape</Label>
-            <Input
-              name="features.bodyShape"
-              placeholder="Enter body shape"
-              value={formik.values.features?.bodyShape || ""}
-              onChange={formik.handleChange}
-              onBlur={formik.handleBlur}
-              className={InputErrorStyle(formik.errors.features?.bodyShape, formik.touched.features?.bodyShape)}
-            />
-            {formik.touched.features?.bodyShape && formik.errors.features?.bodyShape && (
-              <InputErrorMessage error={formik.errors.features.bodyShape} touched={formik.touched.features.bodyShape} />
-            )}
-          </div>
-        </div>
-
-        <Button className="mt-6 w-full" type="submit" disabled={formik.isSubmitting}>
-          {formik.isSubmitting ? "Submitting..." : "Submit"}
-        </Button>
       </form>
     </Card>
   );

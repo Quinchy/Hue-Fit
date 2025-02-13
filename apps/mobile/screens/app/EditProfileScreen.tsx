@@ -1,12 +1,19 @@
-// src/screens/app/EditProfileScreen.tsx
-import React, { useEffect, useState } from 'react';
-import { ScrollView, Alert, StyleSheet, View } from 'react-native';
-import { VStack, Text, Center, HStack, IconButton, Image, Select } from 'native-base';
+// EditProfileScreen.js
+import React, { useEffect, useState, useCallback } from 'react';
+import { ScrollView, Alert, View, Pressable } from 'react-native';
+import {
+  VStack,
+  Text,
+  Center,
+  HStack,
+  Image,
+  Select,
+  Box
+} from 'native-base';
 import BackgroundProvider from '../../providers/BackgroundProvider';
 import CustomInput from '../../components/Input';
 import DefaultButton from '../../components/Button';
 import CustomSelect from '../../components/Select';
-import GradientCard from '../../components/GradientCard';
 import { Formik } from 'formik';
 import * as Yup from 'yup';
 import { EXPO_PUBLIC_API_URL } from '@env';
@@ -15,53 +22,44 @@ import AsyncStorage from '@react-native-async-storage/async-storage';
 import * as ImagePicker from 'expo-image-picker';
 import LoadingSpinner from '../../components/Loading';
 
-// Attach the native-base Select.Item to CustomSelect so that <CustomSelect.Item> is defined.
+// Attach native-base Select.Item to CustomSelect.
 CustomSelect.Item = Select.Item;
-
 // Import the placeholder image.
 const placeholderProfile = require('../../assets/placeholder-profile-picture.png');
 
 const EditProfileSchema = Yup.object().shape({
-  // General Section
   userNo: Yup.string().required('User Number is required'),
   username: Yup.string().required('Username is required'),
-  // "status" field removed
   profilePicture: Yup.string(),
   email: Yup.string().email('Invalid email').required('Email is required'),
   firstName: Yup.string().required('First Name is required'),
   lastName: Yup.string().required('Last Name is required'),
-  // Customer Feature Section
   height: Yup.number().typeError('Must be a number').required('Height is required'),
   weight: Yup.number().typeError('Must be a number').required('Weight is required'),
   age: Yup.number().typeError('Must be a number').required('Age is required'),
   skintone: Yup.string().required('Skin Tone is required'),
   bodyShape: Yup.string().required('Body Shape is required'),
-  // Customer Address Section
-  buildingNo: Yup.string(), // optional
-  street: Yup.string(),     // optional
+  buildingNo: Yup.string(),
+  street: Yup.string(),
   barangay: Yup.string().required('Barangay is required'),
   municipality: Yup.string().required('Municipality is required'),
   province: Yup.string().required('Province is required'),
   postalCode: Yup.string().required('Postal Code is required'),
 });
 
-export default function EditProfileScreen({ navigation, route }) {
+export default function EditProfileScreen({ navigation }) {
   const [initialValues, setInitialValues] = useState({
-    // General Section
     userNo: '',
     username: '',
-    // "status" field removed
     profilePicture: '',
     email: '',
     firstName: '',
     lastName: '',
-    // Customer Feature Section
     height: '',
     weight: '',
     age: '',
     skintone: '',
     bodyShape: '',
-    // Customer Address Section
     buildingNo: '',
     street: '',
     barangay: '',
@@ -70,51 +68,50 @@ export default function EditProfileScreen({ navigation, route }) {
     postalCode: '',
   });
   const [loading, setLoading] = useState(true);
-  // Local state for immediate preview.
-  const [profileImagePreview, setProfileImagePreview] = useState<string | null>(null);
-  // Local state to control the spinner during image upload.
+  const [profileImagePreview, setProfileImagePreview] = useState(null);
   const [uploading, setUploading] = useState(false);
+  const [userId, setUserId] = useState(null);
+  const [localSubmitting, setLocalSubmitting] = useState(false);
 
   useEffect(() => {
     const loadProfile = async () => {
       try {
-        const userId = await AsyncStorage.getItem('user').then((user) =>
-          user ? JSON.parse(user).id : null
-        );
-        // Fetch customer info from the API endpoint.
-        const response = await fetch("http://192.168.254.105:3000/api/mobile/profile/get-user-info", {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ userId: userId || null })
-        });
-        if (response.ok) {
-          const user = await response.json();
-          const loadedProfilePicture = user.CustomerProfile?.profilePicture || '';
-          setInitialValues({
-            userNo: user.userNo || '',
-            username: user.username || '',
-            // "status" field removed
-            profilePicture: loadedProfilePicture,
-            email: user.CustomerProfile?.email || '',
-            firstName: user.CustomerProfile?.firstName || '',
-            lastName: user.CustomerProfile?.lastName || '',
-            height: user.CustomerFeature?.height ? user.CustomerFeature.height.toString() : '',
-            weight: user.CustomerFeature?.weight ? user.CustomerFeature.weight.toString() : '',
-            age: user.CustomerFeature?.age ? user.CustomerFeature.age.toString() : '',
-            skintone: user.CustomerFeature?.skintone || '',
-            bodyShape: user.CustomerFeature?.bodyShape || '',
-            buildingNo: user.CustomerAddress?.buildingNo || '',
-            street: user.CustomerAddress?.street || '',
-            barangay: user.CustomerAddress?.barangay || '',
-            municipality: user.CustomerAddress?.municipality || '',
-            province: user.CustomerAddress?.province || '',
-            postalCode: user.CustomerAddress?.postalCode || '',
+        const storedUserStr = await AsyncStorage.getItem('user');
+        const storedUser = storedUserStr ? JSON.parse(storedUserStr) : null;
+        if (storedUser) {
+          setUserId(storedUser.id);
+          const response = await fetch("http://192.168.254.105:3000/api/mobile/profile/get-user-info", {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ userId: storedUser.id })
           });
-          // Initialize the preview with the loaded profile picture.
-          setProfileImagePreview(loadedProfilePicture);
-          await AsyncStorage.setItem("user", JSON.stringify(user));
-        } else {
-          Alert.alert("Error", "Failed to fetch user info.");
+          if (response.ok) {
+            const user = await response.json();
+            const loadedProfilePicture = user.CustomerProfile?.profilePicture || '';
+            setInitialValues({
+              userNo: user.userNo || '',
+              username: user.username || '',
+              profilePicture: loadedProfilePicture,
+              email: user.CustomerProfile?.email || '',
+              firstName: user.CustomerProfile?.firstName || '',
+              lastName: user.CustomerProfile?.lastName || '',
+              height: user.CustomerFeature?.height ? user.CustomerFeature.height.toString() : '',
+              weight: user.CustomerFeature?.weight ? user.CustomerFeature.weight.toString() : '',
+              age: user.CustomerFeature?.age ? user.CustomerFeature.age.toString() : '',
+              skintone: user.CustomerFeature?.skintone || '',
+              bodyShape: user.CustomerFeature?.bodyShape || '',
+              buildingNo: user.CustomerAddress?.buildingNo || '',
+              street: user.CustomerAddress?.street || '',
+              barangay: user.CustomerAddress?.barangay || '',
+              municipality: user.CustomerAddress?.municipality || '',
+              province: user.CustomerAddress?.province || '',
+              postalCode: user.CustomerAddress?.postalCode || '',
+            });
+            setProfileImagePreview(loadedProfilePicture);
+            await AsyncStorage.setItem("user", JSON.stringify(user));
+          } else {
+            Alert.alert("Error", "Failed to fetch user info.");
+          }
         }
       } catch (error) {
         console.error("Error loading profile:", error);
@@ -122,37 +119,28 @@ export default function EditProfileScreen({ navigation, route }) {
         setLoading(false);
       }
     };
-
     loadProfile();
   }, []);
 
-  // Function to handle profile picture upload.
-  const handleUploadProfilePicture = async (setFieldValue: (field: string, value: any) => void) => {
+  // Wrap the image upload handler in useCallback to prevent unnecessary re-renders.
+  const handleUploadProfilePicture = useCallback(async (setFieldValue) => {
     try {
       setUploading(true);
-      // Request permission to access the media library.
       const permissionResult = await ImagePicker.requestMediaLibraryPermissionsAsync();
       if (!permissionResult.granted) {
         Alert.alert("Permission required", "Permission to access camera roll is required!");
-        setUploading(false);
         return;
       }
-      // Launch the image library with editing enabled and force a square aspect.
       const pickerResult = await ImagePicker.launchImageLibraryAsync({
         allowsEditing: true,
         aspect: [1, 1],
         quality: 0.7,
       });
-      // Check for cancellation using the new API.
       if (pickerResult.canceled) {
-        setUploading(false);
         return;
       }
-      // Retrieve the URI from the first asset.
       const uploadedUrl = pickerResult.assets[0].uri;
-      // Update the local preview state immediately.
       setProfileImagePreview(uploadedUrl);
-      // Update Formik's field value.
       setFieldValue('profilePicture', uploadedUrl);
     } catch (error) {
       console.error("Error uploading image:", error);
@@ -160,11 +148,11 @@ export default function EditProfileScreen({ navigation, route }) {
     } finally {
       setUploading(false);
     }
-  };
+  }, []);
 
   if (loading) {
     return (
-      <View style={styles.loadingContainerFull}>
+      <View style={{ flex: 1, justifyContent: 'center', alignItems: 'center' }}>
         <LoadingSpinner size={300} messages="Loading edit profile..." visible={true} />
       </View>
     );
@@ -172,43 +160,49 @@ export default function EditProfileScreen({ navigation, route }) {
 
   return (
     <BackgroundProvider>
-      <ScrollView contentContainerStyle={{ flexGrow: 1 }}>
+      <ScrollView
+        keyboardShouldPersistTaps="handled"
+        keyboardDismissMode="none"
+        contentContainerStyle={{ padding: 10, backgroundColor: "#191919" }}
+      >
+        <HStack alignItems="center" space={2} mb={2} px={4} style={{ paddingTop: 40 }}>
+          <Pressable
+            onPress={() => navigation.goBack()}
+            style={{ padding: 4 }}
+            android_ripple={{ color: "rgba(255, 255, 255, 0.3)", radius: 20, borderless: true }}
+            accessibilityLabel="Go back"
+          >
+            <ArrowLeft color="#FFF" size={24} />
+          </Pressable>
+          <Text style={{ color: "#FFF", fontSize: 20, fontWeight: "bold" }}>
+            Edit Profile
+          </Text>
+        </HStack>
+
         <Center>
-          {/* Back Button */}
-          <HStack width="100%" px={4} pt={5} mb={3} mt={125}>
-            <IconButton
-              icon={<ArrowLeft color="white" size={24} />}
-              onPress={() => navigation.goBack()}
-              alignSelf="flex-start"
-              _pressed={{ bg: 'dark.100' }}
-              borderRadius="full"
-            />
-          </HStack>
-          <GradientCard>
+          <Box style={{ backgroundColor: "#191919", padding: 15, width: "100%" }}>
             <Formik
               initialValues={initialValues}
               validationSchema={EditProfileSchema}
+              validateOnChange={false}
+              validateOnBlur={false}
               onSubmit={async (values, { setSubmitting }) => {
-                const heightNumber = parseFloat(values.height);
-                const weightNumber = parseFloat(values.weight);
-                const ageNumber = parseInt(values.age, 10);
-                if (isNaN(heightNumber) || isNaN(weightNumber) || isNaN(ageNumber)) {
-                  Alert.alert(
-                    "Error",
-                    "Please enter valid numeric values for Height, Weight, and Age."
-                  );
-                  setSubmitting(false);
-                  return;
-                }
                 try {
-                  const apiUrl = `${EXPO_PUBLIC_API_URL}/api/mobile/profile/update`;
+                  const heightNumber = parseFloat(values.height);
+                  const weightNumber = parseFloat(values.weight);
+                  const ageNumber = parseInt(values.age, 10);
+                  if (isNaN(heightNumber) || isNaN(weightNumber) || isNaN(ageNumber)) {
+                    Alert.alert("Error", "Please enter valid numeric values for Height, Weight, and Age.");
+                    return;
+                  }
+                  const apiUrl = "http://192.168.254.105:3000/api/mobile/profile/edit-user-info";
                   const response = await fetch(apiUrl, {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
                     body: JSON.stringify({
                       userNo: values.userNo,
+                      userId,
                       username: values.username,
-                      // "status" field removed
                       profilePicture: values.profilePicture,
                       email: values.email,
                       firstName: values.firstName,
@@ -228,60 +222,48 @@ export default function EditProfileScreen({ navigation, route }) {
                   });
                   const data = await response.json();
                   if (response.ok) {
-                    Alert.alert("Success", "Profile updated successfully!", [
-                      { text: "OK", onPress: () => navigation.goBack() }
-                    ]);
-                    await AsyncStorage.setItem("user", JSON.stringify(data.user));
+                    Alert.alert("Success", "Profile updated successfully!");
+                    if (data.user) {
+                      await AsyncStorage.setItem("user", JSON.stringify(data.user));
+                    }
                   } else {
                     Alert.alert("Error", data.message || "Profile update failed.");
                   }
                 } catch (error) {
                   console.error("Profile update error:", error);
                   Alert.alert("Error", "An error occurred while updating profile.");
+                } finally {
+                  setLocalSubmitting(false);
+                  setSubmitting(false);
                 }
-                setSubmitting(false);
               }}
             >
-              {({
-                handleChange,
-                handleBlur,
-                handleSubmit,
-                values,
-                errors,
-                touched,
-                setFieldValue,
-                isSubmitting,
-              }) => (
-                <VStack space={4} alignItems="center" opacity={isSubmitting ? 0.5 : 1}>
-                  {/* Profile Picture Section */}
-                  <VStack alignItems="center" mb={4}>
+              {({ handleChange, handleBlur, handleSubmit, values, errors, touched, setFieldValue, isSubmitting }) => (
+                <VStack space={6} alignItems="center" opacity={isSubmitting || localSubmitting ? 0.5 : 1}>
+                  <VStack width="100%" space={4} alignItems="center">
                     <Image
                       key={profileImagePreview || 'placeholder'}
-                      source={
-                        profileImagePreview
-                          ? { uri: profileImagePreview }
-                          : placeholderProfile
-                      }
+                      source={profileImagePreview ? { uri: profileImagePreview } : placeholderProfile}
                       alt="Profile Picture"
-                      size="xl"
-                      borderRadius="full"
-                      mb={2}
+                      style={{
+                        width: 100,
+                        height: 100,
+                        borderRadius: 50,
+                        marginBottom: 10,
+                        alignSelf: "center",
+                      }}
                     />
-                    {uploading ? (
-                      <LoadingSpinner size={50} messages="" visible={true} />
-                    ) : (
-                      <DefaultButton
-                        title="Upload Profile Picture"
-                        onPress={() => handleUploadProfilePicture(setFieldValue)}
-                      />
-                    )}
+                    <DefaultButton
+                      title="Upload Profile Picture"
+                      onPress={() => handleUploadProfilePicture(setFieldValue)}
+                      isLoading={uploading}
+                    />
                   </VStack>
 
-                  {/* GENERAL SECTION */}
-                  <Text fontSize="md" color="white" fontWeight="bold" alignSelf="flex-start">
-                    General
-                  </Text>
-                  <VStack width="100%">
+                  <VStack width="100%" space={2}>
+                    <Text style={{ fontSize: 16, color: "white", fontWeight: "bold", marginBottom: 4 }}>
+                      General
+                    </Text>
                     <CustomInput
                       label="User Number"
                       placeholder="User Number"
@@ -291,10 +273,8 @@ export default function EditProfileScreen({ navigation, route }) {
                       variant="filled"
                       error={touched.userNo && errors.userNo ? errors.userNo : undefined}
                       required
-                      editable={false}
+                      isDisabled={true}
                     />
-                  </VStack>
-                  <VStack width="100%">
                     <CustomInput
                       label="Username"
                       placeholder="Username"
@@ -305,8 +285,6 @@ export default function EditProfileScreen({ navigation, route }) {
                       error={touched.username && errors.username ? errors.username : undefined}
                       required
                     />
-                  </VStack>
-                  <VStack width="100%">
                     <CustomInput
                       label="Email"
                       placeholder="Email"
@@ -318,8 +296,6 @@ export default function EditProfileScreen({ navigation, route }) {
                       error={touched.email && errors.email ? errors.email : undefined}
                       required
                     />
-                  </VStack>
-                  <VStack width="100%">
                     <CustomInput
                       label="First Name"
                       placeholder="First Name"
@@ -330,8 +306,6 @@ export default function EditProfileScreen({ navigation, route }) {
                       error={touched.firstName && errors.firstName ? errors.firstName : undefined}
                       required
                     />
-                  </VStack>
-                  <VStack width="100%">
                     <CustomInput
                       label="Last Name"
                       placeholder="Last Name"
@@ -344,11 +318,10 @@ export default function EditProfileScreen({ navigation, route }) {
                     />
                   </VStack>
 
-                  {/* CUSTOMER FEATURE SECTION */}
-                  <Text fontSize="md" color="white" fontWeight="bold" alignSelf="flex-start" mt={4}>
-                    Customer Feature
-                  </Text>
-                  <VStack width="100%">
+                  <VStack width="100%" space={2}>
+                    <Text style={{ fontSize: 16, color: "white", fontWeight: "bold", marginBottom: 4 }}>
+                      Customer Feature
+                    </Text>
                     <CustomInput
                       label="Height (cm)"
                       placeholder="Height"
@@ -360,8 +333,6 @@ export default function EditProfileScreen({ navigation, route }) {
                       error={touched.height && errors.height ? errors.height : undefined}
                       required
                     />
-                  </VStack>
-                  <VStack width="100%">
                     <CustomInput
                       label="Weight (kg)"
                       placeholder="Weight"
@@ -373,8 +344,6 @@ export default function EditProfileScreen({ navigation, route }) {
                       error={touched.weight && errors.weight ? errors.weight : undefined}
                       required
                     />
-                  </VStack>
-                  <VStack width="100%">
                     <CustomInput
                       label="Age"
                       placeholder="Age"
@@ -386,8 +355,6 @@ export default function EditProfileScreen({ navigation, route }) {
                       error={touched.age && errors.age ? errors.age : undefined}
                       required
                     />
-                  </VStack>
-                  <VStack width="100%">
                     <CustomSelect
                       label="Skin Tone"
                       value={values.skintone}
@@ -401,8 +368,6 @@ export default function EditProfileScreen({ navigation, route }) {
                       <CustomSelect.Item label="Dark" value="Dark" />
                       <CustomSelect.Item label="Deep" value="Deep" />
                     </CustomSelect>
-                  </VStack>
-                  <VStack width="100%">
                     <CustomSelect
                       label="Body Shape"
                       value={values.bodyShape}
@@ -419,11 +384,10 @@ export default function EditProfileScreen({ navigation, route }) {
                     </CustomSelect>
                   </VStack>
 
-                  {/* CUSTOMER ADDRESS SECTION */}
-                  <Text fontSize="md" color="white" fontWeight="bold" alignSelf="flex-start" mt={4}>
-                    Customer Address
-                  </Text>
-                  <VStack width="100%">
+                  <VStack width="100%" space={2}>
+                    <Text style={{ fontSize: 16, color: "white", fontWeight: "bold", marginBottom: 4 }}>
+                      Customer Address
+                    </Text>
                     <CustomInput
                       label="Building No"
                       placeholder="Building No"
@@ -433,8 +397,6 @@ export default function EditProfileScreen({ navigation, route }) {
                       variant="filled"
                       error={touched.buildingNo && errors.buildingNo ? errors.buildingNo : undefined}
                     />
-                  </VStack>
-                  <VStack width="100%">
                     <CustomInput
                       label="Street"
                       placeholder="Street"
@@ -444,8 +406,6 @@ export default function EditProfileScreen({ navigation, route }) {
                       variant="filled"
                       error={touched.street && errors.street ? errors.street : undefined}
                     />
-                  </VStack>
-                  <VStack width="100%">
                     <CustomInput
                       label="Barangay"
                       placeholder="Barangay"
@@ -456,8 +416,6 @@ export default function EditProfileScreen({ navigation, route }) {
                       error={touched.barangay && errors.barangay ? errors.barangay : undefined}
                       required
                     />
-                  </VStack>
-                  <VStack width="100%">
                     <CustomInput
                       label="Municipality"
                       placeholder="Municipality"
@@ -468,8 +426,6 @@ export default function EditProfileScreen({ navigation, route }) {
                       error={touched.municipality && errors.municipality ? errors.municipality : undefined}
                       required
                     />
-                  </VStack>
-                  <VStack width="100%">
                     <CustomInput
                       label="Province"
                       placeholder="Province"
@@ -480,8 +436,6 @@ export default function EditProfileScreen({ navigation, route }) {
                       error={touched.province && errors.province ? errors.province : undefined}
                       required
                     />
-                  </VStack>
-                  <VStack width="100%">
                     <CustomInput
                       label="Postal Code"
                       placeholder="Postal Code"
@@ -496,24 +450,19 @@ export default function EditProfileScreen({ navigation, route }) {
 
                   <DefaultButton
                     mt={10}
-                    title={isSubmitting ? "Saving..." : "Save Changes"}
+                    mb={125}
+                    title={localSubmitting || isSubmitting ? "Saving..." : "Save Changes"}
                     onPress={handleSubmit}
-                    isDisabled={isSubmitting}
+                    isDisabled={localSubmitting || isSubmitting}
                   />
                 </VStack>
               )}
             </Formik>
-          </GradientCard>
+          </Box>
         </Center>
       </ScrollView>
     </BackgroundProvider>
   );
 }
 
-const styles = StyleSheet.create({
-  loadingContainerFull: {
-    flex: 1,
-    justifyContent: 'center',
-    alignItems: 'center',
-  },
-});
+export default EditProfileScreen;

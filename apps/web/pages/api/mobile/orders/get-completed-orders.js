@@ -20,7 +20,10 @@ export default async function handler(req, res) {
 
   try {
     const orders = await prisma.order.findMany({
-      where: { userId: Number(userId) },
+      where: { 
+        userId: Number(userId), 
+        status: { in: ["COMPLETED", "CANCELLED"] } 
+      },
       include: {
         OrderItems: {
           include: {
@@ -46,14 +49,7 @@ export default async function handler(req, res) {
       orderBy: { created_at: "desc" },
     });
 
-    // Group orders by status.
-    const groupedOrders = orders.reduce((acc, order) => {
-      const status = order.status;
-      if (!acc[status]) {
-        acc[status] = [];
-      }
-
-      // Compute order total from each order item.
+    const formattedOrders = orders.map((order) => {
       let orderTotal = 0;
       const formattedOrderItems = order.OrderItems.map((item) => {
         const price = parseFloat(item.ProductVariant.price.toString());
@@ -61,7 +57,7 @@ export default async function handler(req, res) {
         orderTotal += itemTotal;
         return {
           productName: item.Product.name,
-          thumbnailURL: item.Product.thumbnailURL, // Added product thumbnail URL.
+          thumbnailURL: item.Product.thumbnailURL, // product thumbnail
           productVariantColorName: item.ProductVariant.Color.name,
           productVariantPrice: price.toFixed(2),
           productVariantSizeName: item.ProductVariantSize.Size.name,
@@ -69,14 +65,13 @@ export default async function handler(req, res) {
         };
       });
 
-      // Determine the delivery fee from the shop's DeliveryFee array.
       let deliveryFee = 0;
       if (
         order.Shop &&
         order.Shop.DeliveryFee &&
         order.Shop.DeliveryFee.length > 0
       ) {
-        const fee = order.Shop.DeliveryFee[0]; // Use the first fee.
+        const fee = order.Shop.DeliveryFee[0];
         if (fee.feeType === "FIXED") {
           deliveryFee = parseFloat(fee.feeAmount.toString());
         } else if (fee.feeType === "PERCENTAGE") {
@@ -85,25 +80,23 @@ export default async function handler(req, res) {
       }
       const finalTotal = orderTotal + deliveryFee;
 
-      // Build the order object.
-      acc[status].push({
+      return {
         id: order.id,
         orderNo: order.orderNo,
         status: order.status,
-        askingForCancel: order.askingForCancel, // Updated property name for client usage.
+        askingForCancel: order.askingForCancel,
         shopName: order.Shop ? order.Shop.name : "Unknown Shop",
         shopLogo: order.Shop ? order.Shop.logo : null,
         orderItems: formattedOrderItems,
         orderTotal: orderTotal.toFixed(2),
         deliveryFee: deliveryFee.toFixed(2),
         finalTotal: finalTotal.toFixed(2),
-      });
-      return acc;
-    }, {});
+      };
+    });
 
-    return res.status(200).json({ orders: groupedOrders });
+    return res.status(200).json({ orders: formattedOrders });
   } catch (error) {
-    console.error("Error fetching orders:", error);
-    return res.status(500).json({ message: "Failed to fetch orders" });
+    console.error("Error fetching completed orders:", error);
+    return res.status(500).json({ message: "Failed to fetch completed orders" });
   }
 }

@@ -1,14 +1,14 @@
-// src/components/Input.tsx
-import React, { useState } from 'react';
+// CustomInput.js
+import React, { useState, memo } from 'react';
 import { Input, Icon, IInputProps, Pressable, Text, VStack } from 'native-base';
 import { Ionicons } from '@expo/vector-icons';
 import { Asterisk } from 'lucide-react-native';
 
 interface CustomInputProps extends IInputProps {
   isPassword?: boolean;
-  label?: string;       // Optional label for the input
-  error?: string;       // Optional error message (for red border styling)
-  required?: boolean;   // If true, show a required asterisk beside the label
+  label?: string;
+  error?: string;
+  required?: boolean;
 }
 
 const CustomInput: React.FC<CustomInputProps> = ({
@@ -21,20 +21,21 @@ const CustomInput: React.FC<CustomInputProps> = ({
   const [isFocused, setIsFocused] = useState(false);
   const [showPassword, setShowPassword] = useState(false);
 
-  // Determine border styling based on error state or focus state
-  const computedBorderWidth = error ? 2 : (isFocused ? 2 : 0);
-  const computedBorderColor = error ? "red.500" : "transparent";
+  const computedBorderWidth = error ? 2 : (isFocused ? 2 : 1);
+  const computedBorderColor = error
+    ? "red.500"
+    : (isFocused ? "#ffffff" : "#c0c0c035");
 
   return (
     <VStack space={1}>
-      {label ? (
-        <Text fontSize="md" fontWeight={600} color="#cebfbf" flexDir="row" alignItems="center">
+      {label && (
+        <Text fontSize="md" fontWeight={600} color="#c0c0c0" flexDir="row" alignItems="center">
           {label}
           {required && (
             <Asterisk size={12} color="#C0C0C0" style={{ marginLeft: 4, marginTop: 2 }} />
           )}
         </Text>
-      ) : null}
+      )}
       <Input
         {...props}
         type={isPassword && !showPassword ? "password" : "text"}
@@ -51,8 +52,14 @@ const CustomInput: React.FC<CustomInputProps> = ({
         _focus={{
           bg: "#272727",
           borderWidth: 2,
-          borderColor: error ? "red.500" : "transparent",
+          borderColor: error ? "red.500" : "#60A5FA",
           selectionColor: '#c0c0c035',
+        }}
+        _disabled={{
+          bg: "#2E2E2E",
+          borderWidth: 1,
+          borderColor: "#c0c0c035",
+          color: "#c0c0c035",
         }}
         focusOutlineColor="#c0c0c035"
         py={3}
@@ -60,7 +67,7 @@ const CustomInput: React.FC<CustomInputProps> = ({
         onFocus={() => setIsFocused(true)}
         onBlur={() => setIsFocused(false)}
         InputRightElement={
-          isPassword ? (
+          isPassword && (
             <Pressable onPress={() => setShowPassword(!showPassword)}>
               <Icon
                 as={<Ionicons name={showPassword ? "eye-off" : "eye"} />}
@@ -69,11 +76,11 @@ const CustomInput: React.FC<CustomInputProps> = ({
                 mr={5}
               />
             </Pressable>
-          ) : null
+          )
         }
       />
     </VStack>
   );
 };
 
-export default CustomInput;
+export default memo(CustomInput);

@@ -66,13 +66,6 @@ export default async function handler(req, res) {
             },
           },
         },
-        OrderHistory: {
-          orderBy: { changed_at: "asc" },
-          select: {
-            status: true,
-            changed_at: true,
-          },
-        },
       },
     });
 

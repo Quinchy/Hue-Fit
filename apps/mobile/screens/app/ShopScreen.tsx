@@ -5,14 +5,13 @@ import {
   RefreshControl,
   View,
   StyleSheet,
-  ActivityIndicator, // Import ActivityIndicator
+  ActivityIndicator,
 } from 'react-native';
-import { VStack, HStack, Box, IconButton } from 'native-base';
+import { VStack, HStack, Box } from 'native-base';
 import BackgroundProvider from '../../providers/BackgroundProvider';
 import SearchBar from '../../components/SearchBar';
-import { Bell } from 'lucide-react-native';
 import ProductCard from '../../components/ProductCard';
-import LoadingSpinner from '../../components/Loading'; // Import LoadingSpinner
+import LoadingSpinner from '../../components/Loading';
 import { EXPO_PUBLIC_API_URL } from '@env';
 
 const ShopScreen = ({ navigation }) => {
@@ -75,7 +74,7 @@ const ShopScreen = ({ navigation }) => {
       thumbnailURL={item.thumbnailURL}
       productName={item.productName}
       price={`PHP ${item.price}`}
-      onPress={() => navigation.navigate('ProductView', { productId: item.id })} // Pass product.id
+      onPress={() => navigation.navigate('ProductView', { productId: item.id })}
     />
   );
 
@@ -102,8 +101,6 @@ const ShopScreen = ({ navigation }) => {
         renderItem={renderProductCard}
         numColumns={2}
         columnWrapperStyle={styles.columnWrapper}
-        // Remove the incorrect marginBottom prop
-        // Add paddingBottom via contentContainerStyle
         contentContainerStyle={styles.listContent}
         ListHeaderComponent={
           <VStack alignItems="center" mt={10}>
@@ -111,7 +108,7 @@ const ShopScreen = ({ navigation }) => {
               width="100%"
               mb={2}
               flexDirection="row"
-              justifyContent="space-between"
+              justifyContent="center"
               alignItems="center"
             >
               <Box flex={1} mx={2}>
@@ -121,15 +118,6 @@ const ShopScreen = ({ navigation }) => {
                   value={searchQuery}
                 />
               </Box>
-              <HStack>
-                <IconButton
-                  icon={<Bell size={25} color="white" />}
-                  mr={2}
-                  onPress={() => navigation.navigate('Notification')}
-                  _pressed={{ bg: 'dark.100' }}
-                  borderRadius="full"
-                />
-              </HStack>
             </Box>
           </VStack>
         }
@@ -139,7 +127,7 @@ const ShopScreen = ({ navigation }) => {
         onEndReached={handleLoadMore}
         onEndReachedThreshold={0.5}
         ListFooterComponent={
-          loading && page > 1 ? ( // Show ActivityIndicator when loading more products
+          loading && page > 1 ? (
             <View style={styles.footerLoadingContainer}>
               <ActivityIndicator size="small" color="#FFF" />
             </View>
@@ -160,15 +148,10 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     alignItems: 'center',
   },
-  loadingContainer: {
-    marginVertical: 20,
-    alignItems: 'center',
-  },
-  // Add a new style for the FlatList content
   listContent: {
-    paddingBottom: 120, // Adjust this value as needed
+    paddingBottom: 120,
   },
-  footerLoadingContainer: { // New style for the footer loading indicator
+  footerLoadingContainer: {
     paddingVertical: 20,
     alignItems: 'center',
   },

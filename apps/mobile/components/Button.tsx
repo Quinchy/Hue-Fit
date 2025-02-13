@@ -1,36 +1,53 @@
-// src/components/RegisterButton.tsx
-import React from 'react';
-import { Button, IButtonProps, Text, Box, HStack } from 'native-base';
-
+// DefaultButton.js
+import React, { memo } from 'react';
+import { Button, IButtonProps, Text, Box, HStack, Spinner } from 'native-base';
 
 interface DefaultButtonProps extends IButtonProps {
   title: string;
   onPress: () => void;
-  icon?: React.ReactNode; // Optional icon prop
+  icon?: React.ReactNode;
+  isLoading?: boolean;
+  centerTitle?: boolean;
 }
 
-const DefaultButton: React.FC<DefaultButtonProps> = ({ title, onPress, icon, ...props }) => {
+const DefaultButton: React.FC<DefaultButtonProps> = ({
+  title,
+  onPress,
+  icon,
+  isLoading,
+  centerTitle = false,
+  ...props
+}) => {
+  const hStackProps = centerTitle
+    ? { w: "100%", justifyContent: "center", alignItems: "center", space: 2 }
+    : { justifyContent: "center", alignItems: "center", space: 2, flex: 1 };
+  const textProps = centerTitle ? { flex: 1, textAlign: "center" } : { textAlign: "center" };
+
   return (
     <Button
       onPress={onPress}
-      bg="white"               // White background color
-      borderRadius="md"      // Fully rounded corners
-      height={50}              // 50px height
-      borderColor="transparent"// Optional: Use transparent or specific border color
-      _pressed={{ bg: "gray.200" }} // Light gray background on press
-      px={8}                   // Horizontal padding
-      py={3}                   // Vertical padding
-      width="100%"             // Full width
+      bg="white"
+      borderRadius="md"
+      height={50}
+      borderColor="transparent"
+      _pressed={{ bg: "#C0C0C0" }}
+      px={8}
+      py={3}
+      width="100%"
       {...props}
     >
-      <HStack justifyContent="center" alignItems="center" space={2} flex={1}>
-        {icon && <Box>{icon}</Box>} 
-        <Text color="black" fontWeight="bold" fontSize="md" textAlign="center">
-          {title}
-        </Text>
-      </HStack>
+      {isLoading ? (
+        <Spinner color="#191919" />
+      ) : (
+        <HStack {...hStackProps}>
+          {icon && <Box>{icon}</Box>}
+          <Text color="black" fontWeight="bold" fontSize="md" {...textProps}>
+            {title}
+          </Text>
+        </HStack>
+      )}
     </Button>
   );
 };
 
-export default DefaultButton;
+export default memo(DefaultButton);

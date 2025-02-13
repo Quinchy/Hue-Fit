@@ -1,11 +1,12 @@
 // File: components/AdminDashboard.jsx
 "use client";
-import { useState, useMemo, useEffect } from "react";
+import { useState, useEffect } from "react";
 import { useSession } from "next-auth/react";
 import useSWR from "swr";
 import DashboardLayoutWrapper from "@/components/ui/dashboard-layout";
-import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
-import { BellRing, Store, Building2, User, TrendingUp } from "lucide-react";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { BellRing, Store, Building2, User } from "lucide-react";
+import routes from "@/routes";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Label } from "@/components/ui/label";
 import {
@@ -15,6 +16,7 @@ import {
 } from "@/components/ui/chart";
 import { BarChart, Bar, CartesianGrid, XAxis, YAxis } from "recharts";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from "@/components/ui/dialog";
+import Link from "next/link";
 
 /**
  * 1. SWR fetcher
@@ -195,9 +197,14 @@ export default function AdminDashboard() {
 
               {/* Right Column - Notifications */}
               <Card className="w-full h-full p-5">
-                <div className="flex flex-row items-center gap-2 mb-3">
-                  <BellRing />
-                  <Label className="uppercase font-medium text-lg">Notifications</Label>
+                <div className="flex flex-row items-center justify-between gap-4 mb-4">                    
+                  <div className="flex flex-row items-center gap-2">
+                    <BellRing />
+                    <Label className="uppercase font-medium text-lg">Notifications:</Label>
+                  </div>
+                  <Link href={routes.notification} className="text-primary/50 text-base uppercase font-light">
+                    See all
+                  </Link>
                 </div>
                 <div className="flex flex-col gap-2 overflow-y-auto max-h-[660px]">
                   {notifications.length ? (

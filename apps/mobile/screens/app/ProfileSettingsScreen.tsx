@@ -1,14 +1,13 @@
-// Frontend: ProfileSettingsScreen.tsx
-
-import React, { useEffect, useState } from "react";
+import React, { useEffect, useState, useRef } from "react";
 import {
   Text,
   View,
-  TouchableOpacity,
+  Pressable,
   Image,
   StyleSheet,
   SafeAreaView,
-  Pressable,
+  Animated,
+  Easing,
 } from "react-native";
 import {
   Archive,
@@ -18,16 +17,59 @@ import {
   Shirt,
   LogOut,
   Pencil,
+  Bell,
 } from "lucide-react-native";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import { useNavigation } from "@react-navigation/native";
 import BackgroundProvider from "../../providers/BackgroundProvider";
 import GradientCard from "../../components/GradientCard";
 
+// AnimatedPressable for settings options with ease in/out animations.
+const AnimatedPressable = ({ children, style, onPress, ...props }) => {
+  const animValue = useRef(new Animated.Value(0)).current;
+
+  const animatedStyle = {
+    backgroundColor: animValue.interpolate({
+      inputRange: [0, 1],
+      outputRange: ["transparent", "rgba(255,255,255,0.1)"],
+    }),
+  };
+
+  const handlePressIn = () => {
+    Animated.timing(animValue, {
+      toValue: 1,
+      duration: 150,
+      easing: Easing.inOut(Easing.ease),
+      useNativeDriver: false,
+    }).start();
+  };
+
+  const handlePressOut = () => {
+    Animated.timing(animValue, {
+      toValue: 0,
+      duration: 300,
+      easing: Easing.inOut(Easing.ease),
+      useNativeDriver: false,
+    }).start();
+  };
+
+  return (
+    <Pressable
+      onPressIn={handlePressIn}
+      onPressOut={handlePressOut}
+      onPress={onPress}
+      {...props}
+    >
+      <Animated.View style={[style, animatedStyle]}>
+        {children}
+      </Animated.View>
+    </Pressable>
+  );
+};
+
 const ProfileSettingsScreen = () => {
   const navigation = useNavigation();
-  const [userData, setUserData] = useState<any>(null);
-  const [pressedItem, setPressedItem] = useState(null);
+  const [userData, setUserData] = useState(null);
 
   useEffect(() => {
     (async () => {
@@ -54,22 +96,33 @@ const ProfileSettingsScreen = () => {
     }
   };
 
-  // Tabs array
   const tabs = [
     { name: "Pending", icon: MonitorCog },
     { name: "Processing", icon: Package },
     { name: "Delivering", icon: Truck },
   ];
 
-  // Navigate to OrderTransactionScreen with initialTab param
-  const handleNavigate = (tabName: string) => {
+  const handleNavigate = (tabName) => {
     navigation.navigate("OrderTransactionScreen", { initialTab: tabName });
   };
 
   return (
     <BackgroundProvider>
       <SafeAreaView style={styles.safeArea}>
-        <Text style={styles.title}>My Profile</Text>
+        {/* New Header Row: "My Profile" left-aligned and Notification icon on right */}
+        <View style={styles.headerRow}>
+          <Text style={styles.headerTitle}>My Profile</Text>
+          <Pressable
+            onPress={() => navigation.navigate("Notification")}
+            style={({ pressed }) => [
+              styles.notificationIcon,
+              pressed && { backgroundColor: "rgba(255,255,255,0.1)" },
+            ]}
+          >
+            <Bell size={25} color="white" />
+          </Pressable>
+        </View>
+
         {userData && (
           <View style={styles.userInfoContainer}>
             <Image
@@ -88,41 +141,50 @@ const ProfileSettingsScreen = () => {
           </View>
         )}
 
-        {/* Order Tabs */}
+        {/* Order Tabs remain unchanged */}
         <View style={styles.tabsContainer}>
           {tabs.map(({ name, icon: IconComponent }) => (
-            <TouchableOpacity
+            <Pressable
               key={name}
               onPress={() => handleNavigate(name)}
-              style={styles.tab}
+              style={({ pressed }) => [
+                styles.tab,
+                pressed && styles.tabPressed,
+              ]}
             >
               <IconComponent size={24} stroke="white" strokeWidth={2} />
               <Text style={styles.tabText}>{name}</Text>
-            </TouchableOpacity>
+            </Pressable>
           ))}
         </View>
 
-        {/* Settings Options */}
+        {/* Settings Options using AnimatedPressable for smooth ease in/out */}
         <GradientCard style={styles.settingsCard}>
-          <TouchableOpacity
-            style={styles.menuItem}
+          <AnimatedPressable
             onPress={() => navigation.navigate("EditProfile")}
+            style={styles.menuItem}
           >
             <Pencil size={24} stroke="white" strokeWidth={2} />
             <Text style={styles.menuText}>Edit Profile</Text>
-          </TouchableOpacity>
-          <TouchableOpacity style={styles.menuItem}>
+          </AnimatedPressable>
+          <AnimatedPressable
+            onPress={() => navigation.navigate("OrderHistory")}
+            style={styles.menuItem}
+          >
             <Archive size={24} stroke="white" strokeWidth={2} />
             <Text style={styles.menuText}>Order History</Text>
-          </TouchableOpacity>
-          <TouchableOpacity style={styles.menuItem}>
+          </AnimatedPressable>
+          <AnimatedPressable
+            onPress={() => navigation.navigate("GeneratedOutfits")}
+            style={styles.menuItem}
+          >
             <Shirt size={24} stroke="white" strokeWidth={2} />
             <Text style={styles.menuText}>Generated Outfits</Text>
-          </TouchableOpacity>
-          <TouchableOpacity style={styles.menuItem} onPress={handleLogout}>
+          </AnimatedPressable>
+          <AnimatedPressable onPress={handleLogout} style={styles.menuItem}>
             <LogOut size={24} stroke="white" strokeWidth={2} />
             <Text style={styles.menuText}>Log Out</Text>
-          </TouchableOpacity>
+          </AnimatedPressable>
         </GradientCard>
       </SafeAreaView>
     </BackgroundProvider>
@@ -131,13 +193,22 @@ const ProfileSettingsScreen = () => {
 
 const styles = StyleSheet.create({
   safeArea: { flex: 1, backgroundColor: "transparent" },
-  title: {
+  headerRow: {
+    flexDirection: "row",
+    justifyContent: "space-between",
+    alignItems: "center",
+    paddingHorizontal: 25,
+    marginTop: 40,
+    marginBottom: 15,
+  },
+  headerTitle: {
     color: "white",
     fontSize: 22,
-    marginBottom: 20,
-    marginTop: 50,
     fontWeight: "bold",
-    textAlign: "center",
+  },
+  notificationIcon: {
+    padding: 8,
+    borderRadius: 25,
   },
   userInfoContainer: { alignItems: "center", marginBottom: 30 },
   profileImage: { width: 100, height: 100, borderRadius: 50, marginBottom: 10 },
@@ -147,7 +218,8 @@ const styles = StyleSheet.create({
     flexDirection: "row",
     justifyContent: "space-between",
     width: "100%",
-    marginBottom: 40,
+    marginBottom: 30,
+    paddingHorizontal: 15,
   },
   tab: {
     backgroundColor: "#333",
@@ -157,12 +229,13 @@ const styles = StyleSheet.create({
     flex: 1,
     marginHorizontal: 5,
   },
+  tabPressed: { backgroundColor: "#444" },
   tabText: { color: "white", marginTop: 8, fontSize: 14 },
   settingsCard: {
     width: "100%",
-    padding: 15,
+    padding: 10,
     borderRadius: 10,
-    marginBottom: 20,
+    marginBottom: 10,
     backgroundColor: "#222",
   },
   menuItem: {
@@ -171,6 +244,7 @@ const styles = StyleSheet.create({
     paddingVertical: 14,
     borderRadius: 10,
     paddingHorizontal: 10,
+    marginVertical: 5,
   },
   menuText: { color: "white", fontSize: 16, marginLeft: 14 },
 });

@@ -196,7 +196,7 @@ export default function Reserves() {
                       </TableCell>
 
                       <TableCell className="text-center">
-                        <p className="py-1 w-full rounded font-bold text-card bg-blue-500 uppercase">
+                        <p className="py-1 w-full rounded font-bold text-card bg-rose-500 uppercase">
                           {order.status}
                         </p>
                       </TableCell>

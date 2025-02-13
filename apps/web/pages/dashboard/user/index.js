@@ -51,7 +51,7 @@ export default function UsersPage() {
   const [selectedRole, setSelectedRole] = useState("ALL");
   const router = useRouter();
 
-  const { data: usersData, error } = useSWR(
+  const { data: usersData } = useSWR(
     `/api/users/get-users?page=${currentPage}&search=${encodeURIComponent(
       searchTerm
     )}&role=${selectedRole !== "ALL" ? selectedRole : ""}`,
@@ -79,10 +79,10 @@ export default function UsersPage() {
     }
   };
 
-  const handleViewClick = (userNo, role) => {
+  const handleViewClick = (userNo, role, userId) => {
     router.push({
       pathname: routes.userView.replace("[userNo]", userNo),
-      query: { role },
+      query: { role, userId },
     });
   };
 
@@ -125,7 +125,7 @@ export default function UsersPage() {
           </DropdownMenu>
           <Link className={buttonVariants({ variant: "default" })} href={routes.userAdd}>
             <Plus className="scale-110 stroke-[3px]" />
-            Add User
+            Create Admin
           </Link>
         </div>
       </div>
@@ -228,7 +228,7 @@ export default function UsersPage() {
                                 variant="none"
                                 className="text-base"
                                 onClick={() =>
-                                  handleViewClick(user.userNo, user.Role.name)
+                                  handleViewClick(user.userNo, user.Role.name, user.userId)
                                 }
                               >
                                 <Eye className="scale-125" />
@@ -243,7 +243,8 @@ export default function UsersPage() {
                                     className="text-base"
                                     onClick={() =>
                                       router.push(
-                                        routes.userEdit.replace("[userNo]", user.userNo)
+                                        routes.userEdit.replace("[userNo]", user.userNo) +
+                                        `?userId=${user.userId}`
                                       )
                                     }
                                   >

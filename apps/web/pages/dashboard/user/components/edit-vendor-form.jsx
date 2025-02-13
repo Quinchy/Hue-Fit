@@ -1,10 +1,10 @@
-import { useState, useEffect } from "react";
+// File: components/edit-vendor-form.js
+import { useEffect } from "react";
 import { useFormik } from "formik";
 import * as Yup from "yup";
 import { Card, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { Button } from "@/components/ui/button";
 import {
   Select,
   SelectTrigger,
@@ -14,16 +14,12 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { InputErrorMessage, InputErrorStyle } from "@/components/ui/error-message";
-import { Alert, AlertTitle, AlertDescription } from "@/components/ui/alert";
 import { LoadingMessage } from "@/components/ui/loading-message";
+import { Asterisk } from "lucide-react";
 
 export default function EditVendorForm({ form = {}, onChange }) {
-  // State for available shops.
   const [shops, setShops] = useState([]);
-  const [showSuccessAlert, setShowSuccessAlert] = useState(false);
-  const [successMessage, setSuccessMessage] = useState("");
 
-  // Fetch shops from the API.
   useEffect(() => {
     (async () => {
       try {
@@ -37,7 +33,6 @@ export default function EditVendorForm({ form = {}, onChange }) {
     })();
   }, []);
 
-  // Define the validation schema using Yup.
   const validationSchema = Yup.object().shape({
     shop: Yup.string().required("Required"),
     firstName: Yup.string().required("Required"),
@@ -48,7 +43,6 @@ export default function EditVendorForm({ form = {}, onChange }) {
     username: Yup.string().required("Required"),
   });
 
-  // Initialize Formik.
   const formik = useFormik({
     initialValues: {
       shop: form.shop || "",
@@ -62,11 +56,7 @@ export default function EditVendorForm({ form = {}, onChange }) {
     validationSchema,
     onSubmit: async (values, { setSubmitting }) => {
       try {
-        // Simulate an API update call (replace with your actual API call).
-        await new Promise((resolve) => setTimeout(resolve, 1000));
-        setSuccessMessage("Vendor details updated successfully!");
-        setShowSuccessAlert(true);
-        // Propagate the new values upward if needed.
+        await new Promise((resolve) => setTimeout(resolve, 500));
         if (onChange) onChange(values);
       } catch (error) {
         console.error("Submission error", error);
@@ -74,23 +64,23 @@ export default function EditVendorForm({ form = {}, onChange }) {
         setSubmitting(false);
       }
     },
-    enableReinitialize: true, // Reinitialize if the `form` prop changes.
+    enableReinitialize: true,
   });
+
+  // Propagate changes to parent on every value change
+  useEffect(() => {
+    if (onChange) onChange(formik.values);
+  }, [formik.values, onChange]);
 
   return (
     <Card className="flex flex-col p-5 gap-5 shadow-md w-full">
-      {showSuccessAlert && (
-        <Alert className="mb-4">
-          <AlertTitle className="font-semibold text-green-600">Success</AlertTitle>
-          <AlertDescription className="text-green-500">{successMessage}</AlertDescription>
-        </Alert>
-      )}
-      <form onSubmit={formik.handleSubmit}>
-        {/* Role (Shop) Information */}
-        <CardTitle className="text-xl font-semibold">Role Information</CardTitle>
-        <div className="grid grid-cols-2 gap-4">
-          <div>
-            <Label className="font-semibold">Shop</Label>
+      <form onSubmit={formik.handleSubmit} className="flex flex-col gap-6">
+        <div className="flex flex-col gap-1">
+          <CardTitle className="text-xl font-semibold">Role Information</CardTitle>
+          <div className="flex flex-col">
+            <Label className="font-semibold flex items-center">
+              Shop <Asterisk className="w-4" />
+            </Label>
             <Select
               name="shop"
               value={formik.values.shop}
@@ -107,7 +97,6 @@ export default function EditVendorForm({ form = {}, onChange }) {
               <SelectContent>
                 <SelectGroup>
                   {shops.map((shop) => (
-                    // Using shop.shopNo as the unique identifier.
                     <SelectItem key={shop.shopNo} value={shop.shopNo}>
                       {shop.name}
                     </SelectItem>
@@ -120,104 +109,113 @@ export default function EditVendorForm({ form = {}, onChange }) {
             )}
           </div>
         </div>
-
-        {/* Vendor Personal Information */}
-        <CardTitle className="text-xl font-semibold">Vendor Information</CardTitle>
-        <div className="grid grid-cols-2 gap-4">
-          <div>
-            <Label className="font-semibold">First Name</Label>
-            <Input
-              name="firstName"
-              placeholder="Enter the vendor's first name"
-              value={formik.values.firstName}
-              onChange={formik.handleChange}
-              onBlur={formik.handleBlur}
-              className={InputErrorStyle(formik.errors.firstName, formik.touched.firstName)}
-            />
-            {formik.touched.firstName && formik.errors.firstName && (
-              <InputErrorMessage error={formik.errors.firstName} touched={formik.touched.firstName} />
-            )}
-          </div>
-          <div>
-            <Label className="font-semibold">Last Name</Label>
-            <Input
-              name="lastName"
-              placeholder="Enter the vendor's last name"
-              value={formik.values.lastName}
-              onChange={formik.handleChange}
-              onBlur={formik.handleBlur}
-              className={InputErrorStyle(formik.errors.lastName, formik.touched.lastName)}
-            />
-            {formik.touched.lastName && formik.errors.lastName && (
-              <InputErrorMessage error={formik.errors.lastName} touched={formik.touched.lastName} />
-            )}
-          </div>
-          <div>
-            <Label className="font-semibold">Contact Number</Label>
-            <Input
-              name="contactNo"
-              placeholder="Enter the vendor's contact number"
-              value={formik.values.contactNo}
-              onChange={formik.handleChange}
-              onBlur={formik.handleBlur}
-              className={InputErrorStyle(formik.errors.contactNo, formik.touched.contactNo)}
-            />
-            {formik.touched.contactNo && formik.errors.contactNo && (
-              <InputErrorMessage error={formik.errors.contactNo} touched={formik.touched.contactNo} />
-            )}
-          </div>
-          <div>
-            <Label className="font-semibold">Email</Label>
-            <Input
-              name="email"
-              type="email"
-              placeholder="Enter the vendor's email"
-              value={formik.values.email}
-              onChange={formik.handleChange}
-              onBlur={formik.handleBlur}
-              className={InputErrorStyle(formik.errors.email, formik.touched.email)}
-            />
-            {formik.touched.email && formik.errors.email && (
-              <InputErrorMessage error={formik.errors.email} touched={formik.touched.email} />
-            )}
-          </div>
-          <div className="col-span-2">
-            <Label className="font-semibold">Position</Label>
-            <Input
-              name="position"
-              placeholder="Enter the vendor's position"
-              value={formik.values.position}
-              onChange={formik.handleChange}
-              onBlur={formik.handleBlur}
-              className={InputErrorStyle(formik.errors.position, formik.touched.position)}
-            />
-            {formik.touched.position && formik.errors.position && (
-              <InputErrorMessage error={formik.errors.position} touched={formik.touched.position} />
-            )}
-          </div>
-        </div>
-
-        {/* Account Information */}
-        <CardTitle className="text-xl font-semibold">Account Information</CardTitle>
-        <div className="grid grid-cols-2 gap-4">
-          <div>
-            <Label className="font-semibold">Username</Label>
-            <Input
-              name="username"
-              placeholder="Create the vendor's username"
-              value={formik.values.username}
-              onChange={formik.handleChange}
-              onBlur={formik.handleBlur}
-              className={InputErrorStyle(formik.errors.username, formik.touched.username)}
-            />
-            {formik.touched.username && formik.errors.username && (
-              <InputErrorMessage error={formik.errors.username} touched={formik.touched.username} />
-            )}
+        <div className="flex flex-col gap-1">
+          <CardTitle className="text-xl font-semibold">Vendor Information</CardTitle>
+          <div className="grid grid-cols-2 gap-4">
+            <div>
+              <Label className="font-semibold flex items-center">
+                First Name <Asterisk className="w-4" />
+              </Label>
+              <Input
+                name="firstName"
+                placeholder="Enter the vendor's first name"
+                value={formik.values.firstName}
+                onChange={formik.handleChange}
+                onBlur={formik.handleBlur}
+                className={InputErrorStyle(formik.errors.firstName, formik.touched.firstName)}
+              />
+              {formik.touched.firstName && formik.errors.firstName && (
+                <InputErrorMessage error={formik.errors.firstName} touched={formik.touched.firstName} />
+              )}
+            </div>
+            <div>
+              <Label className="font-semibold flex items-center">
+                Last Name <Asterisk className="w-4" />
+              </Label>
+              <Input
+                name="lastName"
+                placeholder="Enter the vendor's last name"
+                value={formik.values.lastName}
+                onChange={formik.handleChange}
+                onBlur={formik.handleBlur}
+                className={InputErrorStyle(formik.errors.lastName, formik.touched.lastName)}
+              />
+              {formik.touched.lastName && formik.errors.lastName && (
+                <InputErrorMessage error={formik.errors.lastName} touched={formik.touched.lastName} />
+              )}
+            </div>
+            <div>
+              <Label className="font-semibold flex items-center">
+                Contact Number <Asterisk className="w-4" />
+              </Label>
+              <Input
+                name="contactNo"
+                placeholder="Enter the vendor's contact number"
+                value={formik.values.contactNo}
+                onChange={formik.handleChange}
+                onBlur={formik.handleBlur}
+                className={InputErrorStyle(formik.errors.contactNo, formik.touched.contactNo)}
+              />
+              {formik.touched.contactNo && formik.errors.contactNo && (
+                <InputErrorMessage error={formik.errors.contactNo} touched={formik.touched.contactNo} />
+              )}
+            </div>
+            <div>
+              <Label className="font-semibold flex items-center">
+                Email <Asterisk className="w-4" />
+              </Label>
+              <Input
+                name="email"
+                type="email"
+                placeholder="Enter the vendor's email"
+                value={formik.values.email}
+                onChange={formik.handleChange}
+                onBlur={formik.handleBlur}
+                className={InputErrorStyle(formik.errors.email, formik.touched.email)}
+              />
+              {formik.touched.email && formik.errors.email && (
+                <InputErrorMessage error={formik.errors.email} touched={formik.touched.email} />
+              )}
+            </div>
+            <div className="col-span-2">
+              <Label className="font-semibold flex items-center">
+                Position <Asterisk className="w-4" />
+              </Label>
+              <Input
+                name="position"
+                placeholder="Enter the vendor's position"
+                value={formik.values.position}
+                onChange={formik.handleChange}
+                onBlur={formik.handleBlur}
+                className={InputErrorStyle(formik.errors.position, formik.touched.position)}
+              />
+              {formik.touched.position && formik.errors.position && (
+                <InputErrorMessage error={formik.errors.position} touched={formik.touched.position} />
+              )}
+            </div>
           </div>
         </div>
-        <Button className="mt-6 w-full" type="submit" disabled={formik.isSubmitting}>
-          {formik.isSubmitting ? <LoadingMessage message="Submitting..." /> : "Submit"}
-        </Button>
+        <div className="flex flex-col gap-1">
+          <CardTitle className="text-xl font-semibold">Account Information</CardTitle>
+          <div className="grid grid-cols-2 gap-4">
+            <div>
+              <Label className="font-semibold flex items-center">
+                Username <Asterisk className="w-4" />
+              </Label>
+              <Input
+                name="username"
+                placeholder="Create the vendor's username"
+                value={formik.values.username}
+                onChange={formik.handleChange}
+                onBlur={formik.handleBlur}
+                className={InputErrorStyle(formik.errors.username, formik.touched.username)}
+              />
+              {formik.touched.username && formik.errors.username && (
+                <InputErrorMessage error={formik.errors.username} touched={formik.touched.username} />
+              )}
+            </div>
+          </div>
+        </div>
       </form>
     </Card>
   );

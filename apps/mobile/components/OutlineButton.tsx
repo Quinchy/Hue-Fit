@@ -1,6 +1,5 @@
-// src/components/OutlineButton.tsx
 import React from 'react';
-import { Button, HStack, IButtonProps, Text } from 'native-base';
+import { Button, HStack, IButtonProps, Text, Box } from 'native-base';
 
 interface OutlineButtonProps extends IButtonProps {
   title: string;
@@ -30,22 +29,25 @@ const OutlineButton: React.FC<OutlineButtonProps> = ({
     <Button
       onPress={onPress}
       variant="outline"
-      borderColor="gray.600"
+      borderColor="#C0C0C025"
       borderRadius="md"
       height={height}
       width={width}
       py={py}
       _pressed={{ bg: "gray.700" }}
+      _disabled={{
+        bg: "gray.200",
+        borderColor: "gray.200",
+        _text: { color: "gray.500" },
+      }}
       {...props}
     >
-      <HStack alignItems="center" space={2}>
-        {/* Icon on the left, if provided */}
-        {iconLeft && iconLeft}
-        <Text color="white" fontWeight={fontWeight} fontSize={fontSize}>
+      <HStack justifyContent="center" alignItems="center" space={2}>
+        {iconLeft && <Box>{iconLeft}</Box>}
+        <Text color="white" fontWeight={fontWeight} fontSize={fontSize} textAlign="center">
           {title}
         </Text>
-        {/* Icon on the right, if provided */}
-        {iconRight && iconRight}
+        {iconRight && <Box>{iconRight}</Box>}
       </HStack>
     </Button>
   );

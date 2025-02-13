@@ -1,23 +1,25 @@
 // pages/dashboard/order/edit/[orderNo].js
+"use client";
+
 import { useState, useEffect } from "react";
 import { useRouter } from "next/router";
 import axios from "axios";
+import { useFormik } from "formik";
+import * as Yup from "yup";
 import { Card, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import DashboardLayoutWrapper from "@/components/ui/dashboard-layout";
-import { MoveLeft, Loader2, CheckCircle2, Package, Truck } from "lucide-react";
+import { MoveLeft, Loader2, CheckCircle2, Package, Truck, Asterisk } from "lucide-react";
+import { Textarea } from "@/components/ui/textarea";
+import { Label } from "@/components/ui/label";
 import routes from "@/routes";
 import { Alert, AlertTitle, AlertDescription } from "@/components/ui/alert";
 import Image from "next/image";
-import Loading from "@/components/ui/loading";
+import Loading from "@/components/ui/loading"; // Overall page loading
 import { ScrollArea } from "@/components/ui/scroll-area";
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { LoadingMessage } from "@/components/ui/loading-message";
+import { InputErrorMessage, InputErrorStyle } from "@/components/ui/error-message";
 
 const ORDER_STEPS_DATA = [
   { id: "PENDING", label: "Pending", Icon: Loader2 },
@@ -37,17 +39,11 @@ function getNextStatus(currentStatus) {
 export default function EditOrder() {
   const router = useRouter();
   const { orderNo } = router.query;
-
   const [orderDetails, setOrderDetails] = useState(null);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
   const [showAlert, setShowAlert] = useState(false);
-
-  // Cancellation response states
-  const [cancellationResponse, setCancellationResponse] = useState("");
-  const [rejectionReason, setRejectionReason] = useState("");
-  const [responseLoading, setResponseLoading] = useState(false);
-  const [responseError, setResponseError] = useState(null);
+  const [showCancelAlert, setShowCancelAlert] = useState(false);
 
   useEffect(() => {
     if (orderNo) {
@@ -57,11 +53,8 @@ export default function EditOrder() {
 
   const fetchOrderDetails = async (orderNoVal) => {
     try {
-      const response = await axios.get(
-        `/api/orders/get-order-detail?orderNo=${orderNoVal}`
-      );
-      const fetchedOrder = response.data.order;
-      setOrderDetails(fetchedOrder);
+      const response = await axios.get(`/api/orders/get-order-detail?orderNo=${orderNoVal}`);
+      setOrderDetails(response.data.order);
     } catch (err) {
       setError("Failed to fetch order details.");
     }
@@ -83,35 +76,41 @@ export default function EditOrder() {
     }
   };
 
-  const handleCancellationResponseSubmit = async () => {
-    if (!orderDetails) return;
-    if (!cancellationResponse) {
-      setResponseError("Please select a response.");
-      return;
-    }
-    if (cancellationResponse === "REJECT" && !rejectionReason.trim()) {
-      setResponseError("Please provide a reason for rejection.");
-      return;
-    }
-    try {
-      setResponseLoading(true);
-      setResponseError(null);
-      await axios.post("/api/orders/cancellation-response", {
-        orderId: orderDetails.id,
-        action: cancellationResponse,
-        rejectionReason: cancellationResponse === "REJECT" ? rejectionReason : null,
-      });
-      fetchOrderDetails(orderNo);
-    } catch (err) {
-      setResponseError("Failed to submit response.");
-    } finally {
-      setResponseLoading(false);
-    }
-  };
+  // Updated cancellation Formik instance with enhanced Yup validation.
+  const cancellationFormik = useFormik({
+    initialValues: {
+      cancellationResponse: "",
+      rejectionReason: "",
+    },
+    validationSchema: Yup.object({
+      cancellationResponse: Yup.string().required("Please select a response."),
+      rejectionReason: Yup.string().when("cancellationResponse", {
+        is: "REJECT",
+        then: () => Yup.string().required("Please provide a reason for rejection."),
+        otherwise: () => Yup.string().nullable(),
+      })      
+    }),
+    onSubmit: async (values, { setSubmitting, setStatus, resetForm }) => {
+      if (!orderDetails) return;
+      try {
+        const payload = {
+          orderId: orderDetails.id,
+          action: values.cancellationResponse,
+          rejectionReason: values.cancellationResponse === "REJECT" ? values.rejectionReason : null,
+        };
+        await axios.post("/api/orders/cancellation-response", payload);
+        setShowCancelAlert(true);
+        fetchOrderDetails(orderNo);
+        resetForm();
+      } catch (err) {
+        setStatus("Failed to submit response.");
+      } finally {
+        setSubmitting(false);
+      }
+    },
+  });
 
-  if (error) {
-    return <div>{error}</div>;
-  }
+  if (error) return <div>{error}</div>;
 
   if (!orderDetails) {
     return (
@@ -121,6 +120,7 @@ export default function EditOrder() {
     );
   }
 
+  // Calculate totals and order information
   const totalEarnings =
     orderDetails.OrderItems?.reduce((sum, item) => {
       const price = parseFloat(item.ProductVariant?.price || 0);
@@ -139,15 +139,10 @@ export default function EditOrder() {
   const finalTotal = totalEarnings + deliveryFeeAmount;
   const profilePicture = orderDetails.User?.profilePicture || "/images/profile-picture.png";
 
-  const currentStepIndex = ORDER_STEPS_DATA.findIndex(
-    (step) => step.id === orderDetails.status
-  );
-  const canAdvance =
-    currentStepIndex >= 0 && currentStepIndex < ORDER_STEPS_DATA.length - 1;
+  const currentStepIndex = ORDER_STEPS_DATA.findIndex((step) => step.id === orderDetails.status);
+  const canAdvance = currentStepIndex >= 0 && currentStepIndex < ORDER_STEPS_DATA.length - 1;
   const progressPercentage =
-    currentStepIndex > 0
-      ? (currentStepIndex / (ORDER_STEPS_DATA.length - 1)) * 100
-      : 0;
+    currentStepIndex > 0 ? (currentStepIndex / (ORDER_STEPS_DATA.length - 1)) * 100 : 0;
 
   const customerAddress = orderDetails.User?.address
     ? [
@@ -189,14 +184,11 @@ export default function EditOrder() {
         </Button>
       </div>
 
-      <Card className="p-10 flex flex-col gap-8">
+      <Card className="p-10 flex flex-col gap-8 mb-20">
         {/* Progress Bar */}
         <div className="relative flex items-center justify-between px-2 h-20">
           <div className="absolute top-4 left-0 right-0 h-0.5 border-t-2 border-dashed border-border" />
-          <div
-            className="absolute top-4 left-0 h-0.5 bg-primary"
-            style={{ width: `${progressPercentage}%` }}
-          />
+          <div className="absolute top-4 left-0 h-0.5 bg-primary" style={{ width: `${progressPercentage}%` }} />
           {ORDER_STEPS_DATA.map((step, index) => {
             const isActive = index <= currentStepIndex;
             const StepIcon = step.Icon;
@@ -212,11 +204,7 @@ export default function EditOrder() {
                   {index + 1}
                 </div>
                 <div className="mt-2 flex flex-col items-center text-xs">
-                  <StepIcon
-                    className={`w-4 h-4 mb-1 ${
-                      isActive ? "text-primary" : "text-muted-foreground"
-                    }`}
-                  />
+                  <StepIcon className={`w-4 h-4 mb-1 ${isActive ? "text-primary" : "text-muted-foreground"}`} />
                   <p className={isActive ? "font-semibold text-primary" : "text-muted-foreground"}>
                     {step.label}
                   </p>
@@ -298,20 +286,12 @@ export default function EditOrder() {
           <div>
             <CardTitle className="text-2xl">Order Status</CardTitle>
             {orderDetails.status.toUpperCase() === "CANCELLED" ? (
-              <p className="mt-2 text-muted-foreground italic">
-                This order is cancelled.
-              </p>
+              <p className="mt-2 text-muted-foreground italic">This order is cancelled.</p>
             ) : orderDetails.status.toUpperCase() === "COMPLETED" ? (
-              <p className="mt-2 text-muted-foreground italic">
-                This order is already completed.
-              </p>
+              <p className="mt-2 text-muted-foreground italic">This order is already completed.</p>
             ) : canAdvance ? (
               <Button onClick={handleAdvanceStep} className="mt-2 min-w-[15rem]" disabled={loading}>
-                {loading ? (
-                  <Loader2 className="animate-spin h-5 w-5 text-card" />
-                ) : (
-                  "Advance to Next Step"
-                )}
+                {loading ? <LoadingMessage message="Advancing..." /> : "Advance to Next Step"}
               </Button>
             ) : null}
           </div>
@@ -330,49 +310,84 @@ export default function EditOrder() {
 
         {/* Cancellation Response Section */}
         {orderDetails.askingForCancel && (
-          <div className="mt-8 border-t pt-4">
-            <CardTitle className="text-2xl mb-2">Cancellation Request</CardTitle>
-            <p className="mb-4">
-              <strong>Cancellation Reason:</strong> {orderDetails.cancelReason}
+          <div className="flex flex-col gap-4 border-t">
+            <CardTitle className="text-2xl mt-5">Cancellation Request</CardTitle>
+            <p>
+              <strong>Reason:</strong> {orderDetails.cancelReason}
             </p>
-            <div className="mb-4">
-              <label className="block text-sm font-medium mb-1">Response</label>
-              <Select value={cancellationResponse} onValueChange={setCancellationResponse}>
-                <SelectTrigger className="w-full">
-                  <SelectValue placeholder="Select response" />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="ACCEPT">Accept</SelectItem>
-                  <SelectItem value="REJECT">Reject</SelectItem>
-                </SelectContent>
-              </Select>
-            </div>
-            {cancellationResponse === "REJECT" && (
-              <div className="mb-4">
-                <label className="block text-sm font-medium mb-1">Rejection Reason</label>
-                <textarea
-                  className="w-full border rounded p-2"
-                  placeholder="Enter rejection reason"
-                  value={rejectionReason}
-                  onChange={(e) => setRejectionReason(e.target.value)}
-                />
+            <form onSubmit={cancellationFormik.handleSubmit} className="flex flex-col gap-4">
+              <div className="flex flex-col gap-4">
+                <div className="flex flex-col gap-1">
+                  <Label className="flex flex-row items-center font-semibold">
+                    Response <Asterisk className="w-4" />
+                  </Label>
+                  <Select
+                    onValueChange={(value) =>
+                      cancellationFormik.setFieldValue("cancellationResponse", value)
+                    }
+                    value={cancellationFormik.values.cancellationResponse}
+                  >
+                    <SelectTrigger
+                      className={`w-full ${InputErrorStyle(
+                        cancellationFormik.errors.cancellationResponse,
+                        cancellationFormik.touched.cancellationResponse
+                      )}`}
+                    >
+                      <SelectValue placeholder="Select response" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="ACCEPT">Accept</SelectItem>
+                      <SelectItem value="REJECT">Reject</SelectItem>
+                    </SelectContent>
+                  </Select>
+                  {cancellationFormik.touched.cancellationResponse &&
+                    cancellationFormik.errors.cancellationResponse && (
+                      <InputErrorMessage
+                        error={cancellationFormik.errors.cancellationResponse}
+                        touched={cancellationFormik.touched.cancellationResponse}
+                      />
+                    )}
+                </div>
+                {cancellationFormik.values.cancellationResponse === "REJECT" && (
+                  <div className="flex flex-col gap-1">
+                    <Label className="flex flex-row items-center font-semibold">
+                      Rejection Reason <Asterisk className="w-4" />
+                    </Label>
+                    <Textarea
+                      className={`w-full border rounded p-2 ${InputErrorStyle(
+                        cancellationFormik.errors.rejectionReason,
+                        cancellationFormik.touched.rejectionReason
+                      )}`}
+                      placeholder="Enter rejection reason"
+                      {...cancellationFormik.getFieldProps("rejectionReason")}
+                    />
+                    {cancellationFormik.touched.rejectionReason &&
+                      cancellationFormik.errors.rejectionReason && (
+                        <InputErrorMessage
+                          error={cancellationFormik.errors.rejectionReason}
+                          touched={cancellationFormik.touched.rejectionReason}
+                        />
+                      )}
+                  </div>
+                )}
               </div>
-            )}
-            <Button onClick={handleCancellationResponseSubmit} className="min-w-[15rem]" disabled={responseLoading}>
-              {responseLoading ? "Submitting..." : "Submit Response"}
-            </Button>
-            {responseError && <p className="text-red-500 mt-2">{responseError}</p>}
+              <Button type="submit" className="mt-10" disabled={cancellationFormik.isSubmitting}>
+                {cancellationFormik.isSubmitting ? <LoadingMessage message="Submitting..." /> : "Submit"}
+              </Button>
+              {cancellationFormik.status && (
+                <p className="text-red-500 mt-2">{cancellationFormik.status}</p>
+              )}
+            </form>
           </div>
         )}
       </Card>
 
+      {/* Order Status Update Alert */}
       {showAlert && (
-        <Alert className="fixed z-50 w-[30rem] right-10 bottom-10 flex items-center shadow-lg rounded-lg">
+        <Alert className="fixed z-50 w-[30rem] right-14 bottom-10 flex items-center shadow-lg rounded-lg">
           <CheckCircle2 className="h-10 w-10 stroke-green-500" />
           <div className="ml-7">
-            <AlertTitle className="text-green-400 text-base font-semibold">
-              Status Updated
-            </AlertTitle>
+            <AlertTitle className="text-green-400 text-base font-semibold">Status Updated</AlertTitle>
             <AlertDescription className="text-green-300">
               The order status has been updated successfully.
             </AlertDescription>
@@ -380,6 +395,27 @@ export default function EditOrder() {
           <button
             className="ml-auto mr-4 hover:text-primary/50 focus:outline-none"
             onClick={() => setShowAlert(false)}
+          >
+            ✕
+          </button>
+        </Alert>
+      )}
+
+      {/* Cancellation Response Alert */}
+      {showCancelAlert && (
+        <Alert className="fixed z-50 w-[30rem] right-14 bottom-10 flex items-center shadow-lg rounded-lg">
+          <CheckCircle2 className="h-10 w-10 stroke-green-500" />
+          <div className="ml-7">
+            <AlertTitle className="text-green-400 text-base font-semibold">
+              Cancellation Response Submitted
+            </AlertTitle>
+            <AlertDescription className="text-green-300">
+              The cancellation response has been submitted successfully.
+            </AlertDescription>
+          </div>
+          <button
+            className="ml-auto mr-4 hover:text-primary/50 focus:outline-none"
+            onClick={() => setShowCancelAlert(false)}
           >
             ✕
           </button>

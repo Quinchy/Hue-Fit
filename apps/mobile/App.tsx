@@ -19,8 +19,7 @@ import { useSafeAreaInsets } from "react-native-safe-area-context";
 import LoginScreen from "./screens/account/LoginScreen";
 import RegisterScreen from "./screens/account/RegisterScreen";
 import Register2Screen from "./screens/account/Register2Screen";
-import ForgetPassword1Screen from "./screens/account/ForgetPassword1Screen";
-import ForgetPassword2Screen from "./screens/account/ForgetPassword2Screen";
+import ForgotPasswordScreen from "./screens/account/ForgotPasswordScreen";
 import CartScreen from "./screens/app/CartScreen";
 import VirtualFittingScreen from "./screens/app/VirtualFittingScreen";
 import AiTryOnScreen from "./screens/app/AiTryOnScreen";
@@ -28,11 +27,13 @@ import EditProfileScreen from "./screens/app/EditProfileScreen";
 import ShopScreen from "./screens/app/ShopScreen";
 import ProfileSettingsScreen from "./screens/app/ProfileSettingsScreen";
 import OrderTransactionScreen from "./screens/app/OrderTransactionScreen";
+import OrderHistoryScreen from "./screens/app/OrderHistoryScreen";
 import InputScreen from "./screens/app/InputScreen";
 import ProductView from "./screens/app/ProductViewScreen";
 import PlaygroundScreen from "./screens/app/PlaygroundScreen";
 import NotificationScreen from "./screens/app/NotificationScreen";
 import GeneratedOutfitScreen from "./screens/app/GeneratedOutfitScreen";
+import ViewNotificationScreen from "./screens/app/ViewNotificationScreen";
 
 // Load Geist Fonts
 const loadFonts = async () => {
@@ -171,18 +172,19 @@ const AppNavigator = ({ initialRoute }) => (
     <Stack.Screen name="Login" component={LoginScreen} />
     <Stack.Screen name="Register" component={RegisterScreen} />
     <Stack.Screen name="Register2" component={Register2Screen} />
-    <Stack.Screen name="ForgetPassword1" component={ForgetPassword1Screen} />
-    <Stack.Screen name="ForgetPassword2" component={ForgetPassword2Screen} />
+    <Stack.Screen name="ForgotPassword" component={ForgotPasswordScreen} />
     <Stack.Screen name="Main" component={TabNavigator} />
     <Stack.Screen name="Cart" component={CartScreen} />
     <Stack.Screen name="EditProfile" component={EditProfileScreen} />
     <Stack.Screen name="ProfileSettings" component={ProfileSettingsScreen} />
     <Stack.Screen name="OrderTransactionScreen" component={OrderTransactionScreen} />
+    <Stack.Screen name="OrderHistory" component={OrderHistoryScreen} />
     <Stack.Screen name="VirtualFitting" component={VirtualFittingScreen} />
     <Stack.Screen name="AiTryOn" component={AiTryOnScreen} />
     <Stack.Screen name="ProductView" component={ProductView} />
     <Stack.Screen name="Notification" component={NotificationScreen} />
     <Stack.Screen name="GeneratedOutfit" component={GeneratedOutfitScreen} />
+    <Stack.Screen name="ViewNotification" component={ViewNotificationScreen} />
   </Stack.Navigator>
 );
 

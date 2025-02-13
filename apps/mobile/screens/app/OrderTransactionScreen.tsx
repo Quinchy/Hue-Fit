@@ -1,20 +1,15 @@
 import React, { useState, useEffect } from "react";
-import { FlatList, Pressable, View, Alert } from "react-native";
+import { FlatList, Pressable, View, Alert, Image } from "react-native";
+import { Store } from "lucide-react-native"; 
 import { createMaterialTopTabNavigator } from "@react-navigation/material-top-tabs";
 import { useRoute, useNavigation } from "@react-navigation/native";
 import { SafeAreaView, useSafeAreaInsets } from "react-native-safe-area-context";
-import {
-  VStack,
-  Text,
-  Box,
-  HStack,
-  Modal,
-  Select
-} from "native-base";
+import { VStack, Text, Box, HStack, Modal, Select } from "native-base";
 import { ArrowLeft } from "lucide-react-native";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import CustomInput from "../../components/Input";
 import DefaultButton from "../../components/Button";
+import OutlineButton from "../../components/OutlineButton";
 import LoadingSpinner from "../../components/Loading";
 
 const Tab = createMaterialTopTabNavigator();
@@ -26,7 +21,15 @@ const OrderList = ({ status, ordersData, refreshOrders }) => {
   // For PROCESSING orders cancellation reason state.
   const [cancelReason, setCancelReason] = useState("");
   const [customReason, setCustomReason] = useState("");
-
+  // Define the color mapping (you can adjust these hex values if desired)
+  const statusColors = {
+    PENDING: "#60A5FA",      // bg-blue-400
+    PROCESSING: "#F59E0B",   // bg-amber-500
+    DELIVERING: "#A78BFA",   // bg-purple-400
+    RESERVED: "#e60076",     // bg-emerald-400
+    COMPLETED: "#34D399",    // bg-green-400
+    CANCELLED: "#EF4444",    // bg-red-500
+  };
   // Cancellation reasons for PROCESSING orders.
   const cancellationReasons = [
     "Not Interested anymore.",
@@ -64,10 +67,7 @@ const OrderList = ({ status, ordersData, refreshOrders }) => {
       }
     } catch (error) {
       console.error("Error cancelling order:", error);
-      Alert.alert(
-        "Error",
-        "An error occurred while requesting cancellation"
-      );
+      Alert.alert("Error", "An error occurred while requesting cancellation");
     } finally {
       setCancelModalVisible(false);
       setSelectedOrder(null);
@@ -77,19 +77,19 @@ const OrderList = ({ status, ordersData, refreshOrders }) => {
   };
 
   return (
-    <VStack flex={1} p={4} style={{ backgroundColor: "#000" }}>
+    <VStack flex={1} style={{ backgroundColor: "#191919" }}>
       <FlatList
         data={orders}
         keyExtractor={(item) => item.id.toString()}
         renderItem={({ item }) => (
           <Box
             style={{
-              backgroundColor: "#1A1A1A",
-              padding: 16,
-              marginBottom: 15,
+              backgroundColor: "#191919",
+              padding: 15,
+              marginHorizontal: 15,
               borderRadius: 10,
               borderWidth: 1,
-              borderColor: "#808080",
+              borderColor: "#C0C0C025",
               shadowColor: "#000",
               shadowOffset: { width: 0, height: 3 },
               shadowOpacity: 0.3,
@@ -97,91 +97,182 @@ const OrderList = ({ status, ordersData, refreshOrders }) => {
               elevation: 5,
             }}
           >
-            <Text
-              style={{
-                fontSize: 16,
-                fontWeight: "bold",
-                color: "#FFF",
-                marginBottom: 8,
-              }}
-            >
-              Order No: {item.orderNo}
+            <Text style={{
+              marginBottom: 5,
+              alignSelf: "flex-start",
+              fontSize: 16,
+              fontWeight: "bold",
+              color: "#FFF",
+              backgroundColor: "#C0C0C025",
+              padding: 5,
+              borderRadius: 4,
+            }}>
+              {item.orderNo}
             </Text>
-            <Text
-              style={{
-                fontSize: 14,
-                fontWeight: "600",
-                color: "#FFF",
-                marginBottom: 4,
-              }}
-            >
-              Shop: {item.shopName}
-            </Text>
+            <View style={{ flexDirection: "row", alignItems: "center", justifyContent: "space-between", marginBottom: 20 }}>
+              {/* Left part: Icon and shop name */}
+              <View style={{ flexDirection: "row", alignItems: "center" }}>
+                <Store width={20} height={20} strokeWidth={1.5} color="#FFF" />
+                <Text style={{
+                  fontSize: 16,
+                  fontWeight: "700",
+                  color: "#FFF",
+                  marginLeft: 5,
+                }}>
+                  {item.shopName}
+                </Text>
+              </View>
+              {/* Right part: Order number */}
+              <Text
+                style={{
+                  fontSize: 14,
+                  color: "#FFF",
+                  backgroundColor: statusColors[item.status] || "#191919",
+                  padding: 5,
+                  borderRadius: 4,
+                  minWidth: 85,
+                  textAlign: "center",
+                  fontWeight: "bold",
+                }}
+              >
+                {item.status}
+              </Text>
+            </View>
             {item.orderItems.map((orderItem, index) => (
               <Box
                 key={index}
                 style={{
-                  marginBottom: 8,
-                  paddingLeft: 8,
-                  borderLeftWidth: 2,
-                  borderLeftColor: "#FFF",
+                  marginBottom: 10,
+                  paddingLeft: 10,
+                  borderLeftWidth: 1,
+                  borderLeftColor: "#C0C0C025",
+                  flexDirection: "row",
+                  alignItems: "center",
                 }}
               >
-                <Text style={{ fontSize: 14, color: "#FFF" }}>
-                  {orderItem.productName}
-                </Text>
-                <Text style={{ fontSize: 12, color: "#AAA" }}>
-                  Color: {orderItem.productVariantColorName} | Size: {orderItem.productVariantSizeName}
-                </Text>
-                <Text style={{ fontSize: 12, color: "#AAA" }}>
-                  Price: PHP {orderItem.productVariantPrice} | Quantity: {orderItem.quantity}
-                </Text>
+                {/* Product thumbnail on the left */}
+                <Image
+                  source={{ uri: orderItem.thumbnailURL }}  // Assumes each orderItem has a thumbnailURL property.
+                  style={{
+                    width: 75,
+                    height: 75,
+                    marginRight: 10,
+                    borderRadius: 4,
+                  }}
+                />
+                {/* Order item details */}
+                <View style={{ flex: 1 }}>
+                  <Text style={{ fontSize: 14, color: "#FFF" }}>
+                    {orderItem.productName}
+                  </Text>
+                  <Text style={{ fontSize: 12, color: "#AAA" }}>
+                    Color: {orderItem.productVariantColorName} | Size: {orderItem.productVariantSizeName}
+                  </Text>
+                  <Text style={{ fontSize: 12, color: "#AAA" }}>
+                    Price: PHP {orderItem.productVariantPrice} | Quantity: {orderItem.quantity}
+                  </Text>
+                </View>
               </Box>
             ))}
-            <Text style={{ fontSize: 14, color: "#CCC", marginTop: 4 }}>
-              Status: {item.status}
-            </Text>
-            <Text
+            <View
               style={{
-                color: "#FFF",
-                fontSize: 14,
-                marginTop: 8,
-                fontWeight: "bold",
+                marginTop: 10,
+                marginBottom: 20,
+                padding: 10,
+                borderRadius: 4,
               }}
             >
-              Order Total: PHP {item.orderTotal} {"\n"}
-              Delivery Fee: PHP {item.deliveryFee} {"\n"}
-              Final Total: PHP {item.finalTotal}
-            </Text>
-            {/* Show cancel button for both PENDING and PROCESSING orders */}
-            {(item.status === "PENDING" || item.status === "PROCESSING") && (
-              <Pressable
-                onPress={() => {
-                  setSelectedOrder(item);
-                  setCancelModalVisible(true);
-                }}
+              {/* Row for Item Total */}
+              <View style={{ flexDirection: "row", justifyContent: "flex-end", alignItems: "center" }}>
+                <Text style={{ fontSize: 14, color: "#FFF", fontWeight: "bold" }}>
+                  Item Total Prices: PHP {item.orderTotal}
+                </Text>
+              </View>
+              {/* Row for Delivery Fee */}
+              <View style={{ flexDirection: "row", justifyContent: "flex-end", alignItems: "center", marginTop: 4 }}>
+                <Text style={{ fontSize: 14, color: "#FFF", fontWeight: "bold" }}>
+                  Delivery Fee: PHP {item.deliveryFee}
+                </Text>
+              </View>
+              {/* Row for Total Payment with divider */}
+              <View
                 style={{
-                  backgroundColor: "#FFF",
-                  paddingVertical: 8,
-                  paddingHorizontal: 12,
-                  borderRadius: 4,
+                  flexDirection: "row",
+                  justifyContent: "flex-end",
+                  alignItems: "center",
                   marginTop: 8,
-                  alignSelf: "flex-start",
+                  paddingTop: 4,
+                  borderTopWidth: 1,
+                  borderTopColor: "#C0C0C025",
                 }}
               >
-                <Text
+                <Text style={{ fontSize: 14, color: "#FFF", fontWeight: "bold" }}>
+                  Total ammount: PHP {item.finalTotal}
+                </Text>
+              </View>
+            </View>
+            {(item.status === "PENDING" || item.status === "PROCESSING") && (
+              item.status === "PROCESSING" && item.askingForCancel ? (
+                <Pressable
+                  disabled
                   style={{
-                    color: "#000",
-                    fontSize: 14,
-                    fontWeight: "bold",
+                    minWidth: 150,
+                    backgroundColor: "transparent",
+                    borderWidth: 1,
+                    borderColor: "#C0C0C050",
+                    paddingVertical: 8,
+                    paddingHorizontal: 12,
+                    borderRadius: 4,
+                    marginTop: 8,
+                    alignSelf: "flex-end",
                   }}
                 >
-                  Cancel Order
-                </Text>
-              </Pressable>
+                  <Text
+                    style={{
+                      color: "#C0C0C050",
+                      fontSize: 14,
+                      fontWeight: "bold",
+                      textAlign: "center",
+                    }}
+                  >
+                    Cancellation in Progress
+                  </Text>
+                </Pressable>
+              ) : (
+                <Pressable
+                  onPress={() => {
+                    setSelectedOrder(item);
+                    setCancelModalVisible(true);
+                  }}
+                  style={{
+                    minWidth: 150,
+                    backgroundColor: "#FFF",
+                    paddingVertical: 8,
+                    paddingHorizontal: 12,
+                    borderRadius: 4,
+                    marginTop: 8,
+                    alignSelf: "flex-end",
+                  }}
+                >
+                  <Text
+                    style={{
+                      color: "#191919",
+                      fontSize: 14,
+                      fontWeight: "bold",
+                      textAlign: "center",
+                    }}
+                  >
+                    Cancel Order
+                  </Text>
+                </Pressable>
+              )
             )}
           </Box>
         )}
+        // Add a separator between each Box (item)
+        ItemSeparatorComponent={() => <View style={{ height: 15 }} />}
+        // Optionally add padding to the FlatList container
+        contentContainerStyle={{ paddingVertical: 15 }}
       />
 
       <Modal
@@ -191,27 +282,27 @@ const OrderList = ({ status, ordersData, refreshOrders }) => {
         <Modal.Content
           maxWidth="400px"
           style={{
-            backgroundColor: "#000",
+            backgroundColor: "#191919",
             borderRadius: 10,
           }}
         >
           <Modal.CloseButton />
           <Modal.Header
             style={{
-              backgroundColor: "#000",
+              backgroundColor: "#191919",
               borderBottomWidth: 1,
-              borderColor: "#808080",
+              borderColor: "#C0C0C025",
             }}
           >
-            <Text style={{ color: "#FFF", fontWeight: "bold" }}>Cancel Order</Text>
+            <Text style={{ color: "#FFF", fontWeight: "bold", fontSize: 16 }}>Cancel Order</Text>
           </Modal.Header>
-          <Modal.Body style={{ backgroundColor: "#000" }}>
+          <Modal.Body style={{ backgroundColor: "#191919" }}>
             {selectedOrder && selectedOrder.status === "PENDING" ? (
               <Text
                 style={{
                   fontSize: 16,
-                  fontWeight: "bold",
-                  color: "#FFF",
+                  fontWeight: "semibold",
+                  color: "#FFFFFF75",
                   marginBottom: 8,
                 }}
               >
@@ -264,9 +355,9 @@ const OrderList = ({ status, ordersData, refreshOrders }) => {
           <Modal.Footer
             style={{
               justifyContent: "center",
-              backgroundColor: "#000",
+              backgroundColor: "#191919",
               borderTopWidth: 1,
-              borderColor: "#808080",
+              borderColor: "#C0C0C025",
             }}
           >
             {selectedOrder && selectedOrder.status === "PENDING" ? (
@@ -279,16 +370,15 @@ const OrderList = ({ status, ordersData, refreshOrders }) => {
                     marginHorizontal: 10,
                     marginBottom: 10,
                   }}
-                  textStyle={{ color: "#000" }}
+                  textStyle={{ color: "#191919" }}
                 />
-                <DefaultButton
+                <OutlineButton
                   title="No"
                   onPress={() => setCancelModalVisible(false)}
                   style={{
-                    backgroundColor: "#FFF",
                     marginHorizontal: 10,
+                    width: "100%",
                   }}
-                  textStyle={{ color: "#000" }}
                 />
               </>
             ) : (
@@ -301,7 +391,7 @@ const OrderList = ({ status, ordersData, refreshOrders }) => {
                     marginHorizontal: 10,
                     marginBottom: 10,
                   }}
-                  textStyle={{ color: "#000" }}
+                  textStyle={{ color: "#191919" }}
                 />
                 <DefaultButton
                   title="Cancel"
@@ -310,7 +400,7 @@ const OrderList = ({ status, ordersData, refreshOrders }) => {
                     backgroundColor: "#FFF",
                     marginHorizontal: 10,
                   }}
-                  textStyle={{ color: "#000" }}
+                  textStyle={{ color: "#191919" }}
                 />
               </>
             )}
@@ -380,7 +470,7 @@ const OrderTransactionScreen = () => {
       <View
         style={{
           flex: 1,
-          backgroundColor: "#000",
+          backgroundColor: "#191919",
           paddingTop: insets.top,
         }}
       >
@@ -395,7 +485,7 @@ const OrderTransactionScreen = () => {
         flex: 1,
         paddingTop: insets.top - 20,
         paddingBottom: insets.bottom,
-        backgroundColor: "#000",
+        backgroundColor: "#191919",
       }}
       edges={["top", "left", "right"]}
     >
@@ -427,7 +517,7 @@ const OrderTransactionScreen = () => {
           initialRouteName={initialTab}
           screenOptions={{
             tabBarIndicatorStyle: { backgroundColor: "#FFF" },
-            tabBarStyle: { backgroundColor: "#000" },
+            tabBarStyle: { backgroundColor: "#191919" },
             tabBarLabelStyle: { fontWeight: "bold", color: "#FFF" },
             tabBarPressColor: "rgba(255, 255, 255, 0.2)",
             tabBarScrollEnabled: true,
@@ -446,7 +536,11 @@ const OrderTransactionScreen = () => {
           <Tab.Screen
             name="PROCESSING"
             children={() => (
-              <OrderList status="PROCESSING" ordersData={ordersData} refreshOrders={fetchOrders} />
+              <OrderList
+                status="PROCESSING"
+                ordersData={ordersData}
+                refreshOrders={fetchOrders}
+              />
             )}
           />
           <Tab.Screen
