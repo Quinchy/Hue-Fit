@@ -1,20 +1,19 @@
 // Frontend: LoginScreen.tsx
 
 import React, { useState } from 'react';
-import { Image, ScrollView, Alert } from 'react-native';
+import { Image, ScrollView, Alert, Pressable } from 'react-native';
 import { VStack, HStack, Text, Center } from 'native-base';
 import BackgroundProvider from '../../providers/BackgroundProvider';
 import CustomInput from '../../components/Input';
 import DefaultButton from '../../components/Button';
 import GradientCard from '../../components/GradientCard';
-import Link from '../../components/Link';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import LoadingSpinner from '../../components/Loading';
 import { useNavigation } from '@react-navigation/native';
 import { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import { EXPO_PUBLIC_API_URL } from '@env';
 
-type RootStackParamList = { Main: undefined; Register: undefined };
+type RootStackParamList = { Main: undefined; Register: undefined; ForgotPassword: undefined };
 
 export default function LoginScreen() {
   const navigation = useNavigation<NativeStackNavigationProp<RootStackParamList>>();
@@ -82,10 +81,21 @@ export default function LoginScreen() {
                 LOGIN
               </Text>
               <HStack alignItems="center" space={1}>
-                <Text fontSize="md" color="gray.400">
+                <Text fontSize="md" color="#C0C0C095">
                   Don't have an account?
                 </Text>
-                <Link title="REGISTER" onPress={() => navigation.navigate('Register')} />
+                <Pressable onPress={() => navigation.navigate('Register')}>
+                  {({ pressed }) => (
+                    <Text
+                      fontSize="md"
+                      fontWeight={'bold'}
+                      color="white"
+                      style={{ textDecorationLine: pressed ? 'underline' : 'none' }}
+                    >
+                      REGISTER
+                    </Text>
+                  )}
+                </Pressable>
               </HStack>
             </Center>
             <VStack space={4} alignItems="center">
@@ -102,9 +112,23 @@ export default function LoginScreen() {
                 onChangeText={setPassword}
                 isPassword
               />
-              <Text alignSelf="flex-end" color="gray.400" fontSize="sm" mt={-2} mb={2}>
-                Forgot Password?
-              </Text>
+              <Pressable
+                style={{ alignSelf: 'flex-end' }}
+                onPress={() => navigation.navigate('ForgotPassword')}
+              >
+                {({ pressed }) => (
+                  <Text
+                    color="white"
+                    fontSize="sm"
+                    fontWeight={'bold'}
+                    mt={-2}
+                    mb={2}
+                    style={{ textDecorationLine: pressed ? 'underline' : 'none' }}
+                  >
+                    Forgot Password?
+                  </Text>
+                )}
+              </Pressable>
               <DefaultButton title="LOGIN" onPress={handleLogin} />
             </VStack>
           </GradientCard>

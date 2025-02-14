@@ -1,12 +1,12 @@
 // src/screens/account/RegisterScreen.tsx
+
 import React from 'react';
-import { Image, ScrollView } from 'react-native';
+import { Image, ScrollView, Pressable } from 'react-native';
 import { VStack, HStack, Text, Center } from 'native-base';
 import BackgroundProvider from '../../providers/BackgroundProvider';
 import CustomInput from '../../components/Input';
 import DefaultButton from '../../components/Button';
 import GradientCard from '../../components/GradientCard';
-import Link from '../../components/Link';
 import { Formik } from 'formik';
 import * as Yup from 'yup';
 
@@ -43,10 +43,21 @@ export default function RegisterScreen({ navigation }) {
                 REGISTER
               </Text>
               <HStack alignItems="center" space={1}>
-                <Text fontSize="md" color="gray.400">
+                <Text fontSize="md" color="#C0C0C095">
                   Already have an account?
                 </Text>
-                <Link title="LOGIN" onPress={() => navigation.navigate('Login')} />
+                <Pressable onPress={() => navigation.navigate('Login')}>
+                  {({ pressed }) => (
+                    <Text
+                      fontSize="md"
+                      fontWeight="bold"
+                      color="white"
+                      style={{ textDecorationLine: pressed ? 'underline' : 'none' }}
+                    >
+                      LOGIN
+                    </Text>
+                  )}
+                </Pressable>
               </HStack>
             </Center>
 
@@ -55,7 +66,7 @@ export default function RegisterScreen({ navigation }) {
               <Text fontSize="lg" color="white" fontWeight="bold">
                 Personal Information
               </Text>
-              <Text fontSize="md" color="gray.400">
+              <Text fontSize="md" color="#C0C0C095">
                 Please fill the form with your personal information
               </Text>
             </VStack>

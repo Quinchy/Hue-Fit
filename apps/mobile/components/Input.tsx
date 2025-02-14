@@ -72,7 +72,7 @@ const CustomInput: React.FC<CustomInputProps> = ({
               <Icon
                 as={<Ionicons name={showPassword ? "eye-off" : "eye"} />}
                 size="sm"
-                color="gray.400"
+                color="#C0C0C095"
                 mr={5}
               />
             </Pressable>

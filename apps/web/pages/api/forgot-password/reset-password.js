@@ -1,9 +1,8 @@
-// pages/api/forgot-password/reset-password.js
 import nodemailer from "nodemailer";
 import cookie from "cookie";
 import prisma, { disconnectPrisma } from "@/utils/helpers";
 
-// Generate a random OTP
+// Generate a random OTP.
 const generateOtp = () => Math.floor(100000 + Math.random() * 900000).toString();
 
 export default async function handler(req, res) {
@@ -18,24 +17,29 @@ export default async function handler(req, res) {
   }
 
   try {
-    // Find vendor user using compound unique key (username, roleId: 2)
+    // For web, we'll look up a Vendor (roleId: 2); for mobile, a Customer (roleId: 3).
+    const isMobile = req.headers["x-platform"] === "mobile";
+    const roleId = isMobile ? 3 : 2;
+    const profileKey = isMobile ? "CustomerProfile" : "VendorProfile";
+
+    // Find user using compound unique key.
     const user = await prisma.user.findUnique({
-      where: { username_roleId: { username, roleId: 2 } },
-      include: { VendorProfile: true },
+      where: { username_roleId: { username, roleId } },
+      include: { [profileKey]: true },
     });
 
-    if (!user || !user.VendorProfile) {
-      return res.status(404).json({ error: "User not found or not a vendor." });
+    if (!user || !user[profileKey]) {
+      return res.status(404).json({ error: "User not found or profile missing." });
     }
 
-    if (user.VendorProfile.email.toLowerCase() !== email.toLowerCase()) {
+    if (user[profileKey].email?.toLowerCase() !== email.toLowerCase()) {
       return res.status(400).json({ error: "Email does not match the user." });
     }
 
-    // Generate OTP
+    // Generate OTP.
     const otp = generateOtp();
 
-    // Create a Nodemailer transporter
+    // Create a Nodemailer transporter.
     const transporter = nodemailer.createTransport({
       service: "gmail",
       auth: {
@@ -53,19 +57,22 @@ export default async function handler(req, res) {
       html: `<p>Your OTP for resetting your password is: <strong>${otp}</strong></p><p>It is valid for 5 minutes.</p>`,
     };
 
-    // Send email
+    // Send email.
     await transporter.sendMail(mailOptions);
 
-    // Store OTP in a cookie with a 5-minute expiration
-    res.setHeader(
-      "Set-Cookie",
-      cookie.serialize("otp", otp, {
-        httpOnly: true,
-        secure: process.env.NODE_ENV === "production",
-        maxAge: 5 * 60, // 5 minutes
-        path: "/",
-      })
-    );
+    // For web, store OTP in a cookie with a 5-minute expiration.
+    if (!isMobile) {
+      res.setHeader(
+        "Set-Cookie",
+        cookie.serialize("otp", otp, {
+          httpOnly: true,
+          secure: process.env.NODE_ENV === "production",
+          maxAge: 5 * 60, // 5 minutes
+          path: "/",
+        })
+      );
+    }
+    // For mobile, you may handle OTP storage differently.
 
     res.status(200).json({ success: true, message: "OTP sent successfully." });
   } catch (error) {

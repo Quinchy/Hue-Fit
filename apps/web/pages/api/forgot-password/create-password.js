@@ -1,4 +1,3 @@
-// pages/api/forgot-password/create-password.js
 import bcrypt from "bcrypt";
 import prisma, { disconnectPrisma } from "@/utils/helpers";
 import cookie from "cookie";
@@ -18,47 +17,64 @@ export default async function handler(req, res) {
     return res.status(400).json({ error: "Passwords do not match." });
   }
 
-  // Check that the OTP cookie exists
-  const cookies = req.headers.cookie ? cookie.parse(req.headers.cookie) : {};
-  if (!cookies.otp) {
-    return res.status(400).json({ error: "OTP expired or missing." });
-  }
+  // Check if the request is from mobile by inspecting a custom header.
+  const isMobile = req.headers["x-platform"] === "mobile";
 
-  // Compare the provided OTP with the one in the cookie
-  if (otp !== cookies.otp) {
-    return res.status(400).json({ error: "Invalid OTP." });
-  }
-
-  try {
-    // Find vendor user using compound unique key (username, roleId: 2)
-    const user = await prisma.user.findUnique({
-      where: { username_roleId: { username, roleId: 2 } },
-      include: { VendorProfile: true },
-    });
-
-    if (!user || !user.VendorProfile) {
-      return res.status(404).json({ error: "User not found or not a vendor." });
+  if (!isMobile) {
+    // For web requests, check that the OTP cookie exists.
+    const cookies = req.headers.cookie ? cookie.parse(req.headers.cookie) : {};
+    if (!cookies.otp) {
+      return res.status(400).json({ error: "OTP expired or missing." });
     }
 
-    // Verify that the email on file matches the provided email
-    if (user.VendorProfile.email.toLowerCase() !== email.toLowerCase()) {
+    // Compare the provided OTP with the one in the cookie.
+    if (otp !== cookies.otp) {
+      return res.status(400).json({ error: "Invalid OTP." });
+    }
+  }
+  // If mobile, skip OTP cookie verification.
+
+  try {
+    // Determine which role/profile to use:
+    // - For mobile, use Customer (roleId: 3, CustomerProfile)
+    // - Otherwise, use Vendor (roleId: 2, VendorProfile)
+    const roleId = isMobile ? 3 : 2;
+    const profileKey = isMobile ? "CustomerProfile" : "VendorProfile";
+
+    // Find user using compound unique key.
+    const user = await prisma.user.findUnique({
+      where: { username_roleId: { username, roleId } },
+      include: { [profileKey]: true },
+    });
+
+    if (!user || !user[profileKey]) {
+      return res.status(404).json({ error: "User not found or profile missing." });
+    }
+
+    // Verify that the email on file matches the provided email.
+    if (user[profileKey].email?.toLowerCase() !== email.toLowerCase()) {
       return res.status(400).json({ error: "Email does not match the user." });
     }
 
-    // Hash the new password
+    // Hash the new password.
     const hashedPassword = await bcrypt.hash(newPassword, 10);
 
-    // Update the user's password
+    // Update the user's password.
     await prisma.user.update({
       where: { id: user.id },
       data: { password: hashedPassword },
     });
 
-    // Clear the OTP cookie
-    res.setHeader("Set-Cookie", cookie.serialize("otp", "", {
-      maxAge: -1,
-      path: "/",
-    }));
+    // For web, clear the OTP cookie.
+    if (!isMobile) {
+      res.setHeader(
+        "Set-Cookie",
+        cookie.serialize("otp", "", {
+          maxAge: -1,
+          path: "/",
+        })
+      );
+    }
 
     res.status(200).json({ success: true, message: "Password updated successfully." });
   } catch (error) {
