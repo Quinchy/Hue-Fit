@@ -1,22 +1,59 @@
 // src/screens/account/InputScreen.tsx
 import React, { useState, useEffect } from "react";
-import { ScrollView } from "react-native";
-import { SafeAreaView } from "react-native-safe-area-context";
-import { VStack, Text, Center, Select } from "native-base";
-import BackgroundProvider from "../../providers/BackgroundProvider";
+import { ScrollView, TouchableOpacity, Image, StyleSheet } from "react-native";
+import { VStack, Text, View } from "native-base";
 import CustomInput from "../../components/Input";
-import CustomSelect from "../../components/Select";
 import DefaultButton from "../../components/Button";
 import GradientCard from "../../components/GradientCard";
 import LoadingSpinner from "../../components/Loading";
 import * as NavigationBar from "expo-navigation-bar";
 import AsyncStorage from "@react-native-async-storage/async-storage";
-import { View } from "native-base";
 import { EXPO_PUBLIC_API_URL } from "@env";
+import { Asterisk } from "lucide-react-native";
 
-const InputScreen: React.FC = ({ navigation }) => {
+interface FashionRadioGroupProps {
+  selectedValue: string;
+  onValueChange: (value: string) => void;
+}
+
+const FashionRadioGroup: React.FC<FashionRadioGroupProps> = ({ selectedValue, onValueChange }) => {
+  // Define the available options along with their images
+  const options = [
+    { label: "Casual", image: require("../../assets/casual.png") },
+    { label: "Smart Casual", image: require("../../assets/smart-casual.png") },
+    { label: "Formal", image: require("../../assets/formal.png") },
+  ];
+
+  return (
+    <View style={styles.radioGroupContainer}>
+      {options.map((option) => {
+        const isSelected = selectedValue === option.label;
+        return (
+          <TouchableOpacity
+            key={option.label}
+            style={[
+              styles.optionContainer,
+              {
+                borderColor: isSelected ? "#fff" : "#4E4E4E",
+                borderWidth: isSelected ? 2 : 1,
+                borderStyle: isSelected ? "solid" : "dashed",
+              },
+            ]}
+            onPress={() => onValueChange(option.label)}
+          >
+            <Image source={option.image} style={styles.optionImage} resizeMode="contain" />
+            <Text style={styles.optionText}>{option.label}</Text>
+          </TouchableOpacity>
+        );
+      })}
+    </View>
+  );
+};
+
+const InputScreen: React.FC<any> = ({ navigation }) => {
   const [outfitName, setOutfitName] = useState("");
-  const [preference, setPreference] = useState("All Random");
+  // Default to "Casual" since "All Random" option is removed
+  const [preference, setPreference] = useState("Casual");
   const [loading, setLoading] = useState(false);
   const [userId, setUserId] = useState<number | null>(null);
   const [loadingUser, setLoadingUser] = useState(true);
@@ -101,7 +138,7 @@ const InputScreen: React.FC = ({ navigation }) => {
         ].filter((color) => color.hexcode);
         const passedData = {
           outfit_name,
-          ...best_combination, // Use the API-returned best_combination directly
+          ...best_combination,
           color_palette,
           user_inputs: userFeatures,
         };
@@ -146,45 +183,61 @@ const InputScreen: React.FC = ({ navigation }) => {
 
   return (
     <ScrollView style={{ backgroundColor: "#191919" }}>
-      <View style={{ marginTop: 60, marginLeft: 15, marginBottom: 20 }}>
-        <Text fontSize="2xl" fontWeight="bold" color="white">
-          GENERATE OUTFIT
+      <View style={{ marginTop: 45, marginLeft: 15, marginBottom: 20 }}>
+        <Text fontSize={28} fontWeight="bold" color="white">
+          Generate Outfit
         </Text>
       </View>
       <GradientCard>
-        <VStack space={4}>
+        <VStack space={4} padding={4}>
           <CustomInput
-            label="Outfit Name"
+            label="Outfit Name (optional)"
             placeholder="Give this outfit a name"
             value={outfitName}
             onChangeText={setOutfitName}
             variant="filled"
-            required
           />
           <View>
             <Text fontSize="lg" fontWeight="bold" color="white" mt={4}>
-              Your Outfit Preference
+              Outfit Style <Asterisk size={12} color="#C0C0C0" style={{ marginLeft: 4, marginTop: 2 }} />
             </Text>
             <Text fontSize="md" color="#C0C0C0" fontWeight="light">
               Select a fashion style and generate outfit.
             </Text>
           </View>
-          <CustomSelect
-            label="Fashion Style"
-            value={preference}
-            onChange={(value) => setPreference(value)}
-            required
-          >
-            <Select.Item label="All Random" value="All Random" />
-            <Select.Item label="Casual" value="Casual" />
-            <Select.Item label="Smart Casual" value="Smart Casual" />
-            <Select.Item label="Formal" value="Formal" />
-          </CustomSelect>
-          <DefaultButton mt={10} mb={185} title="GENERATE" onPress={handleGenerate} />
+          {/* Replace CustomSelect with our custom radio group in grid layout */}
+          <FashionRadioGroup selectedValue={preference} onValueChange={setPreference} />
+          <DefaultButton mt={10} mb={75} title="GENERATE" onPress={handleGenerate} />
         </VStack>
       </GradientCard>
     </ScrollView>
   );
 };
+
+const styles = StyleSheet.create({
+  radioGroupContainer: {
+    flexDirection: "row",
+    flexWrap: "wrap",
+    justifyContent: "space-between",
+    marginTop: 10,
+  },
+  optionContainer: {
+    alignItems: "center",
+    padding: 10,
+    borderRadius: 8,
+    width: "48%",
+    marginBottom: 10,
+  },
+  optionImage: {
+    width: 60,
+    height: 60,
+    marginBottom: 8,
+  },
+  optionText: {
+    fontSize: 14,
+    textAlign: "center",
+    color: "#fff",
+  },
+});
 
 export default InputScreen;

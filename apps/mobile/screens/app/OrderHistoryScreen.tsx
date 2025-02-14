@@ -68,7 +68,7 @@ const OrderHistoryScreen = () => {
   if (loading) {
     return (
       <View style={{ flex: 1, backgroundColor: "#000", paddingTop: insets.top }}>
-        <LoadingSpinner size={300} messages="Loading completed orders..." visible={true} />
+        <LoadingSpinner size={300} messages="Loading order history..." visible={true} />
       </View>
     );
   }

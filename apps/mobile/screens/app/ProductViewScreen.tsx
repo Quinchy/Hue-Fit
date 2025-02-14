@@ -265,6 +265,27 @@ const ProductViewScreen = ({ route, navigation }) => {
                   <Camera color="#fff" size={24} />
                 </TouchableOpacity>
 
+                {/* AR Try-On Button */}
+                <TouchableOpacity
+                  style={[
+                    styles.backButton,
+                    { marginLeft: 10 },
+                    !values.selectedVariant?.pngClotheURL && { opacity: 0.5 }
+                  ]}
+                  onPress={() => {
+                    if (values.selectedVariant?.pngClotheURL) {
+                      navigation.navigate('ArTryOn', {
+                        pngClotheURL: values.selectedVariant.pngClotheURL,
+                        type: parentProduct?.typeName ?? '',
+                        tag: parentProduct?.tagName ?? '',
+                      });
+                    }
+                  }}
+                  disabled={!values.selectedVariant?.pngClotheURL}
+                >
+                  <Text style={{ color: '#fff', fontSize: 12 }}>AR Try-On</Text>
+                </TouchableOpacity>
+
                 {/* New AI Try-On Button */}
                 <TouchableOpacity
                   style={[

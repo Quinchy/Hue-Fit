@@ -141,7 +141,7 @@ async function addPredefinedValues(shopId) {
 function generateTagsData(types, shopId) {
   const typeIds = types.map((type) => type.id);
   return [
-    { typeId: typeIds[0], shopId, name: "BLAZERS" },
+    { typeId: typeIds[0], shopId, name: "BLAZER" },
     { typeId: typeIds[0], shopId, name: "COATS" },
     { typeId: typeIds[0], shopId, name: "CARDIGANS" },
     { typeId: typeIds[0], shopId, name: "VESTS" },
@@ -149,6 +149,8 @@ function generateTagsData(types, shopId) {
     { typeId: typeIds[1], shopId, name: "T-SHIRTS" },
     { typeId: typeIds[1], shopId, name: "POLO SHIRT" },
     { typeId: typeIds[1], shopId, name: "SHORT SLEEVES" },
+    { typeId: typeIds[1], shopId, name: "LONG SLEEVES" },
+    { typeId: typeIds[1], shopId, name: "TURTLE NECK LONG SLEEVES" },
     { typeId: typeIds[2], shopId, name: "SHORTS" },
     { typeId: typeIds[2], shopId, name: "JEANS" },
     { typeId: typeIds[2], shopId, name: "CHINOS" },

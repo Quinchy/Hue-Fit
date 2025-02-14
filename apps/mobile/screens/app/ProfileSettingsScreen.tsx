@@ -203,7 +203,7 @@ const styles = StyleSheet.create({
   },
   headerTitle: {
     color: "white",
-    fontSize: 22,
+    fontSize: 28,
     fontWeight: "bold",
   },
   notificationIcon: {

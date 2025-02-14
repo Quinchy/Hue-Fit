@@ -103,7 +103,7 @@ const ShopScreen = ({ navigation }) => {
         columnWrapperStyle={styles.columnWrapper}
         contentContainerStyle={styles.listContent}
         ListHeaderComponent={
-          <VStack alignItems="center" mt={10}>
+          <VStack alignItems="center" mt={12}>
             <Box
               width="100%"
               mb={2}
@@ -111,7 +111,7 @@ const ShopScreen = ({ navigation }) => {
               justifyContent="center"
               alignItems="center"
             >
-              <Box flex={1} mx={2}>
+              <Box flex={1} mx={4}>
                 <SearchBar
                   placeholder="Search products..."
                   onChangeText={(text) => setSearchQuery(text)}
@@ -141,7 +141,7 @@ const ShopScreen = ({ navigation }) => {
 const styles = StyleSheet.create({
   columnWrapper: {
     justifyContent: 'space-between',
-    paddingHorizontal: 7,
+    paddingHorizontal: 15,
   },
   loadingContainerFull: {
     flex: 1,

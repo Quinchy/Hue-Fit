@@ -34,6 +34,7 @@ import PlaygroundScreen from "./screens/app/PlaygroundScreen";
 import NotificationScreen from "./screens/app/NotificationScreen";
 import GeneratedOutfitScreen from "./screens/app/GeneratedOutfitScreen";
 import ViewNotificationScreen from "./screens/app/ViewNotificationScreen";
+import ArTryOnScreen from "./screens/app/ArTryOnScreen";
 
 // Load Geist Fonts
 const loadFonts = async () => {
@@ -185,6 +186,7 @@ const AppNavigator = ({ initialRoute }) => (
     <Stack.Screen name="Notification" component={NotificationScreen} />
     <Stack.Screen name="GeneratedOutfit" component={GeneratedOutfitScreen} />
     <Stack.Screen name="ViewNotification" component={ViewNotificationScreen} />
+    <Stack.Screen name="ArTryOn" component={ArTryOnScreen} />
   </Stack.Navigator>
 );
 

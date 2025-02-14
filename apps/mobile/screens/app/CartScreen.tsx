@@ -389,7 +389,7 @@ const CartScreen = ({ navigation, route }) => {
                 <ArrowLeft color="#fff" size={24} />
               </Pressable>
             )}
-            <Text style={styles.cartTitle}>Cart</Text>
+            <Text style={styles.cartTitle}>My Cart</Text>
           </HStack>
 
           <VStack>
@@ -628,7 +628,7 @@ const styles = StyleSheet.create({
   },
   scrollViewContent: {
     paddingBottom: 50,
-    paddingHorizontal: 10,
+    paddingHorizontal: 15,
   },
   backButton: {
     marginTop: 5,
@@ -639,7 +639,6 @@ const styles = StyleSheet.create({
     fontSize: 28,
     fontWeight: 'bold',
     paddingTop: 30,
-    paddingLeft: 10,
   },
   shopGroup: {
     flexDirection: 'column',
