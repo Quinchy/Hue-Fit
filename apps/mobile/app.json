@@ -27,9 +27,7 @@
         "foregroundImage": "./assets/adaptive-icon.png",
         "backgroundColor": "#191919"
       },
-      "permissions": [
-        "CAMERA"
-      ],
+      "permissions": ["CAMERA"],
       "package": "com.yourcompany.huefit",
       "versionCode": 1
     },
@@ -48,20 +46,10 @@
     },
     "plugins": [
       [
-        "@reactvision/react-viro",
-        {
-          "android": {
-            "xRMode": ["GVR", "AR", "OVR_MOBILE"]
-          }
-        }
-      ],
-      [
         "expo-camera",
         {
           "cameraPermission": "This app uses the camera to allow you to try on virtual outfits."
-        }
-      ],
-      [
+        },
         "expo-image-picker",
         {
           "photosPermission": "The app accesses your photos to let you share them with your friends."
@@ -71,6 +59,9 @@
     "updates": {
       "fallbackToCacheTimeout": 0
     },
+    "assetBundlePatterns": [
+      "**/*"
+    ],
     "extra": {
       "apiUrl": "https://hue-fit-web.vercel.app",
       "eas": {

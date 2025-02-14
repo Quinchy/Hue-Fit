@@ -22,8 +22,8 @@ export default function App({ Component, pageProps: { session, ...pageProps } })
   let customStyle = '';
   let divClassName = 'flex flex-col justify-center items-center';
 
-  // Hide Navbar on shop setup/status pages and virtual fitting mobile routes.
-  const hideNavbarPaths = [routes.shopSetup, routes.shopStatus, routes.shopSuccess];
+  // Hide Navbar on shop setup/status pages, virtual fitting mobile routes, and the /test route.
+  const hideNavbarPaths = [routes.shopSetup, routes.shopStatus, routes.shopSuccess, '/test'];
   const isNavbarHidden = hideNavbarPaths.includes(normalizedPathname);
   const isVirtualFittingMobile = normalizedPathname.startsWith(routes.virtualFittingMobile);
 
