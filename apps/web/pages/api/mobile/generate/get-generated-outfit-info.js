@@ -1,20 +1,33 @@
-// File: pages/api/mobile/generate/get-wardrobe.js
+// File: pages/api/mobile/generate/get-generated-outfit-info.js
 import prisma from '@/utils/helpers';
 
 export default async function handler(req, res) {
-  const { wardrobeId } = req.body;
-  if (!wardrobeId) {
-    return res.status(400).json({ message: 'Wardrobe ID is required' });
+  console.log("Starting handler for get-generated-outfit-info");
+
+  if (req.method !== "POST") {
+    console.log("Method not allowed:", req.method);
+    return res.status(405).json({ message: "Method not allowed" });
   }
+
+  // Use outfitId as provided by the client
+  const { outfitId } = req.body;
+  console.log("Received outfitId:", outfitId);
+
+  if (!outfitId) {
+    console.log("Missing outfitId in request body");
+    return res.status(400).json({ message: "Missing outfitId" });
+  }
+
   try {
-    const wardrobe = await prisma.generatedOutfit.findUnique({
-      where: { id: Number(wardrobeId) },
+    console.log("Fetching generated outfit info for ID:", outfitId);
+    const generatedOutfit = await prisma.generatedOutfit.findUnique({
+      where: { id: Number(outfitId) },
       include: {
         items: {
           include: {
             ProductVariant: {
               include: {
-                Product: { include: { Type: true } },
+                Product: true,
                 Color: true,
                 ProductVariantImage: true,
               },
@@ -23,44 +36,45 @@ export default async function handler(req, res) {
         },
       },
     });
-    if (!wardrobe) {
-      return res.status(404).json({ message: 'Wardrobe not found' });
+
+    if (!generatedOutfit) {
+      console.log("Generated outfit not found for ID:", outfitId);
+      return res.status(404).json({ message: "Generated outfit not found" });
     }
-    const typeOrderMapping = {
-      "OUTERWEAR": 1,
-      "UPPERWEAR": 2,
-      "LOWERWEAR": 3,
-      "FOOTWEAR": 4,
+
+    console.log("Generated outfit fetched successfully");
+
+    // Transform the data for UI consumption
+    const items = generatedOutfit.items.map(item => {
+      const pv = item.ProductVariant;
+      return {
+        productId: pv.productId,
+        price: pv.price,
+        productName: pv.Product?.name,
+        colorName: pv.Color?.name,
+        colorHex: pv.Color?.hexcode,
+        productVariantImage:
+          pv.ProductVariantImage && pv.ProductVariantImage.length > 0
+            ? pv.ProductVariantImage[0].imageURL
+            : null,
+      };
+    });
+
+    const responseData = {
+      id: generatedOutfit.id,
+      name: generatedOutfit.name,
+      style: generatedOutfit.style,
+      items,
     };
-    const sortedItems = wardrobe.items.sort((a, b) => {
-      const typeA = a.ProductVariant.Product.Type.name.toUpperCase();
-      const typeB = b.ProductVariant.Product.Type.name.toUpperCase();
-      const orderA = typeOrderMapping[typeA] || 99;
-      const orderB = typeOrderMapping[typeB] || 99;
-      return orderA - orderB;
-    });
-    const colorPalette = [];
-    sortedItems.forEach(item => {
-      const color = item.ProductVariant.Color;
-      if (color && !colorPalette.find(c => c.hexcode === color.hexcode)) {
-        const productType = item.ProductVariant.Product.Type.name;
-        colorPalette.push({ name: productType, hexcode: color.hexcode });
-      }
-    });
-    res.status(200).json({
-      wardrobe: {
-        id: wardrobe.id,
-        userId: wardrobe.userId,
-        name: wardrobe.name,
-        style: wardrobe.style,
-        created_at: wardrobe.created_at,
-        updated_at: wardrobe.updated_at,
-        items: sortedItems,
-        color_palette: colorPalette,
-      },
-    });
+
+    res.status(200).json(responseData);
   } catch (error) {
-    console.error("Error fetching wardrobe:", error);
-    res.status(500).json({ message: 'Internal server error', error: error.message });
+    console.error("Error fetching generated outfit info:", error);
+    res.status(500).json({
+      message: "Internal server error",
+      error: error.message,
+    });
   }
+
+  console.log("Handler for get-generated-outfit-info finished");
 }

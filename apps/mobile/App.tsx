@@ -32,9 +32,10 @@ import InputScreen from "./screens/app/InputScreen";
 import ProductView from "./screens/app/ProductViewScreen";
 import PlaygroundScreen from "./screens/app/PlaygroundScreen";
 import NotificationScreen from "./screens/app/NotificationScreen";
-import GeneratedOutfitScreen from "./screens/app/GeneratedOutfitScreen";
 import ViewNotificationScreen from "./screens/app/ViewNotificationScreen";
 import ArTryOnScreen from "./screens/app/ArTryOnScreen";
+import GeneratedOutfitListScreen from "./screens/app/GeneratedOutfitListScreen";
+import GeneratedOutfitViewScreen from "./screens/app/GeneratedOutfitViewScreen";
 
 // Load Geist Fonts
 const loadFonts = async () => {
@@ -184,9 +185,10 @@ const AppNavigator = ({ initialRoute }) => (
     <Stack.Screen name="AiTryOn" component={AiTryOnScreen} />
     <Stack.Screen name="ProductView" component={ProductView} />
     <Stack.Screen name="Notification" component={NotificationScreen} />
-    <Stack.Screen name="GeneratedOutfit" component={GeneratedOutfitScreen} />
     <Stack.Screen name="ViewNotification" component={ViewNotificationScreen} />
     <Stack.Screen name="ArTryOn" component={ArTryOnScreen} />
+    <Stack.Screen name="GeneratedOutfitList" component={GeneratedOutfitListScreen} />
+    <Stack.Screen name="GeneratedOutfitView" component={GeneratedOutfitViewScreen} />
   </Stack.Navigator>
 );
 

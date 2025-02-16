@@ -1,74 +1,83 @@
-import React, { useEffect, useRef } from 'react';
+import React, { useRef, useEffect, useState } from 'react';
 import * as THREE from 'three';
-// Import ARButton from Three.js examples (ensure your bundler supports this)
-import { ARButton } from 'three/examples/jsm/webxr/ARButton';
+import { OBJLoader } from 'three/examples/jsm/loaders/OBJLoader';
 
-function ARApp() {
+function CameraOverlayObj() {
+  const videoRef = useRef(null);
   const mountRef = useRef(null);
+  const [isClient, setIsClient] = useState(false);
 
   useEffect(() => {
-    // Create the Three.js scene and camera
+    // Mark as client only to avoid SSR hydration issues.
+    setIsClient(true);
+  }, []);
+
+  useEffect(() => {
+    if (!isClient || !mountRef.current) return;
+
+    // 1. Set up the video background (camera feed)
+    navigator.mediaDevices
+      .getUserMedia({ video: true })
+      .then((stream) => {
+        if (videoRef.current) {
+          videoRef.current.srcObject = stream;
+          videoRef.current.play();
+        }
+      })
+      .catch((err) => {
+        console.error('Error accessing camera:', err);
+      });
+
+    // 2. Set up Three.js scene for the OBJ model
     const scene = new THREE.Scene();
+    // No explicit background so the video shows through.
+    scene.background = null;
+
     const camera = new THREE.PerspectiveCamera(
       70,
       window.innerWidth / window.innerHeight,
       0.01,
-      20
+      100
     );
-    camera.position.set(0, 1.6, 3);
+    camera.position.z = 2;
 
-    // Create the renderer and enable XR
-    const renderer = new THREE.WebGLRenderer({ antialias: true, alpha: true });
+    const renderer = new THREE.WebGLRenderer({ alpha: true, antialias: true });
+    // Transparent canvas so the camera feed shows through.
+    renderer.setClearColor(0x000000, 0);
     renderer.setSize(window.innerWidth, window.innerHeight);
-    renderer.xr.enabled = true;
     mountRef.current.appendChild(renderer.domElement);
 
-    // Check for immersive-ar support
-    if (navigator.xr) {
-      navigator.xr.isSessionSupported('immersive-ar').then((supported) => {
-        if (supported) {
-          // Add the AR button if AR is supported
-          document.body.appendChild(ARButton.createButton(renderer));
-        } else {
-          // Display fallback if immersive AR is not supported
-          const warning = document.createElement('div');
-          warning.style.position = 'absolute';
-          warning.style.top = '10px';
-          warning.style.left = '10px';
-          warning.style.padding = '8px';
-          warning.style.backgroundColor = 'rgba(0, 0, 0, 0.5)';
-          warning.style.color = '#fff';
-          warning.innerHTML = 'Immersive AR is not supported on this device.';
-          document.body.appendChild(warning);
-        }
+    // 3. Download and parse the OBJ file manually
+    const loader = new OBJLoader();
+    const objUrl =
+      'https://bjymhfrftpseknpnlbse.supabase.co/storage/v1/object/public/products/product-3d-virtual-fitting/Male_Tshirt.obj';
+    fetch(objUrl)
+      .then((response) => response.text())
+      .then((data) => {
+        const object = loader.parse(data);
+        // Adjust position and scale if necessary
+        object.position.set(0, 0, 0);
+        object.scale.set(1, 1, 1);
+        // Apply a basic white material to all meshes to ensure visibility
+        object.traverse((child) => {
+          if (child.isMesh) {
+            child.material = new THREE.MeshBasicMaterial({ color: 0xffffff });
+          }
+        });
+        scene.add(object);
+      })
+      .catch((error) => {
+        console.error('Error loading OBJ file:', error);
       });
-    } else {
-      // Display fallback if WebXR is unavailable
-      const warning = document.createElement('div');
-      warning.style.position = 'absolute';
-      warning.style.top = '10px';
-      warning.style.left = '10px';
-      warning.style.padding = '8px';
-      warning.style.backgroundColor = 'rgba(0, 0, 0, 0.5)';
-      warning.style.color = '#fff';
-      warning.innerHTML = 'WebXR is not available on this device.';
-      document.body.appendChild(warning);
-    }
 
-    // Add a simple cube as a placeholder object
-    const geometry = new THREE.BoxGeometry(0.2, 0.2, 0.2);
-    const material = new THREE.MeshNormalMaterial();
-    const cube = new THREE.Mesh(geometry, material);
-    scene.add(cube);
-
-    // Animation loop: update and render the scene
-    renderer.setAnimationLoop(() => {
-      cube.rotation.x += 0.01;
-      cube.rotation.y += 0.01;
+    // 4. Animation loop: render the scene continuously
+    const animate = () => {
+      requestAnimationFrame(animate);
       renderer.render(scene, camera);
-    });
+    };
+    animate();
 
-    // Handle window resizing
+    // 5. Handle window resizing
     const onWindowResize = () => {
       camera.aspect = window.innerWidth / window.innerHeight;
       camera.updateProjectionMatrix();
@@ -79,11 +88,47 @@ function ARApp() {
     // Cleanup on unmount
     return () => {
       window.removeEventListener('resize', onWindowResize);
-      mountRef.current.removeChild(renderer.domElement);
+      if (mountRef.current && renderer.domElement.parentNode === mountRef.current) {
+        mountRef.current.removeChild(renderer.domElement);
+      }
+      if (videoRef.current && videoRef.current.srcObject) {
+        const tracks = videoRef.current.srcObject.getTracks();
+        tracks.forEach((track) => track.stop());
+      }
     };
-  }, []);
+  }, [isClient]);
 
-  return <div ref={mountRef} style={{ width: '100%', height: '100vh' }} />;
+  if (!isClient) return null; // Prevent SSR rendering
+
+  return (
+    <div style={{ position: 'relative', width: '100%', height: '100vh' }}>
+      {/* Video background */}
+      <video
+        ref={videoRef}
+        style={{
+          position: 'absolute',
+          top: 0,
+          left: 0,
+          width: '100%',
+          height: '100%',
+          objectFit: 'cover',
+          zIndex: 1,
+        }}
+      />
+      {/* Three.js canvas overlay */}
+      <div
+        ref={mountRef}
+        style={{
+          position: 'absolute',
+          top: 0,
+          left: 0,
+          width: '100%',
+          height: '100%',
+          zIndex: 2,
+        }}
+      />
+    </div>
+  );
 }
 
-export default ARApp;
+export default CameraOverlayObj;

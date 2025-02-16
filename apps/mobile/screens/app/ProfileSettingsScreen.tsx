@@ -175,7 +175,7 @@ const ProfileSettingsScreen = () => {
             <Text style={styles.menuText}>Order History</Text>
           </AnimatedPressable>
           <AnimatedPressable
-            onPress={() => navigation.navigate("GeneratedOutfits")}
+            onPress={() => navigation.navigate("GeneratedOutfitList")}
             style={styles.menuItem}
           >
             <Shirt size={24} stroke="white" strokeWidth={2} />
