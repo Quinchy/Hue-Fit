@@ -74,7 +74,7 @@ const GeneratedOutfitViewScreen = () => {
       setLoading(true);
       try {
         const response = await fetch(
-          `http://192.168.254.105:3000/api/mobile/generate/get-generated-outfit-info`,
+          `${EXPO_PUBLIC_API_URL}/api/mobile/generate/get-generated-outfit-info`,
           {
             method: "POST",
             headers: { "Content-Type": "application/json" },

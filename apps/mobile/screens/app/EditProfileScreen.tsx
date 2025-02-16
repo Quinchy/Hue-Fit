@@ -80,7 +80,7 @@ export default function EditProfileScreen({ navigation }) {
         const storedUser = storedUserStr ? JSON.parse(storedUserStr) : null;
         if (storedUser) {
           setUserId(storedUser.id);
-          const response = await fetch("http://192.168.254.105:3000/api/mobile/profile/get-user-info", {
+          const response = await fetch(`${EXPO_PUBLIC_API_URL}/api/mobile/profile/get-user-info`, {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({ userId: storedUser.id })
@@ -195,7 +195,7 @@ export default function EditProfileScreen({ navigation }) {
                     Alert.alert("Error", "Please enter valid numeric values for Height, Weight, and Age.");
                     return;
                   }
-                  const apiUrl = "http://192.168.254.105:3000/api/mobile/profile/edit-user-info";
+                  const apiUrl = `${EXPO_PUBLIC_API_URL}/api/mobile/profile/edit-user-info`;
                   const response = await fetch(apiUrl, {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },

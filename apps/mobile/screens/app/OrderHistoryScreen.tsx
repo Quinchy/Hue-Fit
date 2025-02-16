@@ -7,6 +7,7 @@ import { VStack, Text, Box, HStack } from "native-base";
 import { ArrowLeft } from "lucide-react-native";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import LoadingSpinner from "../../components/Loading";
+import { EXPO_PUBLIC_API_URL } from "@env";
 
 const OrderHistoryScreen = () => {
   const navigation = useNavigation();
@@ -39,7 +40,7 @@ const OrderHistoryScreen = () => {
 
     try {
       const response = await fetch(
-        "http://192.168.254.105:3000/api/mobile/orders/get-completed-orders",
+        `${EXPO_PUBLIC_API_URL}/api/mobile/orders/get-completed-orders`,
         {
           method: "POST",
           headers: { "Content-Type": "application/json" },

@@ -11,6 +11,7 @@ import CustomInput from "../../components/Input";
 import DefaultButton from "../../components/Button";
 import OutlineButton from "../../components/OutlineButton";
 import LoadingSpinner from "../../components/Loading";
+import { EXPO_PUBLIC_API_URL } from "@env";
 
 const Tab = createMaterialTopTabNavigator();
 
@@ -48,7 +49,7 @@ const OrderList = ({ status, ordersData, refreshOrders }) => {
 
     try {
       const response = await fetch(
-        `http://192.168.254.105:3000/api/mobile/orders/cancel-order`,
+        `${EXPO_PUBLIC_API_URL}/api/mobile/orders/cancel-order`,
         {
           method: "POST",
           headers: { "Content-Type": "application/json" },
@@ -438,7 +439,7 @@ const OrderTransactionScreen = () => {
 
     try {
       const response = await fetch(
-        "http://192.168.254.105:3000/api/mobile/orders/get-orders",
+        `${EXPO_PUBLIC_API_URL}/api/mobile/orders/get-orders`,
         {
           method: "POST",
           headers: { "Content-Type": "application/json" },
