@@ -23,7 +23,14 @@ const gloock = Gloock({
 
 export default function Hero() {
   const [scope, animate] = useAnimate();
-
+  const handleDownload = () => {
+    const link = document.createElement("a");
+    link.href = "/HueFit-ver1.0.0.apk"; // Ensure the APK is in your public folder
+    link.download = "HueFit.apk"; // Optional: specify the default filename
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+  };
   useEffect(() => {
     animate("img", { opacity: [0, 1] }, { duration: 0.5, delay: stagger(0.15) });
   }, [animate]);
@@ -180,7 +187,10 @@ export default function Hero() {
           {"for virtual fitting, to ensure that you already know the outfit matches your looks."}
         </p>
         <div className="flex flex-row items-center gap-5 z-10">
-          <button className="flex flex-row items-center justify-center bg-primary border-muted/30 py-4 border-2 rounded-lg shadow-primary/25 shadow-md min-w-[20rem] hover:ring-2 hover:ring-primary duration-300 ease-in-out">
+          <button
+            onClick={handleDownload}
+            className="flex flex-row items-center justify-center bg-primary border-muted/30 py-4 border-2 rounded-lg shadow-primary/25 shadow-md min-w-[20rem] hover:ring-2 hover:ring-primary duration-300 ease-in-out"
+          >
             <p className="uppercase tracking-widest text-pure font-bold text-md">Try Hue-Fit</p>
             <Download className="mb-[2px] stroke-[3px] stroke-pure ml-1" width={20} height={20} />
           </button>
