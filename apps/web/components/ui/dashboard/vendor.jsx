@@ -236,7 +236,7 @@ export default function VendorDashboard() {
                 <CardContent>
                   {chartData.length === 0 ? (
                     <p className="text-center text-lg font-extralight text-primary/45 mt-[13rem]">
-                      You haven't created any products yet.
+                      {"You haven't created any products yet."}
                     </p>
                   ) : (
                     <ChartContainer config={chartConfig} className="w-full h-fit-content">
