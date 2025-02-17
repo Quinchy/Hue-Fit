@@ -9,20 +9,26 @@ export default async function getProducts(req, res) {
   const page = parseInt(req.query.page) || 1;
   const limit = parseInt(req.query.limit) || 10;
   const skip = (page - 1) * limit;
+  const search = req.query.search || '';
 
   try {
     const productsData = await prisma.product.findMany({
       skip,
       take: limit,
-      orderBy: {
-        id: 'asc', // or any preferred sorting field
-      },
+      orderBy: { id: 'asc' },
+      // Use the search query if provided
+      where: search
+        ? {
+            name: {
+              contains: search,
+              mode: 'insensitive',
+            },
+          }
+        : {},
       include: {
         ProductVariant: {
           take: 1,
-          orderBy: {
-            id: 'asc',
-          },
+          orderBy: { id: 'asc' },
         },
       },
     });
@@ -30,7 +36,7 @@ export default async function getProducts(req, res) {
     const products = productsData.map((product) => {
       const firstVariant = product.ProductVariant[0];
       return {
-        id: product.id, // Pass product.id
+        id: product.id,
         productVariantNo: firstVariant?.productVariantNo || '',
         thumbnailURL: product.thumbnailURL || '',
         productName: product.name,

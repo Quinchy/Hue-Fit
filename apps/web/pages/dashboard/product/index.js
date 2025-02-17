@@ -58,10 +58,9 @@ export default function ProductsPage() {
   const [showAlert, setShowAlert] = useState(false);
 
   const { data: productsData, error, isLoading } = useSWR(
-    `/api/products/get-product?page=${currentPage}&search=${searchTerm}&type=${
-      selectedType !== 'ALL' ? selectedType : ''
-    }`,
-    fetcher
+    `/api/products/get-product?page=${currentPage}&search=${searchTerm}&type=${selectedType !== 'ALL' ? selectedType : ''}`,
+    fetcher,
+    { refreshInterval: 5000 }
   );
 
   const handleSearchChange = (e) => {

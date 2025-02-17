@@ -26,9 +26,10 @@ const ShopScreen = ({ navigation }) => {
     if (loading || (!reset && !hasMore)) return;
     setLoading(true);
     try {
-      const response = await fetch(
-        `${EXPO_PUBLIC_API_URL}/api/mobile/home/get-products?limit=10&page=${pageNumber}`
-      );
+      const url = `${EXPO_PUBLIC_API_URL}/api/mobile/home/get-products?limit=10&page=${pageNumber}${
+        searchQuery ? `&search=${encodeURIComponent(searchQuery)}` : ''
+      }`;
+      const response = await fetch(url);
       if (!response.ok) throw new Error('Failed to fetch products');
       const data = await response.json();
       if (data.products?.length > 0) {
@@ -78,9 +79,18 @@ const ShopScreen = ({ navigation }) => {
     />
   );
 
+  // Fetch initial products on mount
   useEffect(() => {
     fetchProducts(1);
   }, []);
+
+  // Debounce search refresh: When searchQuery changes, wait 500ms before refreshing
+  useEffect(() => {
+    const timeoutId = setTimeout(() => {
+      handleRefresh();
+    }, 500);
+    return () => clearTimeout(timeoutId);
+  }, [searchQuery]);
 
   // Show LoadingSpinner during initial load
   if (loading && page === 1) {
