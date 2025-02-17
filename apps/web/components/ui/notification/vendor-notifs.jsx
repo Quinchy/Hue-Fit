@@ -84,8 +84,8 @@ export default function VendorNotification() {
               </div>
             ))
           ) : data.notifications.length === 0 ? (
-            <p className="text-lg font-extralight text-center text-primary/50">
-              No notifications
+            <p className="text-center text-lg font-extralight text-primary/45 mt-[20rem]">
+              You have no notifications.
             </p>
           ) : (
             data.notifications.map((notification) => (

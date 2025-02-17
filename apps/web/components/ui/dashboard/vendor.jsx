@@ -1,13 +1,11 @@
-// File: components/VendorDashboard.jsx
 import DashboardLayoutWrapper from "@/components/ui/dashboard-layout";
 import { Label } from "@/components/ui/label";
 import { useSession } from "next-auth/react";
 import { useMemo, useState, useEffect } from "react";
-import { Shirt, Tag, BellRing, Store } from "lucide-react";
-import { Cell } from "recharts";
-import routes from "@/routes"
+import { Shirt, Tag, BellRing, Store, CreditCard, PackageSearch } from "lucide-react";
+import routes from "@/routes";
 import Link from "next/link";
-import { Pie, PieChart, Bar, BarChart, CartesianGrid, XAxis } from "recharts";
+import { Pie, PieChart, Bar, BarChart, CartesianGrid, XAxis, Cell } from "recharts";
 import {
   Card,
   CardContent,
@@ -103,7 +101,6 @@ export default function VendorDashboard() {
     visitors: { label: "Count" },
   };
 
-  // Using the same primary color as the pie chart slices.
   const paymentChartConfig = {
     total: {
       label: "Payments",
@@ -182,87 +179,127 @@ export default function VendorDashboard() {
             <div className="flex flex-col gap-4 w-full">
               <div className="flex flex-row gap-4">
                 <Card className="w-full flex flex-col justify-center p-6">
-                  <Shirt width={30} height={30} className="mb-2 stroke-2" />
                   <div className="flex flex-col">
-                    <Label className="uppercase font-medium">Products</Label>
-                    <p className="text-6xl font-bold">{dashboardData.productCount}</p>
+                    <div className="flex flex-row items-center gap-2 mb-2">
+                      <Shirt width={20} height={20} className="stroke-2" />
+                      <Label className="uppercase font-medium">Products</Label>
+                    </div>
+                    <p className="text-6xl font-bold">
+                      {dashboardData.productCount || 0}
+                    </p>
                   </div>
                   <div className="flex flex-row items-center gap-2">
-                    <p className="uppercase font-extralight text-base">Total of</p>
-                    <p className="text-base font-bold">{dashboardData.productVariantCount}</p>
-                    <Label className="uppercase font-extralight text-base">Product Items</Label>
+                    <p className="uppercase font-extralight text-base text-primary/75">
+                      Total of{" "}
+                    </p>
+                    <p className="text-base font-bold uppercase">
+                      {dashboardData.productVariantCount || 0}
+                    </p>
+                    <Label className="uppercase font-extralight text-base text-primary/75">
+                      Product Items
+                    </Label>
                   </div>
                 </Card>
                 <Card className="w-full flex flex-col justify-center p-6">
-                  <Tag width={30} height={30} className="mb-2 stroke-2" />
                   <div className="flex flex-col">
-                    <Label className="uppercase font-medium">Orders</Label>
-                    <p className="text-6xl font-bold">{dashboardData.orderCount}</p>
+                    <div className="flex flex-row items-center gap-2 mb-2">
+                      <Tag width={20} height={20} className="stroke-2" />
+                      <Label className="uppercase font-medium">Orders</Label>
+                    </div>
+                    <p className="text-6xl font-bold">
+                      {dashboardData.orderCount || 0}
+                    </p>
                   </div>
                   <div className="flex flex-row items-center gap-2">
-                    <p className="uppercase font-extralight text-base">Total of</p>
-                    <p className="text-base font-bold">{dashboardData.orderItemCount}</p>
-                    <Label className="uppercase font-extralight text-base">Order Items</Label>
+                    <p className="uppercase font-extralight text-base text-primary/75">
+                      Total of{" "}
+                    </p>
+                    <p className="text-base font-bold">
+                      {dashboardData.orderItemCount || 0}
+                    </p>
+                    <Label className="uppercase font-extralight text-base text-primary/75">
+                      Order Items
+                    </Label>
                   </div>
                 </Card>
               </div>
               <Card className="flex flex-col p-5 h-full">
-                <CardHeader>
-                  <Label className="uppercase font-medium">PRODUCT TYPE</Label>
-                  <div className="leading-none text-muted-foreground">
+                <CardHeader className="flex flex-col p-0 pb-5">
+                  <div className="flex flex-row items-center gap-2">
+                    <PackageSearch className="w-5" />
+                    <Label className="uppercase font-medium">Product Types</Label>
+                  </div>
+                  <div className="font-extralight text-base text-primary/75 leading-none">
                     Showing all product types available in your shop.
                   </div>
                 </CardHeader>
                 <CardContent>
-                  <ChartContainer config={chartConfig} className="w-full h-fit-content">
-                    <PieChart width="100%" height="100%">
-                      <ChartTooltip cursor={false} content={<ChartTooltipContent hideLabel />} />
-                      <Pie data={chartData} dataKey="visitors" nameKey="browser" innerRadius={110} />
-                    </PieChart>
-                  </ChartContainer>
+                  {chartData.length === 0 ? (
+                    <p className="text-center text-lg font-extralight text-primary/45 mt-[13rem]">
+                      You haven't created any products yet.
+                    </p>
+                  ) : (
+                    <ChartContainer config={chartConfig} className="w-full h-fit-content">
+                      <PieChart width="100%" height="100%">
+                        <ChartTooltip cursor={false} content={<ChartTooltipContent hideLabel />} />
+                        <Pie data={chartData} dataKey="visitors" nameKey="browser" innerRadius={110} />
+                      </PieChart>
+                    </ChartContainer>
+                  )}
                 </CardContent>
               </Card>
             </div>
             <div className="flex flex-col gap-4 w-full">
-              <Card className="flex flex-col w-full p-5">
-                <CardHeader>
-                  <Label className="uppercase font-medium">Payments</Label>
-                  <div className="leading-none text-muted-foreground">Total payments per month</div>
+              <Card className="flex flex-col w-full p-5 h-full">
+                <CardHeader className="flex flex-col p-0 pb-5">
+                  <div className="flex flex-row items-center gap-2">
+                    <CreditCard className="w-5" />
+                    <Label className="uppercase font-medium">Payments</Label>
+                  </div>
+                  <div className="font-extralight text-base text-primary/75 leading-none">
+                    Total payments per month
+                  </div>
                 </CardHeader>
                 <CardContent>
-                  <ChartContainer config={paymentChartConfig} className="w-full h-64">
-                  <BarChart data={dashboardData.paymentChartData} width={400} height={250}>
-                    <CartesianGrid vertical={false} />
-                    <XAxis
-                      dataKey="month"
-                      tickLine={false}
-                      tickMargin={10}
-                      axisLine={false}
-                      tickFormatter={(value) => value.slice(0, 3)}
-                    />
-                    <ChartTooltip
-                      cursor={false}
-                      content={<ChartTooltipContent indicator="dashed" />}
-                    />
-                    <Bar dataKey="total" radius={4}>
-                      {dashboardData.paymentChartData.map((entry, index) => (
-                        <Cell
-                          key={`cell-${index}`}
-                          fill={['#3b82f6', '#14b8a6', '#8b5cf6', '#06b6d4'][index % 4]}
+                  {dashboardData.paymentChartData && dashboardData.paymentChartData.length > 0 ? (
+                    <ChartContainer config={paymentChartConfig} className="w-full h-64">
+                      <BarChart data={dashboardData.paymentChartData} width={400} height={250}>
+                        <CartesianGrid vertical={false} />
+                        <XAxis
+                          dataKey="month"
+                          tickLine={false}
+                          tickMargin={10}
+                          axisLine={false}
+                          tickFormatter={(value) => value.slice(0, 3)}
                         />
-                      ))}
-                    </Bar>
-                  </BarChart>
-                  </ChartContainer>
+                        <ChartTooltip
+                          cursor={false}
+                          content={<ChartTooltipContent indicator="dashed" />}
+                        />
+                        <Bar dataKey="total" radius={4}>
+                          {dashboardData.paymentChartData.map((entry, index) => (
+                            <Cell
+                              key={`cell-${index}`}
+                              fill={['#3b82f6', '#14b8a6', '#8b5cf6', '#06b6d4'][index % 4]}
+                            />
+                          ))}
+                        </Bar>
+                      </BarChart>
+                    </ChartContainer>
+                  ) : (
+                    <p className="text-center text-lg font-extralight text-primary/45 mt-[8rem]">
+                      You have no payments made yet.
+                    </p>
+                  )}
                 </CardContent>
               </Card>
-              <Card className="flex flex-col w-full p-5">
+              <Card className="flex flex-col w-full p-5 h-full">
                 <div className="flex flex-row items-center justify-between gap-4 mb-4">                    
                   <div className="flex flex-row items-center gap-2">
-                    <BellRing />
-                    <Label className="uppercase font-medium text-lg">Notifications:</Label>
+                    <BellRing className="w-5" />
+                    <Label className="uppercase font-medium">Notifications:</Label>
                   </div>
-                  <Link href={routes.notification} className="text-primary/50 text-base uppercase font-light">
+                  <Link href={routes.notification} className="text-primary/50 text-base uppercase font-light hover:underline">
                     See all
                   </Link>
                 </div>
@@ -283,8 +320,8 @@ export default function VendorDashboard() {
                       </div>
                     ))
                   ) : (
-                    <p className="text-lg text-center font-extralight text-primary/50">
-                      No notifications
+                    <p className="text-center text-lg font-extralight text-primary/45 mt-[8rem]">
+                      You have no notifications.
                     </p>
                   )}
                 </div>

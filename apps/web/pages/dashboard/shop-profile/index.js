@@ -1,12 +1,13 @@
 "use client";
 
-import React, { useState, useEffect, useRef } from "react";
+import React, { useState, useEffect, useRef, useCallback } from "react";
+import dynamic from "next/dynamic";
 import DashboardLayoutWrapper from "@/components/ui/dashboard-layout";
 import { Card, CardTitle } from "@/components/ui/card";
 import Image from "next/image";
 import Loading from "@/components/ui/loading";
 import { Alert, AlertTitle, AlertDescription } from "@/components/ui/alert";
-import { CircleAlert, Pencil, Upload, Loader, Asterisk } from "lucide-react";
+import { CircleAlert, CircleCheck, X, Pencil, Upload, Loader, Asterisk } from "lucide-react";
 import { useFormik } from "formik";
 import * as Yup from "yup";
 import { Input } from "@/components/ui/input";
@@ -22,8 +23,17 @@ import {
   DialogTitle,
   DialogFooter,
 } from "@/components/ui/dialog";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 
-// Validation schema for the shop profile form
+// Dynamically import MapPicker (client-side only)
+const MapPicker = dynamic(() => import("@/components/ui/map-picker"), { ssr: false });
+
 const shopProfileSchema = Yup.object().shape({
   name: Yup.string().required("Shop name is required."),
   email: Yup.string().email("Invalid email").required("Email is required."),
@@ -31,15 +41,23 @@ const shopProfileSchema = Yup.object().shape({
   description: Yup.string(),
   openingTime: Yup.string().required("Opening time is required."),
   closingTime: Yup.string().required("Closing time is required."),
-  buildingNo: Yup.string().required("Building number is required."),
-  street: Yup.string().required("Street is required."),
+  buildingNo: Yup.string(),
+  street: Yup.string(),
   barangay: Yup.string().required("Barangay is required."),
   municipality: Yup.string().required("Municipality is required."),
   province: Yup.string().required("Province is required."),
   postalCode: Yup.string().required("Postal code is required."),
 });
 
-// Utility function to crop an image (same as your profile code)
+const timeOptions = [
+  "6:00 AM", "6:30 AM", "7:00 AM", "7:30 AM", "8:00 AM", "8:30 AM", "9:00 AM", "9:30 AM",
+  "10:00 AM", "10:30 AM", "11:00 AM", "11:30 AM",
+  "12:00 PM", "12:30 PM", "1:00 PM", "1:30 PM", "2:00 PM", "2:30 PM", "3:00 PM", "3:30 PM",
+  "4:00 PM", "4:30 PM", "5:00 PM", "5:30 PM",
+  "6:00 PM", "6:30 PM", "7:00 PM", "7:30 PM", "8:00 PM", "8:30 PM", "9:00 PM", "9:30 PM",
+  "10:00 PM",
+];
+
 const getCroppedImg = async (imageSrc, crop, croppedAreaPixels) => {
   const image = new window.Image();
   image.src = imageSrc;
@@ -83,7 +101,6 @@ export default function ShopProfile() {
   const [saving, setSaving] = useState(false);
   const [alert, setAlert] = useState({ message: "", type: "", title: "" });
 
-  // Shop logo states (with cropping)
   const [shopLogo, setShopLogo] = useState(null);
   const [imageSrc, setImageSrc] = useState(null);
   const [crop, setCrop] = useState({ x: 0, y: 0 });
@@ -92,61 +109,26 @@ export default function ShopProfile() {
   const [isCropDialogOpen, setIsCropDialogOpen] = useState(false);
   const fileInputRef = useRef(null);
 
-  // Fetch shop data from the API
-  const fetchShopData = async () => {
-    try {
-      const response = await fetch("/api/users/get-user-shop-info", {
-        method: "GET",
-        headers: { "Content-Type": "application/json" },
-      });
-      if (!response.ok) {
-        throw new Error(`HTTP error! status: ${response.status}`);
-      }
-      const data = await response.json();
-      setShopData(data);
-      // Set shop logo (or use placeholder)
-      setShopLogo(data.logo || "/images/placeholder-shop-logo.png");
-      // Populate form fields with fetched data
-      formik.setValues({
-        name: data.name || "",
-        email: data.email || "",
-        contactNo: data.contactNo || "",
-        description: data.description || "",
-        openingTime: data.openingTime || "",
-        closingTime: data.closingTime || "",
-        buildingNo: data.address?.buildingNo || "",
-        street: data.address?.street || "",
-        barangay: data.address?.barangay || "",
-        municipality: data.address?.municipality || "",
-        province: data.address?.province || "",
-        postalCode: data.address?.postalCode || "",
-      });
-    } catch (err) {
-      setError(err.message);
-    } finally {
-      setLoading(false);
-    }
+  const initialFormValues = {
+    name: "",
+    email: "",
+    contactNo: "",
+    description: "",
+    openingTime: "",
+    closingTime: "",
+    buildingNo: "",
+    street: "",
+    barangay: "",
+    municipality: "",
+    province: "",
+    postalCode: "",
+    googleMapPlaceName: "",
+    latitude: "",
+    longitude: "",
   };
 
-  useEffect(() => {
-    fetchShopData();
-  }, []);
-
   const formik = useFormik({
-    initialValues: {
-      name: "",
-      email: "",
-      contactNo: "",
-      description: "",
-      openingTime: "",
-      closingTime: "",
-      buildingNo: "",
-      street: "",
-      barangay: "",
-      municipality: "",
-      province: "",
-      postalCode: "",
-    },
+    initialValues: initialFormValues,
     validationSchema: shopProfileSchema,
     onSubmit: async (values) => {
       setSaving(true);
@@ -164,6 +146,9 @@ export default function ShopProfile() {
         formData.append("municipality", values.municipality);
         formData.append("province", values.province);
         formData.append("postalCode", values.postalCode);
+        formData.append("googleMapPlaceName", values.googleMapPlaceName);
+        formData.append("latitude", values.latitude);
+        formData.append("longitude", values.longitude);
 
         if (shopLogo && shopLogo.blob) {
           formData.append("logo", shopLogo.blob, "shop-logo.jpg");
@@ -193,7 +178,11 @@ export default function ShopProfile() {
               municipality: values.municipality,
               province: values.province,
               postalCode: values.postalCode,
-              googleMapLocation: prev.address?.googleMapLocation,
+              googleMapLocation: {
+                name: values.googleMapPlaceName,
+                latitude: values.latitude,
+                longitude: values.longitude,
+              },
             },
             logo: shopLogo?.fileURL || prev.logo,
           }));
@@ -211,12 +200,62 @@ export default function ShopProfile() {
     },
   });
 
+  const fetchShopData = async () => {
+    try {
+      const response = await fetch("/api/users/get-user-shop-info", {
+        method: "GET",
+        headers: { "Content-Type": "application/json" },
+      });
+      if (!response.ok) {
+        throw new Error(`HTTP error! status: ${response.status}`);
+      }
+      const data = await response.json();
+      setShopData(data);
+      setShopLogo(data.logo || "/images/placeholder-shop-logo.png");
+      formik.setValues({
+        name: data.name || "",
+        email: data.email || "",
+        contactNo: data.contactNo || "",
+        description: data.description || "",
+        openingTime: data.openingTime || "",
+        closingTime: data.closingTime || "",
+        buildingNo: data.address?.buildingNo || "",
+        street: data.address?.street || "",
+        barangay: data.address?.barangay || "",
+        municipality: data.address?.municipality || "",
+        province: data.address?.province || "",
+        postalCode: data.address?.postalCode || "",
+        googleMapPlaceName: data.address?.googleMapLocation?.name || "",
+        latitude: data.address?.googleMapLocation?.latitude || "",
+        longitude: data.address?.googleMapLocation?.longitude || "",
+      });
+    } catch (err) {
+      setError(err.message);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  useEffect(() => {
+    fetchShopData();
+  }, []);
+
+  const handleLocationSelect = useCallback((coords, placeName) => {
+    formik.setFieldValue("latitude", coords.lat);
+    formik.setFieldValue("longitude", coords.lng);
+    formik.setFieldValue("googleMapPlaceName", placeName || "None");
+  }, [formik]);
+
+  const initialMapPosition =
+    formik.values.latitude !== "" && formik.values.longitude !== ""
+      ? { lat: Number(formik.values.latitude), lng: Number(formik.values.longitude) }
+      : null;
+
   const handleAlert = (message, type, title) => {
     setAlert({ message, type, title });
     setTimeout(() => setAlert({ message: "", type: "", title: "" }), 5000);
   };
 
-  // Handle shop logo file selection
   const handleFileChange = (e) => {
     if (e.target.files && e.target.files[0]) {
       const file = e.target.files[0];
@@ -257,6 +296,9 @@ export default function ShopProfile() {
         municipality: shopData.address?.municipality || "",
         province: shopData.address?.province || "",
         postalCode: shopData.address?.postalCode || "",
+        googleMapPlaceName: shopData.address?.googleMapLocation?.name || "",
+        latitude: shopData.address?.googleMapLocation?.latitude || "",
+        longitude: shopData.address?.googleMapLocation?.longitude || "",
       });
       setShopLogo(shopData.logo ? { fileURL: shopData.logo } : null);
     }
@@ -287,36 +329,33 @@ export default function ShopProfile() {
     );
   }
 
-  // Destructure read-only fields from shopData
-  const {
-    shopNo,
-    status,
-    address: { googleMapLocation } = {},
-  } = shopData;
+  const { shopNo } = shopData;
 
   return (
     <DashboardLayoutWrapper>
       {alert.message && (
-        <Alert className="flex flex-row items-center w-full shadow-lg rounded-lg p-4 fixed z-50 right-14 bottom-12">
-          <AlertTitle className="text-lg font-bold text-green-500">
-            {alert.title}
-          </AlertTitle>
-          <AlertDescription className="ml-4 text-sm">
-            {alert.message}
-          </AlertDescription>
+        <Alert className="flex flex-row items-center fixed z-50 w-[30rem] right-14 bottom-12 shadow-lg rounded-lg p-4">
+          <CircleCheck className="ml-4 scale-[200%] h-[60%] stroke-green-500" />
+          <div className="flex flex-col justify-center ml-10">
+            <AlertTitle className="text-lg font-bold text-green-500">
+              {alert.title}
+            </AlertTitle>
+            <AlertDescription className="tracking-wide font-light text-green-300">
+              {alert.message}
+            </AlertDescription>
+          </div>
           <Button
             variant="ghost"
-            className="ml-auto"
+            className="ml-auto p-2"
             onClick={() => setAlert({ message: "", type: "", title: "" })}
           >
-            X
+            <X className="scale-150 stroke-primary/50 -translate-x-2" />
           </Button>
         </Alert>
       )}
 
       <CardTitle className="text-4xl mb-5">Shop Profile</CardTitle>
       <div className="flex gap-5">
-        {/* Shop Logo Section */}
         <div className="flex flex-col gap-2 items-center">
           <Card className="bg-accent p-2">
             <Image
@@ -348,8 +387,7 @@ export default function ShopProfile() {
           />
         </div>
 
-        {/* Shop Profile Form */}
-        <Card className="flex-1 p-5">
+        <Card className="flex-1 p-5 mb-20">
           <div className="flex justify-between items-center mb-5">
             <CardTitle className="text-2xl">Shop Information</CardTitle>
             {!isEditing && (
@@ -363,17 +401,15 @@ export default function ShopProfile() {
             )}
           </div>
           <form onSubmit={formik.handleSubmit} className="grid grid-cols-2 gap-5">
-            {/* Shop No (full width) */}
             <div className="col-span-2 flex flex-col gap-2">
               <Label htmlFor="shopNo" className="font-bold">
                 Shop No
               </Label>
               <Input id="shopNo" name="shopNo" type="text" value={shopNo || "N/A"} disabled />
             </div>
-            {/* Name */}
             <div className="flex flex-col gap-1">
               <Label htmlFor="name" className="font-bold flex flex-row items-center">
-                Name <Asterisk className="w-4"/>
+                Name <Asterisk className="w-4" />
               </Label>
               <Input
                 id="name"
@@ -390,7 +426,6 @@ export default function ShopProfile() {
                 <InputErrorMessage error={formik.errors.name} touched={formik.touched.name} />
               )}
             </div>
-            {/* Description (full width) */}
             <div className="col-span-2 flex flex-col gap-2">
               <Label htmlFor="description" className="font-bold">
                 Description
@@ -409,10 +444,9 @@ export default function ShopProfile() {
                 <InputErrorMessage error={formik.errors.description} touched={formik.touched.description} />
               )}
             </div>
-            {/* Contact No */}
             <div className="flex flex-col gap-1">
               <Label htmlFor="contactNo" className="font-bold flex flex-row items-center">
-                Contact No <Asterisk className="w-4"/>
+                Contact No <Asterisk className="w-4" />
               </Label>
               <Input
                 id="contactNo"
@@ -429,10 +463,9 @@ export default function ShopProfile() {
                 <InputErrorMessage error={formik.errors.contactNo} touched={formik.touched.contactNo} />
               )}
             </div>
-            {/* Email */}
             <div className="flex flex-col gap-1">
               <Label htmlFor="email" className="font-bold flex flex-row items-center">
-                Email <Asterisk className="w-4"/>
+                Email <Asterisk className="w-4" />
               </Label>
               <Input
                 id="email"
@@ -449,56 +482,64 @@ export default function ShopProfile() {
                 <InputErrorMessage error={formik.errors.email} touched={formik.touched.email} />
               )}
             </div>
-            {/* Opening Time */}
             <div className="flex flex-col gap-1">
               <Label htmlFor="openingTime" className="font-bold flex flex-row items-center">
-                Opening Time <Asterisk className="w-4"/>
+                Opening Time <Asterisk className="w-4" />
               </Label>
-              <Input
-                id="openingTime"
-                name="openingTime"
-                type="text"
-                placeholder="Enter opening time"
-                value={formik.values.openingTime}
-                onChange={formik.handleChange}
-                onBlur={formik.handleBlur}
+              <Select
+                aria-labelledby="openingTime"
+                onValueChange={(value) => formik.setFieldValue("openingTime", value)}
+                value={formik.values.openingTime || ""}
                 disabled={!isEditing}
-                className={InputErrorStyle(formik.errors.openingTime, formik.touched.openingTime)}
-              />
+              >
+                <SelectTrigger className={`w-full ${InputErrorStyle(formik.errors.openingTime, formik.touched.openingTime)}`}>
+                  <SelectValue placeholder="Select opening time" />
+                </SelectTrigger>
+                <SelectContent>
+                  {timeOptions.map((time, index) => (
+                    <SelectItem key={index} value={time}>
+                      {time}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
               {formik.touched.openingTime && formik.errors.openingTime && (
                 <InputErrorMessage error={formik.errors.openingTime} touched={formik.touched.openingTime} />
               )}
             </div>
-            {/* Closing Time */}
             <div className="flex flex-col gap-1">
               <Label htmlFor="closingTime" className="font-bold flex flex-row items-center">
-                Closing Time <Asterisk className="w-4"/>
+                Closing Time <Asterisk className="w-4" />
               </Label>
-              <Input
-                id="closingTime"
-                name="closingTime"
-                type="text"
-                placeholder="Enter closing time"
-                value={formik.values.closingTime}
-                onChange={formik.handleChange}
-                onBlur={formik.handleBlur}
+              <Select
+                aria-labelledby="closingTime"
+                onValueChange={(value) => formik.setFieldValue("closingTime", value)}
+                value={formik.values.closingTime || ""}
                 disabled={!isEditing}
-                className={InputErrorStyle(formik.errors.closingTime, formik.touched.closingTime)}
-              />
+              >
+                <SelectTrigger className={`w-full ${InputErrorStyle(formik.errors.closingTime, formik.touched.closingTime)}`}>
+                  <SelectValue placeholder="Select closing time" />
+                </SelectTrigger>
+                <SelectContent>
+                  {timeOptions.map((time, index) => (
+                    <SelectItem key={index} value={time}>
+                      {time}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
               {formik.touched.closingTime && formik.errors.closingTime && (
                 <InputErrorMessage error={formik.errors.closingTime} touched={formik.touched.closingTime} />
               )}
             </div>
 
-            {/* Address Section Header (full width) */}
             <div className="col-span-2">
               <CardTitle className="text-2xl">Address Details</CardTitle>
             </div>
-
-            {/* Address Fields */}
-            <div className="flex flex-col gap-1">
-              <Label htmlFor="buildingNo" className="font-bold flex flex-row items-center">
-                Building No <Asterisk className="w-4"/>
+            {/* Building No Field */}
+            <div className="flex flex-col gap-2">
+              <Label htmlFor="buildingNo" className="font-bold">
+                Building No
               </Label>
               <Input
                 id="buildingNo"
@@ -511,32 +552,27 @@ export default function ShopProfile() {
                 disabled={!isEditing}
                 className={InputErrorStyle(formik.errors.buildingNo, formik.touched.buildingNo)}
               />
-              {formik.touched.buildingNo && formik.errors.buildingNo && (
-                <InputErrorMessage error={formik.errors.buildingNo} touched={formik.touched.buildingNo} />
-              )}
             </div>
-            <div className="flex flex-col gap-1">
-              <Label htmlFor="street" className="font-bold flex flex-row items-center">
-                Street <Asterisk className="w-4"/>
+            {/* Street Field */}
+            <div className="flex flex-col gap-2">
+              <Label htmlFor="street" className="font-bold">
+                Street
               </Label>
               <Input
                 id="street"
                 name="street"
                 type="text"
-                placeholder="Enter street"
+                placeholder="Enter street name"
                 value={formik.values.street}
                 onChange={formik.handleChange}
                 onBlur={formik.handleBlur}
                 disabled={!isEditing}
                 className={InputErrorStyle(formik.errors.street, formik.touched.street)}
               />
-              {formik.touched.street && formik.errors.street && (
-                <InputErrorMessage error={formik.errors.street} touched={formik.touched.street} />
-              )}
             </div>
             <div className="flex flex-col gap-1">
               <Label htmlFor="barangay" className="font-bold flex flex-row items-center">
-                Barangay <Asterisk className="w-4"/>
+                Barangay <Asterisk className="w-4" />
               </Label>
               <Input
                 id="barangay"
@@ -555,7 +591,7 @@ export default function ShopProfile() {
             </div>
             <div className="flex flex-col gap-1">
               <Label htmlFor="municipality" className="font-bold flex flex-row items-center">
-                Municipality <Asterisk className="w-4"/>
+                Municipality <Asterisk className="w-4" />
               </Label>
               <Input
                 id="municipality"
@@ -574,7 +610,7 @@ export default function ShopProfile() {
             </div>
             <div className="flex flex-col gap-1">
               <Label htmlFor="province" className="font-bold flex flex-row items-center">
-                Province <Asterisk className="w-4"/>
+                Province <Asterisk className="w-4" />
               </Label>
               <Input
                 id="province"
@@ -593,7 +629,7 @@ export default function ShopProfile() {
             </div>
             <div className="flex flex-col gap-1">
               <Label htmlFor="postalCode" className="font-bold flex flex-row items-center">
-                Postal Code <Asterisk className="w-4"/>
+                Postal Code <Asterisk className="w-4" />
               </Label>
               <Input
                 id="postalCode"
@@ -610,31 +646,17 @@ export default function ShopProfile() {
                 <InputErrorMessage error={formik.errors.postalCode} touched={formik.touched.postalCode} />
               )}
             </div>
-
-            {/* Google Map Link (full width) */}
-            <div className="col-span-2 flex flex-col gap-1">
-              <Label className="font-bold flex flex-row items-center">Google Map</Label>
-              {googleMapLocation?.name ? (
-                <a
-                  href={`https://www.google.com/maps?q=${googleMapLocation.latitude},${googleMapLocation.longitude}`}
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  className="text-blue-500 underline"
-                >
-                  {googleMapLocation.name}
-                </a>
-              ) : (
-                <p>N/A</p>
-              )}
-            </div>
-            {/* Status (full width) */}
-            <div className="col-span-2 flex flex-col gap-1">
-              <Label htmlFor="status" className="font-bold flex flex-row items-center">
-                Status
+            <div className="col-span-2 flex flex-col gap-2">
+              <Label className="font-bold flex flex-row items-center">
+                Your Shop's Google Map Location <Asterisk className="w-4" />
               </Label>
-              <Input id="status" name="status" type="text" value={status || "N/A"} disabled />
+              <MapPicker
+                onLocationSelect={handleLocationSelect}
+                disabled={!isEditing}
+                initialPosition={initialMapPosition}
+                initialPlaceName={formik.values.googleMapPlaceName}
+              />
             </div>
-            {/* Form Buttons (full width) */}
             {isEditing && (
               <div className="col-span-2 flex flex-col gap-5 mt-5">
                 <Button
@@ -654,8 +676,6 @@ export default function ShopProfile() {
           </form>
         </Card>
       </div>
-
-      {/* Dialog for cropping the shop logo */}
       <Dialog open={isCropDialogOpen} onOpenChange={setIsCropDialogOpen}>
         <DialogContent>
           <DialogHeader>
