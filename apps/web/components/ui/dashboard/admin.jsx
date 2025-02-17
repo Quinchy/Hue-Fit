@@ -5,7 +5,7 @@ import { useSession } from "next-auth/react";
 import useSWR from "swr";
 import DashboardLayoutWrapper from "@/components/ui/dashboard-layout";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { BellRing, Store, Building2, User } from "lucide-react";
+import { BellRing, Store, Building2, User, CircleUserRound } from "lucide-react";
 import routes from "@/routes";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Label } from "@/components/ui/label";
@@ -164,7 +164,10 @@ export default function AdminDashboard() {
                 {/* Bar Chart */}
                 <Card className="flex flex-col items-start h-full p-3">
                   <CardHeader className="items-start pb-0">
-                    <Label className="uppercase font-medium">Number of new users per month</Label>
+                    <div className="flex flex-row items-center gap-2">
+                      <CircleUserRound className="w-5" />
+                      <Label className="uppercase font-medium">Number of new users per month</Label>
+                    </div>
                     <div className="leading-none text-muted-foreground">
                       Displays the count of newly registered users each month.
                     </div>
@@ -199,10 +202,10 @@ export default function AdminDashboard() {
               <Card className="w-full h-full p-5">
                 <div className="flex flex-row items-center justify-between gap-4 mb-4">                    
                   <div className="flex flex-row items-center gap-2">
-                    <BellRing />
-                    <Label className="uppercase font-medium text-lg">Notifications:</Label>
+                    <BellRing className="w-5" />
+                    <Label className="uppercase font-medium">Notifications:</Label>
                   </div>
-                  <Link href={routes.notification} className="text-primary/50 text-base uppercase font-light">
+                  <Link href={routes.notification} className="text-primary/50 text-base uppercase font-light hover:underline">
                     See all
                   </Link>
                 </div>
@@ -223,8 +226,8 @@ export default function AdminDashboard() {
                       </div>
                     ))
                   ) : (
-                    <p className="text-lg text-center font-extralight text-primary/50">
-                      No notifications
+                    <p className="text-lg text-center font-extralight text-primary/45 mt-[20rem]">
+                      You have no notifications.
                     </p>
                   )}
                 </div>

@@ -260,7 +260,7 @@ export default function Shop() {
                 <TableRow>
                   <TableCell
                     colSpan={5}
-                    className="text-center align-middle h-[35rem] text-primary/50 text-lg font-thin tracking-wide"
+                    className="text-center align-middle h-[40rem] text-primary/50 text-lg font-thin tracking-wide"
                   >
                     There are no partnered shop yet.
                   </TableCell>

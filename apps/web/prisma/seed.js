@@ -1,22 +1,49 @@
-// prisma/seed.js
+// File: prisma/seed.js
 
 const { PrismaClient } = require('@prisma/client');
 const bcrypt = require('bcrypt');
+const { v4: uuidv4 } = require('uuid');
 const prisma = new PrismaClient();
 
 async function main() {
-  const hashedPassword = await bcrypt.hash('123', 10);
+  // Create roles
+  const roles = [
+    { id: 1, name: "ADMIN" },
+    { id: 2, name: "VENDOR" },
+    { id: 3, name: "CUSTOMER" },
+  ];
 
-  const updatedUser = await prisma.user.update({
-    where: {
-      username: 'quinch',
-    },
+  for (const role of roles) {
+    await prisma.role.upsert({
+      where: { name: role.name },
+      update: {},
+      create: role,
+    });
+  }
+  console.log("Roles seeded.");
+
+  // Create admin user
+  const hashedPassword = await bcrypt.hash("admin", 10);
+  const adminUser = await prisma.user.create({
     data: {
+      userNo: uuidv4(),
+      roleId: 1, // ADMIN role
+      username: "admin",
       password: hashedPassword,
+      status: "ACTIVE",
+      AdminProfile: {
+        create: {
+          // No profilePicture
+          firstName: "Carl Andrei",
+          lastName: "Tallorin",
+          email: "carl.tallorin@gmail.com",
+          contactNo: "09696006969",
+        },
+      },
     },
+    include: { AdminProfile: true },
   });
-
-  console.log('Password updated for user:', updatedUser.username);
+  console.log("Admin user created:", adminUser.username);
 }
 
 main()

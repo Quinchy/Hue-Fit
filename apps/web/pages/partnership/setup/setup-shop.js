@@ -517,13 +517,13 @@ export default function SetupShopForm() {
             <div className="flex flex-col gap-3">
               <div className="flex flex-row gap-3">
                 <div ref={(el) => (fieldRefs.current["shopLogo"] = el)} className="flex flex-col gap-2">
-                  <Label htmlFor="shopLogoFile" className="font-bold flex flex-row items-center">
-                    Shop Logo <Asterisk className="w-4" />
+                  <Label htmlFor="shopLogoFile" className="font-bold flex flex-row items-center mt-1">
+                    Shop Logo
                   </Label>
                   <ImageUpload
                     inputId="shopLogoFile"
-                    onFileSelect={(files) => setFieldValue("shopLogo", files)}
-                    onFileRemove={() => setFieldValue("shopLogo", null)}
+                    onFileSelect={(file) => setFieldValue("shopLogo", file ? [file] : [])}
+                    onFileRemove={() => setFieldValue("shopLogo", [])}
                     initialFiles={
                       Array.isArray(values.shopLogo) && values.shopLogo.length > 0
                         ? values.shopLogo[0]

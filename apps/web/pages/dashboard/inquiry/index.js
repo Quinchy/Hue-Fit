@@ -202,7 +202,7 @@ export default function Inquiries() {
                 <TableRow>
                   <TableCell
                     colSpan={5}
-                    className="text-center align-middle h-[39rem] text-primary/50 text-lg font-thin tracking-wide"
+                    className="text-center align-middle h-[45rem] text-primary/50 text-lg font-thin tracking-wide"
                   >
                     No inquiries found.
                   </TableCell>
