@@ -648,7 +648,7 @@ export default function ShopProfile() {
             </div>
             <div className="col-span-2 flex flex-col gap-2">
               <Label className="font-bold flex flex-row items-center">
-                Your Shop's Google Map Location <Asterisk className="w-4" />
+                {"Your Shop's Google Map Location"} <Asterisk className="w-4" />
               </Label>
               <MapPicker
                 onLocationSelect={handleLocationSelect}
