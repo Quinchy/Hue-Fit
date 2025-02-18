@@ -7,7 +7,7 @@ import {
   StyleSheet,
   ActivityIndicator,
 } from 'react-native';
-import { VStack, HStack, Box } from 'native-base';
+import { VStack, Box } from 'native-base';
 import BackgroundProvider from '../../providers/BackgroundProvider';
 import SearchBar from '../../components/SearchBar';
 import ProductCard from '../../components/ProductCard';
@@ -16,7 +16,7 @@ import { EXPO_PUBLIC_API_URL } from '@env';
 
 const ShopScreen = ({ navigation }) => {
   const [products, setProducts] = useState([]);
-  const [loading, setLoading] = useState(false); // Loading state for initial load and loading more
+  const [loading, setLoading] = useState(false); // For any fetch call
   const [refreshing, setRefreshing] = useState(false);
   const [page, setPage] = useState(1);
   const [hasMore, setHasMore] = useState(true);
@@ -33,18 +33,14 @@ const ShopScreen = ({ navigation }) => {
       if (!response.ok) throw new Error('Failed to fetch products');
       const data = await response.json();
       if (data.products?.length > 0) {
-        setProducts((prev) => {
-          if (reset) {
-            return data.products;
-          } else {
-            // Prevent duplicates by filtering out products that already exist
-            const existingProductIds = new Set(prev.map((product) => product.id));
-            const newProducts = data.products.filter(
-              (product) => !existingProductIds.has(product.id)
-            );
-            return [...prev, ...newProducts];
-          }
-        });
+        setProducts((prev) =>
+          reset ? data.products : [
+            ...prev,
+            ...data.products.filter(
+              (product) => !prev.some((p) => p.id === product.id)
+            ),
+          ]
+        );
         setPage(reset ? 2 : pageNumber + 1);
         if (data.products.length < 10) setHasMore(false);
       } else {
@@ -79,21 +75,21 @@ const ShopScreen = ({ navigation }) => {
     />
   );
 
-  // Fetch initial products on mount
+  // Fetch initial products on mount.
   useEffect(() => {
     fetchProducts(1);
   }, []);
 
-  // Debounce search refresh: When searchQuery changes, wait 500ms before refreshing
+  // Revalidate every time searchQuery changes (with a small debounce of 100ms)
   useEffect(() => {
     const timeoutId = setTimeout(() => {
       handleRefresh();
-    }, 500);
+    }, 100);
     return () => clearTimeout(timeoutId);
   }, [searchQuery]);
 
-  // Show LoadingSpinner during initial load
-  if (loading && page === 1) {
+  // Only show the full-screen spinner on initial load if no products have been loaded yet.
+  if (loading && page === 1 && searchQuery === '' && products.length === 0) {
     return (
       <BackgroundProvider>
         <View style={styles.loadingContainerFull}>
@@ -114,17 +110,11 @@ const ShopScreen = ({ navigation }) => {
         contentContainerStyle={styles.listContent}
         ListHeaderComponent={
           <VStack alignItems="center" mt={12}>
-            <Box
-              width="100%"
-              mb={2}
-              flexDirection="row"
-              justifyContent="center"
-              alignItems="center"
-            >
+            <Box width="100%" mb={2} flexDirection="row" justifyContent="center" alignItems="center">
               <Box flex={1} mx={4}>
                 <SearchBar
                   placeholder="Search products..."
-                  onChangeText={(text) => setSearchQuery(text)}
+                  onChangeText={setSearchQuery}
                   value={searchQuery}
                 />
               </Box>
@@ -137,7 +127,8 @@ const ShopScreen = ({ navigation }) => {
         onEndReached={handleLoadMore}
         onEndReachedThreshold={0.5}
         ListFooterComponent={
-          loading && page > 1 ? (
+          // Only show the footer spinner when loading more on the default list
+          loading && page > 1 && searchQuery === '' ? (
             <View style={styles.footerLoadingContainer}>
               <ActivityIndicator size="small" color="#FFF" />
             </View>

@@ -213,7 +213,7 @@ export default function VirtualTryOnPage() {
           overlayHeight = overlayWidth / aspectRatio;
         }
         // Apply a fixed stretch value for upperwear (1.2)
-        overlayWidth = overlayWidth * 1.5;
+        overlayWidth = overlayWidth * 1.7;
         // Recalculate the X position after stretching
         overlayX = shoulderCenterX - overlayWidth / 2;
         overlayY = shoulderCenterY - overlayHeight * 0.12;
