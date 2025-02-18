@@ -166,9 +166,11 @@ function generateTagsData(types, shopId) {
 
 async function addSizes(shopId) {
   const sizesData = [
+    { shopId, name: "EXTRA SMALL", abbreviation: "XS", nextId: null },
     { shopId, name: "SMALL", abbreviation: "S", nextId: null },
     { shopId, name: "MEDIUM", abbreviation: "M", nextId: null },
     { shopId, name: "LARGE", abbreviation: "L", nextId: null },
+    { shopId, name: "EXTRA LARGE", abbreviation: "XL", nextId: null },
   ];
 
   await prisma.size.createMany({ data: sizesData });
@@ -187,20 +189,48 @@ async function addSizes(shopId) {
     where: { id: sizes[1].id },
     data: { nextId: sizes[2].id },
   });
+
+  await prisma.size.updateMany({
+    where: { id: sizes[2].id },
+    data: { nextId: sizes[3].id },
+  });
+
+  await prisma.size.updateMany({
+    where: { id: sizes[3].id },
+    data: { nextId: sizes[4].id },
+  });
 }
 
 function generateMeasurementData(types, shopId) {
   const typeIds = types.map((type) => type.id);
 
   return [
-    { shopId, typeId: typeIds[0], name: "WIDTH" },
     { shopId, typeId: typeIds[0], name: "LENGTH" },
-    { shopId, typeId: typeIds[1], name: "WIDTH" },
+    { shopId, typeId: typeIds[0], name: "COLLAR" },
+    { shopId, typeId: typeIds[0], name: "BUST" },
+    { shopId, typeId: typeIds[0], name: "WAIST" },
+    { shopId, typeId: typeIds[0], name: "SHOULDER" },
+    { shopId, typeId: typeIds[0], name: "SLEEVE" },
+    { shopId, typeId: typeIds[0], name: "CUFF" },
     { shopId, typeId: typeIds[1], name: "LENGTH" },
-    { shopId, typeId: typeIds[2], name: "WIDTH" },
+    { shopId, typeId: typeIds[1], name: "COLLAR" },
+    { shopId, typeId: typeIds[1], name: "BUST" },
+    { shopId, typeId: typeIds[1], name: "WAIST" },
+    { shopId, typeId: typeIds[1], name: "SHOULDER" },
+    { shopId, typeId: typeIds[1], name: "SLEEVE" },
+    { shopId, typeId: typeIds[1], name: "CUFF" },
+    { shopId, typeId: typeIds[2], name: "WAIST" },
     { shopId, typeId: typeIds[2], name: "LENGTH" },
-    { shopId, typeId: typeIds[3], name: "WIDTH" },
+    { shopId, typeId: typeIds[2], name: "INSEAM" },
+    { shopId, typeId: typeIds[2], name: "HIP" },
+    { shopId, typeId: typeIds[2], name: "THIGH" },
+    { shopId, typeId: typeIds[2], name: "KNEE" },
+    { shopId, typeId: typeIds[2], name: "HEM" },
     { shopId, typeId: typeIds[3], name: "LENGTH" },
+    { shopId, typeId: typeIds[3], name: "ANKLE" },
+    { shopId, typeId: typeIds[3], name: "HEEL" },
+    { shopId, typeId: typeIds[3], name: "INSTEP" },
+    { shopId, typeId: typeIds[3], name: "BALL GIRTH" },
   ];
 }
 
