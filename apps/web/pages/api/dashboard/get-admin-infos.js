@@ -15,11 +15,6 @@ export default async function handler(req, res) {
   }
 
   try {
-    const session = await getSession({ req });
-    if (!session || session?.user?.role !== "ADMIN") {
-      return res.status(403).json({ error: "Forbidden" });
-    }
-
     // Count only ACTIVE shops
     const allShopsCount = await prisma.shop.count({
       where: {
