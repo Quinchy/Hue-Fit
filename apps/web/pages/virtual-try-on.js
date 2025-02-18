@@ -258,7 +258,7 @@ export default function VirtualTryOnPage() {
           overlayHeight = overlayWidth / aspectRatio;
         }
         // Apply a fixed stretch value for lowerwear (1.1)
-        overlayWidth = overlayWidth * 1.3;
+        overlayWidth = overlayWidth * 1.5;
         // Recalculate the X position after stretching
         overlayX = hipCenterX - overlayWidth / 2;
         overlayY = hipCenterY;
