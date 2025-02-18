@@ -215,7 +215,7 @@ export default function VirtualTryOnPage() {
         // Apply a fixed stretch value for upperwear (1.2)
         overlayWidth = overlayWidth * 1.7;
         // Recalculate the X position after stretching
-        overlayX = shoulderCenterX - overlayWidth / 2;
+        overlayX = shoulderCenterX - overlayWidth / 2 - 20;
         overlayY = shoulderCenterY - overlayHeight * 0.12;
       } else if (type === "LOWERWEAR") {
         if (!leftHip || !rightHip) {
