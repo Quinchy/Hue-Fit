@@ -96,7 +96,7 @@ export default async function handler(req, res) {
     });
 
     if (role.toUpperCase() === "CUSTOMER") {
-      const newCustomerFeature = await prisma.customerFeature.create({
+      await prisma.customerFeature.create({
         data: {
           userId: newUser.id,
           height: parseFloat(height),
@@ -112,7 +112,6 @@ export default async function handler(req, res) {
           userId: newUser.id,
           firstName,
           lastName,
-          customerFeaturesId: newCustomerFeature.id,
         },
       });
 
