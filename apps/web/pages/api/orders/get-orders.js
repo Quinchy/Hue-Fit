@@ -13,11 +13,10 @@ export default async function handler(req, res) {
     const perPageNumber = parseInt(perPage);
     const skip = (pageNumber - 1) * perPageNumber;
 
-    // Filter conditions
     const whereConditions = {
       shopId: shopId,
       status: {
-        not: "RESERVED", // Exclude RESERVED orders by default
+        not: "RESERVED",
       },
       ...(search && {
         orderNo: {
@@ -27,17 +26,18 @@ export default async function handler(req, res) {
       }),
       ...(status && {
         status: {
-          equals: status, // If a status is explicitly provided, use it
+          equals: status,
         },
       }),
     };
 
-    // Fetch Orders with OrderItems
-    const orders = await prisma.order.findMany({
+    // Fetch orders with OrderItems
+    let orders = await prisma.order.findMany({
       where: whereConditions,
       skip,
       take: perPageNumber,
       orderBy: {
+        // This ordering is a fallback (e.g. by created date)
         created_at: "desc",
       },
       select: {
@@ -46,24 +46,21 @@ export default async function handler(req, res) {
         status: true,
         created_at: true,
         updated_at: true,
-        // Fetch associated OrderItems
         OrderItems: {
           select: {
             id: true,
             quantity: true,
-            // We need productVariant -> color + product + price
             ProductVariant: {
               select: {
                 price: true,
                 Color: {
-                  select: { name: true }, // color name
+                  select: { name: true },
                 },
                 Product: {
-                  select: { name: true }, // product name
+                  select: { name: true },
                 },
               },
             },
-            // We need productVariantSize -> size -> name
             ProductVariantSize: {
               select: {
                 Size: {
@@ -74,6 +71,21 @@ export default async function handler(req, res) {
           },
         },
       },
+    });
+
+    // Apply custom sorting based on status
+    const orderPriority = {
+      PENDING: 1,
+      PROCESSING: 2,
+      DELIVERING: 3,
+      COMPLETED: 4,
+      CANCELLED: 5,
+    };
+
+    orders.sort((a, b) => {
+      const aPriority = orderPriority[a.status.toUpperCase()] || 99;
+      const bPriority = orderPriority[b.status.toUpperCase()] || 99;
+      return aPriority - bPriority;
     });
 
     const totalCount = await prisma.order.count({

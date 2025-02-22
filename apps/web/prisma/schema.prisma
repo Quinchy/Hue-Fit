@@ -368,10 +368,10 @@ model Measurement {
 model Order {
   id              Int       @id @default(autoincrement())
   orderNo         String    @unique(map: "Unique_OrderNo")
-  shopId          Int       // This order is for a single shop
+  shopId          Int      
   userId          Int
-  paymentMethod   String    // e.g. 'COD', 'CARD'
-  status          String    @default("PENDING") // e.g. 'PENDING', 'PROCESSING', 'DELIVERING', ...
+  paymentMethod   String    
+  status          String    @default("PENDING") // e.g. 'PENDING', 'PROCESSING', 'DELIVERING', 'COMPLETED', 'CANCELLED'
   askingForCancel Boolean   @default(false)
   cancelReason    String?
   created_at      DateTime  @default(now())

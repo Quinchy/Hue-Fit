@@ -1,5 +1,4 @@
 // src/screens/account/RegisterScreen.tsx
-
 import React from 'react';
 import { Image, ScrollView, Pressable } from 'react-native';
 import { VStack, HStack, Text, Center } from 'native-base';
@@ -20,12 +19,14 @@ const RegisterSchema = Yup.object().shape({
     .required('Confirm Password is required'),
 });
 
-export default function RegisterScreen({ navigation }) {
+export default function RegisterScreen({ navigation, route }) {
+  const prevData = route.params?.registerData || {};
+
   return (
     <BackgroundProvider>
       <ScrollView contentContainerStyle={{ flexGrow: 1 }}>
         <Center>
-          {/* Logo remains on this screen */}
+          {/* Logo */}
           <Image
             source={require('../../assets/icons/hue-fit-logo.png')}
             style={{
@@ -61,7 +62,7 @@ export default function RegisterScreen({ navigation }) {
               </HStack>
             </Center>
 
-            {/* New section: Personal Information (aligned left) */}
+            {/* Personal Information */}
             <VStack alignItems="flex-start" mb={4}>
               <Text fontSize="lg" color="white" fontWeight="bold">
                 Personal Information
@@ -73,16 +74,15 @@ export default function RegisterScreen({ navigation }) {
 
             <Formik
               initialValues={{
-                firstName: '',
-                lastName: '',
-                username: '',
-                password: '',
-                confirmPassword: '',
+                firstName: prevData.firstName || '',
+                lastName: prevData.lastName || '',
+                username: prevData.username || '',
+                password: prevData.password || '',
+                confirmPassword: prevData.confirmPassword || '',
               }}
               validationSchema={RegisterSchema}
               onSubmit={(values) => {
-                // When valid, pass the registration info to the next screen
-                navigation.navigate('Register2', { registerData: values });
+                navigation.navigate('Register2', { registerData: { ...prevData, ...values } });
               }}
             >
               {({ handleChange, handleBlur, handleSubmit, values, errors, touched }) => (

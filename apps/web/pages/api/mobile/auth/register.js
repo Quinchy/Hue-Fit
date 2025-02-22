@@ -1,3 +1,4 @@
+// pages/api/mobile/auth/register.js
 import prisma from '@/utils/helpers';
 import bcrypt from 'bcrypt';
 import { v4 as uuidv4 } from 'uuid';
@@ -7,8 +8,6 @@ export default async function handler(req, res) {
     return res.status(405).json({ message: "Method not allowed" });
   }
 
-  // Extract registration fields.
-  // Note: For the CUSTOMER role, the client sends "bodyshape" (all lowercase)
   const {
     username,
     password,
@@ -19,10 +18,15 @@ export default async function handler(req, res) {
     weight,
     age,
     skintone,
-    bodyshape
+    bodyshape,
+    buildingNo,
+    street,
+    barangay,
+    municipality,
+    province,
+    postalCode,
   } = req.body;
 
-  // Basic validation for user credentials.
   if (
     !username?.trim() ||
     !password ||
@@ -33,27 +37,28 @@ export default async function handler(req, res) {
     return res.status(400).json({ message: "All fields are required." });
   }
 
-  // If role is CUSTOMER, ensure additional customer feature fields are provided.
   if (role.toUpperCase() === "CUSTOMER") {
     if (
       height === undefined || height === '' ||
       weight === undefined || weight === '' ||
       age === undefined || age === '' ||
       !skintone?.trim() ||
-      !bodyshape?.trim()
+      !bodyshape?.trim() ||
+      !barangay?.trim() ||
+      !municipality?.trim() ||
+      !province?.trim() ||
+      !postalCode?.trim()
     ) {
-      return res.status(400).json({ message: "All customer feature fields are required." });
+      return res.status(400).json({ message: "All customer feature and address fields are required." });
     }
   }
 
-  // Ensure role is valid.
   const allowedRoles = ["CUSTOMER", "VENDOR", "ADMIN"];
   if (!allowedRoles.includes(role.toUpperCase())) {
     return res.status(400).json({ message: "Invalid role specified." });
   }
 
   try {
-    // Find the CUSTOMER role to check for duplicate users.
     const customerRole = await prisma.role.findFirst({
       where: { name: "CUSTOMER" },
     });
@@ -69,13 +74,9 @@ export default async function handler(req, res) {
       return res.status(409).json({ message: "Username is already taken." });
     }
 
-    // Hash the password.
     const hashedPassword = await bcrypt.hash(password, 10);
-
-    // Generate a unique userNo.
     const userNo = uuidv4();
 
-    // Fetch role ID based on the role name.
     const userRole = await prisma.role.findFirst({
       where: { name: role.toUpperCase() },
     });
@@ -84,20 +85,17 @@ export default async function handler(req, res) {
       return res.status(400).json({ message: "Role not found." });
     }
 
-    // Create the user.
     const newUser = await prisma.user.create({
       data: {
-        userNo, // Generated userNo.
+        userNo,
         username,
         password: hashedPassword,
         roleId: userRole.id,
-        status: 'ACTIVE', // Set status to ACTIVE.
+        status: 'ACTIVE',
       },
     });
 
-    // If the role is CUSTOMER, create the customer feature record and the profile.
     if (role.toUpperCase() === "CUSTOMER") {
-      // Create the CustomerFeature record.
       const newCustomerFeature = await prisma.customerFeature.create({
         data: {
           userId: newUser.id,
@@ -105,17 +103,28 @@ export default async function handler(req, res) {
           weight: parseFloat(weight),
           age: parseInt(age, 10),
           skintone,
-          bodyShape: bodyshape, // Use the destructured field "bodyshape"
+          bodyShape: bodyshape,
         },
       });
 
-      // Create the CustomerProfile record, linking to the new CustomerFeature.
       await prisma.customerProfile.create({
         data: {
           userId: newUser.id,
           firstName,
           lastName,
           customerFeaturesId: newCustomerFeature.id,
+        },
+      });
+
+      await prisma.customerAddress.create({
+        data: {
+          userId: newUser.id,
+          buildingNo: buildingNo ? buildingNo.trim() : null,
+          street: street ? street.trim() : null,
+          barangay: barangay.trim(),
+          municipality: municipality.trim(),
+          province: province.trim(),
+          postalCode: postalCode.trim(),
         },
       });
     }

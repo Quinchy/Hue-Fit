@@ -6,30 +6,10 @@ import { Input } from "@/components/ui/input";
 import DashboardPagesNavigation from "@/components/ui/dashboard-pages-navigation";
 import routes from "@/routes";
 import { Button } from "@/components/ui/button";
-import {
-  Table,
-  TableHead,
-  TableHeader,
-  TableBody,
-  TableCell,
-  TableRow,
-} from "@/components/ui/table";
-import {
-  DropdownMenu,
-  DropdownMenuContent,
-  DropdownMenuGroup,
-  DropdownMenuItem,
-  DropdownMenuTrigger,
-} from "@/components/ui/dropdown-menu";
-import {
-  Pagination,
-  PaginationPrevious,
-  PaginationContent,
-  PaginationItem,
-  PaginationNext,
-  PaginationLink,
-} from "@/components/ui/pagination";
-import { Pencil, Search, ChevronDown, Wrench, Plus } from "lucide-react";
+import { Table, TableHead, TableHeader, TableBody, TableCell, TableRow} from "@/components/ui/table";
+import { DropdownMenu, DropdownMenuContent, DropdownMenuGroup, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
+import { Pagination, PaginationPrevious, PaginationContent, PaginationItem, PaginationNext, PaginationLink } from "@/components/ui/pagination";
+import { Pencil, Search, ChevronDown, Wrench } from "lucide-react";
 import { Skeleton } from "@/components/ui/skeleton";
 import useSWR from "swr";
 import Link from "next/link";
@@ -69,25 +49,8 @@ export default function Orders() {
     }
   );
 
-  // Fallbacks
   const orders = data?.orders || [];
   const totalPages = data?.totalPages || 1;
-
-  // Sort orders: for example, pending orders come first and completed orders last.
-  const sortedOrders = orders.slice().sort((a, b) => {
-    // Define custom ordering: lower number means higher priority in the list.
-    const orderPriority = {
-      PENDING: 1,
-      PROCESSING: 2,
-      DELIVERING: 3,
-      COMPLETED: 4,
-      CANCELLED: 5,
-    };
-
-    const aPriority = orderPriority[a.status.toUpperCase()] || 99;
-    const bPriority = orderPriority[b.status.toUpperCase()] || 99;
-    return aPriority - bPriority;
-  });
 
   const handleUpdateClick = (orderNo) => {
     router.push(`/dashboard/order/edit/${orderNo}`);
@@ -95,12 +58,12 @@ export default function Orders() {
 
   const handleStatusFilter = (filterStatus) => {
     setStatus(filterStatus);
-    setCurrentPage(1); // Reset to first page when filter changes
+    setCurrentPage(1);
   };
 
   const handleSearchChange = (e) => {
     setSearch(e.target.value);
-    setCurrentPage(1); // Reset to first page when search changes
+    setCurrentPage(1);
   };
 
   return (
@@ -198,8 +161,8 @@ export default function Orders() {
                     </TableCell>
                   </TableRow>
                 ))
-              ) : sortedOrders.length > 0 ? (
-                sortedOrders.map((order) => {
+              ) : orders.length > 0 ? (
+                orders.map((order) => {
                   const maxItemsToShow = 2;
                   const items = order.OrderItems || [];
                   const limitedItems = items.slice(0, maxItemsToShow);

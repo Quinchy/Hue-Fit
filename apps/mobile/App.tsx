@@ -19,6 +19,7 @@ import { useSafeAreaInsets } from "react-native-safe-area-context";
 import LoginScreen from "./screens/account/LoginScreen";
 import RegisterScreen from "./screens/account/RegisterScreen";
 import Register2Screen from "./screens/account/Register2Screen";
+import Register3Screen from "./screens/account/Register3Screen";
 import ForgotPasswordScreen from "./screens/account/ForgotPasswordScreen";
 import CartScreen from "./screens/app/CartScreen";
 import VirtualFittingScreen from "./screens/app/VirtualFittingScreen";
@@ -174,6 +175,7 @@ const AppNavigator = ({ initialRoute }) => (
     <Stack.Screen name="Login" component={LoginScreen} />
     <Stack.Screen name="Register" component={RegisterScreen} />
     <Stack.Screen name="Register2" component={Register2Screen} />
+    <Stack.Screen name="Register3" component={Register3Screen} />
     <Stack.Screen name="ForgotPassword" component={ForgotPasswordScreen} />
     <Stack.Screen name="Main" component={TabNavigator} />
     <Stack.Screen name="Cart" component={CartScreen} />

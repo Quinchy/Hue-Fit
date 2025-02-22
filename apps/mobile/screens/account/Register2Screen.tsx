@@ -1,242 +1,167 @@
 // src/screens/account/Register2Screen.tsx
 import React from 'react';
-import { ScrollView, Alert } from 'react-native';
-import {
-  VStack,
-  Text,
-  Center,
-  Select,
-  HStack,
-  IconButton,
-} from 'native-base';
+import { ScrollView } from 'react-native';
+import { VStack, Text, Center, HStack, IconButton } from 'native-base';
+import { ArrowLeft } from 'lucide-react-native';
 import BackgroundProvider from '../../providers/BackgroundProvider';
 import CustomInput from '../../components/Input';
 import DefaultButton from '../../components/Button';
-import CustomSelect from '../../components/Select';
 import GradientCard from '../../components/GradientCard';
 import { Formik } from 'formik';
 import * as Yup from 'yup';
-import { EXPO_PUBLIC_API_URL } from '@env';
-import { ArrowLeft } from 'lucide-react-native';
 
 const Register2Schema = Yup.object().shape({
-  height: Yup.number()
-    .typeError('Must be a number')
-    .required('Height is required'),
-  weight: Yup.number()
-    .typeError('Must be a number')
-    .required('Weight is required'),
-  age: Yup.number()
-    .typeError('Must be a number')
-    .required('Age is required'),
-  skinTone: Yup.string().required('Skin Tone is required'),
-  bodyShape: Yup.string().required('Body Shape is required'),
+  buildingNo: Yup.string(),
+  street: Yup.string(),
+  barangay: Yup.string().required('Barangay is required'),
+  municipality: Yup.string().required('Municipality is required'),
+  province: Yup.string().required('Province is required'),
+  postalCode: Yup.string().required('Postal Code is required'),
 });
 
 export default function Register2Screen({ navigation, route }) {
-  // Get the registration data from the previous screen
-  const registerData = route.params?.registerData || {};
+  const prevData = route.params?.registerData || {};
 
   return (
     <BackgroundProvider>
       <ScrollView contentContainerStyle={{ flexGrow: 1 }}>
         <Center>
-          {/* Back Button above the gradient card */}
-          <HStack width="100%" px={4} pt={5} mb={3} mt={125}>
+          {/* Back Button similar to Register3 */}
+          <HStack width="100%" px={2} pt={165} mb={5}>
             <IconButton
               icon={<ArrowLeft color="white" size={24} />}
-              onPress={() => navigation.goBack()}
+              onPress={() => navigation.navigate('Register', { registerData: prevData })}
               alignSelf="flex-start"
               _pressed={{ bg: 'dark.100' }}
               borderRadius="full"
             />
           </HStack>
+
           <GradientCard>
             <VStack alignItems="flex-start" mb={4}>
               <Text fontSize="lg" color="white" fontWeight="bold">
-                Personal Features
+                Address Information
               </Text>
-              <Text fontSize="md" color="gray.400">
-                Please fill the form with your personal details.
+              <Text fontSize="md" color="#C0C0C095">
+                Please fill in your address details.
               </Text>
             </VStack>
 
             <Formik
               initialValues={{
-                height: '',
-                weight: '',
-                age: '',
-                skinTone: '',
-                bodyShape: '',
+                buildingNo: prevData.buildingNo || '',
+                street: prevData.street || '',
+                barangay: prevData.barangay || '',
+                municipality: prevData.municipality || '',
+                province: prevData.province || '',
+                postalCode: prevData.postalCode || '',
               }}
               validationSchema={Register2Schema}
-              onSubmit={async (values, { setSubmitting }) => {
-                // Safely convert numeric fields
-                const heightNumber = parseFloat(values.height);
-                const weightNumber = parseFloat(values.weight);
-                const ageNumber = parseInt(values.age, 10);
-                if (isNaN(heightNumber) || isNaN(weightNumber) || isNaN(ageNumber)) {
-                  Alert.alert(
-                    "Error",
-                    "Please enter valid numeric values for Height, Weight, and Age."
-                  );
-                  setSubmitting(false);
-                  return;
-                }
-
-                try {
-                  const apiUrl = `${EXPO_PUBLIC_API_URL}/api/mobile/auth/register`;
-                  const response = await fetch(apiUrl, {
-                    method: 'POST',
-                    headers: {
-                      'Content-Type': 'application/json',
-                    },
-                    body: JSON.stringify({
-                      ...registerData, // includes firstName, lastName, username, password
-                      height: heightNumber,
-                      weight: weightNumber,
-                      age: ageNumber,
-                      skintone: values.skinTone,
-                      bodyshape: values.bodyShape,
-                      role: "CUSTOMER",
-                    }),
-                  });
-                  const data = await response.json();
-                  if (response.ok) {
-                    Alert.alert("Success", "User registered successfully!", [
-                      { text: "OK", onPress: () => navigation.navigate('Login') }
-                    ]);
-                  } else {
-                    Alert.alert("Error", data.message || "Registration failed.");
-                  }
-                } catch (error) {
-                  console.error("Registration error:", error);
-                  Alert.alert("Error", "An error occurred during registration.");
-                }
-                setSubmitting(false);
+              onSubmit={(values) => {
+                navigation.navigate('Register3', { registerData: { ...prevData, ...values } });
               }}
             >
-              {({
-                handleChange,
-                handleBlur,
-                handleSubmit,
-                values,
-                errors,
-                touched,
-                isSubmitting,
-              }) => (
-                <VStack space={4} alignItems="center" opacity={isSubmitting ? 0.5 : 1}>
-                  {/* Height Field */}
+              {({ handleChange, handleBlur, handleSubmit, values, errors, touched }) => (
+                <VStack space={4} alignItems="center">
                   <VStack width="100%">
                     <CustomInput
-                      label="Height"
-                      placeholder="Type your Height (in cm)"
-                      value={values.height}
-                      onChangeText={handleChange('height')}
-                      onBlur={handleBlur('height')}
-                      keyboardType="numeric"
-                      variant="filled"
-                      error={touched.height && errors.height ? errors.height : undefined}
-                      required
+                      label="Building No"
+                      placeholder="Building No"
+                      value={values.buildingNo}
+                      onChangeText={handleChange('buildingNo')}
+                      onBlur={handleBlur('buildingNo')}
                     />
-                    {touched.height && errors.height && (
+                    {touched.buildingNo && errors.buildingNo && (
                       <Text color="red.500" mt={1} fontSize="xs">
-                        {errors.height}
+                        {errors.buildingNo}
                       </Text>
                     )}
                   </VStack>
 
-                  {/* Weight Field */}
                   <VStack width="100%">
                     <CustomInput
-                      label="Weight"
-                      placeholder="Type your Weight (in kg)"
-                      value={values.weight}
-                      onChangeText={handleChange('weight')}
-                      onBlur={handleBlur('weight')}
-                      keyboardType="numeric"
-                      variant="filled"
-                      error={touched.weight && errors.weight ? errors.weight : undefined}
-                      required
+                      label="Street"
+                      placeholder="Street"
+                      value={values.street}
+                      onChangeText={handleChange('street')}
+                      onBlur={handleBlur('street')}
                     />
-                    {touched.weight && errors.weight && (
+                    {touched.street && errors.street && (
                       <Text color="red.500" mt={1} fontSize="xs">
-                        {errors.weight}
+                        {errors.street}
                       </Text>
                     )}
                   </VStack>
 
-                  {/* Age Field */}
                   <VStack width="100%">
                     <CustomInput
-                      label="Age"
-                      placeholder="Type your Age"
-                      value={values.age}
-                      onChangeText={handleChange('age')}
-                      onBlur={handleBlur('age')}
-                      keyboardType="numeric"
-                      variant="filled"
-                      error={touched.age && errors.age ? errors.age : undefined}
+                      label="Barangay"
+                      placeholder="Barangay"
+                      value={values.barangay}
+                      onChangeText={handleChange('barangay')}
+                      onBlur={handleBlur('barangay')}
+                      error={touched.barangay && errors.barangay ? errors.barangay : undefined}
                       required
                     />
-                    {touched.age && errors.age && (
+                    {touched.barangay && errors.barangay && (
                       <Text color="red.500" mt={1} fontSize="xs">
-                        {errors.age}
+                        {errors.barangay}
                       </Text>
                     )}
                   </VStack>
 
-                  {/* Skin Tone Field */}
                   <VStack width="100%">
-                    <CustomSelect
-                      label="Skin Tone"
-                      value={values.skinTone}
-                      onChange={(value) => handleChange('skinTone')(value)}
+                    <CustomInput
+                      label="Municipality"
+                      placeholder="Municipality"
+                      value={values.municipality}
+                      onChangeText={handleChange('municipality')}
+                      onBlur={handleBlur('municipality')}
+                      error={touched.municipality && errors.municipality ? errors.municipality : undefined}
                       required
-                      error={touched.skinTone && errors.skinTone ? errors.skinTone : undefined}
-                    >
-                      <Select.Item label="Fair" value="Fair" />
-                      <Select.Item label="Light" value="Light" />
-                      <Select.Item label="Medium" value="Medium" />
-                      <Select.Item label="Dark" value="Dark" />
-                      <Select.Item label="Deep" value="Deep" />
-                    </CustomSelect>
-                    {touched.skinTone && errors.skinTone && (
+                    />
+                    {touched.municipality && errors.municipality && (
                       <Text color="red.500" mt={1} fontSize="xs">
-                        {errors.skinTone}
+                        {errors.municipality}
                       </Text>
                     )}
                   </VStack>
 
-                  {/* Body Shape Field */}
                   <VStack width="100%">
-                    <CustomSelect
-                      label="Body Shape"
-                      value={values.bodyShape}
-                      onChange={(value) => handleChange('bodyShape')(value)}
+                    <CustomInput
+                      label="Province"
+                      placeholder="Province"
+                      value={values.province}
+                      onChangeText={handleChange('province')}
+                      onBlur={handleBlur('province')}
+                      error={touched.province && errors.province ? errors.province : undefined}
                       required
-                      error={touched.bodyShape && errors.bodyShape ? errors.bodyShape : undefined}
-                    >
-                      <Select.Item label="Bulky" value="Bulky" />
-                      <Select.Item label="Athletic" value="Athletic" />
-                      <Select.Item label="Skinny" value="Skinny" />
-                      <Select.Item label="Fit" value="Fit" />
-                      <Select.Item label="Skinny Fat" value="Skinny Fat" />
-                      <Select.Item label="Chubby" value="Chubby" />
-                    </CustomSelect>
-                    {touched.bodyShape && errors.bodyShape && (
+                    />
+                    {touched.province && errors.province && (
                       <Text color="red.500" mt={1} fontSize="xs">
-                        {errors.bodyShape}
+                        {errors.province}
                       </Text>
                     )}
                   </VStack>
 
-                  <DefaultButton
-                    mt={10}
-                    title={isSubmitting ? "Registering..." : "REGISTER"}
-                    onPress={handleSubmit}
-                    isDisabled={isSubmitting}
-                  />
+                  <VStack width="100%">
+                    <CustomInput
+                      label="Postal Code"
+                      placeholder="Postal Code"
+                      value={values.postalCode}
+                      onChangeText={handleChange('postalCode')}
+                      onBlur={handleBlur('postalCode')}
+                      error={touched.postalCode && errors.postalCode ? errors.postalCode : undefined}
+                      required
+                    />
+                    {touched.postalCode && errors.postalCode && (
+                      <Text color="red.500" mt={1} fontSize="xs">
+                        {errors.postalCode}
+                      </Text>
+                    )}
+                  </VStack>
+
+                  <DefaultButton mt={10} title="NEXT" onPress={handleSubmit} />
                 </VStack>
               )}
             </Formik>
