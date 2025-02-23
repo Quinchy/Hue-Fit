@@ -1,4 +1,3 @@
-// src/screens/account/Register2Screen.tsx
 import React from 'react';
 import { ScrollView } from 'react-native';
 import { VStack, Text, Center, HStack, IconButton } from 'native-base';
@@ -9,6 +8,7 @@ import DefaultButton from '../../components/Button';
 import GradientCard from '../../components/GradientCard';
 import { Formik } from 'formik';
 import * as Yup from 'yup';
+import { useTheme, applyOpacity } from '../..//providers/ThemeProvider';
 
 const Register2Schema = Yup.object().shape({
   buildingNo: Yup.string(),
@@ -20,29 +20,32 @@ const Register2Schema = Yup.object().shape({
 });
 
 export default function Register2Screen({ navigation, route }) {
+  const { theme } = useTheme();
   const prevData = route.params?.registerData || {};
 
   return (
     <BackgroundProvider>
       <ScrollView contentContainerStyle={{ flexGrow: 1 }}>
         <Center>
-          {/* Back Button similar to Register3 */}
+          {/* Back Button */}
           <HStack width="100%" px={2} pt={165} mb={5}>
             <IconButton
-              icon={<ArrowLeft color="white" size={24} />}
-              onPress={() => navigation.navigate('Register', { registerData: prevData })}
+              icon={<ArrowLeft color={theme.colors.white} size={24} />}
+              onPress={() =>
+                navigation.navigate('Register', { registerData: prevData })
+              }
               alignSelf="flex-start"
-              _pressed={{ bg: 'dark.100' }}
+              _pressed={{ bg: applyOpacity(theme.colors.darkGrey, 0.8) }}
               borderRadius="full"
             />
           </HStack>
 
           <GradientCard>
             <VStack alignItems="flex-start" mb={4}>
-              <Text fontSize="lg" color="white" fontWeight="bold">
+              <Text fontSize="lg" color={theme.colors.white} fontWeight="bold">
                 Address Information
               </Text>
-              <Text fontSize="md" color="#C0C0C095">
+              <Text fontSize="md" color={applyOpacity(theme.colors.greyWhite, 0.6)}>
                 Please fill in your address details.
               </Text>
             </VStack>

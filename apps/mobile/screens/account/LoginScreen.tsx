@@ -1,5 +1,3 @@
-// Frontend: LoginScreen.tsx
-
 import React, { useState } from 'react';
 import { Image, ScrollView, Alert, Pressable } from 'react-native';
 import { VStack, HStack, Text, Center } from 'native-base';
@@ -12,17 +10,18 @@ import LoadingSpinner from '../../components/Loading';
 import { useNavigation } from '@react-navigation/native';
 import { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import { EXPO_PUBLIC_API_URL } from '@env';
+import { useTheme } from '../../providers/ThemeProvider';
 
 type RootStackParamList = { Main: undefined; Register: undefined; ForgotPassword: undefined };
 
 export default function LoginScreen() {
   const navigation = useNavigation<NativeStackNavigationProp<RootStackParamList>>();
+  const { theme } = useTheme();
   const [username, setUsername] = useState('');
   const [password, setPassword] = useState('');
   const [loading, setLoading] = useState(false);
 
   const handleLogin = async () => {
-    // Basic input validation (optional but recommended)
     if (!username.trim() || !password) {
       Alert.alert('Validation Error', 'Please enter both username and password.');
       return;
@@ -40,15 +39,10 @@ export default function LoginScreen() {
       if (contentType && contentType.includes('application/json')) {
         const data = await response.json();
         if (response.ok) {
-          // Store the entire user object
           await AsyncStorage.setItem('user', JSON.stringify(data));
-
-          // Additionally, store firstName, lastName, and profilePicture separately
           await AsyncStorage.setItem('firstName', data.firstName);
           await AsyncStorage.setItem('lastName', data.lastName);
           await AsyncStorage.setItem('profilePicture', data.profilePicture || '');
-
-          // Navigate to the Main screen
           navigation.reset({ index: 0, routes: [{ name: 'Main' }] });
         } else {
           Alert.alert('Login Failed', data.message || 'Invalid credentials');
@@ -77,22 +71,22 @@ export default function LoginScreen() {
           />
           <GradientCard>
             <Center mt={5} mb={10}>
-              <Text fontSize="3xl" color="white" fontWeight="bold">
+              <Text fontSize="3xl" color={theme.colors.white} fontWeight="bold">
                 LOGIN
               </Text>
               <HStack alignItems="center" space={1}>
-                <Text fontSize="md" color="#C0C0C095">
+                <Text fontSize="md" color={theme.colors.greyWhite}>
                   Don't have an account?
                 </Text>
                 <Pressable onPress={() => navigation.navigate('Register')}>
                   {({ pressed }) => (
                     <Text
                       fontSize="md"
-                      fontWeight={'bold'}
-                      color="white"
+                      fontWeight="bold"
+                      color={theme.colors.white}
                       style={{ textDecorationLine: pressed ? 'underline' : 'none' }}
                     >
-                      REGISTER
+                      Register.
                     </Text>
                   )}
                 </Pressable>
@@ -104,6 +98,7 @@ export default function LoginScreen() {
                 placeholder="Username"
                 value={username}
                 onChangeText={setUsername}
+                required
               />
               <CustomInput
                 label="Password"
@@ -111,6 +106,7 @@ export default function LoginScreen() {
                 value={password}
                 onChangeText={setPassword}
                 isPassword
+                required
               />
               <Pressable
                 style={{ alignSelf: 'flex-end' }}
@@ -118,9 +114,9 @@ export default function LoginScreen() {
               >
                 {({ pressed }) => (
                   <Text
-                    color="white"
+                    color={theme.colors.white}
                     fontSize="sm"
-                    fontWeight={'bold'}
+                    fontWeight="bold"
                     mt={-2}
                     mb={2}
                     style={{ textDecorationLine: pressed ? 'underline' : 'none' }}

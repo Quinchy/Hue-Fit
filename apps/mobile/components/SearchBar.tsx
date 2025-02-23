@@ -1,7 +1,7 @@
-// components/SearchBar.tsx
 import React, { useState } from 'react';
 import { Box, Input, Icon } from 'native-base';
 import { Search } from 'lucide-react-native';
+import { useTheme } from '../providers/ThemeProvider';
 
 type SearchBarProps = {
   placeholder?: string;
@@ -10,12 +10,13 @@ type SearchBarProps = {
 
 const SearchBar: React.FC<SearchBarProps> = ({ placeholder = 'Search...', onChangeText }) => {
   const [isFocused, setIsFocused] = useState(false);
-  
+  const { theme } = useTheme();
+
   return (
-    <Box borderRadius={10} bg="#2E2E2E" width="100%" height={50}>
+    <Box borderRadius={10} bg={theme.colors.darkGrey} width="100%" height={50}>
       <Input
         placeholder={placeholder}
-        placeholderTextColor="#C0C0C090"
+        placeholderTextColor={theme.colors.greyWhite + "90"}
         fontSize="sm"
         fontWeight={300}
         height={50}
@@ -23,19 +24,18 @@ const SearchBar: React.FC<SearchBarProps> = ({ placeholder = 'Search...', onChan
         p={2}
         onChangeText={onChangeText}
         variant="unstyled"
-        color="white"
-        InputLeftElement={<Icon as={<Search />} color="#C0C0C0" marginLeft={3} />}
-        // Override focus style to use a specific border color.
+        color={theme.colors.white}
+        InputLeftElement={
+          <Icon as={<Search />} color={theme.colors.greyWhite} marginLeft={3} />
+        }
         _focus={{
-          borderColor: "#C0C0C090", // Updated focus border color.
-          bg: "#272727",
-          selectionColor: '#c0c0c035',
+          borderColor: theme.colors.greyWhite + "90",
+          bg: theme.colors.dark, // you may choose to use theme.colors.dark or similar
+          selectionColor: theme.colors.greyWhite + "35",
         }}
-        // Use onFocus and onBlur to set a flag if needed elsewhere.
         onFocus={() => setIsFocused(true)}
         onBlur={() => setIsFocused(false)}
-        // Optional: Remove the dynamic borderColor if not needed.
-        borderColor={isFocused ? "#C0C0C090" : "#c0c0c035"}
+        borderColor={isFocused ? theme.colors.greyWhite + "90" : theme.colors.greyWhite + "35"}
         borderWidth={1}
       />
     </Box>

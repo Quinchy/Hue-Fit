@@ -23,6 +23,7 @@ import AsyncStorage from "@react-native-async-storage/async-storage";
 import { useNavigation } from "@react-navigation/native";
 import BackgroundProvider from "../../providers/BackgroundProvider";
 import GradientCard from "../../components/GradientCard";
+import { useTheme, applyOpacity } from "../../providers/ThemeProvider";
 
 // AnimatedPressable for settings options with ease in/out animations.
 const AnimatedPressable = ({ children, style, onPress, ...props }) => {
@@ -31,7 +32,7 @@ const AnimatedPressable = ({ children, style, onPress, ...props }) => {
   const animatedStyle = {
     backgroundColor: animValue.interpolate({
       inputRange: [0, 1],
-      outputRange: ["transparent", "rgba(255,255,255,0.1)"],
+      outputRange: ["transparent", applyOpacity("#ffffff", 0.1)],
     }),
   };
 
@@ -69,6 +70,7 @@ const AnimatedPressable = ({ children, style, onPress, ...props }) => {
 
 const ProfileSettingsScreen = () => {
   const navigation = useNavigation();
+  const { theme } = useTheme();
   const [userData, setUserData] = useState(null);
 
   useEffect(() => {
@@ -108,18 +110,21 @@ const ProfileSettingsScreen = () => {
 
   return (
     <BackgroundProvider>
-      <SafeAreaView style={styles.safeArea}>
-        {/* New Header Row: "My Profile" left-aligned and Notification icon on right */}
+      {/* Set the overall background to transparent */}
+      <SafeAreaView style={[styles.safeArea, { backgroundColor: "transparent" }]}>
+        {/* Header Row */}
         <View style={styles.headerRow}>
-          <Text style={styles.headerTitle}>My Profile</Text>
+          <Text style={[styles.headerTitle, { color: theme.colors.white }]}>
+            My Profile
+          </Text>
           <Pressable
             onPress={() => navigation.navigate("Notification")}
             style={({ pressed }) => [
               styles.notificationIcon,
-              pressed && { backgroundColor: "rgba(255,255,255,0.1)" },
+              pressed && { backgroundColor: applyOpacity(theme.colors.white, 0.1) },
             ]}
           >
-            <Bell size={25} color="white" />
+            <Bell size={25} color={theme.colors.white} />
           </Pressable>
         </View>
 
@@ -134,14 +139,16 @@ const ProfileSettingsScreen = () => {
               style={styles.profileImage}
               resizeMode="cover"
             />
-            <Text style={styles.name}>
+            <Text style={[styles.name, { color: theme.colors.white }]}>
               {userData.firstName} {userData.lastName}
             </Text>
-            <Text style={styles.username}>@{userData.username}</Text>
+            <Text style={[styles.username, { color: theme.colors.greyWhite }]}>
+              @{userData.username}
+            </Text>
           </View>
         )}
 
-        {/* Order Tabs remain unchanged */}
+        {/* Order Tabs */}
         <View style={styles.tabsContainer}>
           {tabs.map(({ name, icon: IconComponent }) => (
             <Pressable
@@ -149,41 +156,50 @@ const ProfileSettingsScreen = () => {
               onPress={() => handleNavigate(name)}
               style={({ pressed }) => [
                 styles.tab,
-                pressed && styles.tabPressed,
+                { backgroundColor: theme.colors.darkGrey },
+                pressed && { backgroundColor: applyOpacity(theme.colors.darkGrey, 0.8) },
               ]}
             >
-              <IconComponent size={24} stroke="white" strokeWidth={2} />
-              <Text style={styles.tabText}>{name}</Text>
+              <IconComponent size={24} stroke={theme.colors.white} strokeWidth={2} />
+              <Text style={[styles.tabText, { color: theme.colors.white }]}>{name}</Text>
             </Pressable>
           ))}
         </View>
 
-        {/* Settings Options using AnimatedPressable for smooth ease in/out */}
-        <GradientCard style={styles.settingsCard}>
+        {/* Settings Options using AnimatedPressable */}
+        <GradientCard style={[styles.settingsCard, { backgroundColor: theme.colors.darkGrey }]}>
           <AnimatedPressable
             onPress={() => navigation.navigate("EditProfile")}
             style={styles.menuItem}
           >
-            <Pencil size={24} stroke="white" strokeWidth={2} />
-            <Text style={styles.menuText}>Edit Profile</Text>
+            <Pencil size={24} stroke={theme.colors.white} strokeWidth={2} />
+            <Text style={[styles.menuText, { color: theme.colors.white }]}>
+              Edit Profile
+            </Text>
           </AnimatedPressable>
           <AnimatedPressable
             onPress={() => navigation.navigate("OrderHistory")}
             style={styles.menuItem}
           >
-            <Archive size={24} stroke="white" strokeWidth={2} />
-            <Text style={styles.menuText}>Order History</Text>
+            <Archive size={24} stroke={theme.colors.white} strokeWidth={2} />
+            <Text style={[styles.menuText, { color: theme.colors.white }]}>
+              Order History
+            </Text>
           </AnimatedPressable>
           <AnimatedPressable
             onPress={() => navigation.navigate("GeneratedOutfitList")}
             style={styles.menuItem}
           >
-            <Shirt size={24} stroke="white" strokeWidth={2} />
-            <Text style={styles.menuText}>Generated Outfits</Text>
+            <Shirt size={24} stroke={theme.colors.white} strokeWidth={2} />
+            <Text style={[styles.menuText, { color: theme.colors.white }]}>
+              Generated Outfits
+            </Text>
           </AnimatedPressable>
           <AnimatedPressable onPress={handleLogout} style={styles.menuItem}>
-            <LogOut size={24} stroke="white" strokeWidth={2} />
-            <Text style={styles.menuText}>Log Out</Text>
+            <LogOut size={24} stroke={theme.colors.white} strokeWidth={2} />
+            <Text style={[styles.menuText, { color: theme.colors.white }]}>
+              Log Out
+            </Text>
           </AnimatedPressable>
         </GradientCard>
       </SafeAreaView>
@@ -192,7 +208,7 @@ const ProfileSettingsScreen = () => {
 };
 
 const styles = StyleSheet.create({
-  safeArea: { flex: 1, backgroundColor: "transparent" },
+  safeArea: { flex: 1 },
   headerRow: {
     flexDirection: "row",
     justifyContent: "space-between",
@@ -202,7 +218,6 @@ const styles = StyleSheet.create({
     marginBottom: 15,
   },
   headerTitle: {
-    color: "white",
     fontSize: 28,
     fontWeight: "bold",
   },
@@ -210,10 +225,24 @@ const styles = StyleSheet.create({
     padding: 8,
     borderRadius: 25,
   },
-  userInfoContainer: { alignItems: "center", marginBottom: 30 },
-  profileImage: { width: 100, height: 100, borderRadius: 50, marginBottom: 10 },
-  name: { color: "white", fontSize: 18, fontWeight: "bold" },
-  username: { color: "gray", fontSize: 14, marginTop: 4 },
+  userInfoContainer: {
+    alignItems: "center",
+    marginBottom: 30,
+  },
+  profileImage: {
+    width: 100,
+    height: 100,
+    borderRadius: 50,
+    marginBottom: 10,
+  },
+  name: {
+    fontSize: 18,
+    fontWeight: "bold",
+  },
+  username: {
+    fontSize: 14,
+    marginTop: 4,
+  },
   tabsContainer: {
     flexDirection: "row",
     justifyContent: "space-between",
@@ -222,21 +251,21 @@ const styles = StyleSheet.create({
     paddingHorizontal: 15,
   },
   tab: {
-    backgroundColor: "#333",
     padding: 15,
     borderRadius: 10,
     alignItems: "center",
     flex: 1,
     marginHorizontal: 5,
   },
-  tabPressed: { backgroundColor: "#444" },
-  tabText: { color: "white", marginTop: 8, fontSize: 14 },
+  tabText: {
+    marginTop: 8,
+    fontSize: 14,
+  },
   settingsCard: {
     width: "100%",
     padding: 10,
     borderRadius: 10,
     marginBottom: 10,
-    backgroundColor: "#222",
   },
   menuItem: {
     flexDirection: "row",
@@ -246,7 +275,10 @@ const styles = StyleSheet.create({
     paddingHorizontal: 10,
     marginVertical: 5,
   },
-  menuText: { color: "white", fontSize: 16, marginLeft: 14 },
+  menuText: {
+    fontSize: 16,
+    marginLeft: 14,
+  },
 });
 
 export default ProfileSettingsScreen;

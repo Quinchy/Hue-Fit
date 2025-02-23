@@ -24,12 +24,12 @@ const OrderList = ({ status, ordersData, refreshOrders }) => {
   const [customReason, setCustomReason] = useState("");
   // Define the color mapping (you can adjust these hex values if desired)
   const statusColors = {
-    PENDING: "#60A5FA",      // bg-blue-400
-    PROCESSING: "#F59E0B",   // bg-amber-500
-    DELIVERING: "#A78BFA",   // bg-purple-400
-    RESERVED: "#e60076",     // bg-emerald-400
-    COMPLETED: "#34D399",    // bg-green-400
-    CANCELLED: "#EF4444",    // bg-red-500
+    PENDING: "#60A5FA",    
+    PROCESSING: "#F59E0B",  
+    DELIVERING: "#A78BFA", 
+    RESERVED: "#e60076",
+    COMPLETED: "#7BE24A", 
+    CANCELLED: "#E24A4A", 
   };
   // Cancellation reasons for PROCESSING orders.
   const cancellationReasons = [

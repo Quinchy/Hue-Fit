@@ -73,7 +73,7 @@ const LoadingSpinner: React.FC<LoadingSpinnerProps> = ({
 
 const styles = StyleSheet.create({
   background: {
-    ...StyleSheet.absoluteFillObject, // ensures full-screen coverage
+    ...StyleSheet.absoluteFillObject,
     justifyContent: 'center',
     alignItems: 'center',
     backgroundColor: '#191919',

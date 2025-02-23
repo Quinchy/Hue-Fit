@@ -1,8 +1,8 @@
-// CustomInput.js
 import React, { useState, memo } from 'react';
 import { Input, Icon, IInputProps, Pressable, Text, VStack } from 'native-base';
 import { Ionicons } from '@expo/vector-icons';
 import { Asterisk } from 'lucide-react-native';
+import { useTheme, applyOpacity } from '../providers/ThemeProvider';
 
 interface CustomInputProps extends IInputProps {
   isPassword?: boolean;
@@ -18,50 +18,61 @@ const CustomInput: React.FC<CustomInputProps> = ({
   required = false,
   ...props
 }) => {
+  const { theme } = useTheme();
   const [isFocused, setIsFocused] = useState(false);
   const [showPassword, setShowPassword] = useState(false);
 
   const computedBorderWidth = error ? 2 : (isFocused ? 2 : 1);
   const computedBorderColor = error
     ? "red.500"
-    : (isFocused ? "#ffffff" : "#c0c0c035");
+    : (isFocused ? theme.colors.white : theme.colors.greyWhite + "35");
 
   return (
     <VStack space={1}>
       {label && (
-        <Text fontSize="md" fontWeight={600} color="#c0c0c0" flexDir="row" alignItems="center">
+        <Text
+          fontSize="md"
+          fontWeight="bold"
+          color={theme.colors.white}
+          flexDir="row"
+          alignItems="center"
+        >
           {label}
           {required && (
-            <Asterisk size={12} color="#C0C0C0" style={{ marginLeft: 4, marginTop: 2 }} />
+            <Asterisk
+              size={12}
+              color={theme.colors.greyWhite}
+              style={{ marginLeft: 4, marginTop: 2 }}
+            />
           )}
         </Text>
       )}
       <Input
         {...props}
         type={isPassword && !showPassword ? "password" : "text"}
-        bg="#2E2E2E"
-        color="white"
-        placeholderTextColor="#c0c0c035"
+        bg={theme.colors.darkGrey}
+        color={theme.colors.white}
+        placeholderTextColor={theme.colors.greyWhite + "35"}
         width="100%"
         fontSize="md"
         height={50}
         borderRadius="md"
         borderWidth={computedBorderWidth}
         borderColor={computedBorderColor}
-        selectionColor="#c0c0c0"
+        selectionColor={theme.colors.greyWhite + "35"}
         _focus={{
-          bg: "#272727",
+          bg: theme.colors.dark,
           borderWidth: 2,
           borderColor: error ? "red.500" : "#60A5FA",
-          selectionColor: '#c0c0c035',
+          selectionColor: theme.colors.greyWhite + "35",
         }}
         _disabled={{
-          bg: "#2E2E2E",
+          bg: theme.colors.darkGrey,
           borderWidth: 1,
-          borderColor: "#c0c0c035",
-          color: "#c0c0c035",
+          borderColor: theme.colors.greyWhite + "35",
+          color: theme.colors.greyWhite + "35",
         }}
-        focusOutlineColor="#c0c0c035"
+        focusOutlineColor={theme.colors.greyWhite + "35"}
         py={3}
         px={5}
         onFocus={() => setIsFocused(true)}
@@ -72,7 +83,7 @@ const CustomInput: React.FC<CustomInputProps> = ({
               <Icon
                 as={<Ionicons name={showPassword ? "eye-off" : "eye"} />}
                 size="sm"
-                color="#C0C0C095"
+                color={theme.colors.greyWhite + "95"}
                 mr={5}
               />
             </Pressable>

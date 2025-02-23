@@ -1,5 +1,6 @@
+// App.js
 import React, { useEffect, useState } from "react";
-import { StatusBar, StyleSheet, ImageBackground, View, Text, Pressable } from "react-native";
+import { StatusBar, StyleSheet, ImageBackground, View, Pressable } from "react-native";
 import { NavigationContainer } from "@react-navigation/native";
 import { NativeBaseProvider, extendTheme } from "native-base";
 import { createBottomTabNavigator } from "@react-navigation/bottom-tabs";
@@ -12,10 +13,8 @@ import * as NavigationBar from "expo-navigation-bar";
 import * as Font from "expo-font";
 import LoadingSpinner from "./components/Loading";
 import OpenAiLogoRainbow from "./assets/icons/OpenAiLogoRainbow.svg";
-import { SafeAreaView } from "react-native-safe-area-context";
-import { useSafeAreaInsets } from "react-native-safe-area-context";
 
-// Screens
+// Screens (imports remain unchanged)
 import LoginScreen from "./screens/account/LoginScreen";
 import RegisterScreen from "./screens/account/RegisterScreen";
 import Register2Screen from "./screens/account/Register2Screen";
@@ -54,7 +53,7 @@ const loadFonts = async () => {
 };
 
 // Extend NativeBase Theme
-const theme = extendTheme({
+const nbTheme = extendTheme({
   fonts: {
     heading: "GeistBold",
     body: "GeistRegular",
@@ -85,79 +84,60 @@ const InputStack = () => (
   </Stack.Navigator>
 );
 
+// Import your custom theme hooks and opacity helper
+import { useTheme, applyOpacity, ThemeProvider as CustomThemeProvider } from "./providers/ThemeProvider";
+
 const CustomTabBar = ({ state, descriptors, navigation }) => {
-  const insets = useSafeAreaInsets(); // Retrieve dynamic safe area insets
+  const { theme } = useTheme();
 
   return (
-    <SafeAreaView
-      style={{
-        backgroundColor: "#0f0f0f", // Background color of the tab bar
-        paddingBottom: insets.bottom, // Dynamically add safe area padding at the bottom
-      }}
-      edges={["bottom"]} // Apply padding only to the bottom edge
-    >
-      <View style={styles.container}>
-        {state.routes.map((route, index) => {
-          const { options } = descriptors[route.key];
-          const isFocused = state.index === index;
+    <View style={[styles.floatingTabBarContainer, { backgroundColor: theme.colors.dark }]}>
+      {state.routes.map((route, index) => {
+        const { options } = descriptors[route.key];
+        const isFocused = state.index === index;
+        let Icon = null;
 
-          let Icon = null;
-          let label = options.tabBarLabel || route.name;
+        if (route.name === "Shops") Icon = Store;
+        else if (route.name === "Cart") Icon = ShoppingCart;
+        else if (route.name === "Profile") Icon = User;
+        else if (route.name === "InputStack") Icon = OpenAiLogoRainbow;
 
-          if (route.name === "Home") Icon = Home;
-          else if (route.name === "Shops") Icon = Store;
-          else if (route.name === "Cart") Icon = ShoppingCart;
-          else if (route.name === "Profile") Icon = User;
-          else if (route.name === "InputStack") {
-            Icon = OpenAiLogoRainbow;
-            label = "Generate";
-          }
-
-          return (
+        return (
+          <View key={route.name} style={styles.rippleContainer}>
             <Pressable
-              key={route.name}
               onPress={() => {
                 if (!isFocused) navigation.navigate(route.name);
               }}
               android_ripple={{
-                color: "rgba(255, 255, 255, 0.2)", // Ripple color
-                radius: 40, // Ripple radius
-                centered: true, // Ensures ripple effect is centered
+                color: applyOpacity(theme.colors.white, 0.2),
+                radius: 25,
+                borderless: false,
               }}
-              style={[
-                styles.iconContainer,
-                {
-                  borderRadius: 10,
-                  overflow: "hidden",
-                },
-              ]}
+              style={styles.iconPressable}
             >
-              {Icon && route.name === "InputStack" ? (
-                <Icon width={25} height={25} strokeWidth={1} color={isFocused ? "#FFF" : "#999"} />
+              {isFocused ? (
+                <View style={[styles.iconCircle, { backgroundColor: applyOpacity(theme.colors.white, 0.1) }]}>
+                  {Icon && route.name === "InputStack" ? (
+                    <Icon width={24} height={24} strokeWidth={1} color={theme.colors.white} />
+                  ) : (
+                    Icon && <Icon size={24} strokeWidth={1.5} color={theme.colors.white} />
+                  )}
+                </View>
               ) : (
-                Icon && (
-                  <Icon
-                    size={25}
-                    strokeWidth={1.5}
-                    color={isFocused ? "#FFF" : "#999"}
-                  />
+                Icon && route.name === "InputStack" ? (
+                  <Icon width={24} height={24} strokeWidth={1} color={theme.colors.greyWhite} />
+                ) : (
+                  Icon && <Icon size={24} strokeWidth={1.5} color={theme.colors.greyWhite} />
                 )
               )}
-              <Text
-                style={[
-                  styles.iconText,
-                  { color: isFocused ? "#FFF" : "#999" },
-                ]}
-              >
-                {label}
-              </Text>
             </Pressable>
-          );
-        })}
-      </View>
-    </SafeAreaView>
+          </View>
+        );
+      })}
+    </View>
   );
 };
+
 const TabNavigator = () => (
   <Tab.Navigator
     screenOptions={{ headerShown: false }}
@@ -166,7 +146,7 @@ const TabNavigator = () => (
     <Tab.Screen name="Shops" component={ShopScreen} />
     <Tab.Screen name="Cart" component={CartScreen} />
     <Tab.Screen name="Profile" component={ProfileSettingsScreen} />
-    <Tab.Screen name="InputStack" component={InputStack} options={{ tabBarLabel: "Generate" }} />
+    <Tab.Screen name="InputStack" component={InputStack} />
   </Tab.Navigator>
 );
 
@@ -194,7 +174,69 @@ const AppNavigator = ({ initialRoute }) => (
   </Stack.Navigator>
 );
 
-export default function App() {
+function AppContent({ initialRoute }) {
+  const { theme } = useTheme();
+  const [barVisibility, setBarVisibility] = useState();
+  
+  useEffect(() => {
+    NavigationBar.setPositionAsync("absolute");
+    NavigationBar.setBackgroundColorAsync(applyOpacity(theme.colors.white, 0.01));
+  }, [theme]);
+
+  useEffect(() => {
+    // Listen for navigation bar visibility changes
+    const listener = NavigationBar.addVisibilityListener(({ visibility }) => {
+      if (visibility === "visible") {
+        setBarVisibility(visibility);
+      }
+    });
+    return () => listener.remove();
+  }, []);
+
+  useEffect(() => {
+    if (barVisibility === "visible") {
+      const timeout = setTimeout(() => {
+        NavigationBar.setVisibilityAsync("hidden");
+      }, 3000); // hide after 3 seconds
+      return () => clearTimeout(timeout);
+    }
+  }, [barVisibility]);
+
+  // Force hide navigation bar every 3 seconds regardless
+  useEffect(() => {
+    const interval = setInterval(() => {
+      NavigationBar.setVisibilityAsync("hidden");
+    }, 3000);
+    return () => clearInterval(interval);
+  }, []);
+
+  const navigationConfig = async () => {
+    // Ensure the navigation bar is hidden
+    NavigationBar.setBackgroundColorAsync(applyOpacity(theme.colors.white, 0.01));
+    NavigationBar.setVisibilityAsync("hidden");
+  };
+
+  useEffect(() => {
+    navigationConfig();
+  }, [barVisibility]);
+
+  return (
+    <ImageBackground
+      source={require("./assets/tile-pattern-2.png")}
+      style={[styles.background, { backgroundColor: theme.colors.dark }]}
+      resizeMode="repeat"
+    >
+      <View style={[styles.overlay, { backgroundColor: applyOpacity(theme.colors.dark, 0.9) }]}>
+        <StatusBar backgroundColor={applyOpacity(theme.colors.white, 0)} />
+        <NavigationContainer>
+          <AppNavigator initialRoute={initialRoute} />
+        </NavigationContainer>
+      </View>
+    </ImageBackground>
+  );
+}
+
+function App() {
   const [initialRoute, setInitialRoute] = useState(null);
   const [fontsLoaded, setFontsLoaded] = useState(false);
 
@@ -220,53 +262,57 @@ export default function App() {
 
   if (!initialRoute || !fontsLoaded) return <LoadingSpinner size={200} />;
 
-  NavigationBar.setPositionAsync("absolute");
-  NavigationBar.setBackgroundColorAsync("#0f0f0f");
-
   return (
     <GestureHandlerRootView style={styles.root}>
       <SafeAreaProvider>
-        <NativeBaseProvider theme={theme}>
-          <ImageBackground
-            source={require("./assets/tile-pattern-2.png")}
-            style={styles.background}
-            resizeMode="repeat"
-          >
-            <View style={styles.overlay}>
-              <StatusBar backgroundColor="#ffffff01" />
-              <NavigationContainer>
-                <AppNavigator initialRoute={initialRoute} />
-              </NavigationContainer>
-            </View>
-          </ImageBackground>
+        <NativeBaseProvider theme={nbTheme}>
+          <AppContent initialRoute={initialRoute} />
         </NativeBaseProvider>
       </SafeAreaProvider>
     </GestureHandlerRootView>
   );
 }
 
+// Wrap your entire app with your custom ThemeProvider
+export default function AppWrapper() {
+  return (
+    <CustomThemeProvider>
+      <App />
+    </CustomThemeProvider>
+  );
+}
+
 const styles = StyleSheet.create({
   root: { flex: 1 },
-  background: { flex: 1, backgroundColor: "#191919" },
-  overlay: { flex: 1, backgroundColor: "rgba(25, 25, 25, 0.9)" },
-  container: {
+  background: { flex: 1 },
+  overlay: { flex: 1 },
+  floatingTabBarContainer: {
+    position: "absolute",
+    bottom: 50,
+    left: 15,
+    right: 15,
+    height: 65,
+    borderRadius: 30,
     flexDirection: "row",
     justifyContent: "space-around",
     alignItems: "center",
-    backgroundColor: "#0f0f0f",
-    height: 65,
-    position: "absolute",
-    overflow: "hidden",
-    bottom: 0,
-    left: 0,
-    right: 0,
-    marginBottom: 42,
   },
-  iconContainer: { 
+  rippleContainer: {
+    borderRadius: 25,
+    overflow: "hidden",
+  },
+  iconPressable: {
     alignItems: "center",
     justifyContent: "center",
-    width: 80,
-    height: 80,
+    width: 50,
+    height: 50,
   },
-  iconText: { marginTop: 5, fontSize: 10, textAlign: "center" },
+  // Active indicator style for the tab bar
+  iconCircle: {
+    width: 50,
+    height: 50,
+    borderRadius: 25,
+    alignItems: "center",
+    justifyContent: "center",
+  },
 });

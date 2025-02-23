@@ -2,15 +2,17 @@
 import React from 'react';
 import { Box } from 'native-base';
 import { LinearGradient } from 'expo-linear-gradient';
+import { useTheme } from '../providers/ThemeProvider';
 
 type GradientCardProps = {
-  children?: React.ReactNode; // Define children explicitly
+  children?: React.ReactNode;
 };
 
 const GradientCard: React.FC<GradientCardProps> = ({ children }) => {
+  const { theme } = useTheme();
   return (
     <Box
-      bg="#191919"
+      bg={theme.colors.darkGrey}
       p={4}
       width="100%"
       height="100%"

@@ -1,14 +1,6 @@
-// src/screens/account/Register3Screen.tsx
 import React from 'react';
 import { ScrollView, Alert } from 'react-native';
-import {
-  VStack,
-  Text,
-  Center,
-  Select,
-  HStack,
-  IconButton,
-} from 'native-base';
+import { VStack, Text, Center, HStack, IconButton, Select } from 'native-base';
 import BackgroundProvider from '../../providers/BackgroundProvider';
 import CustomInput from '../../components/Input';
 import DefaultButton from '../../components/Button';
@@ -18,6 +10,7 @@ import { Formik } from 'formik';
 import * as Yup from 'yup';
 import { EXPO_PUBLIC_API_URL } from '@env';
 import { ArrowLeft } from 'lucide-react-native';
+import { useTheme, applyOpacity } from '../../providers/ThemeProvider';
 
 const Register3Schema = Yup.object().shape({
   height: Yup.number()
@@ -34,6 +27,7 @@ const Register3Schema = Yup.object().shape({
 });
 
 export default function Register3Screen({ navigation, route }) {
+  const { theme } = useTheme();
   const prevData = route.params?.registerData || {};
 
   return (
@@ -43,21 +37,21 @@ export default function Register3Screen({ navigation, route }) {
           {/* Back Button */}
           <HStack width="100%" px={2} pt={165} mb={5}>
             <IconButton
-              icon={<ArrowLeft color="white" size={24} />}
+              icon={<ArrowLeft color={theme.colors.white} size={24} />}
               onPress={() =>
                 navigation.navigate('Register2', { registerData: prevData })
               }
               alignSelf="flex-start"
-              _pressed={{ bg: 'dark.100' }}
+              _pressed={{ bg: applyOpacity(theme.colors.darkGrey, 0.8) }}
               borderRadius="full"
             />
           </HStack>
           <GradientCard>
             <VStack alignItems="flex-start" mb={4}>
-              <Text fontSize="lg" color="white" fontWeight="bold">
+              <Text fontSize="lg" color={theme.colors.white} fontWeight="bold">
                 Personal Features
               </Text>
-              <Text fontSize="md" color="#C0C0C095">
+              <Text fontSize="md" color={applyOpacity(theme.colors.greyWhite, 0.6)}>
                 Please fill the form with your personal details.
               </Text>
             </VStack>
@@ -129,15 +123,7 @@ export default function Register3Screen({ navigation, route }) {
                 setSubmitting(false);
               }}
             >
-              {({
-                handleChange,
-                handleBlur,
-                handleSubmit,
-                values,
-                errors,
-                touched,
-                isSubmitting,
-              }) => (
+              {({ handleChange, handleBlur, handleSubmit, values, errors, touched, isSubmitting }) => (
                 <VStack space={4} alignItems="center" opacity={isSubmitting ? 0.5 : 1}>
                   <VStack width="100%">
                     <CustomInput

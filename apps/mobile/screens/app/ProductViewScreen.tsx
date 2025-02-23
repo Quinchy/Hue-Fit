@@ -19,6 +19,7 @@ import LoadingSpinner from '../../components/Loading';
 import { ShoppingCart, ArrowLeft, Camera, Cpu, Loader2 } from 'lucide-react-native';
 import { Actionsheet, useToast } from 'native-base';
 import { EXPO_PUBLIC_API_URL } from '@env';
+import { useTheme, applyOpacity } from '../../providers/ThemeProvider';
 
 const { width: screenWidth, height: screenHeight } = Dimensions.get('window');
 
@@ -29,6 +30,8 @@ const validationSchema = Yup.object().shape({
 });
 
 const ProductViewScreen = ({ route, navigation }) => {
+  const { theme } = useTheme();
+  const styles = getStyles(theme);
   const { productId } = route.params;
 
   const [loading, setLoading] = useState(false);
@@ -240,10 +243,10 @@ const ProductViewScreen = ({ route, navigation }) => {
             {/* Top overlay buttons */}
             <View style={styles.overlayButtonsContainer}>
               <TouchableOpacity style={styles.backButton} onPress={() => navigation.goBack()}>
-                <ArrowLeft color="#fff" size={24} />
+                <ArrowLeft color={theme.colors.white} size={24} />
               </TouchableOpacity>
 
-              <View style={{ flexDirection: 'row', alignItems: 'center', gap: 10 }}>
+              <View style={styles.topRightButtons}>
                 {/* Virtual Fitting Button */}
                 <TouchableOpacity
                   style={[
@@ -262,7 +265,7 @@ const ProductViewScreen = ({ route, navigation }) => {
                   }}
                   disabled={!values.selectedVariant?.pngClotheURL}
                 >
-                  <Camera color="#fff" size={24} />
+                  <Camera color={theme.colors.white} size={24} />
                 </TouchableOpacity>
 
                 {/* New AI Try-On Button */}
@@ -282,7 +285,7 @@ const ProductViewScreen = ({ route, navigation }) => {
                   }}
                   disabled={!values.selectedVariant?.pngClotheURL}
                 >
-                  <Cpu color="#fff" size={24} />
+                  <Cpu color={theme.colors.white} size={24} />
                 </TouchableOpacity>
 
                 {/* Go to Cart Button */}
@@ -290,7 +293,7 @@ const ProductViewScreen = ({ route, navigation }) => {
                   style={styles.cartButton}
                   onPress={() => navigation.navigate('Cart', { fromProduct: true })}
                 >
-                  <ShoppingCart color="#fff" size={24} />
+                  <ShoppingCart color={theme.colors.white} size={24} />
                 </TouchableOpacity>
               </View>
             </View>
@@ -300,7 +303,7 @@ const ProductViewScreen = ({ route, navigation }) => {
               data={['placeholder']}
               renderItem={() => null}
               ListHeaderComponent={
-                <View style={{ flex: 1, backgroundColor: '#191919' }}>
+                <View style={{ flex: 1, backgroundColor: theme.colors.dark }}>
                   {/* Variants Image Carousel */}
                   {values.selectedVariant && (
                     <FlatList
@@ -316,7 +319,7 @@ const ProductViewScreen = ({ route, navigation }) => {
                             style={{
                               width: screenWidth,
                               height: 500,
-                              backgroundColor: '#ccc',
+                              backgroundColor: theme.colors.greyWhite,
                             }}
                             resizeMode="cover"
                           />
@@ -327,41 +330,43 @@ const ProductViewScreen = ({ route, navigation }) => {
 
                   {/* Variant price */}
                   {values.selectedVariant && (
-                    <View style={{ flexDirection: 'row', padding: 10 }}>
-                      <Text style={{ fontSize: 24, color: '#fff', fontWeight: '300' }}>PHP </Text>
-                      <Text style={{ fontSize: 24, color: '#fff', fontWeight: '600' }}>
+                    <View style={styles.priceContainer}>
+                      <Text style={styles.priceLabel}>PHP </Text>
+                      <Text style={styles.priceValue}>
                         {values.selectedVariant.price}
                       </Text>
                     </View>
                   )}
 
                   {/* Product Title + Description */}
-                  <View style={{ paddingHorizontal: 10, gap: 20 }}>
-                    <View style={{ flexDirection: 'column', gap: 10 }}>
-                      <Text style={{ fontSize: 16, color: '#fff', fontWeight: '600' }}>
+                  <View style={styles.productInfo}>
+                    <View style={styles.productTitleContainer}>
+                      <Text style={styles.productTitle}>
                         {parentProduct?.name || 'Product Name'}
                       </Text>
-                      <Text style={{ fontSize: 16, color: '#ccc', fontWeight: '300' }}>
+                      <Text style={styles.productDescription}>
                         {parentProduct?.description || 'No description available.'}
                       </Text>
                     </View>
 
                     {/* Color Variants */}
-                    <View style={{ flexDirection: 'column', gap: 10 }}>
-                      <Text style={{ fontSize: 16, fontWeight: '600', color: '#fff' }}>Colors:</Text>
+                    <View style={styles.variantContainer}>
+                      <Text style={styles.sectionTitle}>Colors:</Text>
                       <FlatList
                         data={allVariants}
                         horizontal
                         keyExtractor={(item) => item.id.toString()}
                         renderItem={({ item }) => (
                           <TouchableOpacity
-                            style={{
-                              padding: 10,
-                              backgroundColor:
-                                values.selectedVariant?.id === item.id ? '#fff' : '#4E4E4E',
-                              borderRadius: 5,
-                              marginRight: 10,
-                            }}
+                            style={[
+                              styles.variantButton,
+                              {
+                                backgroundColor:
+                                  values.selectedVariant?.id === item.id
+                                    ? theme.colors.white
+                                    : theme.colors.grey,
+                              },
+                            ]}
                             onPress={() => {
                               setFieldValue('selectedVariant', item);
                               setSelectedVariant(item);
@@ -371,7 +376,9 @@ const ProductViewScreen = ({ route, navigation }) => {
                               setFieldValue('quantity', 1);
                             }}
                           >
-                            <Text style={{ color: '#191919' }}>{item.color.name}</Text>
+                            <Text style={{ color: theme.colors.dark }}>
+                              {item.color.name}
+                            </Text>
                           </TouchableOpacity>
                         )}
                       />
@@ -382,8 +389,8 @@ const ProductViewScreen = ({ route, navigation }) => {
 
                     {/* Sizes */}
                     {values.selectedVariant && (
-                      <View style={{ flexDirection: 'column', gap: 10 }}>
-                        <Text style={{ fontSize: 16, fontWeight: '600', color: '#fff' }}>
+                      <View style={styles.sizeContainer}>
+                        <Text style={styles.sectionTitle}>
                           Sizes:
                         </Text>
                         <FlatList
@@ -397,7 +404,9 @@ const ProductViewScreen = ({ route, navigation }) => {
                                 style={[
                                   styles.sizeBox,
                                   {
-                                    backgroundColor: isSelected ? '#fff' : '#4E4E4E',
+                                    backgroundColor: isSelected
+                                      ? theme.colors.white
+                                      : theme.colors.grey,
                                   },
                                 ]}
                                 onPress={() => {
@@ -407,7 +416,9 @@ const ProductViewScreen = ({ route, navigation }) => {
                                   setFieldValue('quantity', 1);
                                 }}
                               >
-                                <Text style={{ color: '#191919' }}>{size.abbreviation}</Text>
+                                <Text style={{ color: theme.colors.dark }}>
+                                  {size.abbreviation}
+                                </Text>
                               </TouchableOpacity>
                             );
                           }}
@@ -416,7 +427,7 @@ const ProductViewScreen = ({ route, navigation }) => {
                           <Text style={styles.errorText}>{errors.selectedSize}</Text>
                         )}
                         {values.selectedSize && (
-                          <Text style={{ fontSize: 14, color: '#ccc', marginTop: 10 }}>
+                          <Text style={styles.availableText}>
                             {values.selectedSize.quantity} pieces available
                           </Text>
                         )}
@@ -424,8 +435,8 @@ const ProductViewScreen = ({ route, navigation }) => {
                     )}
 
                     {/* Quantity */}
-                    <View style={{ flexDirection: 'column', gap: 10 }}>
-                      <Text style={{ fontSize: 16, fontWeight: '600', color: '#fff' }}>
+                    <View style={styles.quantitySection}>
+                      <Text style={styles.sectionTitle}>
                         Quantity:
                       </Text>
                       <View style={styles.quantityContainer}>
@@ -457,28 +468,14 @@ const ProductViewScreen = ({ route, navigation }) => {
                     </View>
 
                     {/* Size Chart */}
-                    <View style={{ flexDirection: 'column', gap: 10 }}>
-                      <Text style={{ fontSize: 16, fontWeight: '600', color: '#fff' }}>
+                    <View style={styles.sizeChartSection}>
+                      <Text style={styles.sectionTitle}>
                         Size Chart:
                       </Text>
-                      <View
-                        style={{
-                          borderWidth: 1,
-                          borderColor: '#4E4E4E',
-                          borderRadius: 5,
-                          overflow: 'hidden',
-                        }}
-                      >
+                      <View style={styles.sizeChartContainer}>
                         {/* Chart Header Row */}
-                        <View style={{ flexDirection: 'row', backgroundColor: '#333', padding: 10 }}>
-                          <Text
-                            style={{
-                              flex: 1,
-                              color: '#fff',
-                              textAlign: 'center',
-                              fontWeight: 'bold',
-                            }}
-                          >
+                        <View style={styles.chartHeaderRow}>
+                          <Text style={styles.chartHeaderText}>
                             Size
                           </Text>
                           {Object.keys(
@@ -486,7 +483,7 @@ const ProductViewScreen = ({ route, navigation }) => {
                           ).map((measurement) => (
                             <Text
                               key={measurement}
-                              style={{ flex: 1, color: '#fff', textAlign: 'center', fontWeight: 'bold' }}
+                              style={styles.chartHeaderText}
                             >
                               {measurement}
                             </Text>
@@ -496,20 +493,15 @@ const ProductViewScreen = ({ route, navigation }) => {
                         {Object.entries(measurementChart).map(([sizeName, measurements]) => (
                           <View
                             key={sizeName}
-                            style={{
-                              flexDirection: 'row',
-                              borderBottomWidth: 1,
-                              borderBottomColor: '#4E4E4E',
-                              padding: 10,
-                            }}
+                            style={styles.chartRow}
                           >
-                            <Text style={{ flex: 1, color: '#fff', textAlign: 'center' }}>
+                            <Text style={styles.chartRowText}>
                               {sizeName}
                             </Text>
                             {Object.values(measurements).map((value, index) => (
                               <Text
                                 key={index}
-                                style={{ flex: 1, color: '#ccc', textAlign: 'center' }}
+                                style={styles.chartRowValue}
                               >
                                 {value}
                               </Text>
@@ -520,20 +512,14 @@ const ProductViewScreen = ({ route, navigation }) => {
                     </View>
 
                     {/* Shop info */}
-                    <View style={{ flexDirection: 'column', gap: 10, marginBottom: 200 }}>
-                      <Text style={{ fontSize: 16, fontWeight: '600', color: '#fff' }}>Shop:</Text>
-                      <View style={{ flexDirection: 'row', alignItems: 'center' }}>
+                    <View style={styles.shopInfoSection}>
+                      <Text style={styles.sectionTitle}>Shop:</Text>
+                      <View style={styles.shopContainer}>
                         <Image
                           source={{ uri: shopDetails.logo }}
-                          style={{
-                            width: 50,
-                            height: 50,
-                            borderRadius: 25,
-                            marginRight: 10,
-                            backgroundColor: '#ccc',
-                          }}
+                          style={styles.shopLogo}
                         />
-                        <Text style={{ fontSize: 18, color: '#fff' }}>{shopDetails.name}</Text>
+                        <Text style={styles.shopName}>{shopDetails.name}</Text>
                       </View>
                     </View>
                   </View>
@@ -541,8 +527,8 @@ const ProductViewScreen = ({ route, navigation }) => {
               }
             />
 
-            {/* Bottom bar: "Add to Cart" */}
-            <View style={styles.stickyButtonContainer}>
+            {/* Bottom floating "Add to Cart" button without extra bg */}
+            <View style={styles.floatingButtonContainer}>
               <TouchableOpacity
                 style={[
                   styles.addToCartButton,
@@ -554,35 +540,28 @@ const ProductViewScreen = ({ route, navigation }) => {
                 {addingToCart ? (
                   <View style={{ flexDirection: 'row', alignItems: 'center' }}>
                     <Animated.View style={{ transform: [{ rotate: spin }] }}>
-                      <Loader2 size={24} color="#191919" style={{ marginRight: 8 }} />
+                      <Loader2 size={24} color={theme.colors.dark} style={{ marginRight: 8 }} />
                     </Animated.View>
                     <Text style={styles.buttonText}>Adding to Cart...</Text>
                   </View>
                 ) : (
-                  <Text style={styles.buttonText}>Add to Cart</Text>
+                  <View style={{ flexDirection: 'row', alignItems: 'center' }}>
+                    <ShoppingCart color={theme.colors.dark} size={24} style={{ marginRight: 8 }} />
+                    <Text style={styles.buttonText}>Add to Cart</Text>
+                  </View>
                 )}
               </TouchableOpacity>
             </View>
 
             {/* Reservation warning if stock <= 5 */}
             <Actionsheet isOpen={showReserveWarning} onClose={() => setShowReserveWarning(false)}>
-              <Actionsheet.Content style={{ backgroundColor: '#191919' }}>
-                <Text
-                  style={{
-                    color: 'white',
-                    fontSize: 18,
-                    marginBottom: 10,
-                    textAlign: 'center'
-                  }}
-                >
+              <Actionsheet.Content style={styles.actionsheetContent}>
+                <Text style={styles.actionsheetText}>
                   The selected size has low stock (5 or fewer).
                   If you proceed, it will be reserved once you check out.
                 </Text>
                 <TouchableOpacity
-                  style={[
-                    styles.addToCartButton,
-                    { backgroundColor: '#fff', marginTop: 5, width: '100%' },
-                  ]}
+                  style={[styles.addToCartButton, styles.proceedButton]}
                   onPress={async () => {
                     setShowReserveWarning(false);
                     if (pendingCartValues) {
@@ -603,34 +582,17 @@ const ProductViewScreen = ({ route, navigation }) => {
                     }
                   }}
                 >
-                  <Text
-                    style={{
-                      color: '#191919',
-                      fontSize: 16,
-                      fontWeight: '400',
-                      textAlign: 'center'
-                    }}
-                  >
+                  <Text style={styles.proceedButtonText}>
                     Proceed Anyway
                   </Text>
                 </TouchableOpacity>
                 <TouchableOpacity
-                  style={[
-                    styles.addToCartButton,
-                    { backgroundColor: '#555', marginTop: 5, width: '100%' },
-                  ]}
+                  style={[styles.addToCartButton, styles.cancelButton]}
                   onPress={() => {
                     setShowReserveWarning(false);
                   }}
                 >
-                  <Text
-                    style={{
-                      color: '#fff',
-                      fontSize: 16,
-                      fontWeight: '400',
-                      textAlign: 'center'
-                    }}
-                  >
+                  <Text style={styles.cancelButtonText}>
                     Cancel
                   </Text>
                 </TouchableOpacity>
@@ -643,8 +605,8 @@ const ProductViewScreen = ({ route, navigation }) => {
   );
 };
 
-const styles = StyleSheet.create({
-  container: { flex: 1 },
+const getStyles = (theme) => StyleSheet.create({
+  container: { flex: 1, backgroundColor: theme.colors.dark },
   overlayButtonsContainer: {
     position: 'absolute',
     top: 40,
@@ -656,33 +618,49 @@ const styles = StyleSheet.create({
     zIndex: 100,
   },
   backButton: {
-    backgroundColor: 'rgba(0,0,0,0.5)',
+    backgroundColor: applyOpacity(theme.colors.black, 0.5),
     padding: 10,
     borderRadius: 25,
+  },
+  topRightButtons: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 10,
   },
   cartButton: {
-    backgroundColor: 'rgba(0,0,0,0.5)',
+    backgroundColor: applyOpacity(theme.colors.black, 0.5),
     padding: 10,
     borderRadius: 25,
   },
-  stickyButtonContainer: {
+  floatingButtonContainer: {
     position: 'absolute',
-    bottom: 0,
-    left: 0,
-    right: 0,
-    backgroundColor: '#191919',
-    paddingHorizontal: 15,
-    paddingTop: 15,
-    paddingBottom: 50,
+    bottom: 50, // increased from 20 to 40 for slight elevation
+    left: 20,
+    right: 20,
+    alignItems: 'center',
     zIndex: 10,
   },
   addToCartButton: {
-    backgroundColor: '#fff',
+    backgroundColor: theme.colors.white,
     padding: 15,
     borderRadius: 5,
     alignItems: 'center',
+    width: '100%',
   },
-  buttonText: { color: '#191919', fontSize: 16, fontWeight: '400' },
+  buttonText: { color: theme.colors.dark, fontSize: 16, fontWeight: '400' },
+  priceContainer: { flexDirection: 'row', padding: 10 },
+  priceLabel: { fontSize: 24, color: theme.colors.white, fontWeight: '300' },
+  priceValue: { fontSize: 24, color: theme.colors.white, fontWeight: '600' },
+  productInfo: { paddingHorizontal: 10, gap: 20 },
+  productTitleContainer: { flexDirection: 'column', gap: 10 },
+  productTitle: { fontSize: 16, color: theme.colors.white, fontWeight: '600' },
+  productDescription: { fontSize: 16, color: applyOpacity(theme.colors.white, 0.8), fontWeight: '300' },
+  variantContainer: { flexDirection: 'column', gap: 10 },
+  sectionTitle: { fontSize: 16, fontWeight: '600', color: theme.colors.white },
+  variantButton: { padding: 10, borderRadius: 5, marginRight: 10 },
+  errorText: { color: 'red', marginTop: 5 },
+  availableText: { fontSize: 14, color: applyOpacity(theme.colors.white, 0.8), marginTop: 10 },
+  sizeContainer: { flexDirection: 'column', gap: 10 },
   sizeBox: {
     padding: 10,
     borderRadius: 5,
@@ -692,24 +670,66 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     alignItems: 'center',
   },
+  quantitySection: { flexDirection: 'column', gap: 10 },
   quantityContainer: { flexDirection: 'row', alignItems: 'center' },
   quantityButton: {
-    backgroundColor: '#4E4E4E',
+    backgroundColor: theme.colors.grey,
     borderRadius: 5,
     width: 30,
     height: 30,
     justifyContent: 'center',
     alignItems: 'center',
   },
-  quantityButtonText: { color: '#fff', fontSize: 18 },
-  quantityText: { marginHorizontal: 20, fontSize: 16, color: '#fff' },
-  errorText: { color: 'red', marginTop: 5 },
+  quantityButtonText: { color: theme.colors.white, fontSize: 18 },
+  quantityText: { marginHorizontal: 20, fontSize: 16, color: theme.colors.white },
+  sizeChartSection: { flexDirection: 'column', gap: 10 },
+  sizeChartContainer: {
+    borderWidth: 1,
+    borderColor: theme.colors.grey,
+    borderRadius: 5,
+    overflow: 'hidden',
+  },
+  chartHeaderRow: {
+    flexDirection: 'row',
+    backgroundColor: theme.colors.darkGrey,
+    padding: 10,
+  },
+  chartHeaderText: {
+    flex: 1,
+    color: theme.colors.white,
+    textAlign: 'center',
+    fontWeight: 'bold',
+  },
+  chartRow: {
+    flexDirection: 'row',
+    borderBottomWidth: 1,
+    borderBottomColor: theme.colors.grey,
+    padding: 10,
+  },
+  chartRowText: { flex: 1, color: theme.colors.white, textAlign: 'center' },
+  chartRowValue: { flex: 1, color: applyOpacity(theme.colors.white, 0.8), textAlign: 'center' },
+  shopInfoSection: { flexDirection: 'column', gap: 10, marginBottom: 200 },
+  shopContainer: { flexDirection: 'row', alignItems: 'center' },
+  shopLogo: {
+    width: 50,
+    height: 50,
+    borderRadius: 25,
+    marginRight: 10,
+    backgroundColor: theme.colors.greyWhite,
+  },
+  shopName: { fontSize: 18, color: theme.colors.white },
   flyingImage: {
     position: 'absolute',
     width: 50,
     height: 50,
     zIndex: 200,
   },
+  actionsheetContent: { backgroundColor: theme.colors.dark, width: '100%' },
+  actionsheetText: { color: theme.colors.white, fontSize: 18, marginBottom: 10, textAlign: 'center' },
+  proceedButton: { backgroundColor: theme.colors.white, marginTop: 5, width: '100%' },
+  proceedButtonText: { color: theme.colors.dark, fontSize: 16, fontWeight: '400', textAlign: 'center' },
+  cancelButton: { backgroundColor: theme.colors.grey, marginTop: 5, width: '100%' },
+  cancelButtonText: { color: theme.colors.white, fontSize: 16, fontWeight: '400', textAlign: 'center' },
 });
 
 export default ProductViewScreen;

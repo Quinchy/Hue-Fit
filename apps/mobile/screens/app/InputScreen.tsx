@@ -1,23 +1,65 @@
 // src/screens/account/InputScreen.tsx
-import React, { useState, useEffect } from "react";
-import { ScrollView, TouchableOpacity, Image, StyleSheet } from "react-native";
+import React, { useState, useEffect, useRef } from "react";
+import {
+  ScrollView,
+  TouchableOpacity,
+  Image,
+  StyleSheet,
+  Animated,
+  Easing,
+} from "react-native";
 import { VStack, Text, View } from "native-base";
 import CustomInput from "../../components/Input";
 import DefaultButton from "../../components/Button";
-import GradientCard from "../../components/GradientCard";
 import LoadingSpinner from "../../components/Loading";
 import * as NavigationBar from "expo-navigation-bar";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import { EXPO_PUBLIC_API_URL } from "@env";
 import { Asterisk } from "lucide-react-native";
+import { useTheme, applyOpacity } from "../../providers/ThemeProvider";
 
 interface FashionRadioGroupProps {
   selectedValue: string;
   onValueChange: (value: string) => void;
 }
 
-const FashionRadioGroup: React.FC<FashionRadioGroupProps> = ({ selectedValue, onValueChange }) => {
-  // Define the available options along with their images
+// Internal AnimatedOption component
+const AnimatedOption: React.FC<{
+  isSelected: boolean;
+  theme: any;
+  style?: any;
+  children: React.ReactNode;
+}> = ({ isSelected, theme, style, children, ...props }) => {
+  // Create an animated value; initial value depends on isSelected
+  const animatedValue = useRef(new Animated.Value(isSelected ? 1 : 0)).current;
+
+  useEffect(() => {
+    Animated.timing(animatedValue, {
+      toValue: isSelected ? 1 : 0,
+      duration: 300,
+      easing: Easing.inOut(Easing.ease),
+      useNativeDriver: false, // Color interpolation does not support native driver
+    }).start();
+  }, [isSelected, animatedValue]);
+
+  // Interpolate backgroundColor from transparent to 50% opacity dark
+  const backgroundColor = animatedValue.interpolate({
+    inputRange: [0, 1],
+    outputRange: ["transparent", applyOpacity(theme.colors.dark, 0.5)],
+  });
+
+  return (
+    <Animated.View style={[style, { backgroundColor }]} {...props}>
+      {children}
+    </Animated.View>
+  );
+};
+
+const FashionRadioGroup: React.FC<FashionRadioGroupProps> = ({
+  selectedValue,
+  onValueChange,
+}) => {
+  const { theme } = useTheme();
   const options = [
     { label: "Casual", image: require("../../assets/casual.png") },
     { label: "Smart Casual", image: require("../../assets/smart-casual.png") },
@@ -28,22 +70,33 @@ const FashionRadioGroup: React.FC<FashionRadioGroupProps> = ({ selectedValue, on
     <View style={styles.radioGroupContainer}>
       {options.map((option) => {
         const isSelected = selectedValue === option.label;
+        const borderStyles = {
+          borderColor: isSelected ? theme.colors.white : theme.colors.grey,
+          borderWidth: isSelected ? 2 : 1,
+          borderStyle: isSelected ? "solid" : "dashed",
+        };
+
         return (
-          <TouchableOpacity
+          <AnimatedOption
             key={option.label}
-            style={[
-              styles.optionContainer,
-              {
-                borderColor: isSelected ? "#fff" : "#4E4E4E",
-                borderWidth: isSelected ? 2 : 1,
-                borderStyle: isSelected ? "solid" : "dashed",
-              },
-            ]}
-            onPress={() => onValueChange(option.label)}
+            isSelected={isSelected}
+            theme={theme}
+            style={[styles.optionContainer, borderStyles]}
           >
-            <Image source={option.image} style={styles.optionImage} resizeMode="contain" />
-            <Text style={styles.optionText}>{option.label}</Text>
-          </TouchableOpacity>
+            <TouchableOpacity
+              onPress={() => onValueChange(option.label)}
+              style={{ flex: 1, alignItems: "center" }}
+            >
+              <Image
+                source={option.image}
+                style={styles.optionImage}
+                resizeMode="contain"
+              />
+              <Text style={[styles.optionText, { color: theme.colors.white }]}>
+                {option.label}
+              </Text>
+            </TouchableOpacity>
+          </AnimatedOption>
         );
       })}
     </View>
@@ -51,8 +104,8 @@ const FashionRadioGroup: React.FC<FashionRadioGroupProps> = ({ selectedValue, on
 };
 
 const InputScreen: React.FC<any> = ({ navigation }) => {
+  const { theme } = useTheme();
   const [outfitName, setOutfitName] = useState("");
-  // Default to "Casual" since "All Random" option is removed
   const [preference, setPreference] = useState("Casual");
   const [loading, setLoading] = useState(false);
   const [userId, setUserId] = useState<number | null>(null);
@@ -95,7 +148,10 @@ const InputScreen: React.FC<any> = ({ navigation }) => {
         }
       );
       if (!featuresResponse.ok) {
-        console.error("Error fetching customer features:", featuresResponse.statusText);
+        console.error(
+          "Error fetching customer features:",
+          featuresResponse.statusText
+        );
         setLoading(false);
         return;
       }
@@ -179,37 +235,38 @@ const InputScreen: React.FC<any> = ({ navigation }) => {
     );
   }
   NavigationBar.setPositionAsync("absolute");
-  NavigationBar.setBackgroundColorAsync("#0f0f0f");
+  NavigationBar.setBackgroundColorAsync(theme.colors.dark);
 
   return (
-    <ScrollView style={{ backgroundColor: "#191919" }}>
+    <ScrollView style={{ backgroundColor: theme.colors.darkGrey }}>
       <View style={{ marginTop: 45, marginLeft: 15, marginBottom: 20 }}>
-        <Text fontSize={28} fontWeight="bold" color="white">
+        <Text fontSize={28} fontWeight="bold" color={theme.colors.white}>
           Generate Outfit
         </Text>
       </View>
-      <GradientCard>
-        <VStack space={4} padding={4}>
-          <CustomInput
-            label="Outfit Name (optional)"
-            placeholder="Give this outfit a name"
-            value={outfitName}
-            onChangeText={setOutfitName}
-            variant="filled"
-          />
-          <View>
-            <Text fontSize="lg" fontWeight="bold" color="white" mt={4}>
-              Outfit Style <Asterisk size={12} color="#C0C0C0" style={{ marginLeft: 4, marginTop: 2 }} />
-            </Text>
-            <Text fontSize="md" color="#C0C0C0" fontWeight="light">
-              Select a fashion style and generate outfit.
-            </Text>
-          </View>
-          {/* Replace CustomSelect with our custom radio group in grid layout */}
-          <FashionRadioGroup selectedValue={preference} onValueChange={setPreference} />
-          <DefaultButton mt={10} mb={75} title="GENERATE" onPress={handleGenerate} />
-        </VStack>
-      </GradientCard>
+      {/* Card Container */}
+      <View style={[styles.cardContainer, { backgroundColor: theme.colors.darkGrey }]}>
+        <Text style={[styles.label, { color: theme.colors.white }]}>
+          Outfit Name (optional)
+        </Text>
+        <CustomInput
+          placeholder="Give this outfit a name"
+          value={outfitName}
+          onChangeText={setOutfitName}
+          variant="filled"
+        />
+        <View>
+          <Text fontSize="lg" fontWeight="bold" color={theme.colors.white} mt={4}>
+            Outfit Style{" "}
+            <Asterisk size={12} color={theme.colors.greyWhite} style={{ marginLeft: 4, marginTop: 2 }} />
+          </Text>
+          <Text fontSize="md" color={theme.colors.greyWhite} fontWeight="light">
+            Select a fashion style and generate outfit.
+          </Text>
+        </View>
+        <FashionRadioGroup selectedValue={preference} onValueChange={setPreference} />
+        <DefaultButton mt={10} mb={75} title="GENERATE" onPress={handleGenerate} />
+      </View>
     </ScrollView>
   );
 };
@@ -236,7 +293,17 @@ const styles = StyleSheet.create({
   optionText: {
     fontSize: 14,
     textAlign: "center",
-    color: "#fff",
+  },
+  cardContainer: {
+    marginHorizontal: 15,
+    marginBottom: 20,
+    borderRadius: 8,
+    padding: 4,
+  },
+  label: {
+    fontSize: 18, // Same as Outfit Style ("lg")
+    fontWeight: "bold",
+    marginBottom: 8,
   },
 });
 

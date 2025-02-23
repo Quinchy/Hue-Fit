@@ -10,21 +10,31 @@ export default async function getProducts(req, res) {
   const limit = parseInt(req.query.limit) || 10;
   const skip = (page - 1) * limit;
   const search = req.query.search || '';
+  const typeQuery = req.query.type || ""; // comma-separated types
+
+  let whereCondition = {};
+
+  if (search) {
+    whereCondition.name = {
+      contains: search,
+      mode: 'insensitive',
+    };
+  }
+
+  if (typeQuery) {
+    const typesArray = typeQuery.split(',').map(t => t.trim());
+    // Add a condition on the Type relation if provided.
+    whereCondition.Type = {
+      name: { in: typesArray },
+    };
+  }
 
   try {
     const productsData = await prisma.product.findMany({
       skip,
       take: limit,
       orderBy: { id: 'asc' },
-      // Use the search query if provided
-      where: search
-        ? {
-            name: {
-              contains: search,
-              mode: 'insensitive',
-            },
-          }
-        : {},
+      where: whereCondition,
       include: {
         ProductVariant: {
           take: 1,

@@ -1,5 +1,3 @@
-// src/screens/account/ForgotPasswordScreen.tsx
-
 import React, { useState } from 'react';
 import { Image, ScrollView, Pressable, Modal, ActivityIndicator } from 'react-native';
 import { VStack, HStack, Text, Center } from 'native-base';
@@ -11,6 +9,7 @@ import { Formik } from 'formik';
 import * as Yup from 'yup';
 import { useNavigation } from '@react-navigation/native';
 import { EXPO_PUBLIC_API_URL } from '@env';
+import { useTheme, applyOpacity } from '../../providers/ThemeProvider';
 
 const ForgotPasswordSchema = Yup.object().shape({
   username: Yup.string().required('Username is required'),
@@ -27,6 +26,7 @@ const ResetPasswordSchema = Yup.object().shape({
 
 const ForgotPasswordScreen = () => {
   const navigation = useNavigation();
+  const { theme } = useTheme();
   const [modalVisible, setModalVisible] = useState(false);
   const [requestError, setRequestError] = useState('');
   const [requestSuccess, setRequestSuccess] = useState('');
@@ -36,7 +36,7 @@ const ForgotPasswordScreen = () => {
   const [usernameForReset, setUsernameForReset] = useState('');
   const [emailForReset, setEmailForReset] = useState('');
 
-  const handleForgotPassword = async (values) => {
+  const handleForgotPassword = async (values: { username: string; email: string; }) => {
     setLoading(true);
     setRequestError('');
     setRequestSuccess('');
@@ -67,7 +67,7 @@ const ForgotPasswordScreen = () => {
     setLoading(false);
   };
 
-  const handleResetPassword = async (values) => {
+  const handleResetPassword = async (values: { otp: string; newPassword: string; confirmPassword: string; }) => {
     setResetLoading(true);
     setResetError('');
     try {
@@ -109,11 +109,11 @@ const ForgotPasswordScreen = () => {
           />
           <GradientCard>
             <Center mt={5} mb={10}>
-              <Text fontSize="3xl" color="white" fontWeight="bold">
+              <Text fontSize="3xl" color={theme.colors.white} fontWeight="bold">
                 FORGOT PASSWORD
               </Text>
               <HStack alignItems="center" space={1}>
-                <Text fontSize="md" color="#C0C0C095">
+                <Text fontSize="md" color={applyOpacity(theme.colors.greyWhite, 0.95)}>
                   Remembered your password?
                 </Text>
                 <Pressable onPress={() => navigation.navigate('Login')}>
@@ -121,7 +121,7 @@ const ForgotPasswordScreen = () => {
                     <Text
                       fontSize="md"
                       fontWeight="bold"
-                      color="white"
+                      color={theme.colors.white}
                       style={{ textDecorationLine: pressed ? 'underline' : 'none' }}
                     >
                       LOGIN
@@ -180,7 +180,7 @@ const ForgotPasswordScreen = () => {
                     </Text>
                   ) : null}
                   {loading ? (
-                    <ActivityIndicator size="large" color="#fff" />
+                    <ActivityIndicator size="large" color={theme.colors.white} />
                   ) : (
                     <DefaultButton mt={10} title="SUBMIT" onPress={handleSubmit} />
                   )}
@@ -201,7 +201,7 @@ const ForgotPasswordScreen = () => {
         <Center flex={1} px={4}>
           <GradientCard>
             <Center mt={5} mb={10}>
-              <Text fontSize="3xl" color="white" fontWeight="bold">
+              <Text fontSize="3xl" color={theme.colors.white} fontWeight="bold">
                 RESET PASSWORD
               </Text>
             </Center>
@@ -268,7 +268,7 @@ const ForgotPasswordScreen = () => {
                     </Text>
                   ) : null}
                   {resetLoading ? (
-                    <ActivityIndicator size="large" color="#fff" />
+                    <ActivityIndicator size="large" color={theme.colors.white} />
                   ) : (
                     <DefaultButton mt={10} title="UPDATE PASSWORD" onPress={handleSubmit} />
                   )}

@@ -1,4 +1,3 @@
-// src/screens/account/RegisterScreen.tsx
 import React from 'react';
 import { Image, ScrollView, Pressable } from 'react-native';
 import { VStack, HStack, Text, Center } from 'native-base';
@@ -8,6 +7,7 @@ import DefaultButton from '../../components/Button';
 import GradientCard from '../../components/GradientCard';
 import { Formik } from 'formik';
 import * as Yup from 'yup';
+import { useTheme, applyOpacity } from '../../providers/ThemeProvider';
 
 const RegisterSchema = Yup.object().shape({
   firstName: Yup.string().required('First Name is required'),
@@ -20,6 +20,7 @@ const RegisterSchema = Yup.object().shape({
 });
 
 export default function RegisterScreen({ navigation, route }) {
+  const { theme } = useTheme();
   const prevData = route.params?.registerData || {};
 
   return (
@@ -40,11 +41,11 @@ export default function RegisterScreen({ navigation, route }) {
 
           <GradientCard>
             <Center mt={5} mb={10}>
-              <Text fontSize="3xl" color="white" fontWeight="bold">
+              <Text fontSize="3xl" color={theme.colors.white} fontWeight="bold">
                 REGISTER
               </Text>
               <HStack alignItems="center" space={1}>
-                <Text fontSize="md" color="#C0C0C095">
+                <Text fontSize="md" color={applyOpacity(theme.colors.greyWhite, 0.6)}>
                   Already have an account?
                 </Text>
                 <Pressable onPress={() => navigation.navigate('Login')}>
@@ -52,10 +53,10 @@ export default function RegisterScreen({ navigation, route }) {
                     <Text
                       fontSize="md"
                       fontWeight="bold"
-                      color="white"
+                      color={theme.colors.white}
                       style={{ textDecorationLine: pressed ? 'underline' : 'none' }}
                     >
-                      LOGIN
+                      Login.
                     </Text>
                   )}
                 </Pressable>
@@ -64,10 +65,10 @@ export default function RegisterScreen({ navigation, route }) {
 
             {/* Personal Information */}
             <VStack alignItems="flex-start" mb={4}>
-              <Text fontSize="lg" color="white" fontWeight="bold">
+              <Text fontSize="lg" color={theme.colors.white} fontWeight="bold">
                 Personal Information
               </Text>
-              <Text fontSize="md" color="#C0C0C095">
+              <Text fontSize="md" color={applyOpacity(theme.colors.greyWhite, 0.6)}>
                 Please fill the form with your personal information
               </Text>
             </VStack>

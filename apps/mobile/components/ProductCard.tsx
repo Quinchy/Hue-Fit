@@ -1,30 +1,54 @@
-import React from 'react';
-import { TouchableOpacity, Image } from 'react-native';
-import { Box, Text } from 'native-base';
+// ProductCard.js
+import React, { useMemo } from "react";
+import { View, Text, Image, StyleSheet, TouchableOpacity } from "react-native";
+import { useTheme } from "../providers/ThemeProvider";
 
-type ProductCardProps = {
-  thumbnailURL: string;
-  productName: string;
-  price: string;
-  onPress: () => void;
-};
+const ProductCard = ({ thumbnailURL, productName, price, onPress }) => {
+  const { theme } = useTheme();
+  // Memoize the random aspect ratio to keep it stable across re-renders.
+  const randomAspectRatio = useMemo(() => Math.random() * (1.2 - 0.7) + 0.7, []);
 
-const ProductCard: React.FC<ProductCardProps> = ({ thumbnailURL, productName, price, onPress }) => {
   return (
-    <TouchableOpacity onPress={onPress} style={{ width: '49.2%', marginBottom: 6 }}>
-      <Box borderWidth={1} borderColor="muted.900" bg="dark.100" borderRadius={5} overflow="hidden">
-        <Image source={{ uri: thumbnailURL }} style={{ width: '100%', height: 250 }} resizeMode="cover" />
-        <Box p={2}>
-          <Text fontSize="xs" color='white' fontWeight="thin" numberOfLines={1}>
-            {productName}
-          </Text>
-          <Text color="#fff" fontSize="sm" fontWeight="bold">
-            {price}
-          </Text>
-        </Box>
-      </Box>
+    <TouchableOpacity
+      style={[styles.card, { backgroundColor: theme.colors.darkGrey }]}
+      onPress={onPress}
+    >
+      <Image
+        source={{ uri: thumbnailURL }}
+        style={[styles.image, { aspectRatio: randomAspectRatio }]}
+      />
+      <View style={styles.textContainer}>
+        <Text style={[styles.title, { color: theme.colors.white }]} numberOfLines={1}>
+          {productName}
+        </Text>
+        <Text style={[styles.price, { color: theme.colors.greyWhite }]}>{price}</Text>
+      </View>
     </TouchableOpacity>
   );
 };
 
-export default ProductCard;
+const styles = StyleSheet.create({
+  card: {
+    margin: 4,
+    borderRadius: 10,
+    overflow: "hidden",
+    flex: 1,
+  },
+  image: {
+    width: "100%",
+    resizeMode: "cover",
+  },
+  textContainer: {
+    padding: 8,
+  },
+  title: {
+    fontSize: 14,
+    marginBottom: 4,
+  },
+  price: {
+    fontSize: 12,
+  },
+});
+
+// Export wrapped with React.memo to avoid unnecessary re-renders.
+export default React.memo(ProductCard);

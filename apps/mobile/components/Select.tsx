@@ -1,6 +1,7 @@
 import React from 'react';
 import { Box, Text, Select, ISelectProps, CheckIcon } from 'native-base';
 import { Asterisk } from 'lucide-react-native';
+import { useTheme, applyOpacity } from '../providers/ThemeProvider';
 
 interface CustomSelectProps extends ISelectProps {
   label?: string;           // Optional label for the selector
@@ -20,25 +21,28 @@ const CustomSelect: React.FC<CustomSelectProps> = ({
   error,
   ...props
 }) => {
-  const borderWidth = error ? 2 : 1;
-  const borderColor = error ? "red.500" : "#C0C0C035";
+  const { theme } = useTheme();
+  const labelColor = theme.colors.greyWhite; // replacing "#C0C0C0"
+  const bgColor = theme.colors.darkGrey; // replacing "#2E2E2E"
+  const placeholderTextColor = applyOpacity(theme.colors.greyWhite, 0.35); // similar to "#c0c0c035"
+  const computedBorderColor = error ? "red.500" : placeholderTextColor;
 
   return (
     <Box>
       <Text
         fontSize="md"
         fontWeight={600}
-        color="#C0C0C0"
+        color={labelColor}
         mb={1}
         flexDir="row"
         alignItems="center"
       >
         {label}
         {required && (
-          <Asterisk size={12} color="#C0C0C0" style={{ marginLeft: 4 }} />
+          <Asterisk size={12} color={labelColor} style={{ marginLeft: 4 }} />
         )}
       </Text>
-      <Box borderWidth={borderWidth} borderColor={borderColor} borderRadius="md">
+      <Box borderWidth={error ? 2 : 1} borderColor={computedBorderColor} borderRadius="md">
         <Select
           selectedValue={value}
           minWidth="200"
@@ -46,25 +50,25 @@ const CustomSelect: React.FC<CustomSelectProps> = ({
           placeholder={`Choose your ${label}`}
           onValueChange={(itemValue) => onChange(itemValue)}
           _selectedItem={{
-            bg: "#c0c0c035",
+            bg: placeholderTextColor,
             borderRadius: "md",
             endIcon: <CheckIcon size="5" />,
           }}
           _actionSheetContent={{
-            backgroundColor: "#2E2E2E",
+            backgroundColor: bgColor,
             borderRadius: "lg",
           }}
           _actionSheetBody={{
-            backgroundColor: "#2E2E2E",
+            backgroundColor: bgColor,
           }}
           _item={{
-            bg: "#2E2E2E",
+            bg: bgColor,
             my: 0.5,
             _text: {
-              color: "white",
+              color: theme.colors.white,
             },
             _pressed: {
-              bg: "#c0c0c035",
+              bg: placeholderTextColor,
               borderRadius: "md",
             },
           }}
@@ -72,11 +76,11 @@ const CustomSelect: React.FC<CustomSelectProps> = ({
           px={5}
           height={50}
           borderRadius="md"
-          bg="#2E2E2E"
+          bg={bgColor}
           borderColor="transparent"
-          placeholderTextColor="#c0c0c035"
+          placeholderTextColor={placeholderTextColor}
           fontSize="md"
-          color="white"
+          color={theme.colors.white}
           {...props}
         >
           {children}
