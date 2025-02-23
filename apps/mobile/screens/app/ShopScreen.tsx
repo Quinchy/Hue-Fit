@@ -31,11 +31,11 @@ const UniformIcon = ({ IconComponent, size = 16, color, style }) => {
 
 const filterOptions = ["ALL CLOTHINGS", "OUTERWEAR", "UPPERWEAR", "LOWERWEAR", "FOOTWEAR"];
 const filterIcons = {
-  "ALL CLOTHINGS": Layers,   // from lucide-react-native
-  "OUTERWEAR": Jacket,       // local SVG
-  "UPPERWEAR": Shirt,        // from lucide-react-native
-  "LOWERWEAR": Trousers,     // local SVG
-  "FOOTWEAR": Sneaker,       // local SVG
+  "ALL CLOTHINGS": Layers,
+  "OUTERWEAR": Jacket,
+  "UPPERWEAR": Shirt,
+  "LOWERWEAR": Trousers,
+  "FOOTWEAR": Sneaker,
 };
 
 const ShopScreen = ({ navigation }) => {
