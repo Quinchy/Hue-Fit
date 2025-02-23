@@ -29,7 +29,6 @@ const ProductCard = ({ thumbnailURL, productName, price, onPress }) => {
 
 const styles = StyleSheet.create({
   card: {
-    margin: 4,
     borderRadius: 10,
     overflow: "hidden",
     flex: 1,

@@ -9,8 +9,34 @@ import ProductCard from "../../components/ProductCard";
 import LoadingSpinner from "../../components/Loading";
 import { EXPO_PUBLIC_API_URL } from "@env";
 import { useTheme } from "../../providers/ThemeProvider";
+// Import lucide icons for filters
+import { Layers, Shirt } from "lucide-react-native";
+// Import local SVG icons
+import Jacket from "../../assets/icons/Jacket.svg";
+import Sneaker from "../../assets/icons/Sneaker.svg";
+import Trousers from "../../assets/icons/Trousers.svg";
+
+// UniformIcon component to enforce consistent icon sizing and stroke
+const UniformIcon = ({ IconComponent, size = 16, color, style }) => {
+  return (
+    <IconComponent
+      width={size}
+      height={size}
+      stroke={color}
+      strokeWidth={1.5}
+      style={style}
+    />
+  );
+};
 
 const filterOptions = ["ALL CLOTHINGS", "OUTERWEAR", "UPPERWEAR", "LOWERWEAR", "FOOTWEAR"];
+const filterIcons = {
+  "ALL CLOTHINGS": Layers,   // from lucide-react-native
+  "OUTERWEAR": Jacket,       // local SVG
+  "UPPERWEAR": Shirt,        // from lucide-react-native
+  "LOWERWEAR": Trousers,     // local SVG
+  "FOOTWEAR": Sneaker,       // local SVG
+};
 
 const ShopScreen = ({ navigation }) => {
   const { theme } = useTheme();
@@ -104,13 +130,16 @@ const ShopScreen = ({ navigation }) => {
     fetchProducts(1);
   }, []);
 
+  // Wrap each ProductCard in a container with margin to simulate gaps.
   const renderProductCard = ({ item }) => (
-    <ProductCard
-      thumbnailURL={item.thumbnailURL}
-      productName={item.productName}
-      price={`PHP ${item.price}`}
-      onPress={() => navigation.navigate("ProductView", { productId: item.id })}
-    />
+    <View style={styles.cardWrapper}>
+      <ProductCard
+        thumbnailURL={item.thumbnailURL}
+        productName={item.productName}
+        price={`PHP ${item.price}`}
+        onPress={() => navigation.navigate("ProductView", { productId: item.id })}
+      />
+    </View>
   );
 
   if (loading && page === 1 && searchQuery === "" && products.length === 0) {
@@ -142,13 +171,7 @@ const ShopScreen = ({ navigation }) => {
         ListHeaderComponent={
           <>
             <VStack alignItems="center" mt={12}>
-              <Box
-                width="100%"
-                mb={2}
-                flexDirection="row"
-                justifyContent="center"
-                alignItems="center"
-              >
+              <Box width="100%" mb={2} flexDirection="row" justifyContent="center" alignItems="center">
                 <Box flex={1} px={1}>
                   <SearchBar
                     placeholder="Search products..."
@@ -161,17 +184,24 @@ const ShopScreen = ({ navigation }) => {
               <ScrollView horizontal showsHorizontalScrollIndicator={false} style={styles.filterContainer}>
                 {filterOptions.map((filter) => {
                   const isActive = activeFilters.includes(filter);
+                  const IconComponent = filterIcons[filter];
                   return (
                     <TouchableOpacity
                       key={filter}
                       onPress={() => toggleFilter(filter)}
                       style={[
                         styles.filterButton,
-                        {
-                          backgroundColor: isActive ? theme.colors.white : theme.colors.grey,
-                        },
+                        { backgroundColor: isActive ? theme.colors.white : theme.colors.grey },
                       ]}
                     >
+                      {IconComponent && (
+                        <UniformIcon
+                          IconComponent={IconComponent}
+                          size={16}
+                          color={isActive ? theme.colors.dark : theme.colors.white}
+                          style={{ marginRight: 4 }}
+                        />
+                      )}
                       <Text style={{ color: isActive ? theme.colors.dark : theme.colors.white, fontSize: 12 }}>
                         {filter}
                       </Text>
@@ -202,21 +232,28 @@ const styles = StyleSheet.create({
   },
   listContent: {
     paddingBottom: 120,
-    paddingHorizontal: 8,
   },
   footerLoadingContainer: {
     paddingVertical: 20,
     alignItems: "center",
   },
   filterContainer: {
-    paddingHorizontal: 8,
-    marginBottom: 8,
+    paddingHorizontal: 5,
+    marginBottom: 10,
+    marginTop: 5,
   },
   filterButton: {
-    paddingHorizontal: 12,
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "center",
+    paddingHorizontal: 10,
     paddingVertical: 6,
-    borderRadius: 20,
+    height: 35,
+    borderRadius: 5,
     marginRight: 8,
+  },
+  cardWrapper: {
+    margin: 5, // Adjust this value to change the gap between product cards
   },
 });
 
