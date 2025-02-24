@@ -24,10 +24,8 @@ export default function VirtualTryOnPage() {
   const [statusMessage, setStatusMessage] = useState("");
   const [mounted, setMounted] = useState(false);
   const [isPortrait, setIsPortrait] = useState(true);
-  // New state for controlling the camera facing mode.
+  // Camera facing mode state remains
   const [facingMode, setFacingMode] = useState("environment");
-  // New state for the subtle card flip rotation effect.
-  const [cardRotation, setCardRotation] = useState(0);
 
   // The cropped <img> to draw & its ImageData (if needed for future usage)
   const clothingImageElementRef = useRef(null);
@@ -212,11 +210,11 @@ export default function VirtualTryOnPage() {
           overlayWidth = shoulderWidth * 1.2;
           overlayHeight = overlayWidth / aspectRatio;
         }
-        // Apply a fixed stretch value for upperwear (1.2)
+        // Apply a fixed stretch value for upperwear (1.85)
         overlayWidth = overlayWidth * 1.85;
         // Recalculate the X position after stretching
         overlayX = shoulderCenterX - overlayWidth / 2 + 10;
-        overlayY = shoulderCenterY - overlayHeight * 0.12 - 30 ;
+        overlayY = shoulderCenterY - overlayHeight * 0.12 - 30;
       } else if (type === "LOWERWEAR") {
         if (!leftHip || !rightHip) {
           setStatusMessage("Lower body not fully detected (hips). Please move back to show hips.");
@@ -257,7 +255,7 @@ export default function VirtualTryOnPage() {
           overlayWidth = hipWidth * 1.1;
           overlayHeight = overlayWidth / aspectRatio;
         }
-        // Apply a fixed stretch value for lowerwear (1.1)
+        // Apply a fixed stretch value for lowerwear (1.5)
         overlayWidth = overlayWidth * 1.5;
         // Recalculate the X position after stretching
         overlayX = hipCenterX - overlayWidth / 2;
@@ -295,13 +293,10 @@ export default function VirtualTryOnPage() {
       return;
     }
     try {
-      // Get the canvas context (with alpha transparency enabled).
       const canvasElement = canvasElementRef.current;
       const canvasContext = canvasElement.getContext("2d", { alpha: true });
-      // Clear only the overlay canvas.
       canvasContext.clearRect(0, 0, canvasElement.width, canvasElement.height);
 
-      // Estimate poses from the video element.
       const detectedPoses = await poseDetector.estimatePoses(videoElementRef.current, {
         flipHorizontal: false,
       });
@@ -357,21 +352,17 @@ export default function VirtualTryOnPage() {
   }, [facingMode]);
 
   /**
-   * Start the pose detection loop once the camera is ready and detector is initialized.
+   * Start the pose detection loop using setInterval (30 FPS).
    */
   useEffect(() => {
-    let animationFrameId;
-    const detectionLoop = async () => {
-      await performPoseDetection();
-      setTimeout(() => {
-        animationFrameId = requestAnimationFrame(detectionLoop);
-      }, 66); // roughly 15 fps
-    };
+    let detectionInterval;
     if (isCameraReady && poseDetector) {
-      detectionLoop();
+      detectionInterval = setInterval(() => {
+        performPoseDetection();
+      }, 1000 / 30);
     }
     return () => {
-      if (animationFrameId) cancelAnimationFrame(animationFrameId);
+      if (detectionInterval) clearInterval(detectionInterval);
     };
   }, [isCameraReady, poseDetector, performPoseDetection]);
 
@@ -396,24 +387,6 @@ export default function VirtualTryOnPage() {
   }, []);
 
   /**
-   * Listen for device orientation events and update cardRotation.
-   * Adjust the gamma value to a subtle rotation (e.g., maximum ±5°)
-   * and use a larger perspective to reduce foreshortening.
-   */
-  useEffect(() => {
-    const handleDeviceOrientation = (event) => {
-      // gamma: left-to-right tilt (in degrees)
-      // Dividing by 6 and clamping to ±5° gives a more subtle effect.
-      const { gamma } = event;
-      const rotation = Math.max(-5, Math.min(5, gamma / 6));
-      setCardRotation(rotation);
-    };
-
-    window.addEventListener("deviceorientation", handleDeviceOrientation);
-    return () => window.removeEventListener("deviceorientation", handleDeviceOrientation);
-  }, []);
-
-  /**
    * Initialize pose detector on mount.
    */
   useEffect(() => {
@@ -424,21 +397,8 @@ export default function VirtualTryOnPage() {
 
   return (
     <div style={styles.container} ref={containerRef}>
-      {/* 
-          Apply a 3D perspective and dynamic rotateY to create a subtle card flip effect.
-          Increasing the perspective value to 3000px reduces the foreshortening that makes
-          the PNG clothing appear smaller.
-      */}
-      <div
-        style={{
-          ...styles.cameraContainer,
-          transform: `perspective(3000px) rotateY(${cardRotation}deg)`,
-          transition: "transform 0.2s ease-out",
-        }}
-      >
-        {/* Video element shows the live camera feed */}
+      <div style={styles.cameraContainer}>
         <video ref={videoElementRef} style={styles.video} muted playsInline autoPlay />
-        {/* Canvas is positioned on top to show only the clothing overlay */}
         <canvas ref={canvasElementRef} style={styles.canvas} />
         <button style={styles.toggleButton} onClick={toggleCamera}>
           Switch Camera
@@ -451,7 +411,7 @@ export default function VirtualTryOnPage() {
 
 const styles = {
   container: {
-    position: "fixed", // Make sure the container is fixed to the viewport
+    position: "fixed", // Fix container to the viewport
     top: 0,
     left: 0,
     width: "100vw",
@@ -466,14 +426,12 @@ const styles = {
     width: "100%",
     height: "100%",
   },
-  // Video element displays the camera feed normally.
   video: {
     width: "100%",
     height: "100%",
     objectFit: "cover",
     backgroundColor: "#000",
   },
-  // Canvas is absolutely positioned over the video and remains transparent.
   canvas: {
     position: "absolute",
     top: "0",
