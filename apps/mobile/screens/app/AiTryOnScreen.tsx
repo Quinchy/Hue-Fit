@@ -1,5 +1,4 @@
 // AiTryOnScreen.js
-
 import React, { useState } from 'react';
 import {
   View,
@@ -18,8 +17,9 @@ import { EXPO_PUBLIC_API_URL } from '@env';
 
 function AiTryOnScreen() {
   const route = useRoute();
-  const { pngClotheURL, type } = route.params;
-  const [image, setImage] = useState<string | null>(null);
+  // Receive both the preview garment URL and the variant image for API usage
+  const { pngClotheURL, variantImage, type } = route.params;
+  const [image, setImage] = useState(null);
   const [mode, setMode] = useState('balanced');
   const [loading, setLoading] = useState(false);
   const [resultImage, setResultImage] = useState(null);
@@ -57,7 +57,8 @@ function AiTryOnScreen() {
         name: 'model.jpg',
         type: 'image/jpeg',
       });
-      formData.append('pngClotheURL', pngClotheURL);
+      // Use the variantImage for the API call as garment
+      formData.append('pngClotheURL', variantImage);
       formData.append('type', type);
       formData.append('mode', mode);
 
@@ -93,7 +94,7 @@ function AiTryOnScreen() {
         <View style={styles.container}>
           <Text style={styles.title}>AI Try-On</Text>
 
-          {/* Garment Image */}
+          {/* Garment Image Preview (using pngClotheURL) */}
           <View style={styles.section}>
             <Text style={styles.subtitle}>Garment</Text>
             {pngClotheURL ? (

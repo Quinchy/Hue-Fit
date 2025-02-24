@@ -552,13 +552,6 @@ const CartScreen = ({ navigation, route }) => {
                   </Text>
                 </Radio>
               </Box>
-              <Box style={[styles.paymentMethodBox, { opacity: 0.4, backgroundColor: theme.colors.grey }]} >
-                <Radio value="CARD" isDisabled colorScheme="gray">
-                  <Text style={styles.paymentMethodText}>
-                    Credit Card
-                  </Text>
-                </Radio>
-              </Box>
             </VStack>
           </Radio.Group>
           <TouchableOpacity

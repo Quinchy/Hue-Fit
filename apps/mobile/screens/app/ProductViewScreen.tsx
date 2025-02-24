@@ -277,7 +277,8 @@ const ProductViewScreen = ({ route, navigation }) => {
                   onPress={() => {
                     if (values.selectedVariant?.pngClotheURL) {
                       navigation.navigate('AiTryOn', {
-                        pngClotheURL: values.selectedVariant.pngClotheURL,
+                        pngClotheURL: values.selectedVariant.pngClotheURL, // used for garment preview
+                        variantImage: values.selectedVariant.images[0],   // passed for API use
                         type: parentProduct?.typeName ?? '',
                         tag: parentProduct?.tagName ?? '',
                       });
@@ -634,7 +635,7 @@ const getStyles = (theme) => StyleSheet.create({
   },
   floatingButtonContainer: {
     position: 'absolute',
-    bottom: 50, // increased from 20 to 40 for slight elevation
+    bottom: 50,
     left: 20,
     right: 20,
     alignItems: 'center',
