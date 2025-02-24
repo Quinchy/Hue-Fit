@@ -216,7 +216,7 @@ export default function VirtualTryOnPage() {
         overlayWidth = overlayWidth * 1.85;
         // Recalculate the X position after stretching
         overlayX = shoulderCenterX - overlayWidth / 2 + 10;
-        overlayY = shoulderCenterY - overlayHeight * 0.12 - 40 ;
+        overlayY = shoulderCenterY - overlayHeight * 0.12 - 30 ;
       } else if (type === "LOWERWEAR") {
         if (!leftHip || !rightHip) {
           setStatusMessage("Lower body not fully detected (hips). Please move back to show hips.");
