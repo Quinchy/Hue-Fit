@@ -313,6 +313,10 @@ const PlaygroundScreen: React.FC = ({ route, navigation }) => {
               </Text>
               <TouchableOpacity
                 onPress={() => {
+                  // Log the pngClotheURL values
+                  console.log("upperWearPng:", outfitData.upper_wear.pngClotheURL);
+                  console.log("lowerWearPng:", outfitData.lower_wear.pngClotheURL);
+                  console.log("outerWearPng:", preference.toUpperCase() === "FORMAL" ? outfitData.outerwear?.pngClotheURL : null);
                   navigation.navigate("VirtualFitting", {
                     upperWearPng: outfitData.upper_wear.pngClotheURL,
                     lowerWearPng: outfitData.lower_wear.pngClotheURL,
@@ -373,8 +377,8 @@ const PlaygroundScreen: React.FC = ({ route, navigation }) => {
             </VStack>
             <DefaultButton
               title={loading ? "Generating..." : "RE-GENERATE"}
-              mt={20}
-              mb={20}
+              mt={10}
+              mb={150}
               onPress={handleRegenerate}
               isDisabled={loading}
               leftIcon={loading ? <Spinner color="white" size="sm" /> : undefined}

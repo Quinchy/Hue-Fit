@@ -172,7 +172,7 @@ const InputScreen: React.FC<any> = ({ navigation }) => {
         bodyshape: customerFeature.bodyShape,
       };
       const response = await fetch(
-        `http://192.168.254.105:8000/generate-outfit?unique=${Date.now()}`,
+        `https://hue-fit-ai.onrender.com/generate-outfit?unique=${Date.now()}`,
         {
           method: "POST",
           headers: {
