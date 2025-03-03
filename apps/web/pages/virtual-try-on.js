@@ -1,3 +1,4 @@
+// pages/virtual-try-on.js
 import React, { useRef, useState, useCallback, useEffect } from "react";
 import { useRouter } from "next/router";
 import * as tf from "@tensorflow/tfjs-core";
@@ -10,25 +11,10 @@ import * as posedetection from "@tensorflow-models/pose-detection";
 // Set WASM paths (if needed)
 setWasmPaths("/wasm/");
 
-// General multipliers and offsets for overlay calculations.
-const GENERAL_UPPER_STRETCH_MULTIPLIER = 1.5;
-const GENERAL_UPPER_VERTICAL_OFFSET = 0.12;
-const TRIPLE_UPPER_EXTRA_UPWARD_SHIFT = 20;
-
-const GENERAL_OUTER_STRETCH_MULTIPLIER = 1.85;
-const GENERAL_LOWER_STRETCH_MULTIPLIER = 1.6;
-
 export default function VirtualTryOnPage() {
   const router = useRouter();
   // Extract both single and multiple PNG URL parameters.
-  const {
-    pngClotheURL,
-    upperWearPng,
-    lowerWearPng,
-    outerWearPng,
-    type,
-    tag,
-  } = router.query;
+  const { pngClotheURL, upperWearPng, lowerWearPng, outerWearPng, type, tag } = router.query;
 
   const videoElementRef = useRef(null);
   const canvasElementRef = useRef(null);
@@ -53,6 +39,10 @@ export default function VirtualTryOnPage() {
     setMounted(true);
   }, []);
 
+  /**
+   * Crop transparent edges from the loaded PNG image.
+   * Adjust this function if you need to fine-tune cropping behavior.
+   */
   function cropTransparentImage(img) {
     const w = img.naturalWidth;
     const h = img.naturalHeight;
@@ -112,9 +102,64 @@ export default function VirtualTryOnPage() {
     return { croppedImg, imageData: croppedImageData };
   }
 
-  // New: Compute overlay parameters based on scenario.
-  // scenario: "single", "dual", or "triple"
-  function computeOverlayParamsScenario(clothingType, scaleX, scaleY, keypoints, aspectRatio, scenario = "single") {
+  /**
+   * Load clothing PNG(s) once the URL(s) are known.
+   * Adjust loading or cropping behavior here if needed.
+   */
+  useEffect(() => {
+    if (!router.isReady) return;
+    if (upperWearPng && lowerWearPng) {
+      const loadImage = (url, ref) => {
+        const img = new Image();
+        img.crossOrigin = "anonymous";
+        img.src = url;
+        img.onload = () => {
+          const { croppedImg } = cropTransparentImage(img);
+          ref.current = croppedImg;
+        };
+      };
+      loadImage(upperWearPng, upperWearImageRef);
+      loadImage(lowerWearPng, lowerWearImageRef);
+      if (outerWearPng) {
+        loadImage(outerWearPng, outerWearImageRef);
+      }
+    } else if (pngClotheURL) {
+      const img = new Image();
+      img.crossOrigin = "anonymous";
+      img.src = pngClotheURL;
+      img.onload = () => {
+        const { croppedImg, imageData } = cropTransparentImage(img);
+        clothingImageElementRef.current = croppedImg;
+        clothingPixelDataRef.current = imageData;
+      };
+    }
+  }, [router.isReady, pngClotheURL, upperWearPng, lowerWearPng, outerWearPng]);
+
+  /**
+   * Initialize Pose Detector with tf.js MoveNet.
+   * Adjust detector settings by changing the modelType or configuration.
+   */
+  const initializePoseDetector = async () => {
+    try {
+      await tf.setBackend("wasm");
+      await tf.ready();
+      const detectionModel = posedetection.SupportedModels.MoveNet;
+      const detectorConfig = {
+        modelType: posedetection.movenet.modelType.SINGLEPOSE_LIGHTNING,
+      };
+      const detectorInstance = await posedetection.createDetector(detectionModel, detectorConfig);
+      setPoseDetector(detectorInstance);
+    } catch (error) {
+      console.error("Error initializing pose detector:", error);
+      setStatusMessage("Failed to initialize pose detector. Please refresh the page.");
+    }
+  };
+
+  /**
+   * Compute overlay parameters based on clothing type.
+   * Adjust the multipliers and offsets below to tweak stretching and position.
+   */
+  function computeOverlayParams(clothingType, scaleX, scaleY, keypoints, aspectRatio) {
     if (clothingType === "UPPERWEAR") {
       if (!keypoints.left_shoulder || !keypoints.right_shoulder) return null;
       const leftShoulderX = keypoints.left_shoulder.x * scaleX;
@@ -130,7 +175,7 @@ export default function VirtualTryOnPage() {
         const rightHipY = keypoints.right_hip.y * scaleY;
         const hipCenterY = (leftHipY + rightHipY) / 2;
         const torsoHeight = hipCenterY - shoulderCenterY;
-        overlayHeight = torsoHeight * 1.15;
+        overlayHeight = torsoHeight * 1.15; // Adjust vertical stretching as needed.
         overlayWidth = overlayHeight * aspectRatio;
       } else {
         overlayWidth = shoulderWidth * 1.2;
@@ -140,16 +185,19 @@ export default function VirtualTryOnPage() {
         overlayWidth = shoulderWidth * 1.2;
         overlayHeight = overlayWidth / aspectRatio;
       }
-      overlayWidth = overlayWidth * GENERAL_UPPER_STRETCH_MULTIPLIER;
+      // Lower the horizontal stretch multiplier for UPPERWEAR.
+      overlayWidth = overlayWidth * 1.5;
       const overlayX = shoulderCenterX - overlayWidth / 2;
-      let overlayY = shoulderCenterY - overlayHeight * GENERAL_UPPER_VERTICAL_OFFSET;
-      // For triple overlays, adjust UPPERWEAR position further upward.
-      if (scenario === "triple") {
-        overlayY = overlayY - TRIPLE_UPPER_EXTRA_UPWARD_SHIFT;
+      // Compute the default vertical offset.
+      let overlayY = shoulderCenterY - overlayHeight * 0.12;
+      // If outerwear is present, adjust the upperwear position upward slightly.
+      if (hasOuterwear) {
+        overlayY = overlayY - 20; // Adjust the offset (e.g., subtract 20px).
       }
       return { overlayX, overlayY, overlayWidth, overlayHeight };
     } 
     else if (clothingType === "OUTERWEAR") {
+      // OUTERWEAR: Use default multipliers.
       if (!keypoints.left_shoulder || !keypoints.right_shoulder) return null;
       const leftShoulderX = keypoints.left_shoulder.x * scaleX;
       const leftShoulderY = keypoints.left_shoulder.y * scaleY;
@@ -174,11 +222,12 @@ export default function VirtualTryOnPage() {
         overlayWidth = shoulderWidth * 1.2;
         overlayHeight = overlayWidth / aspectRatio;
       }
-      overlayWidth = overlayWidth * GENERAL_OUTER_STRETCH_MULTIPLIER;
+      overlayWidth = overlayWidth * 1.85;
       const overlayX = shoulderCenterX - overlayWidth / 2;
-      const overlayY = shoulderCenterY - overlayHeight * GENERAL_UPPER_VERTICAL_OFFSET - 30;
+      const overlayY = shoulderCenterY - overlayHeight * 0.12 - 30;
       return { overlayX, overlayY, overlayWidth, overlayHeight };
-    } else if (clothingType === "LOWERWEAR") {
+    } 
+    else if (clothingType === "LOWERWEAR") {
       if (!keypoints.left_hip || !keypoints.right_hip) return null;
       const leftHipX = keypoints.left_hip.x * scaleX;
       const leftHipY = keypoints.left_hip.y * scaleY;
@@ -200,13 +249,13 @@ export default function VirtualTryOnPage() {
       }
       const lowerBodyHeight = lowerPointY - hipCenterY;
       let overlayHeight = lowerBodyHeight * 1.3;
-      let overlayWidth = overlayHeight * (clothingImageElementRef.current.naturalWidth / clothingImageElementRef.current.naturalHeight);
+      let overlayWidth = overlayHeight * aspectRatio;
       const hipWidth = Math.abs(rightHipX - leftHipX);
       if (overlayWidth < hipWidth * 1.1) {
         overlayWidth = hipWidth * 1.1;
-        overlayHeight = overlayWidth / (clothingImageElementRef.current.naturalWidth / clothingImageElementRef.current.naturalHeight);
+        overlayHeight = overlayWidth / aspectRatio;
       }
-      overlayWidth = overlayWidth * GENERAL_LOWER_STRETCH_MULTIPLIER;
+      overlayWidth = overlayWidth * 1.6;
       const overlayX = hipCenterX - overlayWidth / 2;
       const overlayY = hipCenterY - 40;
       return { overlayX, overlayY, overlayWidth, overlayHeight };
@@ -214,6 +263,10 @@ export default function VirtualTryOnPage() {
     return null;
   }
 
+  /**
+   * Draw clothing overlay based on the user's pose.
+   * Adjust drawing order and positions by modifying the parameters passed to drawImage.
+   */
   const renderClothingOverlay = useCallback(
     (poses, canvasContext) => {
       if (!poses || poses.length === 0) return;
@@ -238,45 +291,46 @@ export default function VirtualTryOnPage() {
       const scaleX = canvasWidth / videoWidth;
       const scaleY = canvasHeight / videoHeight;
 
+      // Clear the canvas before drawing.
       canvasContext.clearRect(0, 0, canvasWidth, canvasHeight);
 
-      // Determine scenario based on available PNG URLs.
-      let scenario = "single";
-      if (upperWearPng && lowerWearPng && outerWearPng) {
-        scenario = "triple";
-      } else if (upperWearPng && lowerWearPng) {
-        scenario = "dual";
-      }
-
-      if (scenario === "dual" || scenario === "triple") {
-        // Multi-overlay mode.
-        const upperAspect = upperWearImageRef.current.naturalWidth / upperWearImageRef.current.naturalHeight;
-        const lowerAspect = lowerWearImageRef.current.naturalWidth / lowerWearImageRef.current.naturalHeight;
+      const multiOverlayMode = upperWearPng && lowerWearPng;
+      if (multiOverlayMode) {
+        // Multi-overlay mode: Draw separate images for upperwear, lowerwear, and outerwear.
+        const upperImg = upperWearImageRef.current;
+        const lowerImg = lowerWearImageRef.current;
+        if (!upperImg || !lowerImg) {
+          setStatusMessage("Clothing images not loaded yet.");
+          return;
+        }
+        const upperAspect = upperImg.naturalWidth / upperImg.naturalHeight;
+        const lowerAspect = lowerImg.naturalWidth / lowerImg.naturalHeight;
         let outerAspect = null;
         if (outerWearPng && outerWearImageRef.current) {
           outerAspect = outerWearImageRef.current.naturalWidth / outerWearImageRef.current.naturalHeight;
         }
-        // For dual overlays, scenario is "dual"; for triple, scenario is "triple".
-        const upperParams = computeOverlayParamsScenario("UPPERWEAR", scaleX, scaleY, kp, upperAspect, scenario);
-        const lowerParams = computeOverlayParamsScenario("LOWERWEAR", scaleX, scaleY, kp, lowerAspect, scenario);
+
+        const upperParams = computeOverlayParams("UPPERWEAR", scaleX, scaleY, kp, upperAspect);
+        const lowerParams = computeOverlayParams("LOWERWEAR", scaleX, scaleY, kp, lowerAspect);
         let outerParams = null;
-        if (scenario === "triple" && outerWearPng && outerWearImageRef.current) {
-          outerParams = computeOverlayParamsScenario("OUTERWEAR", scaleX, scaleY, kp, outerAspect, scenario);
+        if (outerWearPng && outerWearImageRef.current) {
+          // Always display outerwear if available.
+          outerParams = computeOverlayParams("OUTERWEAR", scaleX, scaleY, kp, outerAspect);
         }
 
-        // Draw layers in order: Lowerwear, then Upperwear, then Outerwear (if triple).
+        // Draw lowerwear first (background), then upperwear, then outerwear on top.
         if (lowerParams) {
           canvasContext.drawImage(
-            lowerWearImageRef.current,
-            lowerParams.overlayX,
-            lowerParams.overlayY,
-            lowerParams.overlayWidth,
-            lowerParams.overlayHeight
+            lowerImg,
+            lowerParams.overlayX,  // X position; adjust here if needed.
+            lowerParams.overlayY,  // Y position; adjust here if needed.
+            lowerParams.overlayWidth,  // Width; adjust multiplier in computeOverlayParams to change stretch.
+            lowerParams.overlayHeight  // Height; adjust multiplier in computeOverlayParams to change stretch.
           );
         }
         if (upperParams) {
           canvasContext.drawImage(
-            upperWearImageRef.current,
+            upperImg,
             upperParams.overlayX,
             upperParams.overlayY,
             upperParams.overlayWidth,
@@ -292,9 +346,9 @@ export default function VirtualTryOnPage() {
             outerParams.overlayHeight
           );
         }
-        setStatusMessage(`Clothing applied. Display mode: ${scenario.toUpperCase()} overlays`);
+        setStatusMessage(`Clothing applied. Display mode: All layers`);
       } else {
-        // Single overlay mode.
+        // Single overlay mode: Use the fallback clothing image.
         if (!clothingImageElementRef.current) {
           setStatusMessage("No clothing image loaded.");
           return;
@@ -317,7 +371,7 @@ export default function VirtualTryOnPage() {
             const rightHipY = kp.right_hip.y * scaleY;
             const hipCenterY = (leftHipY + rightHipY) / 2;
             const torsoHeight = hipCenterY - shoulderCenterY;
-            overlayHeight = torsoHeight * 1.15;
+            overlayHeight = torsoHeight * 1.15; // Adjust vertical stretch for upper garments here.
             overlayWidth = overlayHeight * (clothingImageElementRef.current.naturalWidth / clothingImageElementRef.current.naturalHeight);
           } else {
             overlayWidth = shoulderWidth * 1.2;
@@ -327,13 +381,9 @@ export default function VirtualTryOnPage() {
             overlayWidth = shoulderWidth * 1.2;
             overlayHeight = overlayWidth / (clothingImageElementRef.current.naturalWidth / clothingImageElementRef.current.naturalHeight);
           }
-          if (type === "OUTERWEAR") {
-            overlayWidth = overlayWidth * GENERAL_OUTER_STRETCH_MULTIPLIER;
-          } else {
-            overlayWidth = overlayWidth * GENERAL_UPPER_STRETCH_MULTIPLIER;
-          }
-          overlayX = shoulderCenterX - overlayWidth / 2;
-          overlayY = shoulderCenterY - overlayHeight * GENERAL_UPPER_VERTICAL_OFFSET - (type === "OUTERWEAR" ? 30 : 0);
+          overlayWidth = overlayWidth * 1.85; // Adjust horizontal stretch for upper garments here.
+          overlayX = shoulderCenterX - overlayWidth / 2; // Adjust horizontal offset if needed.
+          overlayY = shoulderCenterY - overlayHeight * 0.12 - 30; // Adjust vertical offset if needed.
         } else if (type === "LOWERWEAR") {
           if (!kp.left_hip || !kp.right_hip) {
             setStatusMessage("Lower body not fully detected (hips). Please move back to show hips.");
@@ -364,24 +414,27 @@ export default function VirtualTryOnPage() {
             lowerPointY = (leftAnkleY + rightAnkleY) / 2;
           }
           const lowerBodyHeight = lowerPointY - hipCenterY;
-          overlayHeight = lowerBodyHeight * 1.3;
+          overlayHeight = lowerBodyHeight * 1.2; // Adjust vertical stretch for lower garments here.
           overlayWidth = overlayHeight * (clothingImageElementRef.current.naturalWidth / clothingImageElementRef.current.naturalHeight);
           const hipWidth = Math.abs(rightHipX - leftHipX);
           if (overlayWidth < hipWidth * 1.1) {
             overlayWidth = hipWidth * 1.1;
             overlayHeight = overlayWidth / (clothingImageElementRef.current.naturalWidth / clothingImageElementRef.current.naturalHeight);
           }
-          overlayWidth = overlayWidth * GENERAL_LOWER_STRETCH_MULTIPLIER;
-          overlayX = hipCenterX - overlayWidth / 2;
-          overlayY = hipCenterY - 40;
+          overlayWidth = overlayWidth * 1.6; // Adjust horizontal stretch for lower garments here.
+          overlayX = hipCenterX - overlayWidth / 2; // Adjust horizontal offset if needed.
+          overlayY = hipCenterY - 40; // Adjust vertical offset if needed.
         }
         canvasContext.drawImage(clothingImageElementRef.current, overlayX, overlayY, overlayWidth, overlayHeight);
         setStatusMessage(`Clothing applied. Type: ${type}${type === "LOWERWEAR" ? ", Tag: " + tag : ""}`);
       }
     },
-    [type, tag, upperWearPng, lowerWearPng, outerWearPng]
+    [type, tag, upperWearPng, outerWearPng]  // Removed showOuterwear since button is removed.
   );
 
+  /**
+   * Perform pose detection and update the overlay.
+   */
   const performPoseDetection = useCallback(async () => {
     if (
       !videoElementRef.current ||
@@ -396,13 +449,16 @@ export default function VirtualTryOnPage() {
       const canvasElement = canvasElementRef.current;
       const canvasContext = canvasElement.getContext("2d", { alpha: true });
       canvasContext.clearRect(0, 0, canvasElement.width, canvasElement.height);
+
       const detectedPoses = await poseDetector.estimatePoses(videoElementRef.current, {
         flipHorizontal: false,
       });
+
       if (!detectedPoses || detectedPoses.length === 0) {
         setStatusMessage("No human detected. Please step into frame.");
         return;
       }
+
       renderClothingOverlay(detectedPoses, canvasContext);
     } catch (error) {
       console.error("Error in pose detection:", error);
@@ -410,6 +466,10 @@ export default function VirtualTryOnPage() {
     }
   }, [isCameraReady, poseDetector, renderClothingOverlay]);
 
+  /**
+   * Initialize camera stream whenever facingMode changes.
+   * Adjust camera constraints if needed.
+   */
   useEffect(() => {
     const initCameraStream = async () => {
       setIsCameraReady(false);
@@ -442,6 +502,9 @@ export default function VirtualTryOnPage() {
     initCameraStream();
   }, [facingMode]);
 
+  /**
+   * Start the pose detection loop using setInterval (30 FPS).
+   */
   useEffect(() => {
     let detectionInterval;
     if (isCameraReady && poseDetector) {
@@ -454,11 +517,17 @@ export default function VirtualTryOnPage() {
     };
   }, [isCameraReady, poseDetector, performPoseDetection]);
 
+  /**
+   * Toggle between front and back cameras.
+   */
   const toggleCamera = () => {
     setIsCameraReady(false);
     setFacingMode((prev) => (prev === "user" ? "environment" : "user"));
   };
 
+  /**
+   * Handle device orientation changes.
+   */
   useEffect(() => {
     const handleOrientationChange = () => {
       setIsPortrait(window.innerHeight > window.innerWidth);
@@ -468,54 +537,12 @@ export default function VirtualTryOnPage() {
     return () => window.removeEventListener("resize", handleOrientationChange);
   }, []);
 
-  const initializePoseDetector = async () => {
-    try {
-      await tf.setBackend("wasm");
-      await tf.ready();
-      const detectionModel = posedetection.SupportedModels.MoveNet;
-      const detectorConfig = {
-        modelType: posedetection.movenet.modelType.SINGLEPOSE_LIGHTNING,
-      };
-      const detectorInstance = await posedetection.createDetector(detectionModel, detectorConfig);
-      setPoseDetector(detectorInstance);
-    } catch (error) {
-      console.error("Error initializing pose detector:", error);
-      setStatusMessage("Failed to initialize pose detector. Please refresh the page.");
-    }
-  };
-
+  /**
+   * Initialize pose detector on mount.
+   */
   useEffect(() => {
     initializePoseDetector();
   }, []);
-
-  useEffect(() => {
-    if (!router.isReady) return;
-    if (upperWearPng && lowerWearPng) {
-      const loadImage = (url, ref) => {
-        const img = new Image();
-        img.crossOrigin = "anonymous";
-        img.src = url;
-        img.onload = () => {
-          const { croppedImg } = cropTransparentImage(img);
-          ref.current = croppedImg;
-        };
-      };
-      loadImage(upperWearPng, upperWearImageRef);
-      loadImage(lowerWearPng, lowerWearImageRef);
-      if (outerWearPng) {
-        loadImage(outerWearPng, outerWearImageRef);
-      }
-    } else if (pngClotheURL) {
-      const img = new Image();
-      img.crossOrigin = "anonymous";
-      img.src = pngClotheURL;
-      img.onload = () => {
-        const { croppedImg, imageData } = cropTransparentImage(img);
-        clothingImageElementRef.current = croppedImg;
-        clothingPixelDataRef.current = imageData;
-      };
-    }
-  }, [router.isReady, pngClotheURL, upperWearPng, lowerWearPng, outerWearPng]);
 
   if (!mounted) return null;
 
@@ -535,7 +562,7 @@ export default function VirtualTryOnPage() {
 
 const styles = {
   container: {
-    position: "fixed",
+    position: "fixed", // Adjust container position if needed.
     top: 0,
     left: 0,
     width: "100vw",
@@ -546,27 +573,27 @@ const styles = {
     padding: 0,
   },
   cameraContainer: {
-    position: "relative",
+    position: "relative", // Container for video and overlay.
     width: "100%",
     height: "100%",
   },
   video: {
-    width: "100%",
-    height: "100%",
-    objectFit: "cover",
+    width: "100%",      // Adjust video width if needed.
+    height: "100%",     // Adjust video height if needed.
+    objectFit: "cover", // Use cover or contain to change video scaling.
     backgroundColor: "#000",
   },
   canvas: {
-    position: "absolute",
-    top: "0",
-    left: "0",
+    position: "absolute", // Canvas for overlay drawing.
+    top: "0",             // Adjust canvas top offset if needed.
+    left: "0",            // Adjust canvas left offset if needed.
     zIndex: 2,
     width: "100%",
     height: "100%",
     pointerEvents: "none",
   },
   statusMessage: {
-    position: "absolute",
+    position: "absolute", // Status text; adjust positioning here.
     bottom: "5%",
     left: "50%",
     transform: "translateX(-50%)",
@@ -580,7 +607,7 @@ const styles = {
     textAlign: "center",
   },
   toggleButton: {
-    position: "absolute",
+    position: "absolute", // Camera toggle button.
     top: "5%",
     right: "5%",
     backgroundColor: "rgba(0,0,0,0.7)",
