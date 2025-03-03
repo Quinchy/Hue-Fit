@@ -171,7 +171,7 @@ export default function VirtualTryOnPage() {
         const rightHipY = keypoints.right_hip.y * scaleY;
         const hipCenterY = (leftHipY + rightHipY) / 2;
         const torsoHeight = hipCenterY - shoulderCenterY;
-        overlayHeight = torsoHeight * 1.15;
+        overlayHeight = torsoHeight * 1.2;
         overlayWidth = overlayHeight * aspectRatio;
       } else {
         overlayWidth = shoulderWidth * 1.2;
@@ -201,7 +201,7 @@ export default function VirtualTryOnPage() {
         const rightHipY = keypoints.right_hip.y * scaleY;
         const hipCenterY = (leftHipY + rightHipY) / 2;
         const torsoHeight = hipCenterY - shoulderCenterY;
-        overlayHeight = torsoHeight * 1.15;
+        overlayHeight = torsoHeight * 1.2;
         overlayWidth = overlayHeight * aspectRatio;
       } else {
         overlayWidth = shoulderWidth * 1.2;
@@ -212,11 +212,6 @@ export default function VirtualTryOnPage() {
         overlayHeight = overlayWidth / aspectRatio;
       }
       overlayWidth = overlayWidth * 1.85;
-      
-      // For "COATS", stretch further below.
-      if (tag === "COATS") {
-        overlayHeight = overlayHeight * 3;
-      }
       
       const overlayX = shoulderCenterX - overlayWidth / 2;
       const overlayY = shoulderCenterY - overlayHeight * 0.12 - 30;
@@ -315,7 +310,7 @@ export default function VirtualTryOnPage() {
 
         // Adjust UPPERWEAR upward if OUTERWEAR is provided.
         if (upperParams && outerWearPng) {
-          upperParams.overlayY -= 20;
+          upperParams.overlayY -= 30;
         }
 
         // Draw lowerwear first, then upperwear, then outerwear.
@@ -371,7 +366,7 @@ export default function VirtualTryOnPage() {
             const rightHipY = kp.right_hip.y * scaleY;
             const hipCenterY = (leftHipY + rightHipY) / 2;
             const torsoHeight = hipCenterY - shoulderCenterY;
-            overlayHeight = torsoHeight * 1.15;
+            overlayHeight = torsoHeight * 1.2;
             overlayWidth = overlayHeight * (clothingImageElementRef.current.naturalWidth / clothingImageElementRef.current.naturalHeight);
           } else {
             overlayWidth = shoulderWidth * 1.2;
