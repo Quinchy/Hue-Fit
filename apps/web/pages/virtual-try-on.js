@@ -193,7 +193,7 @@ export default function VirtualTryOnPage() {
       const overlayY = shoulderCenterY - overlayHeight * 0.12;
       return { overlayX, overlayY, overlayWidth, overlayHeight };
     } else if (clothingType === "OUTERWEAR") {
-       // OUTERWEAR: Use default multipliers.
+      // OUTERWEAR: Use default multipliers.
       if (!keypoints.left_shoulder || !keypoints.right_shoulder) return null;
       const leftShoulderX = keypoints.left_shoulder.x * scaleX;
       const leftShoulderY = keypoints.left_shoulder.y * scaleY;
@@ -319,6 +319,12 @@ export default function VirtualTryOnPage() {
           outerParams = computeOverlayParams("OUTERWEAR", scaleX, scaleY, kp, outerAspect);
         }
 
+        // Adjust UPPERWEAR upward if OUTERWEAR is provided (i.e. all three layers are active)
+        if (upperParams && outerWearPng) {
+          // Subtract an additional offset (e.g., 20 pixels) to move the upper overlay upward.
+          upperParams.overlayY -= 20;
+        }
+
         // Draw lowerwear first (background), then upperwear, then outerwear on top.
         if (lowerParams) {
           canvasContext.drawImage(
@@ -430,7 +436,7 @@ export default function VirtualTryOnPage() {
         setStatusMessage(`Clothing applied. Type: ${type}${type === "LOWERWEAR" ? ", Tag: " + tag : ""}`);
       }
     },
-    [type, tag, upperWearPng, outerWearPng]  // Removed showOuterwear since button is removed.
+    [type, tag, upperWearPng, outerWearPng]
   );
 
   /**
