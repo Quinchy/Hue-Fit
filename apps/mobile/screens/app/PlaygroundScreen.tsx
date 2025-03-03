@@ -23,12 +23,10 @@ import { LinearGradient } from "expo-linear-gradient";
 import { EXPO_PUBLIC_API_URL } from '@env';
 
 const PlaygroundScreen: React.FC = ({ route, navigation }) => {
-  // Log the passed route parameters immediately upon mount
   useEffect(() => {
     console.log("Route Params:", route.params);
   }, [route.params]);
 
-  // Expecting the API to pass the outfit combination directly
   const { 
     outfit_name, 
     upper_wear, 
@@ -40,25 +38,20 @@ const PlaygroundScreen: React.FC = ({ route, navigation }) => {
     wardrobeId 
   } = route.params || {};
 
-  // If a wardrobeId is provided, details can be fetched to update the UI.
   useEffect(() => {
     const fetchWardrobeDetails = async () => {
       if (!wardrobeId) return;
-
       setIsFetching(true);
-
       try {
         const response = await fetch(`${EXPO_PUBLIC_API_URL}/api/mobile/generate/get-wardrobe-details`, {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({ wardrobeId }),
         });
-
         if (!response.ok) {
           console.error('Error fetching wardrobe details:', response.statusText);
           return;
         }
-
         const data = await response.json();
         console.log('Wardrobe Details:', data);
         if (data && data.wardrobe) {
@@ -68,7 +61,6 @@ const PlaygroundScreen: React.FC = ({ route, navigation }) => {
             wardrobeCustomerFeatures,
             outfitDetails: { upper_wear, lower_wear, footwear, outerwear, color_palette },
           } = data.wardrobe;
-
           setOutfitName(outfitName || "Unnamed Outfit");
           setPreference(outfitStyle || "");
           setHeight(wardrobeCustomerFeatures?.height?.toString() || "");
@@ -76,14 +68,12 @@ const PlaygroundScreen: React.FC = ({ route, navigation }) => {
           setSkinTone(wardrobeCustomerFeatures?.skintone || "");
           setAge(wardrobeCustomerFeatures?.age?.toString() || "");
           setBodyShape(wardrobeCustomerFeatures?.bodyShape || "");
-
           const colorPalette = [
             ...(upper_wear?.color ? [{ name: "Upperwear", hexcode: upper_wear.color.hexcode }] : []),
             ...(lower_wear?.color ? [{ name: "Lowerwear", hexcode: lower_wear.color.hexcode }] : []),
             ...(footwear?.color ? [{ name: "Footwear", hexcode: footwear.color.hexcode }] : []),
             ...(outerwear?.color ? [{ name: "Outerwear", hexcode: outerwear.color.hexcode }] : []),
           ];
-
           setOutfitData({
             outfit_name: outfitName,
             upper_wear,
@@ -99,11 +89,9 @@ const PlaygroundScreen: React.FC = ({ route, navigation }) => {
         setIsFetching(false);
       }
     };
-
     fetchWardrobeDetails();
   }, [wardrobeId]);
 
-  // Default values for user_inputs
   const defaultUserInputs = {
     height: "",
     weight: "",
@@ -153,7 +141,6 @@ const PlaygroundScreen: React.FC = ({ route, navigation }) => {
   const handleRegenerate = async () => {
     setLoading(true);
     setIsFetching(true);
-
     const userInputs = {
       outfit_name: outfitName,
       height: parseFloat(height) || 0,
@@ -163,7 +150,6 @@ const PlaygroundScreen: React.FC = ({ route, navigation }) => {
       bodyshape: bodyShape,
       category: preference,
     };
-
     try {
       const response = await fetch(`https://hue-fit-ai.onrender.com/generate-outfit?unique=${Date.now()}`, {
         method: "POST",
@@ -173,19 +159,16 @@ const PlaygroundScreen: React.FC = ({ route, navigation }) => {
         },
         body: JSON.stringify(userInputs),
       });
-
       if (response.ok) {
         const data = await response.json();
         const { outfit_name, best_combination } = data;
         const { upper_wear, lower_wear, footwear, outerwear } = best_combination;
-
         const color_palette = [
           { name: "Upperwear", hexcode: upper_wear?.hexcode },
           { name: "Lowerwear", hexcode: lower_wear?.hexcode },
           { name: "Footwear", hexcode: footwear?.hexcode },
           ...(outerwear ? [{ name: "Outerwear", hexcode: outerwear?.hexcode }] : []),
         ].filter((color) => color.hexcode);
-
         setOutfitData({
           outfit_name,
           upper_wear,
@@ -218,7 +201,6 @@ const PlaygroundScreen: React.FC = ({ route, navigation }) => {
     (outfitData.footwear?.price || 0) +
     (outfitData.outerwear?.price || 0);
 
-  // Determine if Virtual Fitting (Camera) should be enabled
   const isVirtualFittingEnabled = (() => {
     const category = preference ? preference.toUpperCase() : "";
     if (category === "FORMAL") {
@@ -245,7 +227,6 @@ const PlaygroundScreen: React.FC = ({ route, navigation }) => {
         </HStack>
       );
     }
-
     if (!item) {
       return (
         <HStack alignItems="center" mb={2} space={2}>
@@ -260,7 +241,6 @@ const PlaygroundScreen: React.FC = ({ route, navigation }) => {
         </HStack>
       );
     }
-
     return (
       <HStack bg="#2E2E2E" borderRadius="md" alignItems="center" mb={2} space={1}>
         <Box paddingLeft={3} py={3} justifyContent="center" alignItems="center">
@@ -285,7 +265,7 @@ const PlaygroundScreen: React.FC = ({ route, navigation }) => {
             onPress={() => {
               if (item.productId) {
                 console.log(`View product : ${item.productId}`);
-                navigation.navigate("ProductView", { productId: item.productId });
+                navigation.navigate("ProductView", { productId: item.productId, recommendedColor: item.hexcode });
               } else {
                 console.error("No productId available for this item.");
               }
@@ -306,14 +286,12 @@ const PlaygroundScreen: React.FC = ({ route, navigation }) => {
         <ScrollView>
           <StatusBar backgroundColor="#ffffff01" />
           <VStack px={4} py={2} mt={10}>
-            {/* Header with Outfit Title and Camera Button */}
             <HStack justifyContent="space-between" alignItems="center" mb={4}>
               <Text color="white" fontSize="2xl" fontWeight="bold">
                 {outfitData.outfit_name || "Unnamed Outfit"}
               </Text>
               <TouchableOpacity
                 onPress={() => {
-                  // Log the pngClotheURL values
                   console.log("upperWearPng:", outfitData.upper_wear.pngClotheURL);
                   console.log("lowerWearPng:", outfitData.lower_wear.pngClotheURL);
                   console.log("outerWearPng:", preference.toUpperCase() === "FORMAL" ? outfitData.outerwear?.pngClotheURL : null);
