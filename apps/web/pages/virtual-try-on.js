@@ -161,6 +161,7 @@ export default function VirtualTryOnPage() {
    */
   function computeOverlayParams(clothingType, scaleX, scaleY, keypoints, aspectRatio) {
     if (clothingType === "UPPERWEAR") {
+      // UPPERWEAR: Adjusted to lower the horizontal stretch factor and vertical offset.
       if (!keypoints.left_shoulder || !keypoints.right_shoulder) return null;
       const leftShoulderX = keypoints.left_shoulder.x * scaleX;
       const leftShoulderY = keypoints.left_shoulder.y * scaleY;
@@ -185,18 +186,13 @@ export default function VirtualTryOnPage() {
         overlayWidth = shoulderWidth * 1.2;
         overlayHeight = overlayWidth / aspectRatio;
       }
-      // Lower the horizontal stretch multiplier for UPPERWEAR.
+      // Lower the horizontal stretch multiplier for UPPERWEAR (e.g., 1.5 instead of 1.85)
       overlayWidth = overlayWidth * 1.5;
       const overlayX = shoulderCenterX - overlayWidth / 2;
-      // Compute the default vertical offset.
-      let overlayY = shoulderCenterY - overlayHeight * 0.12;
-      // If outerwear is present, adjust the upperwear position upward slightly.
-      if (hasOuterwear) {
-        overlayY = overlayY - 20; // Adjust the offset (e.g., subtract 20px).
-      }
+      // Adjust the vertical offset for UPPERWEAR only.
+      const overlayY = shoulderCenterY - overlayHeight * 0.12;
       return { overlayX, overlayY, overlayWidth, overlayHeight };
-    } 
-    else if (clothingType === "OUTERWEAR") {
+    } else if (clothingType === "OUTERWEAR") {
       // OUTERWEAR: Use default multipliers.
       if (!keypoints.left_shoulder || !keypoints.right_shoulder) return null;
       const leftShoulderX = keypoints.left_shoulder.x * scaleX;
@@ -226,8 +222,7 @@ export default function VirtualTryOnPage() {
       const overlayX = shoulderCenterX - overlayWidth / 2;
       const overlayY = shoulderCenterY - overlayHeight * 0.12 - 30;
       return { overlayX, overlayY, overlayWidth, overlayHeight };
-    } 
-    else if (clothingType === "LOWERWEAR") {
+    } else if (clothingType === "LOWERWEAR") {
       if (!keypoints.left_hip || !keypoints.right_hip) return null;
       const leftHipX = keypoints.left_hip.x * scaleX;
       const leftHipY = keypoints.left_hip.y * scaleY;
