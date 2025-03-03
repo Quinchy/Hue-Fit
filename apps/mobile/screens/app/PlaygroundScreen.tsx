@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from "react";
-import { ScrollView, Image, View, StatusBar } from "react-native";
+import { ScrollView, Image, View, StatusBar, TouchableOpacity } from "react-native";
 import { VStack, Text, Box, HStack, IconButton, Spinner, Skeleton, Select, Center } from "native-base";
-import { House, Menu, ChevronRight } from "lucide-react-native";
+import { House, Menu, ChevronRight, Camera } from "lucide-react-native";
 import BackgroundProvider from "../../providers/BackgroundProvider";
 import DefaultButton from "../../components/Button";
 import CustomInput from "../../components/Input";
@@ -86,28 +86,10 @@ const PlaygroundScreen: React.FC = ({ route, navigation }) => {
 
           setOutfitData({
             outfit_name: outfitName,
-            upper_wear: {
-              ...upper_wear,
-              price: parseFloat(upper_wear?.price || 0),
-              name: `${upper_wear.color?.name || ""} ${upper_wear.name}`,
-            },
-            lower_wear: {
-              ...lower_wear,
-              price: parseFloat(lower_wear?.price || 0),
-              name: `${lower_wear.color?.name || ""} ${lower_wear.name}`,
-            },
-            footwear: {
-              ...footwear,
-              price: parseFloat(footwear?.price || 0),
-              name: `${footwear.color?.name || ""} ${footwear.name}`,
-            },
-            outerwear: outerwear
-              ? {
-                  ...outerwear,
-                  price: parseFloat(outerwear?.price || 0),
-                  name: `${outerwear.color?.name || ""} ${outerwear.name}`,
-                }
-              : null,
+            upper_wear,
+            lower_wear,
+            footwear,
+            outerwear,
             color_palette: colorPalette,
           });
         }
@@ -236,6 +218,24 @@ const PlaygroundScreen: React.FC = ({ route, navigation }) => {
     (outfitData.footwear?.price || 0) +
     (outfitData.outerwear?.price || 0);
 
+  // Determine if Virtual Fitting (Camera) should be enabled
+  const isVirtualFittingEnabled = (() => {
+    const category = preference ? preference.toUpperCase() : "";
+    if (category === "FORMAL") {
+      return (
+        outfitData.upper_wear?.pngClotheURL != null &&
+        outfitData.lower_wear?.pngClotheURL != null &&
+        outfitData.outerwear?.pngClotheURL != null
+      );
+    } else if (category === "CASUAL" || category === "SMART CASUAL") {
+      return (
+        outfitData.upper_wear?.pngClotheURL != null &&
+        outfitData.lower_wear?.pngClotheURL != null
+      );
+    }
+    return false;
+  })();
+
   const renderOutfitItem = (icon: JSX.Element, item: any, fallback: string) => {
     if (isFetching) {
       return (
@@ -306,9 +306,25 @@ const PlaygroundScreen: React.FC = ({ route, navigation }) => {
         <ScrollView>
           <StatusBar backgroundColor="#ffffff01" />
           <VStack px={4} py={2} mt={10}>
-            <Text color="white" fontSize="2xl" fontWeight="bold">
-              {outfitData.outfit_name || "Unnamed Outfit"}
-            </Text>
+            {/* Header with Outfit Title and Camera Button */}
+            <HStack justifyContent="space-between" alignItems="center" mb={4}>
+              <Text color="white" fontSize="2xl" fontWeight="bold">
+                {outfitData.outfit_name || "Unnamed Outfit"}
+              </Text>
+              <TouchableOpacity
+                onPress={() => {
+                  navigation.navigate("VirtualFitting", {
+                    upperWearPng: outfitData.upper_wear.pngClotheURL,
+                    lowerWearPng: outfitData.lower_wear.pngClotheURL,
+                    outerWearPng: preference.toUpperCase() === "FORMAL" ? outfitData.outerwear?.pngClotheURL : null,
+                  });
+                }}
+                disabled={!isVirtualFittingEnabled}
+                style={{ opacity: isVirtualFittingEnabled ? 1 : 0.5 }}
+              >
+                <Camera color="white" size={24} />
+              </TouchableOpacity>
+            </HStack>
             <VStack>
               <Text color="#C0C0C0" fontSize="md" fontWeight="light" textTransform="uppercase" mb={2}>
                 Recommended Outfit

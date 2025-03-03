@@ -13,8 +13,27 @@ import { WebView } from 'react-native-webview';
 import { Camera } from 'expo-camera';
 
 export default function VirtualFittingScreen({ route }) {
-  const { pngClotheURL, type, tag } = route.params;
-  const webViewUrl = `https://hue-fit-web.vercel.app/virtual-try-on?pngClotheURL=${encodeURIComponent(pngClotheURL)}&type=${type}&tag=${tag}`;
+  // Extract parameters from route; different screens may pass either:
+  // - a single pngClotheURL OR
+  // - upperWearPng, lowerWearPng, and optionally outerWearPng.
+  const { pngClotheURL, upperWearPng, lowerWearPng, outerWearPng, type, tag } = route.params;
+  
+  // Build the WebView URL based on which parameters are provided.
+  let webViewUrl = '';
+  if (upperWearPng && lowerWearPng) {
+    // Multiple PNG URLs provided.
+    webViewUrl = `https://hue-fit-web.vercel.app/virtual-try-on?upperWearPng=${encodeURIComponent(upperWearPng)}&lowerWearPng=${encodeURIComponent(lowerWearPng)}`;
+    if (outerWearPng) {
+      webViewUrl += `&outerWearPng=${encodeURIComponent(outerWearPng)}`;
+    }
+    webViewUrl += `&type=${encodeURIComponent(type)}&tag=${encodeURIComponent(tag)}`;
+  } else if (pngClotheURL) {
+    // Fallback to single PNG URL.
+    webViewUrl = `https://hue-fit-web.vercel.app/virtual-try-on?pngClotheURL=${encodeURIComponent(pngClotheURL)}&type=${encodeURIComponent(type)}&tag=${encodeURIComponent(tag)}`;
+  } else {
+    // If none provided, just pass type and tag.
+    webViewUrl = `https://hue-fit-web.vercel.app/virtual-try-on?type=${encodeURIComponent(type)}&tag=${encodeURIComponent(tag)}`;
+  }
   
   const [hasPermission, setHasPermission] = useState(null);
   const [isLoading, setIsLoading] = useState(true);
@@ -86,9 +105,7 @@ export default function VirtualFittingScreen({ route }) {
         source={{ uri: webViewUrl }}
         style={styles.webview}
         startInLoadingState
-        injectedJavaScriptBeforeContentLoaded={`
-          navigator.mediaDevices.getUserMedia({ video: true }).then(console.log).catch(console.error);
-        `}
+        injectedJavaScriptBeforeContentLoaded={injectedJS}
         renderLoading={() => (
           <ActivityIndicator
             color="#009b88"
@@ -101,7 +118,6 @@ export default function VirtualFittingScreen({ route }) {
         allowsInlineMediaPlayback
         mediaPlaybackRequiresUserAction={false}
         originWhitelist={['*']}
-        injectedJavaScriptBeforeContentLoaded={injectedJS}
         androidLayerType="hardware"
         androidHardwareAccelerationDisabled={false}
         overScrollMode="never"
