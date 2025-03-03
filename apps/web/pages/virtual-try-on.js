@@ -215,7 +215,7 @@ export default function VirtualTryOnPage() {
       
       // For "COATS", stretch further below.
       if (tag === "COATS") {
-        overlayHeight = overlayHeight * 1.7;
+        overlayHeight = overlayHeight * 3;
       }
       
       const overlayX = shoulderCenterX - overlayWidth / 2;
