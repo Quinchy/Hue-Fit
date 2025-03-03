@@ -193,7 +193,7 @@ export default function VirtualTryOnPage() {
       const overlayY = shoulderCenterY - overlayHeight * 0.12;
       return { overlayX, overlayY, overlayWidth, overlayHeight };
     } else if (clothingType === "OUTERWEAR") {
-      // OUTERWEAR: Use default multipliers.
+       // OUTERWEAR: Use default multipliers.
       if (!keypoints.left_shoulder || !keypoints.right_shoulder) return null;
       const leftShoulderX = keypoints.left_shoulder.x * scaleX;
       const leftShoulderY = keypoints.left_shoulder.y * scaleY;
@@ -219,6 +219,12 @@ export default function VirtualTryOnPage() {
         overlayHeight = overlayWidth / aspectRatio;
       }
       overlayWidth = overlayWidth * 1.85;
+      
+      // Adjust overlay for "COATS" to stretch it further below
+      if (tag === "COATS") {
+        overlayHeight = overlayHeight * 1.1; // Increase height by 10%
+      }
+      
       const overlayX = shoulderCenterX - overlayWidth / 2;
       const overlayY = shoulderCenterY - overlayHeight * 0.12 - 30;
       return { overlayX, overlayY, overlayWidth, overlayHeight };
