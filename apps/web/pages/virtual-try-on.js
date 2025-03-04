@@ -299,7 +299,7 @@ export default function VirtualTryOnPage() {
         if (outerWearPng && outerWearImageRef.current) {
           outerAspect = outerWearImageRef.current.naturalWidth / outerWearImageRef.current.naturalHeight;
         }
-      
+
         const upperParams = computeOverlayParams("UPPERWEAR", scaleX, scaleY, kp, upperAspect);
         const lowerParams = computeOverlayParams("LOWERWEAR", scaleX, scaleY, kp, lowerAspect);
         let outerParams = null;
@@ -307,20 +307,19 @@ export default function VirtualTryOnPage() {
           // Always display outerwear if available.
           outerParams = computeOverlayParams("OUTERWEAR", scaleX, scaleY, kp, outerAspect);
         }
-      
+
         // Adjust UPPERWEAR upward if OUTERWEAR is provided.
         if (upperParams && outerWearPng) {
           upperParams.overlayY -= 30;
         }
-      
-        // Draw outerwear first, then lowerwear, then upperwear.
-        if (outerParams) {
+
+        if (upperParams) {
           canvasContext.drawImage(
-            outerWearImageRef.current,
-            outerParams.overlayX,
-            outerParams.overlayY,
-            outerParams.overlayWidth,
-            outerParams.overlayHeight
+            upperImg,
+            upperParams.overlayX,
+            upperParams.overlayY,
+            upperParams.overlayWidth,
+            upperParams.overlayHeight
           );
         }
         if (lowerParams) {
@@ -332,18 +331,17 @@ export default function VirtualTryOnPage() {
             lowerParams.overlayHeight
           );
         }
-        if (upperParams) {
+        if (outerParams) {
           canvasContext.drawImage(
-            upperImg,
-            upperParams.overlayX,
-            upperParams.overlayY,
-            upperParams.overlayWidth,
-            upperParams.overlayHeight
+            outerWearImageRef.current,
+            outerParams.overlayX,
+            outerParams.overlayY,
+            outerParams.overlayWidth,
+            outerParams.overlayHeight
           );
         }
         setStatusMessage(`Clothing applied. Display mode: All layers`);
-      }
-      else {
+      } else {
         // Single overlay mode: Use the fallback clothing image.
         if (!clothingImageElementRef.current) {
           setStatusMessage("No clothing image loaded.");
