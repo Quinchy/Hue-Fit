@@ -262,7 +262,7 @@ export default function VirtualTryOnPage() {
       if (!poses || poses.length === 0) return;
       const keypointsArray = poses[0].keypoints;
       if (!keypointsArray || keypointsArray.length === 0) return;
-
+  
       const kp = {
         left_shoulder: keypointsArray.find((kp) => kp.name === "left_shoulder" && kp.score > 0.5),
         right_shoulder: keypointsArray.find((kp) => kp.name === "right_shoulder" && kp.score > 0.5),
@@ -273,18 +273,53 @@ export default function VirtualTryOnPage() {
         left_ankle: keypointsArray.find((kp) => kp.name === "left_ankle" && kp.score > 0.5),
         right_ankle: keypointsArray.find((kp) => kp.name === "right_ankle" && kp.score > 0.5),
       };
-
+  
+      // Compute a fit percentage based on the average confidence of the required keypoints.
+      let requiredKeypointNames = [];
+      const multiOverlayMode = upperWearPng && lowerWearPng;
+      if (multiOverlayMode) {
+        // For multi overlay, require shoulders, hips, and either knees (for shorts) or ankles.
+        requiredKeypointNames = ['left_shoulder', 'right_shoulder', 'left_hip', 'right_hip'];
+        if (tag === "SHORTS") {
+          requiredKeypointNames.push('left_knee', 'right_knee');
+        } else {
+          requiredKeypointNames.push('left_ankle', 'right_ankle');
+        }
+      } else {
+        // For single overlay, the required keypoints depend on the type.
+        if (type === "UPPERWEAR" || type === "OUTERWEAR") {
+          requiredKeypointNames = ['left_shoulder', 'right_shoulder', 'left_hip', 'right_hip'];
+        } else if (type === "LOWERWEAR") {
+          requiredKeypointNames = ['left_hip', 'right_hip'];
+          if (tag === "SHORTS") {
+            requiredKeypointNames.push('left_knee', 'right_knee');
+          } else {
+            requiredKeypointNames.push('left_ankle', 'right_ankle');
+          }
+        }
+      }
+      const relevantKps = requiredKeypointNames
+        .map((name) => kp[name])
+        .filter((k) => k != null);
+      const fitPercentage =
+        relevantKps.length > 0
+          ? Math.round(
+              (relevantKps.reduce((acc, k) => acc + k.score, 0) /
+                relevantKps.length) *
+                100
+            )
+          : 0;
+  
       const videoWidth = videoElementRef.current.videoWidth;
       const videoHeight = videoElementRef.current.videoHeight;
       const canvasWidth = canvasElementRef.current.width;
       const canvasHeight = canvasElementRef.current.height;
       const scaleX = canvasWidth / videoWidth;
       const scaleY = canvasHeight / videoHeight;
-
+  
       // Clear the canvas before drawing.
       canvasContext.clearRect(0, 0, canvasWidth, canvasHeight);
-
-      const multiOverlayMode = upperWearPng && lowerWearPng;
+  
       if (multiOverlayMode) {
         // Multi-overlay mode: Draw separate images for upperwear, lowerwear, and outerwear.
         const upperImg = upperWearImageRef.current;
@@ -299,7 +334,7 @@ export default function VirtualTryOnPage() {
         if (outerWearPng && outerWearImageRef.current) {
           outerAspect = outerWearImageRef.current.naturalWidth / outerWearImageRef.current.naturalHeight;
         }
-
+  
         const upperParams = computeOverlayParams("UPPERWEAR", scaleX, scaleY, kp, upperAspect);
         const lowerParams = computeOverlayParams("LOWERWEAR", scaleX, scaleY, kp, lowerAspect);
         let outerParams = null;
@@ -307,12 +342,12 @@ export default function VirtualTryOnPage() {
           // Always display outerwear if available.
           outerParams = computeOverlayParams("OUTERWEAR", scaleX, scaleY, kp, outerAspect);
         }
-
+  
         // Adjust UPPERWEAR upward if OUTERWEAR is provided.
         if (upperParams && outerWearPng) {
           upperParams.overlayY -= 30;
         }
-
+  
         if (upperParams) {
           canvasContext.drawImage(
             upperImg,
@@ -340,14 +375,17 @@ export default function VirtualTryOnPage() {
             outerParams.overlayHeight
           );
         }
-        setStatusMessage(`Clothing applied. Display mode: All layers`);
+        setStatusMessage(`Clothing applied. Display mode: All layers. Fit: ${fitPercentage}%`);
       } else {
         // Single overlay mode: Use the fallback clothing image.
         if (!clothingImageElementRef.current) {
           setStatusMessage("No clothing image loaded.");
           return;
         }
-        let overlayX = 0, overlayY = 0, overlayWidth = 0, overlayHeight = 0;
+        let overlayX = 0,
+          overlayY = 0,
+          overlayWidth = 0,
+          overlayHeight = 0;
         if (type === "UPPERWEAR" || type === "OUTERWEAR") {
           if (!kp.left_shoulder || !kp.right_shoulder) {
             setStatusMessage("Upper body not fully detected. Move into frame and ensure good lighting.");
@@ -420,11 +458,12 @@ export default function VirtualTryOnPage() {
           overlayY = hipCenterY - 40;
         }
         canvasContext.drawImage(clothingImageElementRef.current, overlayX, overlayY, overlayWidth, overlayHeight);
-        setStatusMessage(`Clothing applied. Type: ${type}${type === "LOWERWEAR" ? ", Tag: " + tag : ""}`);
+        setStatusMessage(`Clothing applied. Type: ${type}${type === "LOWERWEAR" ? ", Tag: " + tag : ""}. Fit: ${fitPercentage}%`);
       }
     },
     [type, tag, upperWearPng, outerWearPng]
   );
+  
 
   /**
    * Perform pose detection and update the overlay.
