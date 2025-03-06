@@ -23,11 +23,11 @@ const containerVariants = {
 const cardVariants = {
   hidden: { opacity: 0, scale: 0.9 },
   visible: { opacity: 1, scale: 1, transition: { type: "spring", stiffness: 100, damping: 10 } },
-  hover: { scale: 1.05, transition: { duration: 0.3 } },
+  hover: { scale: 1.0, transition: { duration: 0.3 } },
 };
 
 const iconVariants = {
-  hover: { scale: 1.2, transition: { duration: 0.3 } },
+  hover: { scale: 1.1, transition: { duration: 0.3 } },
 };
 
 export default function Section2() {
@@ -63,7 +63,7 @@ export default function Section2() {
           >
             <Shirt className="w-12 h-12 stroke-primary/55" />
           </motion.div>
-          <p className="text-lg text-center">
+          <p className="uppercase font-thin text-base w-full text-primary/75 text-center">
             {"To provide users with AI-driven, customized outfit suggestions based on their unique body type, skin tone, and style preferences."}
           </p>
         </motion.div>

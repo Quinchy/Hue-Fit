@@ -1,9 +1,9 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Gloock } from "next/font/google";
 import { motion, AnimatePresence } from "framer-motion";
-import Image from "next/image";
+import NextImage from "next/image"; // Renamed import
 import { MoveLeft, MoveRight } from "lucide-react";
 
 const gloock = Gloock({
@@ -40,7 +40,6 @@ const infoItems = [
   },
 ];
 
-// Define motion variants for sliding animation
 const variants = {
   enter: (direction) => ({
     x: direction > 0 ? 300 : -300,
@@ -56,7 +55,6 @@ const variants = {
   }),
 };
 
-// Smooth reveal animation
 const revealVariants = {
   hidden: { opacity: 0, y: 50 },
   visible: { opacity: 1, y: 0, transition: { duration: 0.8, ease: "easeOut" } },
@@ -65,6 +63,14 @@ const revealVariants = {
 export default function Section1() {
   const [currentIndex, setCurrentIndex] = useState(0);
   const [direction, setDirection] = useState(0);
+
+  // Preload images with the global window.Image constructor
+  useEffect(() => {
+    infoItems.forEach((item) => {
+      const preloader = new window.Image();
+      preloader.src = item.src;
+    });
+  }, []);
 
   const paginate = (newDirection) => {
     let newIndex = currentIndex + newDirection;
@@ -87,9 +93,8 @@ export default function Section1() {
         Discover the Power of Smart Fashion
       </h1>
 
-      {/* Animated Display Information Section with Smooth Reveal */}
       <motion.div
-        className="relative flex flex-row items-center px-[10rem] h-[300px]"
+        className="relative flex flex-row items-center px-4 md:px-[10rem] h-auto md:h-[300px]"
         variants={revealVariants}
         initial="hidden"
         whileInView="visible"
@@ -109,12 +114,12 @@ export default function Section1() {
             }}
             className="flex flex-row gap-10 items-center"
           >
-            <Image
+            <NextImage
               src={src}
               width={300}
               height={300}
               quality={100}
-              className="rounded-2xl shadow-pure shadow-lg"
+              className="rounded-2xl shadow-pure shadow-md min-w-[300px] max-w-[300px]"
               alt={title}
             />
             <div>
@@ -131,7 +136,6 @@ export default function Section1() {
         </AnimatePresence>
       </motion.div>
 
-      {/* Navigation Buttons */}
       <div className="flex flex-row gap-5">
         <motion.div
           whileHover={{ scale: 1.05 }}
