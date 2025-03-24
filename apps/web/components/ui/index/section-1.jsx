@@ -1,14 +1,13 @@
 "use client";
 
-import { useEffect, useRef, useState } from "react";
 import Image from "next/image";
 import Float from "@/components/fancy/float";
 import { ArrowUpRight } from "lucide-react";
 import Link from "next/link";
-import ScrambleIn from "@/components/fancy/scramble-in";
 import { Gloock } from "next/font/google";
 import routes from "@/routes";
-import { motion } from "framer-motion";
+import LetterSwapPingPong from "@/components/fancy/letter-swap-pingpong-anim";
+import { useEffect, useState, useRef } from "react";
 
 const gloock = Gloock({
   style: ["normal"],
@@ -16,120 +15,113 @@ const gloock = Gloock({
   subsets: ["latin"],
 });
 
-const linkVariants = {
-  hidden: { opacity: 0 },
-  visible: { opacity: 1, y: 0 },
-};
+// A simple fade-in component with delay that only starts when trigger is true
+function FadeIn({ delay, children, trigger = true }) {
+  const [isVisible, setIsVisible] = useState(false);
+  useEffect(() => {
+    if (!trigger) return;
+    const timeout = setTimeout(() => setIsVisible(true), delay);
+    return () => clearTimeout(timeout);
+  }, [delay, trigger]);
+  return (
+    <div
+      style={{
+        opacity: isVisible ? 1 : 0,
+        transition: "opacity 0.5s ease-in-out",
+      }}
+    >
+      {children}
+    </div>
+  );
+}
 
 export default function Section1() {
-  const paragraphRef = useRef(null);
-  const [linkVisible, setLinkVisible] = useState(false);
+  const containerRef = useRef(null);
+  const [isInView, setIsInView] = useState(false);
 
+  // Trigger the animations only when the section is in view
   useEffect(() => {
-    const options = {
-      root: null,
-      rootMargin: "0px",
-      threshold: 0.1,
-    };
-
-    const observerCallback = (entries) => {
-      entries.forEach((entry) => {
+    const observer = new IntersectionObserver(
+      ([entry]) => {
         if (entry.isIntersecting) {
-          if (
-            entry.target.id === "scramble-paragraph" &&
-            paragraphRef.current
-          ) {
-            paragraphRef.current.start();
-          }
+          setIsInView(true);
+          observer.disconnect();
         }
-      });
-    };
-
-    const observer = new IntersectionObserver(observerCallback, options);
-    const paragraphElement = document.getElementById("scramble-paragraph");
-
-    if (paragraphElement) observer.observe(paragraphElement);
-
-    return () => {
-      if (paragraphElement) observer.unobserve(paragraphElement);
-    };
+      },
+      { threshold: 0.3 }
+    );
+    if (containerRef.current) observer.observe(containerRef.current);
+    return () => observer.disconnect();
   }, []);
 
   return (
-    <div className="flex flex-row items-center justify-between gap-4">
-      <div className="flex flex-col items-start gap-5 z-10">
-        <div>
-          <h1
-            className={`${gloock.className} text-[8rem] text-primary font-black subpixel-antialiased tracking-tight text-start leading-[7rem]`}
-          >
-            ELEVATE
-            <br />
-            YOUR LOOKS
-          </h1>
-        </div>
-        <div id="scramble-paragraph">
-          <ScrambleIn
-            ref={paragraphRef}
-            text={`Discover outfits designed to match your unique features, from
-skin tone to body shape. With AI-driven precision, achieve a look that
-reflects your personal style and enhances your confidence.`}
-            scrambleSpeed={10}
-            scrambledLetterCount={5}
-            className="uppercase font-thin text-lg w-[100%] text-[1.25rem] text-primary text-start"
-            scrambledClassName="uppercase font-thin text-lg w-[100%] text-[1.25rem] text-primary text-start"
-            autoStart={false}
-            onComplete={() => {
-              setLinkVisible(true);
-            }}
-            onStart={() => {
-              setLinkVisible(false);
-            }}
-          />
-        </div>
-        {linkVisible && (
-          <motion.div
-            variants={linkVariants}
-            initial="hidden"
-            animate="visible"
-            transition={{ duration: 0.5 }}
-            className="group"
-          >
-            <Link
-              className="flex flex-row items-center justify-center py-4 border-primary/50 border-2 rounded-lg min-w-[20rem] group-hover:border-primary duration-300 ease-in-out"
-              href={routes.about}
+    <div
+      ref={containerRef}
+      className="flex flex-col-reverse 2xl:flex-row items-center justify-between gap-20 z-50 pt-[10rem] sm:pt-[15rem] md:pt-[20rem] pl-[1rem] pr-[1rem] sm:pl-[3rem] sm:pr-[3rem] md:pl-[5rem] md:pr-[5rem] lg:pl-[8rem] lg:pr-[8rem] xl:pl-[12rem] xl:pr-[12rem] 2xl:pl-[13rem] 2xl:pr-0 pb-56"
+    >
+      <div className="flex flex-col items-center 2xl:items-start gap-4 z-10">
+        {/* Fade in the h1 element first */}
+        <FadeIn delay={0} trigger={isInView}>
+          <div>
+            <h1
+              className={`${gloock.className} text-5xl md:text-6xl lg:text-7xl min-[1713px]:text-7xl text-primary font-black text-center 2xl:text-start cursor-pointer`}
             >
-              <p className="uppercase tracking-widest text-primary/70 font-bold text-md group-hover:text-primary duration-300 ease-in-out">
-                Learn More
-              </p>
-              <ArrowUpRight
-                className="mb-[2px] stroke-[3px] stroke-primary/70 ml-1 group-hover:stroke-primary duration-300 ease-in-out"
-                width={20}
-                height={20}
-              />
-            </Link>
-          </motion.div>
-        )}
+              ELEVATE
+              <br />
+              YOUR LOOKS
+            </h1>
+          </div>
+        </FadeIn>
+        {/* Fade in the paragraph next */}
+        <FadeIn delay={300} trigger={isInView}>
+          <div>
+            <p className="text-base w-full 2xl:text-lg text-primary/75 text-center 2xl:text-start">
+              Discover outfits designed to match your unique features, from skin
+              tone to body shape. With AI-driven precision, achieve a look that
+              reflects your personal style and enhances your confidence.
+            </p>
+          </div>
+        </FadeIn>
+        {/* Fade in the learn more button */}
+        <FadeIn delay={600} trigger={isInView}>
+          <Link
+            className="flex flex-row items-center justify-center min-w-44 lg:min-w-48 py-3 lg:py-4 ring-primary ring-[1px] mt-4"
+            href={routes.about}
+          >
+            <p className="uppercase text-primary font-medium tracking-wider text-base">
+              <LetterSwapPingPong label="LEARN MORE" staggerFrom="last" />
+            </p>
+            <ArrowUpRight
+              className="mb-[2px] stroke-[2px] stroke-primary ml-1"
+              width={20}
+              height={20}
+            />
+          </Link>
+        </FadeIn>
       </div>
-      <div className="relative w-[400px] h-[400px]">
-        {/* Background Image */}
-        <Image
-          src="/images/gradient-pic-bg.png"
-          width={400}
-          height={400}
-          quality={100}
-          className="absolute top-[10%] left-0"
-          alt="Background"
+      <div className="relative h-[420px] xl:h-[480px] 2xl:h-[520px] w-full">
+        <div
+          className="
+            absolute
+            w-full
+            h-full
+            rounded-ss-[10rem]
+            rounded-ee-[10rem]
+            xl:rounded-ss-[12rem]
+            xl:rounded-ee-[12rem]
+            2xl:rounded-ss-[15rem]
+            2xl:rounded-ee-none
+            bg-[linear-gradient(90deg,_var(--rainbow1)_0%,_var(--rainbow2)_20%,_var(--rainbow3)_40%,_var(--rainbow4)_60%,_var(--rainbow5)_80%,_var(--rainbow6)_100%)]
+          "
         />
-        {/* Foreground Image */}
         <Float speed={0.25}>
-          <div className="hover:scale-105 duration-200 cursor-pointer transition-transform">
+          <div className="absolute top-[10rem] left-1/2 transform -translate-x-1/2 -translate-y-1/2 hover:scale-105 duration-200 cursor-pointer transition-transform w-full max-w-[380px] lg:max-w-[430px] xl:max-w-[460px] aspect-square">
             <Image
               src="/images/floating-image-section-1.png"
-              width={360}
-              height={360}
-              quality={100}
-              className="absolute top-[-5rem] left-0"
               alt="Foreground"
+              fill
+              quality={100}
+              className="select-none object-contain"
             />
           </div>
         </Float>

@@ -7,43 +7,11 @@ import DashboardLayoutWrapper from '@/components/ui/dashboard-layout';
 import { Card, CardTitle } from '@/components/ui/card';
 import Link from 'next/link';
 import Image from 'next/image';
-import {
-  X,
-  Plus,
-  NotepadText,
-  Search,
-  ChevronDown,
-  Eye,
-  Pencil,
-  Package,
-  Copy,
-  CheckCircle2,
-  CircleAlert,
-} from 'lucide-react';
+import { X, Plus, NotepadText, Search, ChevronDown, Eye, Package, Copy, CheckCircle2, CircleAlert } from 'lucide-react';
 import { buttonVariants, Button } from '@/components/ui/button';
-import {
-  Pagination,
-  PaginationPrevious,
-  PaginationContent,
-  PaginationItem,
-  PaginationNext,
-  PaginationLink,
-} from '@/components/ui/pagination';
-import {
-  Table,
-  TableHead,
-  TableHeader,
-  TableBody,
-  TableCell,
-  TableRow,
-} from '@/components/ui/table';
-import {
-  DropdownMenu,
-  DropdownMenuContent,
-  DropdownMenuGroup,
-  DropdownMenuItem,
-  DropdownMenuTrigger,
-} from '@/components/ui/dropdown-menu';
+import { Pagination, PaginationPrevious, PaginationContent, PaginationItem, PaginationNext, PaginationLink } from '@/components/ui/pagination';
+import { Table, TableHead, TableHeader, TableBody, TableCell, TableRow } from '@/components/ui/table';
+import { DropdownMenu, DropdownMenuContent, DropdownMenuGroup, DropdownMenuItem, DropdownMenuTrigger } from '@/components/ui/dropdown-menu';
 import { Alert, AlertTitle, AlertDescription } from '@/components/ui/alert';
 import { Skeleton } from '@/components/ui/skeleton';
 import useSWR from 'swr';

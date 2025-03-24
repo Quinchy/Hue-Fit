@@ -25,6 +25,7 @@
     --background: 223 16% 85%;
     --foreground: 240 10% 30%;
     --pure: 0 0% 100%;
+    --follower: 0 0% 100%;
     --card: 0 0% 95%;
     --card-foreground: 240 10% 3.9%;
     --popover: 0 0% 100%;
@@ -52,9 +53,10 @@
 
   .dark {
     --background-image: url('../public/images/tile-pattern.png');
-    --background: 0 0% 12%;
+    --background: 0 0% 8%;
     --foreground: 0 0% 98%;
     --pure: 0 0% 5%;
+    --follower: 0 0% 100%;
     --card: 0 0% 10%;
     --card-foreground: 0 0% 98%;
     --popover: 0 0% 10%;
@@ -65,7 +67,7 @@
     --secondary-foreground: 0 0% 98%;
     --muted: 240 3.7% 15.9%;
     --muted-foreground: 240 5% 64.9%;
-    --accent: 240 3.7% 15.9%;
+    --accent: 240 3.7% 16%;
     --accent-foreground: 0 0% 98%;
     --destructive: 0 62.8% 30.6%;
     --destructive-foreground: 0 0% 98%;
@@ -102,13 +104,14 @@
   html, body {
     max-width: 100%;
     overflow-x: hidden;
+    scroll-behavior: smooth;
   }
   ::-webkit-scrollbar {
     width: 14px;
   }
   
   ::-webkit-scrollbar-track {
-    background: hsl(var(--background)); /* Dark track background */
+    background: hsl(var(--pure)); /* Dark track background */
   }
   
   ::-webkit-scrollbar-thumb {
@@ -120,6 +123,9 @@
     background: hsl(var(--border)); /* Slightly lighter on hover */
   }
 
+  ::selection {
+    background: hsl(var(--primary) / 0.15);/* WebKit/Blink Browsers */
+  }
 }
 
 .gm-style-iw {

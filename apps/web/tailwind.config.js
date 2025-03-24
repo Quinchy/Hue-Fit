@@ -65,6 +65,7 @@ module.exports = {
         },
         // Add the "pure" color referencing the CSS variable
         pure: 'hsl(var(--pure))',
+        follower: 'hsl(var(--follower))',
       },
       borderRadius: {
         lg: 'var(--radius)',

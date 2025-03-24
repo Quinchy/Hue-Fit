@@ -268,7 +268,7 @@ export default function ContactForm() {
               </div>
               <div className="flex items-center gap-4">
                 <Mail width={30} height={30} className="stroke-1" />
-                <CardTitle className="text-xl">inquiries@huefitstyle.com</CardTitle>
+                <CardTitle className="text-xl">inquiries@huefit.com</CardTitle>
               </div>
             </div>
             <div className="flex flex-row justify-start min-w-[15rem] gap-5">

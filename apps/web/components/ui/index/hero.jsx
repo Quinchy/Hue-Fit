@@ -1,19 +1,14 @@
 "use client";
 
-import { useEffect } from "react";
-import { motion, stagger, useAnimate } from "motion/react";
-import { Button } from "@/components/ui/button";
+import LetterSwapPingPong from "@/components/fancy/letter-swap-pingpong-anim";
 import { Gloock } from "next/font/google";
 import { ArrowUpRight, Download } from "lucide-react";
 import Link from "next/link";
-import { buttonVariants } from "@/components/ui/button";
-import Floating, { FloatingElement } from "@/components/fancy/parallax-floating";
 import ScrambleHover from "@/components/fancy/scramble-hover";
-import Image from "next/image";
 import routes from "@/routes";
-
-// Create a motion-enabled Next.js Image component
-const MotionImage = motion(Image);
+import ShrinkingImage from "@/components/ui/shrinking-image";
+import { useState, useEffect, useRef } from "react";
+import { motion } from "framer-motion";
 
 const gloock = Gloock({
   style: ["normal"],
@@ -22,7 +17,24 @@ const gloock = Gloock({
 });
 
 export default function Hero() {
-  const [scope, animate] = useAnimate();
+  const [cursorPos, setCursorPos] = useState({ x: -1000, y: -1000 });
+  const containerRef = useRef(null);
+
+  useEffect(() => {
+    const handleWindowMouseMove = (e) => {
+      if (containerRef.current) {
+        const rect = containerRef.current.getBoundingClientRect();
+        setCursorPos({
+          x: e.clientX - rect.left,
+          y: e.clientY - rect.top,
+        });
+      }
+    };
+
+    window.addEventListener("mousemove", handleWindowMouseMove);
+    return () => window.removeEventListener("mousemove", handleWindowMouseMove);
+  }, []);
+
   const handleDownload = () => {
     const link = document.createElement("a");
     link.href = "/HueFit-ver1.0.0.apk"; // Ensure the APK is in your public folder
@@ -31,137 +43,63 @@ export default function Hero() {
     link.click();
     document.body.removeChild(link);
   };
-  useEffect(() => {
-    animate("img", { opacity: [0, 1] }, { duration: 0.5, delay: stagger(0.15) });
-  }, [animate]);
+
+  // Array of image paths
+  const imagePaths = [
+    "/images/floating-image-0.png",
+    "/images/floating-image-1.png",
+    "/images/floating-image-2.png",
+    "/images/floating-image-3.png",
+    "/images/floating-image-4.png",
+    "/images/floating-image-5.png",
+    "/images/floating-image-6.png",
+    "/images/floating-image-7.png",
+    "/images/floating-image-8.png",
+    "/images/floating-image-9.png",
+  ];
+
+  // Total number of grid cells
+  const cellCount = 30;
 
   return (
-    <div className="relative" ref={scope}>
-      {/* Absolutely Positioned Floating Background with Motion */}
-      <div className="absolute inset-0 overflow-visible">
-        <Floating sensitivity={-1}>
-          {/* Floating Elements for Images 1 to 12 */}
-          <FloatingElement depth={0.5} className="top-[-45%] left-[-10%] opacity-25">
-            <motion.div className="h-[8rem] w-[8rem] hover:scale-105 duration-200 cursor-pointer transition-transform">
-              <MotionImage
-                src="/images/floating-image-0.png"
-                fill
-                quality={100}
-                className="object-cover"
-                alt="Floating Element 0"
-              />
-            </motion.div>
-          </FloatingElement>
-          <FloatingElement depth={1} className="top-[20%] left-[-5%] opacity-75">
-            <motion.div className="h-[15rem] w-[15rem] hover:scale-105 duration-200 cursor-pointer transition-transform">
-              <MotionImage
-                src="/images/floating-image-1.png"
-                fill
-                quality={100}
-                className="object-cover"
-                alt="Floating Element 1"
-              />
-            </motion.div>
-          </FloatingElement>
-          <FloatingElement depth={2} className="top-[-50%] right-[15%] opacity-55">
-            <motion.div className="h-[11rem] w-[11rem] hover:scale-105 duration-200 cursor-pointer transition-transform">
-              <MotionImage
-                src="/images/floating-image-2.png"
-                fill
-                quality={100}
-                className="object-cover"
-                alt="Floating Element 2"
-              />
-            </motion.div>
-          </FloatingElement>
-          <FloatingElement depth={1.25} className="top-[115%] right-[20%] opacity-60">
-            <motion.div className="h-[11rem] w-[11rem] hover:scale-105 duration-200 cursor-pointer transition-transform">
-              <MotionImage
-                src="/images/floating-image-3.png"
-                fill
-                quality={100}
-                className="object-cover"
-                alt="Floating Element 3"
-              />
-            </motion.div>
-          </FloatingElement>
-
-          {/* Additional floating elements for images 4 through 12 */}
-          <FloatingElement depth={1.25} className="top-[-50%] left-[15%] opacity-65">
-            <motion.div className="h-[11rem] w-[11rem] hover:scale-105 duration-200 cursor-pointer transition-transform">
-              <MotionImage
-                src="/images/floating-image-4.png"
-                fill
-                quality={100}
-                className="object-cover"
-                alt="Floating Element 4"
-              />
-            </motion.div>
-          </FloatingElement>
-          <FloatingElement depth={1} className="top-[115%] left-[20%] opacity-45 blur-[0.5px]">
-            <motion.div className="h-[12rem] w-[12rem] hover:scale-105 duration-200 cursor-pointer transition-transform">
-              <MotionImage
-                src="/images/floating-image-5.png"
-                fill
-                quality={100}
-                className="object-cover"
-                alt="Floating Element 5"
-              />
-            </motion.div>
-          </FloatingElement>
-          <FloatingElement depth={0.5} className="top-[105%] left-[-10%] opacity-70">
-            <motion.div className="h-[18rem] w-[18rem] hover:scale-105 duration-200 cursor-pointer transition-transform">
-              <MotionImage
-                src="/images/floating-image-6.png"
-                fill
-                quality={100}
-                className="object-cover"
-                alt="Floating Element 6"
-              />
-            </motion.div>
-          </FloatingElement>
-          <FloatingElement depth={0.5} className="top-[85%] right-[-10%] opacity-65">
-            <motion.div className="h-[17rem] w-[17rem] hover:scale-105 duration-200 cursor-pointer transition-transform">
-              <MotionImage
-                src="/images/floating-image-7.png"
-                fill
-                quality={100}
-                className="object-cover"
-                alt="Floating Element 7"
-              />
-            </motion.div>
-          </FloatingElement>
-          <FloatingElement depth={1} className="top-[5%] right-[-3%] opacity-80">
-            <motion.div className="h-[15rem] w-[15rem] hover:scale-105 duration-200 cursor-pointer transition-transform">
-              <MotionImage
-                src="/images/floating-image-8.png"
-                fill
-                quality={100}
-                className="object-cover"
-                alt="Floating Element 8"
-              />
-            </motion.div>
-          </FloatingElement>
-          <FloatingElement depth={0.5} className="top-[-35%] right-[-10%] opacity-40 blur-[0.5px]">
-            <motion.div className="h-[8rem] w-[8rem] hover:scale-105 duration-200 cursor-pointer transition-transform">
-              <MotionImage
-                src="/images/floating-image-9.png"
-                fill
-                quality={100}
-                className="object-cover"
-                alt="Floating Element 9"
-              />
-            </motion.div>
-          </FloatingElement>
-        </Floating>
+    <div className="relative w-full">
+      <div
+        ref={containerRef}
+        className="absolute -top-[25rem] w-screen overflow-visible"
+      >
+        {/* Smooth radial gradient overlay following the cursor with a smoother light spread */}
+        <motion.div
+          className="absolute inset-0 pointer-events-none z-10 transition-all duration-300"
+          style={{
+            background:
+              "radial-gradient(circle 200px at var(--cursor-x) var(--cursor-y), rgba(0,0,0,0) 0%, rgba(0,0,0,0.2) 30%, rgba(0,0,0,0.4) 50%, rgba(0,0,0,0.8) 90%)",
+          }}
+          animate={{
+            "--cursor-x": `${cursorPos.x}px`,
+            "--cursor-y": `${cursorPos.y}px`,
+          }}
+          transition={{ type: "tween", duration: 0.3 }}
+        />
+        <div className="relative w-full grid grid-cols-2 md:grid-cols-3 lg:grid-cols-5">
+          {Array.from({ length: cellCount }, (_, i) => (
+            <div key={i} className="relative aspect-square">
+              {i % 4 !== 0 && (
+                <ShrinkingImage
+                  src={imagePaths[i % imagePaths.length]}
+                  alt={`Background image ${i}`}
+                />
+              )}
+            </div>
+          ))}
+        </div>
       </div>
 
       {/* Hero Content */}
-      <div className="flex flex-col items-center gap-6 z-10">
+      <div className="flex flex-col items-center gap-6">
         <h1
-          className={`z-10 text-[8rem] text-primary font-black subpixel-antialiased tracking-tight text-center leading-[7rem] ${gloock.className}`}
+          className={`z-10 text-5xl md:text-6xl lg:text-7xl xl:text-8xl tracking-tight text-primary text-center select-none ${gloock.className}`}
         >
-           <ScrambleHover
+          <ScrambleHover
             text={"DISCOVER"}
             scrambleSpeed={50}
             maxIterations={8}
@@ -175,32 +113,44 @@ export default function Hero() {
               scrambleSpeed={50}
               maxIterations={8}
               useOriginalCharsOnly={true}
-              className="cursor-pointer"
-            /> 
+              className="cursor-pointer whitespace-nowrap"
+            />
           </p>
         </h1>
-        <p className="z-10 uppercase font-thin text-lg w-[100%] text-[1.25rem] text-primary text-center">
-          {"Hue-fit is a modern men's apparel online shopping platform that leverages Artificial Intelligence to"}
-          <br />
-          {"help find the best outfit for you based on your physical features, and Augmented Reality technology"}
-          <br />
-          {"for virtual fitting, to ensure that you already know the outfit matches your looks."}
+        <p className="z-10 uppercase text-balance text-sm lg:text-xl tracking-wide text-primary/80 text-center max-w-sm sm:max-w-md md:max-w-xl lg:max-w-4xl xl:max-w-4xl">
+          HueFit is a modern {"men's"} apparel shopping platform that leverages
+          advanced technology to help you find the perfect outfit.
         </p>
-        <div className="flex flex-row items-center gap-5 z-10">
+        <div className="flex flex-col xl:flex-row items-center gap-4 mt-4">
           <button
             onClick={handleDownload}
-            className="flex flex-row items-center justify-center bg-primary border-muted/30 py-4 border-2 rounded-lg shadow-primary/25 shadow-md min-w-[20rem] hover:ring-2 hover:ring-primary duration-300 ease-in-out"
+            className="flex flex-row items-center justify-center bg-primary border-primary border min-w-44 lg:min-w-48 py-3 lg:py-4 z-20"
           >
-            <p className="uppercase tracking-widest text-pure font-bold text-md">Try Hue-Fit</p>
-            <Download className="mb-[2px] stroke-[3px] stroke-pure ml-1" width={20} height={20} />
+            <p className="uppercase text-pure font-medium lg:font-bold text-sm text-center">
+              <LetterSwapPingPong label="Download HueFit" staggerFrom="last" />
+            </p>
+            <Download
+              className="mb-[1px] stroke-[3px] stroke-pure ml-1"
+              width={13}
+              height={13}
+            />
           </button>
-          <div className="group">
+          <div className="z-20">
             <Link
-              className={`flex flex-row items-center justify-center py-4 border-primary/50 border-2 rounded-lg min-w-[20rem] group-hover:border-primary duration-300 ease-in-out`}
+              className="flex flex-row items-center justify-center min-w-44 lg:min-w-48 py-3 lg:py-4 ring-primary ring-[1px]"
               href={routes.partnership}
             >
-              <p className="uppercase tracking-widest text-primary/70 font-bold text-md group-hover:text-primary duration-300 ease-in-out">Partner With Us</p>
-              <ArrowUpRight className="mb-[2px] stroke-[3px] stroke-primary/70 ml-1 group-hover:stroke-primary duration-300 ease-in-out" width={20} height={20} />
+              <p className="uppercase lg:font-bold text-sm text-center">
+                <LetterSwapPingPong
+                  label="Partner With Us"
+                  staggerFrom="last"
+                />
+              </p>
+              <ArrowUpRight
+                className="mb-[1px] stroke-[3px] ml-1"
+                width={15}
+                height={15}
+              />
             </Link>
           </div>
         </div>
