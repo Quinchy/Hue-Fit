@@ -65,7 +65,7 @@ export default function Hero() {
     <div className="relative w-full">
       <div
         ref={containerRef}
-        className="absolute -top-[25rem] w-screen overflow-visible"
+        className="absolute -top-[25rem] w-screen overflow-hidden"
       >
         {/* Smooth radial gradient overlay following the cursor with a smoother light spread */}
         <motion.div

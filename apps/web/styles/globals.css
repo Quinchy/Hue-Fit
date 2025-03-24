@@ -141,3 +141,30 @@
 .gm-style-iw div {
   font-family: 'Geist' !important;
 }
+
+@layer utilities {
+  @keyframes marquee {
+    0% {
+      transform: translateX(0);
+    }
+    100% {
+      transform: translateX(-50%);
+    }
+  }
+  .animate-marquee {
+    animation: marquee 30s linear infinite;
+  }
+  @keyframes slideDown {
+    from {
+      transform: translateY(-100%);
+      opacity: 0;
+    }
+    to {
+      transform: translateY(0);
+      opacity: 1;
+    }
+  }
+  .animate-slide-down {
+    animation: slideDown 0.5s ease-in-out forwards;
+  }
+}
