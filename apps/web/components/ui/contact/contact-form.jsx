@@ -152,7 +152,7 @@ export default function ContactForm() {
   };
 
   return (
-    <div className="flex flex-col gap-20 relative px-4 md:px-20 lg:px-[15rem]">
+    <div className="flex flex-col gap-14 relative px-4 md:px-20 lg:px-[15rem]">
       {/* Success Alert */}
       {showSuccessAlert && (
         <Alert className="fixed z-50 w-[90%] max-w-md right-4 bottom-4 flex items-center shadow-lg rounded-lg">
@@ -173,7 +173,7 @@ export default function ContactForm() {
           </button>
         </Alert>
       )}
-      <div className="flex flex-col gap-20">
+      <div className="flex flex-col gap-14">
         <h1
           className={`text-5xl md:text-6xl lg:text-7xl min-[1713px]:text-7xl text-primary font-black text-center 2xl:text-start cursor-pointer ${gloock.className}`}
         >
@@ -369,7 +369,7 @@ export default function ContactForm() {
             </div>
           </div>
         </div>
-        <div className="h-20"></div>
+        <div className="h-96"></div>
       </div>
       <div
         className="absolute inset-0 pointer-events-none -z-10"

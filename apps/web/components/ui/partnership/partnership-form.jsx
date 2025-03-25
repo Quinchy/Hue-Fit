@@ -2,7 +2,6 @@
 import Link from "next/link";
 import Image from "next/image";
 import routes from "@/routes";
-import WebsiteLayoutWrapper from "@/components/ui/website-layout";
 import { useFormik } from "formik";
 import { useRouter } from "next/router";
 import { useRef, useState, useEffect } from "react";
@@ -251,13 +250,12 @@ export default function PartnershipForm() {
 
   return (
     <>
-      <WebsiteLayoutWrapper className="justify-center items-center">
-        <div className="flex flex-col md:flex-row items-start gap-10 md:gap-20 w-full px-4 md:px-10 lg:px-20">
+      <div className="justify-center items-center">
+        <div className="flex flex-col md:flex-row items-start gap-10 md:gap-20 w-full px-4 md:px-10 lg:px-44">
           {/* Left Column */}
           <div className="flex flex-col items-start gap-5 mt-5 w-full md:w-1/2">
             <CardTitle className="text-2xl text-start font-black tracking-wide">
               We empower vendors with a modern platform to redefine
-              <br />
               fashion retail and seamless e-commerce integration.
             </CardTitle>
             <div className="relative w-full">
@@ -583,7 +581,7 @@ export default function PartnershipForm() {
             </Card>
           </div>
         </div>
-      </WebsiteLayoutWrapper>
+      </div>
 
       <Dialog open={otpDialogOpen} onOpenChange={setOtpDialogOpen}>
         <DialogContent>
