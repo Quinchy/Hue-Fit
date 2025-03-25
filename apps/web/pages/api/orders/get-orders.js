@@ -13,20 +13,16 @@ export default async function handler(req, res) {
     const perPageNumber = parseInt(perPage);
     const skip = (pageNumber - 1) * perPageNumber;
 
+    // If no status is provided, default to "PENDING"
+    const statusFilter = status || "PENDING";
+
     const whereConditions = {
       shopId: shopId,
-      status: {
-        not: "RESERVED",
-      },
+      status: { equals: statusFilter },
       ...(search && {
         orderNo: {
           contains: search,
           mode: "insensitive",
-        },
-      }),
-      ...(status && {
-        status: {
-          equals: status,
         },
       }),
     };
@@ -37,7 +33,6 @@ export default async function handler(req, res) {
       skip,
       take: perPageNumber,
       orderBy: {
-        // This ordering is a fallback (e.g. by created date)
         created_at: "desc",
       },
       select: {
@@ -73,20 +68,8 @@ export default async function handler(req, res) {
       },
     });
 
-    // Apply custom sorting based on status
-    const orderPriority = {
-      PENDING: 1,
-      PROCESSING: 2,
-      DELIVERING: 3,
-      COMPLETED: 4,
-      CANCELLED: 5,
-    };
-
-    orders.sort((a, b) => {
-      const aPriority = orderPriority[a.status.toUpperCase()] || 99;
-      const bPriority = orderPriority[b.status.toUpperCase()] || 99;
-      return aPriority - bPriority;
-    });
+    // Log the complete response for debugging purposes.
+    console.log("Fetched orders:", orders);
 
     const totalCount = await prisma.order.count({
       where: whereConditions,

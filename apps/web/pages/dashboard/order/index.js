@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useRouter } from "next/router";
 import DashboardLayoutWrapper from "@/components/ui/dashboard-layout";
 import { Card, CardTitle } from "@/components/ui/card";
@@ -6,9 +6,29 @@ import { Input } from "@/components/ui/input";
 import DashboardPagesNavigation from "@/components/ui/dashboard-pages-navigation";
 import routes from "@/routes";
 import { Button } from "@/components/ui/button";
-import { Table, TableHead, TableHeader, TableBody, TableCell, TableRow} from "@/components/ui/table";
-import { DropdownMenu, DropdownMenuContent, DropdownMenuGroup, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
-import { Pagination, PaginationPrevious, PaginationContent, PaginationItem, PaginationNext, PaginationLink } from "@/components/ui/pagination";
+import {
+  Table,
+  TableHead,
+  TableHeader,
+  TableBody,
+  TableCell,
+  TableRow,
+} from "@/components/ui/table";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuGroup,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
+import {
+  Pagination,
+  PaginationPrevious,
+  PaginationContent,
+  PaginationItem,
+  PaginationNext,
+  PaginationLink,
+} from "@/components/ui/pagination";
 import { Pencil, Search, ChevronDown, Wrench } from "lucide-react";
 import { Skeleton } from "@/components/ui/skeleton";
 import useSWR from "swr";
@@ -22,7 +42,8 @@ export default function Orders() {
   const router = useRouter();
   const [currentPage, setCurrentPage] = useState(1);
   const [search, setSearch] = useState("");
-  const [status, setStatus] = useState("");
+  // Set default status to "PENDING" so the UI fetches pending orders by default.
+  const [status, setStatus] = useState("PENDING");
 
   const navItems = [
     { label: "Orders", href: routes.order },
@@ -49,7 +70,27 @@ export default function Orders() {
     }
   );
 
-  const orders = data?.orders || [];
+  // Log the response from the API whenever it changes
+  useEffect(() => {
+    if (data) {
+      console.log("Received orders data:", data);
+    }
+  }, [data]);
+
+  // Use client-side sorting logic in case ordering from API doesn't match your needs
+  const orderPriority = {
+    PENDING: 1,
+    PROCESSING: 2,
+    DELIVERING: 3,
+    COMPLETED: 4,
+    CANCELLED: 5,
+  };
+
+  const orders = (data?.orders || []).slice().sort((a, b) => {
+    const aPriority = orderPriority[a.status.toUpperCase()] || 99;
+    const bPriority = orderPriority[b.status.toUpperCase()] || 99;
+    return aPriority - bPriority;
+  });
   const totalPages = data?.totalPages || 1;
 
   const handleUpdateClick = (orderNo) => {
@@ -94,23 +135,32 @@ export default function Orders() {
                     All Status
                   </Button>
                 </DropdownMenuItem>
-                {["PENDING", "PROCESSING", "DELIVERING", "COMPLETED", "CANCELLED"].map(
-                  (filterStatus) => (
-                    <DropdownMenuItem className="justify-center" key={filterStatus}>
-                      <Button
-                        variant="none"
-                        onClick={() => handleStatusFilter(filterStatus)}
-                      >
-                        {filterStatus}
-                      </Button>
-                    </DropdownMenuItem>
-                  )
-                )}
+                {[
+                  "PENDING",
+                  "PROCESSING",
+                  "DELIVERING",
+                  "COMPLETED",
+                  "CANCELLED",
+                ].map((filterStatus) => (
+                  <DropdownMenuItem
+                    className="justify-center"
+                    key={filterStatus}
+                  >
+                    <Button
+                      variant="none"
+                      onClick={() => handleStatusFilter(filterStatus)}
+                    >
+                      {filterStatus}
+                    </Button>
+                  </DropdownMenuItem>
+                ))}
               </DropdownMenuGroup>
             </DropdownMenuContent>
           </DropdownMenu>
           <Link
-            className={`${buttonVariants({ variant: "default" })} px-8 align-middle`}
+            className={`${buttonVariants({
+              variant: "default",
+            })} px-8 align-middle`}
             href={routes.manageFee}
           >
             <Wrench />
@@ -177,8 +227,8 @@ export default function Orders() {
                     (item) => item.ProductVariantSize?.Size?.name || "N/A"
                   );
 
-                  const quantities = limitedItems.map(
-                    (item) => String(item.quantity || 0)
+                  const quantities = limitedItems.map((item) =>
+                    String(item.quantity || 0)
                   );
 
                   const prices = limitedItems.map((item) => {
@@ -215,7 +265,8 @@ export default function Orders() {
                       <TableCell className="text-center">
                         <p
                           className={`py-1 w-full rounded font-bold uppercase text-white ${
-                            statusColors[order.status.toUpperCase()] || "bg-gray-500"
+                            statusColors[order.status.toUpperCase()] ||
+                            "bg-gray-500"
                           }`}
                         >
                           {order.status}
@@ -234,7 +285,9 @@ export default function Orders() {
                               <DropdownMenuItem className="justify-center">
                                 <Button
                                   variant="none"
-                                  onClick={() => handleUpdateClick(order.orderNo)}
+                                  onClick={() =>
+                                    handleUpdateClick(order.orderNo)
+                                  }
                                 >
                                   <Pencil className="scale-125 mr-2" />
                                   Update
@@ -264,17 +317,23 @@ export default function Orders() {
             <Pagination className="flex flex-col items-end">
               <PaginationContent>
                 {currentPage > 1 && (
-                  <PaginationPrevious onClick={() => setCurrentPage((prev) => prev - 1)} />
+                  <PaginationPrevious
+                    onClick={() => setCurrentPage((prev) => prev - 1)}
+                  />
                 )}
-                {Array.from({ length: totalPages }, (_, i) => i + 1).map((page) => (
-                  <PaginationItem key={page} active={page === currentPage}>
-                    <PaginationLink onClick={() => setCurrentPage(page)}>
-                      {page}
-                    </PaginationLink>
-                  </PaginationItem>
-                ))}
+                {Array.from({ length: totalPages }, (_, i) => i + 1).map(
+                  (page) => (
+                    <PaginationItem key={page} active={page === currentPage}>
+                      <PaginationLink onClick={() => setCurrentPage(page)}>
+                        {page}
+                      </PaginationLink>
+                    </PaginationItem>
+                  )
+                )}
                 {currentPage < totalPages && (
-                  <PaginationNext onClick={() => setCurrentPage((prev) => prev + 1)} />
+                  <PaginationNext
+                    onClick={() => setCurrentPage((prev) => prev + 1)}
+                  />
                 )}
               </PaginationContent>
             </Pagination>

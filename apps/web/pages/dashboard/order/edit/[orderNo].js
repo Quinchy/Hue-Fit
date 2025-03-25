@@ -9,7 +9,14 @@ import * as Yup from "yup";
 import { Card, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import DashboardLayoutWrapper from "@/components/ui/dashboard-layout";
-import { MoveLeft, Loader2, CheckCircle2, Package, Truck, Asterisk } from "lucide-react";
+import {
+  MoveLeft,
+  Loader2,
+  CheckCircle2,
+  Package,
+  Truck,
+  Asterisk,
+} from "lucide-react";
 import { Textarea } from "@/components/ui/textarea";
 import { Label } from "@/components/ui/label";
 import routes from "@/routes";
@@ -17,9 +24,18 @@ import { Alert, AlertTitle, AlertDescription } from "@/components/ui/alert";
 import Image from "next/image";
 import Loading from "@/components/ui/loading"; // Overall page loading
 import { ScrollArea } from "@/components/ui/scroll-area";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 import { LoadingMessage } from "@/components/ui/loading-message";
-import { InputErrorMessage, InputErrorStyle } from "@/components/ui/error-message";
+import {
+  InputErrorMessage,
+  InputErrorStyle,
+} from "@/components/ui/error-message";
 
 const ORDER_STEPS_DATA = [
   { id: "PENDING", label: "Pending", Icon: Loader2 },
@@ -53,7 +69,9 @@ export default function EditOrder() {
 
   const fetchOrderDetails = async (orderNoVal) => {
     try {
-      const response = await axios.get(`/api/orders/get-order-detail?orderNo=${orderNoVal}`);
+      const response = await axios.get(
+        `/api/orders/get-order-detail?orderNo=${orderNoVal}`
+      );
       setOrderDetails(response.data.order);
     } catch (err) {
       setError("Failed to fetch order details.");
@@ -66,7 +84,10 @@ export default function EditOrder() {
       setLoading(true);
       setError(null);
       const nextStatus = getNextStatus(orderDetails.status);
-      await axios.post("/api/orders/update-order", { orderNo, status: nextStatus });
+      await axios.post("/api/orders/update-order", {
+        orderNo,
+        status: nextStatus,
+      });
       setOrderDetails((prev) => ({ ...prev, status: nextStatus }));
       setShowAlert(true);
     } catch (err) {
@@ -76,7 +97,7 @@ export default function EditOrder() {
     }
   };
 
-  // Updated cancellation Formik instance with enhanced Yup validation.
+  // Cancellation Formik instance with enhanced Yup validation.
   const cancellationFormik = useFormik({
     initialValues: {
       cancellationResponse: "",
@@ -86,9 +107,10 @@ export default function EditOrder() {
       cancellationResponse: Yup.string().required("Please select a response."),
       rejectionReason: Yup.string().when("cancellationResponse", {
         is: "REJECT",
-        then: () => Yup.string().required("Please provide a reason for rejection."),
+        then: () =>
+          Yup.string().required("Please provide a reason for rejection."),
         otherwise: () => Yup.string().nullable(),
-      })      
+      }),
     }),
     onSubmit: async (values, { setSubmitting, setStatus, resetForm }) => {
       if (!orderDetails) return;
@@ -96,10 +118,14 @@ export default function EditOrder() {
         const payload = {
           orderId: orderDetails.id,
           action: values.cancellationResponse,
-          rejectionReason: values.cancellationResponse === "REJECT" ? values.rejectionReason : null,
+          rejectionReason:
+            values.cancellationResponse === "REJECT"
+              ? values.rejectionReason
+              : null,
         };
         await axios.post("/api/orders/cancellation-response", payload);
         setShowCancelAlert(true);
+        // Re-fetch order details to update the UI after submission
         fetchOrderDetails(orderNo);
         resetForm();
       } catch (err) {
@@ -128,21 +154,31 @@ export default function EditOrder() {
     }, 0) || 0;
 
   let deliveryFeeAmount = 0;
-  if (orderDetails.Shop?.DeliveryFee && orderDetails.Shop.DeliveryFee.length > 0) {
+  if (
+    orderDetails.Shop?.DeliveryFee &&
+    orderDetails.Shop.DeliveryFee.length > 0
+  ) {
     const feeRecord = orderDetails.Shop.DeliveryFee[0];
     if (feeRecord.feeType === "FIXED") {
       deliveryFeeAmount = parseFloat(feeRecord.feeAmount);
     } else if (feeRecord.feeType === "PERCENTAGE") {
-      deliveryFeeAmount = totalEarnings * (parseFloat(feeRecord.feeAmount) / 100);
+      deliveryFeeAmount =
+        totalEarnings * (parseFloat(feeRecord.feeAmount) / 100);
     }
   }
   const finalTotal = totalEarnings + deliveryFeeAmount;
-  const profilePicture = orderDetails.User?.profilePicture || "/images/profile-picture.png";
+  const profilePicture =
+    orderDetails.User?.profilePicture || "/images/profile-picture.png";
 
-  const currentStepIndex = ORDER_STEPS_DATA.findIndex((step) => step.id === orderDetails.status);
-  const canAdvance = currentStepIndex >= 0 && currentStepIndex < ORDER_STEPS_DATA.length - 1;
+  const currentStepIndex = ORDER_STEPS_DATA.findIndex(
+    (step) => step.id === orderDetails.status
+  );
+  const canAdvance =
+    currentStepIndex >= 0 && currentStepIndex < ORDER_STEPS_DATA.length - 1;
   const progressPercentage =
-    currentStepIndex > 0 ? (currentStepIndex / (ORDER_STEPS_DATA.length - 1)) * 100 : 0;
+    currentStepIndex > 0
+      ? (currentStepIndex / (ORDER_STEPS_DATA.length - 1)) * 100
+      : 0;
 
   const customerAddress = orderDetails.User?.address
     ? [
@@ -169,7 +205,9 @@ export default function EditOrder() {
     <DashboardLayoutWrapper>
       <div className="flex justify-between items-center">
         <div className="flex flex-row items-center gap-4">
-          <CardTitle className="text-4xl">Order: {orderDetails.orderNo}</CardTitle>
+          <CardTitle className="text-4xl">
+            Order: {orderDetails.orderNo}
+          </CardTitle>
           <p
             className={`px-3 py-1 min-w-[10rem] text-center rounded text-card font-bold ${
               statusColors[orderDetails.status.toUpperCase()]
@@ -188,12 +226,18 @@ export default function EditOrder() {
         {/* Progress Bar */}
         <div className="relative flex items-center justify-between px-2 h-20">
           <div className="absolute top-4 left-0 right-0 h-0.5 border-t-2 border-dashed border-border" />
-          <div className="absolute top-4 left-0 h-0.5 bg-primary" style={{ width: `${progressPercentage}%` }} />
+          <div
+            className="absolute top-4 left-0 h-0.5 bg-primary"
+            style={{ width: `${progressPercentage}%` }}
+          />
           {ORDER_STEPS_DATA.map((step, index) => {
             const isActive = index <= currentStepIndex;
             const StepIcon = step.Icon;
             return (
-              <div key={step.id} className="relative z-10 flex flex-col items-center">
+              <div
+                key={step.id}
+                className="relative z-10 flex flex-col items-center"
+              >
                 <div
                   className={`w-8 h-8 rounded-full border-2 flex items-center justify-center ${
                     isActive
@@ -204,8 +248,18 @@ export default function EditOrder() {
                   {index + 1}
                 </div>
                 <div className="mt-2 flex flex-col items-center text-xs">
-                  <StepIcon className={`w-4 h-4 mb-1 ${isActive ? "text-primary" : "text-muted-foreground"}`} />
-                  <p className={isActive ? "font-semibold text-primary" : "text-muted-foreground"}>
+                  <StepIcon
+                    className={`w-4 h-4 mb-1 ${
+                      isActive ? "text-primary" : "text-muted-foreground"
+                    }`}
+                  />
+                  <p
+                    className={
+                      isActive
+                        ? "font-semibold text-primary"
+                        : "text-muted-foreground"
+                    }
+                  >
                     {step.label}
                   </p>
                 </div>
@@ -227,7 +281,8 @@ export default function EditOrder() {
                   ? parseFloat(item.ProductVariant.price).toFixed(2)
                   : "0.00";
                 const firstImageURL =
-                  item.ProductVariant?.ProductVariantImage?.[0]?.imageURL || null;
+                  item.ProductVariant?.ProductVariantImage?.[0]?.imageURL ||
+                  null;
                 return (
                   <div
                     key={item.id}
@@ -275,7 +330,9 @@ export default function EditOrder() {
             />
             <div>
               <p className="font-semibold text-lg">{orderDetails.User.name}</p>
-              <p className="text-sm">Payment Method: {orderDetails.paymentMethod}</p>
+              <p className="text-sm">
+                Payment Method: {orderDetails.paymentMethod}
+              </p>
               <p className="text-sm">Shipping Address: {customerAddress}</p>
             </div>
           </div>
@@ -286,12 +343,24 @@ export default function EditOrder() {
           <div>
             <CardTitle className="text-2xl">Order Status</CardTitle>
             {orderDetails.status.toUpperCase() === "CANCELLED" ? (
-              <p className="mt-2 text-muted-foreground italic">This order is cancelled.</p>
+              <p className="mt-2 text-muted-foreground italic">
+                This order is cancelled.
+              </p>
             ) : orderDetails.status.toUpperCase() === "COMPLETED" ? (
-              <p className="mt-2 text-muted-foreground italic">This order is already completed.</p>
+              <p className="mt-2 text-muted-foreground italic">
+                This order is already completed.
+              </p>
             ) : canAdvance ? (
-              <Button onClick={handleAdvanceStep} className="mt-2 min-w-[15rem]" disabled={loading}>
-                {loading ? <LoadingMessage message="Advancing..." /> : "Advance to Next Step"}
+              <Button
+                onClick={handleAdvanceStep}
+                className="mt-2 min-w-[15rem]"
+                disabled={loading}
+              >
+                {loading ? (
+                  <LoadingMessage message="Advancing..." />
+                ) : (
+                  "Advance to Next Step"
+                )}
               </Button>
             ) : null}
           </div>
@@ -309,77 +378,99 @@ export default function EditOrder() {
         </div>
 
         {/* Cancellation Response Section */}
-        {orderDetails.askingForCancel && (
-          <div className="flex flex-col gap-4 border-t">
-            <CardTitle className="text-2xl mt-5">Cancellation Request</CardTitle>
-            <p>
-              <strong>Reason:</strong> {orderDetails.cancelReason}
-            </p>
-            <form onSubmit={cancellationFormik.handleSubmit} className="flex flex-col gap-4">
-              <div className="flex flex-col gap-4">
-                <div className="flex flex-col gap-1">
-                  <Label className="flex flex-row items-center font-semibold">
-                    Response <Asterisk className="w-4" />
-                  </Label>
-                  <Select
-                    onValueChange={(value) =>
-                      cancellationFormik.setFieldValue("cancellationResponse", value)
-                    }
-                    value={cancellationFormik.values.cancellationResponse}
-                  >
-                    <SelectTrigger
-                      className={`w-full ${InputErrorStyle(
-                        cancellationFormik.errors.cancellationResponse,
-                        cancellationFormik.touched.cancellationResponse
-                      )}`}
-                    >
-                      <SelectValue placeholder="Select response" />
-                    </SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="ACCEPT">Accept</SelectItem>
-                      <SelectItem value="REJECT">Reject</SelectItem>
-                    </SelectContent>
-                  </Select>
-                  {cancellationFormik.touched.cancellationResponse &&
-                    cancellationFormik.errors.cancellationResponse && (
-                      <InputErrorMessage
-                        error={cancellationFormik.errors.cancellationResponse}
-                        touched={cancellationFormik.touched.cancellationResponse}
-                      />
-                    )}
-                </div>
-                {cancellationFormik.values.cancellationResponse === "REJECT" && (
+        {orderDetails.askingForCancel &&
+          orderDetails.status.toUpperCase() !== "CANCELLED" && (
+            <div className="flex flex-col gap-4 border-t">
+              <CardTitle className="text-2xl mt-5">
+                Cancellation Request
+              </CardTitle>
+              <p>
+                <strong>Reason:</strong> {orderDetails.cancelReason}
+              </p>
+              <form
+                onSubmit={cancellationFormik.handleSubmit}
+                className="flex flex-col gap-4"
+              >
+                <div className="flex flex-col gap-4">
                   <div className="flex flex-col gap-1">
                     <Label className="flex flex-row items-center font-semibold">
-                      Rejection Reason <Asterisk className="w-4" />
+                      Response <Asterisk className="w-4" />
                     </Label>
-                    <Textarea
-                      className={`w-full border rounded p-2 ${InputErrorStyle(
-                        cancellationFormik.errors.rejectionReason,
-                        cancellationFormik.touched.rejectionReason
-                      )}`}
-                      placeholder="Enter rejection reason"
-                      {...cancellationFormik.getFieldProps("rejectionReason")}
-                    />
-                    {cancellationFormik.touched.rejectionReason &&
-                      cancellationFormik.errors.rejectionReason && (
+                    <Select
+                      onValueChange={(value) =>
+                        cancellationFormik.setFieldValue(
+                          "cancellationResponse",
+                          value
+                        )
+                      }
+                      value={cancellationFormik.values.cancellationResponse}
+                    >
+                      <SelectTrigger
+                        className={`w-full ${InputErrorStyle(
+                          cancellationFormik.errors.cancellationResponse,
+                          cancellationFormik.touched.cancellationResponse
+                        )}`}
+                      >
+                        <SelectValue placeholder="Select response" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="ACCEPT">Accept</SelectItem>
+                        <SelectItem value="REJECT">Reject</SelectItem>
+                      </SelectContent>
+                    </Select>
+                    {cancellationFormik.touched.cancellationResponse &&
+                      cancellationFormik.errors.cancellationResponse && (
                         <InputErrorMessage
-                          error={cancellationFormik.errors.rejectionReason}
-                          touched={cancellationFormik.touched.rejectionReason}
+                          error={cancellationFormik.errors.cancellationResponse}
+                          touched={
+                            cancellationFormik.touched.cancellationResponse
+                          }
                         />
                       )}
                   </div>
+                  {cancellationFormik.values.cancellationResponse ===
+                    "REJECT" && (
+                    <div className="flex flex-col gap-1">
+                      <Label className="flex flex-row items-center font-semibold">
+                        Rejection Reason <Asterisk className="w-4" />
+                      </Label>
+                      <Textarea
+                        className={`w-full border rounded p-2 ${InputErrorStyle(
+                          cancellationFormik.errors.rejectionReason,
+                          cancellationFormik.touched.rejectionReason
+                        )}`}
+                        placeholder="Enter rejection reason"
+                        {...cancellationFormik.getFieldProps("rejectionReason")}
+                      />
+                      {cancellationFormik.touched.rejectionReason &&
+                        cancellationFormik.errors.rejectionReason && (
+                          <InputErrorMessage
+                            error={cancellationFormik.errors.rejectionReason}
+                            touched={cancellationFormik.touched.rejectionReason}
+                          />
+                        )}
+                    </div>
+                  )}
+                </div>
+                <Button
+                  type="submit"
+                  className="mt-10"
+                  disabled={cancellationFormik.isSubmitting}
+                >
+                  {cancellationFormik.isSubmitting ? (
+                    <LoadingMessage message="Submitting..." />
+                  ) : (
+                    "Submit"
+                  )}
+                </Button>
+                {cancellationFormik.status && (
+                  <p className="text-red-500 mt-2">
+                    {cancellationFormik.status}
+                  </p>
                 )}
-              </div>
-              <Button type="submit" className="mt-10" disabled={cancellationFormik.isSubmitting}>
-                {cancellationFormik.isSubmitting ? <LoadingMessage message="Submitting..." /> : "Submit"}
-              </Button>
-              {cancellationFormik.status && (
-                <p className="text-red-500 mt-2">{cancellationFormik.status}</p>
-              )}
-            </form>
-          </div>
-        )}
+              </form>
+            </div>
+          )}
       </Card>
 
       {/* Order Status Update Alert */}
@@ -387,7 +478,9 @@ export default function EditOrder() {
         <Alert className="fixed z-50 w-[30rem] right-14 bottom-10 flex items-center shadow-lg rounded-lg">
           <CheckCircle2 className="h-10 w-10 stroke-green-500" />
           <div className="ml-7">
-            <AlertTitle className="text-green-400 text-base font-semibold">Status Updated</AlertTitle>
+            <AlertTitle className="text-green-400 text-base font-semibold">
+              Status Updated
+            </AlertTitle>
             <AlertDescription className="text-green-300">
               The order status has been updated successfully.
             </AlertDescription>
