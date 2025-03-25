@@ -11,7 +11,6 @@ import {
   LogOut,
   MessageSquareMore,
   Wrench,
-  Camera,
 } from "lucide-react";
 import { ModeToggle } from "@/components/ui/mode-toggle";
 import {
@@ -30,19 +29,54 @@ const NavbarDashboard = () => {
   const userRole = session?.user?.role;
 
   const links = [
-    { route: routes.dashboard, icon: <House />, label: "Dashboard", roles: ["VENDOR", "ADMIN"] },
-    { route: routes.shop, icon: <Store />, label: "Shops", roles: ["ADMIN"] },
-    { route: routes.user, icon: <User />, label: "Users", roles: ["ADMIN"] },
-    { route: routes.inquiry, icon: <MessageSquareMore />, label: "Inquiries", roles: ["ADMIN"] },
-    { route: routes.product, icon: <Shirt />, label: "Products", roles: ["VENDOR"] },
-    { route: routes.order, icon: <Tag />, label: "Orders", roles: ["VENDOR"] },
-    { route: routes.maintenance, icon: <Wrench />, label: "Maintenance", roles: ["VENDOR"] },
+    {
+      route: routes.dashboard,
+      icon: <House className="scale-75" />,
+      label: "Dashboard",
+      roles: ["VENDOR", "ADMIN"],
+    },
+    {
+      route: routes.shop,
+      icon: <Store className="scale-75" />,
+      label: "Shops",
+      roles: ["ADMIN"],
+    },
+    {
+      route: routes.user,
+      icon: <User className="scale-75" />,
+      label: "Users",
+      roles: ["ADMIN"],
+    },
+    {
+      route: routes.inquiry,
+      icon: <MessageSquareMore className="scale-75" />,
+      label: "Inquiries",
+      roles: ["ADMIN"],
+    },
+    {
+      route: routes.product,
+      icon: <Shirt className="scale-75" />,
+      label: "Products",
+      roles: ["VENDOR"],
+    },
+    {
+      route: routes.order,
+      icon: <Tag className="scale-75" />,
+      label: "Orders",
+      roles: ["VENDOR"],
+    },
+    {
+      route: routes.maintenance,
+      icon: <Wrench className="scale-75" />,
+      label: "Maintenance",
+      roles: ["VENDOR"],
+    },
   ];
 
   return (
-    <div className="fixed flex flex-col justify-between items-center min-w-[20rem] border-r-[1px] border-border bg-card text-white h-full z-10 pt-5">
+    <div className="fixed flex flex-col justify-between items-center min-w-[15rem] border-r-[1px] border-border bg-card text-white h-full z-10 pt-5">
       <div className="flex flex-col items-center w-full space-y-5">
-        <div className="flex flex-row justify-between w-full px-9">
+        <div className="flex flex-row justify-between w-full px-5">
           <Link href={routes.dashboard} className="mb-3">
             <HueFitLogo height={50} className="fill-primary" />
           </Link>
@@ -58,9 +92,9 @@ const NavbarDashboard = () => {
                 <Link
                   key={route}
                   href={route}
-                  className="flex flex-row justify-start items-center gap-3 py-3 w-full hover:bg-accent duration-300 ease-in-out"
+                  className="text-sm py-2 w-full hover:bg-accent duration-500 ease-in-out"
                 >
-                  <div className="pl-10 flex flex-row items-center gap-3 text-primary uppercase">
+                  <div className="pl-5 flex flex-row items-center gap-2 text-primary uppercase">
                     {icon}
                     {label}
                   </div>
@@ -84,7 +118,7 @@ const NavbarDashboard = () => {
               </div>
             ) : !session ? (
               // If session not found at all
-              <div className="flex flex-row pl-10 items-center gap-3">
+              <div className="flex flex-row pl-5 items-center gap-2">
                 <Image
                   src="/images/profile-picture.png"
                   width={50}
@@ -92,22 +126,25 @@ const NavbarDashboard = () => {
                   className="rounded-full border-2 border-background/75"
                   alt="Profile Picture"
                 />
-                <div className="flex flex-col items-start gap-0 text-primary">
+                <div className="flex flex-col items-start text-sm text-primary">
                   <p className="font-semibold">Guest</p>
                   <p className="font-light">Not Logged In</p>
                 </div>
               </div>
             ) : (
               // Session is loaded & user is present
-              <div className="flex flex-row pl-10 items-center gap-3">
+              <div className="flex flex-row pl-5 items-center gap-2">
                 <Image
-                  src={session?.user?.profilePicture || "/images/profile-picture.png"}
+                  src={
+                    session?.user?.profilePicture ||
+                    "/images/profile-picture.png"
+                  }
                   width={50}
                   height={50}
                   className="rounded-full border-2 border-background/75"
                   alt="Profile Picture"
                 />
-                <div className="flex flex-col items-start gap-0 text-primary">
+                <div className="flex flex-col items-start text-sm text-primary">
                   <p className="font-semibold">
                     {session?.user?.firstName} {session?.user?.lastName}
                   </p>
@@ -123,9 +160,9 @@ const NavbarDashboard = () => {
           <DropdownMenuItem>
             <Link
               href={routes.profile}
-              className="flex justify-start items-center gap-3 font-semibold py-2 px-4 rounded w-full uppercase"
+              className="flex justify-start items-center gap-2 text-sm font-semibold py-1 px-5 rounded w-full uppercase"
             >
-              <User className="stroke-primary" /> Profile
+              <User className="scale-75" /> Profile
             </Link>
           </DropdownMenuItem>
           {/* Add Shop menu item if the user is a VENDOR */}
@@ -133,9 +170,9 @@ const NavbarDashboard = () => {
             <DropdownMenuItem>
               <Link
                 href={routes.shopProfile}
-                className="flex justify-start items-center gap-3 font-semibold py-2 px-4 rounded w-full uppercase"
+                className="flex justify-start items-center gap-2 text-sm font-semibold py-1 px-5 rounded w-full uppercase"
               >
-                <Store className="stroke-primary" /> Shop
+                <Store className="scale-75" /> Shop
               </Link>
             </DropdownMenuItem>
           )}
@@ -144,9 +181,9 @@ const NavbarDashboard = () => {
               onClick={() => {
                 signOut({ callbackUrl: "/" });
               }}
-              className="flex items-center gap-3 justify-start shadow-none text-red-500 font-semibold py-2 px-4 rounded w-full uppercase"
+              className="flex items-center gap-2 text-sm justify-start shadow-none text-red-500 font-semibold py-1 px-5 rounded w-full uppercase"
             >
-              <LogOut /> Logout
+              <LogOut className="scale-75" /> Logout
             </button>
           </DropdownMenuItem>
         </DropdownMenuContent>

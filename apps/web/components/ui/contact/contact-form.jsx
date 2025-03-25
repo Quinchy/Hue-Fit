@@ -8,14 +8,32 @@ import { Textarea } from "@/components/ui/textarea";
 import { Label } from "@/components/ui/label";
 import { Button } from "@/components/ui/button";
 import { Card, CardTitle } from "@/components/ui/card";
-import { InputErrorMessage, InputErrorStyle } from "@/components/ui/error-message";
+import {
+  InputErrorMessage,
+  InputErrorStyle,
+} from "@/components/ui/error-message";
 import { LoadingMessage } from "@/components/ui/loading-message";
 import { Alert, AlertTitle, AlertDescription } from "@/components/ui/alert";
 import { motion } from "framer-motion";
 import Link from "next/link";
-import { Mail, MapPin, Phone, Facebook, Twitter, Instagram, Asterisk, CheckCircle2 } from "lucide-react";
+import {
+  Mail,
+  MapPin,
+  Phone,
+  Facebook,
+  Twitter,
+  Instagram,
+  Asterisk,
+  CheckCircle2,
+} from "lucide-react";
 import { Gloock } from "next/font/google";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 
 const gloock = Gloock({
   style: ["normal"],
@@ -67,7 +85,10 @@ export default function ContactForm() {
       const firstErrorField = errorFields[0];
       const fieldRef = fieldRefs[firstErrorField];
       if (fieldRef && fieldRef.current) {
-        fieldRef.current.scrollIntoView({ behavior: "smooth", block: "center" });
+        fieldRef.current.scrollIntoView({
+          behavior: "smooth",
+          block: "center",
+        });
       }
     }
   };
@@ -86,7 +107,8 @@ export default function ContactForm() {
       const subject =
         values.subjectOption === "OTHERS"
           ? values.customSubject
-          : subjectOptions.find((opt) => opt.value === values.subjectOption)?.label;
+          : subjectOptions.find((opt) => opt.value === values.subjectOption)
+              ?.label;
       const payload = {
         email: values.email,
         subject,
@@ -130,10 +152,10 @@ export default function ContactForm() {
   };
 
   return (
-    <div className="flex flex-col gap-20 relative px-[15rem]">
+    <div className="flex flex-col gap-20 relative px-4 md:px-20 lg:px-[15rem]">
       {/* Success Alert */}
       {showSuccessAlert && (
-        <Alert className="fixed z-50 w-[30rem] right-10 bottom-10 flex items-center shadow-lg rounded-lg">
+        <Alert className="fixed z-50 w-[90%] max-w-md right-4 bottom-4 flex items-center shadow-lg rounded-lg">
           <CheckCircle2 className="h-10 w-10 stroke-green-500" />
           <div className="ml-7">
             <AlertTitle className="text-green-400 text-base font-semibold">
@@ -153,23 +175,28 @@ export default function ContactForm() {
       )}
       <div className="flex flex-col gap-20">
         <h1
-          className={`text-[8rem] text-primary font-black subpixel-antialiased tracking-tight text-start leading-[7rem] ${gloock.className}`}
+          className={`text-5xl md:text-6xl lg:text-7xl min-[1713px]:text-7xl text-primary font-black text-center 2xl:text-start cursor-pointer ${gloock.className}`}
         >
           QUESTIONS ON STYLE? ASK AWAY!
         </h1>
         <div className="flex flex-col md:flex-row justify-between gap-10">
-          <Card className="w-[55%]">
+          <Card className="w-full p-2 md:w-[55%]">
             <form onSubmit={handleSubmit} className="flex flex-col gap-10 p-5">
               <div>
                 <CardTitle className="text-3xl">Get In Touch</CardTitle>
                 <p className="font-light text-primary/75">
-                  {"Have a question or need assistance? Reach out to us and we'll respond promptly!"}
+                  {
+                    "Have a question or need assistance? Reach out to us and we'll respond promptly!"
+                  }
                 </p>
               </div>
               <div className="flex flex-col gap-5">
                 {/* Email Field */}
                 <div className="flex flex-col gap-1" ref={fieldRefs.email}>
-                  <Label htmlFor="email" className="font-bold flex flex-row items-center">
+                  <Label
+                    htmlFor="email"
+                    className="font-bold flex flex-row items-center"
+                  >
                     Email <Asterisk className="w-4" />
                   </Label>
                   <Input
@@ -177,19 +204,33 @@ export default function ContactForm() {
                     type="email"
                     placeholder="Your Email"
                     {...formik.getFieldProps("email")}
-                    className={InputErrorStyle(formik.errors.email, formik.touched.email)}
+                    className={InputErrorStyle(
+                      formik.errors.email,
+                      formik.touched.email
+                    )}
                   />
                   {formik.touched.email && formik.errors.email && (
-                    <InputErrorMessage error={formik.errors.email} touched={formik.touched.email} />
+                    <InputErrorMessage
+                      error={formik.errors.email}
+                      touched={formik.touched.email}
+                    />
                   )}
                 </div>
                 {/* Subject Field */}
-                <div className="flex flex-col gap-1" ref={fieldRefs.subjectOption}>
-                  <Label htmlFor="subject" className="font-bold flex flex-row items-center">
+                <div
+                  className="flex flex-col gap-1"
+                  ref={fieldRefs.subjectOption}
+                >
+                  <Label
+                    htmlFor="subject"
+                    className="font-bold flex flex-row items-center"
+                  >
                     Subject <Asterisk className="w-4" />
                   </Label>
                   <Select
-                    onValueChange={(value) => formik.setFieldValue("subjectOption", value)}
+                    onValueChange={(value) =>
+                      formik.setFieldValue("subjectOption", value)
+                    }
                     value={formik.values.subjectOption}
                   >
                     <SelectTrigger
@@ -208,12 +249,13 @@ export default function ContactForm() {
                       ))}
                     </SelectContent>
                   </Select>
-                  {formik.touched.subjectOption && formik.errors.subjectOption && (
-                    <InputErrorMessage
-                      error={formik.errors.subjectOption}
-                      touched={formik.touched.subjectOption}
-                    />
-                  )}
+                  {formik.touched.subjectOption &&
+                    formik.errors.subjectOption && (
+                      <InputErrorMessage
+                        error={formik.errors.subjectOption}
+                        touched={formik.touched.subjectOption}
+                      />
+                    )}
                   {formik.values.subjectOption === "OTHERS" && (
                     <div className="mt-2" ref={fieldRefs.customSubject}>
                       <Input
@@ -223,20 +265,27 @@ export default function ContactForm() {
                         value={formik.values.customSubject}
                         onChange={formik.handleChange}
                         onBlur={formik.handleBlur}
-                        className={InputErrorStyle(formik.errors.customSubject, formik.touched.customSubject)}
+                        className={InputErrorStyle(
+                          formik.errors.customSubject,
+                          formik.touched.customSubject
+                        )}
                       />
-                      {formik.touched.customSubject && formik.errors.customSubject && (
-                        <InputErrorMessage
-                          error={formik.errors.customSubject}
-                          touched={formik.touched.customSubject}
-                        />
-                      )}
+                      {formik.touched.customSubject &&
+                        formik.errors.customSubject && (
+                          <InputErrorMessage
+                            error={formik.errors.customSubject}
+                            touched={formik.touched.customSubject}
+                          />
+                        )}
                     </div>
                   )}
                 </div>
                 {/* Message Field */}
                 <div className="flex flex-col gap-1" ref={fieldRefs.message}>
-                  <Label htmlFor="message" className="font-bold flex flex-row items-center">
+                  <Label
+                    htmlFor="message"
+                    className="font-bold flex flex-row items-center"
+                  >
                     Message <Asterisk className="w-4" />
                   </Label>
                   <Textarea
@@ -244,23 +293,35 @@ export default function ContactForm() {
                     rows={5}
                     placeholder="Your Message"
                     {...formik.getFieldProps("message")}
-                    className={InputErrorStyle(formik.errors.message, formik.touched.message)}
+                    className={InputErrorStyle(
+                      formik.errors.message,
+                      formik.touched.message
+                    )}
                   />
                   {formik.touched.message && formik.errors.message && (
-                    <InputErrorMessage error={formik.errors.message} touched={formik.touched.message} />
+                    <InputErrorMessage
+                      error={formik.errors.message}
+                      touched={formik.touched.message}
+                    />
                   )}
                 </div>
               </div>
               <Button type="submit" disabled={formik.isSubmitting}>
-                {formik.isSubmitting ? <LoadingMessage message="Submitting..." /> : "Submit"}
+                {formik.isSubmitting ? (
+                  <LoadingMessage message="Submitting..." />
+                ) : (
+                  "Submit"
+                )}
               </Button>
             </form>
           </Card>
-          <div className="w-[45%] flex flex-col gap-10">
-            <div className="flex flex-col gap-5">
+          <div className="w-full md:w-[45%] flex flex-col gap-10">
+            <div className="flex flex-col items-center md:items-start gap-5">
               <div className="flex items-center gap-4">
                 <MapPin width={30} height={30} className="stroke-1" />
-                <CardTitle className="text-xl">BONIFACIO GLOBAL CITY, TAGUIG</CardTitle>
+                <CardTitle className="text-xl">
+                  BONIFACIO GLOBAL CITY, TAGUIG
+                </CardTitle>
               </div>
               <div className="flex items-center gap-4">
                 <Phone width={30} height={30} className="stroke-1" />
@@ -271,7 +332,7 @@ export default function ContactForm() {
                 <CardTitle className="text-xl">inquiries@huefit.com</CardTitle>
               </div>
             </div>
-            <div className="flex flex-row justify-start min-w-[15rem] gap-5">
+            <div className="flex flex-row justify-center md:justify-start min-w-[15rem] gap-5">
               <MotionLink
                 href=""
                 className={socialLinkClasses}
@@ -308,12 +369,13 @@ export default function ContactForm() {
             </div>
           </div>
         </div>
-        <div className="h-[5rem]"></div>
+        <div className="h-20"></div>
       </div>
       <div
         className="absolute inset-0 pointer-events-none -z-10"
         style={{
-          background: "linear-gradient(to top, hsl(var(--pure)) 0%, transparent 100%)",
+          background:
+            "linear-gradient(to top, hsl(var(--pure)) 0%, transparent 100%)",
         }}
       />
     </div>

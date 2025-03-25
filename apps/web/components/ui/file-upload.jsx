@@ -105,8 +105,8 @@ const FileUpload = ({
   };
 
   return (
-    <div className={`flex flex-col items-center justify-center border-2 border-dashed rounded-lg p-5 ${className}`}>
-      <div className="flex flex-col items-center justify-center w-full rounded-lg relative pb-10">
+    <div className={`flex flex-col items-center justify-center border-2 border-dashed rounded-lg p-2 ${className}`}>
+      <div className="flex flex-col items-center justify-center w-full rounded-lg relative">
         <input
           type="file"
           accept={allowedTypes.join(",")}
@@ -116,18 +116,18 @@ const FileUpload = ({
           multiple
         />
         <div className="flex flex-col items-center text-muted-foreground dark:text-accent-foreground">
-          <Upload className="mb-2 w-8 h-8 stroke-border" />
-          <button className="px-10 py-2 text-base text-primary/25 font-medium border-2 rounded-md shadow-sm uppercase">
+          <Upload className="mb-2 w-5 h-5 stroke-border" />
+          <button className="px-14 py-1 text-base text-primary/25 font-medium border-[1px] rounded-md shadow-sm uppercase">
             Browse
           </button>
-          <p className="mt-3 text-base text-primary/50 font-medium">UPLOAD YOUR FILES HERE</p>
+          <p className="mt-3 text-base text-primary/50 font-medium">UPLOAD BUSINESS LICENSE/S</p>
           <p className="text-xs font-light text-primary/35 text-center">
-            FILES SUPPORTED: JPEG, PNG, WEBP, & PDF <br />
-            THE MAX FILE SIZE IS 20 MB PER FILE AND MAXIMUM OF {maxFiles} FILES
+            SUPPORTED FILES: JPEG, PNG, WEBP, & PDF <br />
+            THE MAXIMUM FILE SIZE IS 20 MB PER FILE AND MAXIMUM OF {maxFiles} FILES ONLY
           </p>
         </div>
-        <p className="mt-5 mb-2 text-primary/50 font-medium">Uploaded Files:</p>
-        <div className="flex flex-wrap gap-10 h-full justify-center">
+        <p className="mt-5 mb-1 text-primary/50 font-medium">Uploaded Files:</p>
+        <div className="flex flex-wrap gap-2 h-full justify-center">
           {Object.keys(fileMap).map((key) => {
             const fileData = fileMap[key];
             if (!fileData || !fileData.previewUrl) return null;
@@ -161,7 +161,7 @@ const FileUpload = ({
                   {!disabled && (
                     <Button
                       variant="none"
-                      className="absolute top-1 right-1 shadow-md shadow-pure z-40 bg-primary text-white w-6 h-6 rounded-full flex items-center justify-center hover:bg-muted-foreground"
+                      className="absolute top-1 right-1 shadow-md shadow-pure z-40 bg-primary text-white w-6 h-6 rounded-full flex items-center justify-center hover:bg-muted-foreground active:scale-90"
                       onClick={(e) => handleRemoveFile(e, key)}
                     >
                       <X className="w-4 h-4 stroke-pure" />

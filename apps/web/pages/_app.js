@@ -32,7 +32,7 @@ export default function App({ Component, pageProps: { session, ...pageProps } })
       NavBarComponent = NavbarAccount;
     } else if (normalizedPathname.startsWith(routes.dashboard)) {
       NavBarComponent = NavbarDashboard;
-      divClassName = 'flex flex-col items-start ml-[22rem]';
+      divClassName = 'flex flex-col items-start ml-[16.5rem]';
     }
   } else {
     divClassName = 'flex flex-col justify-center items-center w-full h-full';

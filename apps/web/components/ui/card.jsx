@@ -28,7 +28,7 @@ CardHeader.displayName = "CardHeader"
 const CardTitle = React.forwardRef(({ className, ...props }, ref) => (
   <h3
     ref={ref}
-    className={cn("uppercase text-primary font-bold leading-none tracking-normal", gloock.className, className)}
+    className={cn("uppercase mt-2", gloock.className, className)}
     {...props} />
 ))
 CardTitle.displayName = "CardTitle"

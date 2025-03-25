@@ -78,7 +78,7 @@ export default function ImageUpload({
             {!disabled && (
               <button
                 onClick={handleRemoveFile}
-                className="absolute top-1 right-1 bg-primary text-card text-xl shadow shadow-pure rounded-full w-7 h-7 hover:bg-muted-foreground flex items-center justify-center z-10"
+                className="absolute top-1 right-1 bg-primary text-card text-xl shadow shadow-pure rounded-full w-7 h-7 hover:bg-muted-foreground flex items-center justify-center z-10 transition-transform active:scale-90"
               >
                 <X className="w-4 h-4 stroke-pure" />
               </button>
@@ -93,15 +93,17 @@ export default function ImageUpload({
               }
             }}
           >
-            <Upload className="mb-2 w-8 h-8 stroke-border" />
-            <button className="px-10 py-2 text-base text-primary/25 font-medium border-2 rounded-md shadow-sm uppercase">
+            <Upload className="mb-2 w-5 h-5 stroke-border" />
+            <button className="px-12 py-1 text-sm text-primary/25 font-medium border-[1px] rounded-md shadow-sm uppercase">
               Browse
             </button>
-            <p className="mt-3 text-base text-primary/50 font-medium">
-              {"PLEASE UPLOAD YOUR SHOP'S LOGO"}
+            <p className="mt-2 text-sm text-primary/50 font-medium text-center">
+              {"UPLOAD SHOP'S LOGO"}
             </p>
-            <p className="text-xs font-light text-primary/35 text-center">
-              FILES SUPPORTED: JPEG, PNG, WEBP
+            <p className="text-xs font-light text-primary/35 text-center mt-2">
+              SUPPORTED FILES:
+              <br />
+              JPEG, PNG, WEBP
             </p>
           </div>
         )}

@@ -86,7 +86,7 @@ export default function ProductsPage() {
       )}
       <div className="flex flex-row justify-between">
         <CardTitle className="text-4xl">Products</CardTitle>
-        <div className="flex flex-row gap-5">
+        <div className="flex flex-row items-center gap-2">
           <Input
             type="text"
             className="min-w-[30rem]"
@@ -96,25 +96,18 @@ export default function ProductsPage() {
             value={searchTerm}
             onChange={handleSearchChange}
           />
-          <Link
-            className={buttonVariants({ variant: 'default' })}
-            href={routes.productAdd}
-          >
-            <Plus className="scale-110 stroke-[3px]" />
-            Add Product
-          </Link>
           <DropdownMenu>
             <DropdownMenuTrigger asChild>
               <Button variant="outline" className="font-normal">
                 <NotepadText className="scale-125" />
-                {'Filter by Type'}
+                {"Filter by Type"}
               </Button>
             </DropdownMenuTrigger>
-            <DropdownMenuContent className="w-48">
+            <DropdownMenuContent className="w-40">
               <DropdownMenuGroup>
                 <DropdownMenuItem
                   className="justify-center"
-                  onClick={() => handleTypeSelect('ALL')}
+                  onClick={() => handleTypeSelect("ALL")}
                 >
                   <Button variant="none">ALL</Button>
                 </DropdownMenuItem>
@@ -130,6 +123,13 @@ export default function ProductsPage() {
               </DropdownMenuGroup>
             </DropdownMenuContent>
           </DropdownMenu>
+          <Link
+            className={buttonVariants({ variant: "default" })}
+            href={routes.productAdd}
+          >
+            <Plus className="scale-110 stroke-[3px]" />
+            Add Product
+          </Link>
         </div>
       </div>
       <Card className="flex flex-col p-5 gap-5 justify-between min-h-[49.1rem]">
@@ -145,147 +145,147 @@ export default function ProductsPage() {
             </TableRow>
           </TableHeader>
           <TableBody>
-            {isLoading || !productsData
-              ? Array.from({ length: 9 }).map((_, index) => (
-                  <TableRow key={index}>
-                    <TableCell>
-                      <Skeleton className="w-full h-14" />
+            {isLoading || !productsData ? (
+              Array.from({ length: 10 }).map((_, index) => (
+                <TableRow key={index}>
+                  <TableCell>
+                    <Skeleton className="w-full h-14" />
+                  </TableCell>
+                  <TableCell>
+                    <Skeleton className="w-full h-14" />
+                  </TableCell>
+                  <TableCell>
+                    <Skeleton className="w-full h-14" />
+                  </TableCell>
+                  <TableCell className="text-center">
+                    <Skeleton className="w-full h-14" />
+                  </TableCell>
+                  <TableCell className="text-center">
+                    <Skeleton className="w-full h-14" />
+                  </TableCell>
+                  <TableCell className="text-center">
+                    <Skeleton className="w-full h-14" />
+                  </TableCell>
+                </TableRow>
+              ))
+            ) : productsData.products.length === 0 ? (
+              <TableRow>
+                <TableCell
+                  colSpan={6}
+                  className="text-center align-middle h-[43rem] text-primary/50 text-lg font-thin tracking-wide"
+                >
+                  No products found for{" "}
+                  {selectedType !== "ALL"
+                    ? `"${selectedType}"`
+                    : "the selected criteria"}
+                  .
+                </TableCell>
+              </TableRow>
+            ) : (
+              productsData.products.map((product) => {
+                const shortProductNo =
+                  product.productNo.length > 14
+                    ? product.productNo.slice(0, 14) + "..."
+                    : product.productNo;
+                return (
+                  <TableRow key={product.id}>
+                    <TableCell className="text-center">
+                      <div className="relative w-[2.5rem] h-[2.5rem] inline-block">
+                        <Image
+                          src={product.thumbnailURL}
+                          alt={product.name}
+                          fill
+                          quality={75}
+                          className="object-cover rounded-[0.1rem]"
+                        />
+                      </div>
                     </TableCell>
-                    <TableCell>
-                      <Skeleton className="w-full h-14" />
+                    <TableCell className="h-[4rem] flex items-center justify-between mr-4 gap-2">
+                      {shortProductNo}
+                      <Button
+                        variant="none"
+                        onClick={() =>
+                          navigator.clipboard.writeText(product.productNo)
+                        }
+                        className="hover:opacity-75 duration-300 ease-in-out"
+                      >
+                        <Copy className="scale-100" />
+                      </Button>
                     </TableCell>
-                    <TableCell>
-                      <Skeleton className="w-full h-14" />
+                    <TableCell>{product.name}</TableCell>
+                    <TableCell className="text-center">
+                      {product.totalQuantity}
+                      {product.ProductVariant &&
+                        product.ProductVariant.some(
+                          (variant) =>
+                            variant.ProductVariantSize &&
+                            variant.ProductVariantSize.some(
+                              (pvs) => pvs.quantity <= 5
+                            )
+                        ) && (
+                          <CircleAlert
+                            width={15}
+                            className="text-red-500/75 inline-block ml-1 mb-[0.10rem]"
+                          />
+                        )}
                     </TableCell>
                     <TableCell className="text-center">
-                      <Skeleton className="w-full h-14" />
+                      <p
+                        className={`py-1 w-full rounded font-bold ${
+                          product.Type.name === "UPPERWEAR"
+                            ? "bg-blue-500"
+                            : product.Type.name === "LOWERWEAR"
+                            ? "bg-teal-500"
+                            : product.Type.name === "FOOTWEAR"
+                            ? "bg-purple-500"
+                            : product.Type.name === "OUTERWEAR"
+                            ? "bg-cyan-500"
+                            : "bg-gray-300"
+                        } uppercase`}
+                      >
+                        {product.Type.name}
+                      </p>
                     </TableCell>
                     <TableCell className="text-center">
-                      <Skeleton className="w-full h-14" />
-                    </TableCell>
-                    <TableCell className="text-center">
-                      <Skeleton className="w-full h-14" />
-                    </TableCell>
-                  </TableRow>
-                ))
-              : productsData.products.length === 0 ? (
-                  <TableRow>
-                    <TableCell
-                      colSpan={6}
-                      className="text-center align-middle h-[43rem] text-primary/50 text-lg font-thin tracking-wide"
-                    >
-                      No products found for{' '}
-                      {selectedType !== 'ALL'
-                        ? `"${selectedType}"`
-                        : 'the selected criteria'}
-                      .
-                    </TableCell>
-                  </TableRow>
-                ) : (
-                  productsData.products.map((product) => {
-                    const shortProductNo =
-                      product.productNo.length > 14
-                        ? product.productNo.slice(0, 14) + '...'
-                        : product.productNo;
-                    return (
-                      <TableRow key={product.id}>
-                        <TableCell className="text-center">
-                          <div className="relative w-[3rem] h-[3rem] inline-block">
-                            <Image
-                              src={product.thumbnailURL}
-                              alt={product.name}
-                              fill
-                              quality={75}
-                              className="object-cover rounded-[0.1rem]"
-                            />
-                          </div>
-                        </TableCell>
-                        <TableCell className="h-[4.3rem] flex items-center justify-between mr-4 gap-2">
-                          {shortProductNo}
-                          <Button
-                            variant="none"
-                            onClick={() =>
-                              navigator.clipboard.writeText(product.productNo)
-                            }
-                            className="hover:opacity-75 duration-300 ease-in-out"
-                          >
-                            <Copy className="scale-100" />
+                      <DropdownMenu>
+                        <DropdownMenuTrigger asChild>
+                          <Button variant="outline" className="font-normal">
+                            Action
+                            <ChevronDown className="scale-125" />
                           </Button>
-                        </TableCell>
-                        <TableCell>{product.name}</TableCell>
-                        <TableCell className="text-center">
-                          {product.totalQuantity}
-                          {product.ProductVariant &&
-                            product.ProductVariant.some(
-                              (variant) =>
-                                variant.ProductVariantSize &&
-                                variant.ProductVariantSize.some(
-                                  (pvs) => pvs.quantity <= 5
-                                )
-                            ) && (
-                              <CircleAlert
-                                width={15}
-                                className="text-red-500/75 inline-block ml-1 mb-[0.10rem]"
-                              />
-                            )}
-                        </TableCell>
-                        <TableCell className="text-center">
-                          <p
-                            className={`py-1 w-full rounded font-bold ${
-                              product.Type.name === 'UPPERWEAR'
-                                ? 'bg-blue-500'
-                                : product.Type.name === 'LOWERWEAR'
-                                ? 'bg-teal-500'
-                                : product.Type.name === 'FOOTWEAR'
-                                ? 'bg-purple-500'
-                                : product.Type.name === 'OUTERWEAR'
-                                ? 'bg-cyan-500'
-                                : 'bg-gray-300'
-                            } uppercase`}
-                          >
-                            {product.Type.name}
-                          </p>
-                        </TableCell>
-                        <TableCell className="text-center">
-                          <DropdownMenu>
-                            <DropdownMenuTrigger asChild>
-                              <Button variant="outline" className="font-normal">
-                                Action
-                                <ChevronDown className="scale-125" />
+                        </DropdownMenuTrigger>
+                        <DropdownMenuContent className="w-50">
+                          <DropdownMenuGroup>
+                            <DropdownMenuItem className="justify-center">
+                              <Button
+                                variant="none"
+                                onClick={() =>
+                                  handleViewClick(product.productNo)
+                                }
+                              >
+                                <Eye className="scale-125" />
+                                View
                               </Button>
-                            </DropdownMenuTrigger>
-                            <DropdownMenuContent className="w-50">
-                              <DropdownMenuGroup>
-                                <DropdownMenuItem className="justify-center">
-                                  <Button
-                                    variant="none"
-                                    onClick={() =>
-                                      handleViewClick(product.productNo)
-                                    }
-                                  >
-                                    <Eye className="scale-125" />
-                                    View
-                                  </Button>
-                                </DropdownMenuItem>
-                                <DropdownMenuItem className="justify-center">
-                                  <Button
-                                    variant="none"
-                                    onClick={() =>
-                                      handleStockClick(product.productNo)
-                                    }
-                                  >
-                                    <Package className="scale-125" />
-                                    Stock
-                                  </Button>
-                                </DropdownMenuItem>
-                              </DropdownMenuGroup>
-                            </DropdownMenuContent>
-                          </DropdownMenu>
-                        </TableCell>
-                      </TableRow>
-                    );
-                  })
-                )}
+                            </DropdownMenuItem>
+                            <DropdownMenuItem className="justify-center">
+                              <Button
+                                variant="none"
+                                onClick={() =>
+                                  handleStockClick(product.productNo)
+                                }
+                              >
+                                <Package className="scale-125" />
+                                Stock
+                              </Button>
+                            </DropdownMenuItem>
+                          </DropdownMenuGroup>
+                        </DropdownMenuContent>
+                      </DropdownMenu>
+                    </TableCell>
+                  </TableRow>
+                );
+              })
+            )}
           </TableBody>
         </Table>
         {productsData?.products?.length > 0 && (
@@ -296,15 +296,16 @@ export default function ProductsPage() {
                   onClick={() => handlePageChange(currentPage - 1)}
                 />
               )}
-              {Array.from({ length: productsData.totalPages }, (_, i) => i + 1).map(
-                (page) => (
-                  <PaginationItem key={page} active={page === currentPage}>
-                    <PaginationLink onClick={() => handlePageChange(page)}>
-                      {page}
-                    </PaginationLink>
-                  </PaginationItem>
-                )
-              )}
+              {Array.from(
+                { length: productsData.totalPages },
+                (_, i) => i + 1
+              ).map((page) => (
+                <PaginationItem key={page} active={page === currentPage}>
+                  <PaginationLink onClick={() => handlePageChange(page)}>
+                    {page}
+                  </PaginationLink>
+                </PaginationItem>
+              ))}
               {currentPage < productsData.totalPages && (
                 <PaginationNext
                   onClick={() => handlePageChange(currentPage + 1)}

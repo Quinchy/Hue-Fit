@@ -1,10 +1,7 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import Image from "next/image";
 import { Gloock } from "next/font/google";
-import { motion, AnimatePresence } from "framer-motion";
-import NextImage from "next/image"; // Renamed import
-import { MoveLeft, MoveRight } from "lucide-react";
 
 const gloock = Gloock({
   style: ["normal"],
@@ -12,153 +9,165 @@ const gloock = Gloock({
   subsets: ["latin"],
 });
 
-const infoItems = [
-  {
-    src: "/images/carousel-1.png",
-    title: "AI-Powered Outfit Recommendation",
-    desc: "Experience a truly personalized style journey with our advanced AI technology that curates unique outfit combinations just for you. It carefully analyzes your body type, style preferences, and current fashion trends to craft ensembles that elevate your look. Every recommendation is designed to ensure a flawless and confidence-boosting appearance. The system continuously learns from your feedback, refining its suggestions to perfectly match your evolving taste. With this innovative approach, discovering your next favorite outfit becomes both effortless and exciting.",
-  },
-  {
-    src: "/images/carousel-2.png",
-    title: "Skin Tone-Based Outfit Color Matching",
-    desc: "Discover the art of perfect color coordination tailored to your unique skin tone. Our technology analyzes the subtle nuances of your complexion to provide expert recommendations on harmonious color pairings. It ensures that every outfit enhances your natural beauty while staying true to your personal aesthetic. Detailed insights into how different shades interact with your skin empower you to confidently choose ensembles that make a statement. Embrace a vibrant look that celebrates your individuality and radiates elegance.",
-  },
-  {
-    src: "/images/carousel-3.png",
-    title: "Effortless Ordering Process",
-    desc: "Once your personalized outfit is generated, placing your order becomes a seamless experience. Our platform offers a user-friendly interface that allows you to finalize your selection with just a few clicks. Every step of the process is designed for efficiency and convenience, ensuring a hassle-free purchase. The integration with partnered retailers guarantees a smooth transition from outfit generation to doorstep delivery. Enjoy a stress-free shopping experience that makes high-quality fashion accessible at your fingertips.",
-  },
-  {
-    src: "/images/carousel-4.png",
-    title: "VIRTUAL FITTING ROOM",
-    desc: "Step into the future of fashion with our immersive virtual fitting room experience. In this innovative environment, you can try on outfits in a realistic 3D simulation that adapts to your body shape and style. The detailed preview allows you to see how each garment fits and moves with you, ensuring a perfect match. This cutting-edge technology encourages experimentation with different styles and sizes, boosting your confidence in every selection. It transforms your shopping experience by merging convenience with advanced visual realism.",
-  },
-  {
-    src: "/images/carousel-5.png",
-    title: "Seamless Shopping Integration",
-    desc: "Discover a unified shopping experience that brings together a variety of clothing shops into one convenient platform. Our system lets you effortlessly explore, compare, and purchase outfits from multiple trusted retailers. Intuitive navigation and personalized recommendations make the process both efficient and enjoyable. The seamless integration ensures a smooth checkout experience with reliable delivery timelines. Experience the ultimate convergence of technology and style that redefines online shopping.",
-  },
-];
-
-const variants = {
-  enter: (direction) => ({
-    x: direction > 0 ? 300 : -300,
-    opacity: 0,
-  }),
-  center: {
-    x: 0,
-    opacity: 1,
-  },
-  exit: (direction) => ({
-    x: direction > 0 ? -300 : 300,
-    opacity: 0,
-  }),
-};
-
-const revealVariants = {
-  hidden: { opacity: 0, y: 50 },
-  visible: { opacity: 1, y: 0, transition: { duration: 0.8, ease: "easeOut" } },
-};
-
 export default function Section1() {
-  const [currentIndex, setCurrentIndex] = useState(0);
-  const [direction, setDirection] = useState(0);
-
-  // Preload images with the global window.Image constructor
-  useEffect(() => {
-    infoItems.forEach((item) => {
-      const preloader = new window.Image();
-      preloader.src = item.src;
-    });
-  }, []);
-
-  const paginate = (newDirection) => {
-    let newIndex = currentIndex + newDirection;
-    if (newIndex < 0) {
-      newIndex = infoItems.length - 1;
-    } else if (newIndex >= infoItems.length) {
-      newIndex = 0;
-    }
-    setDirection(newDirection);
-    setCurrentIndex(newIndex);
-  };
-
-  const { src, title, desc } = infoItems[currentIndex];
-
   return (
-    <div className="flex flex-col items-center justify-between gap-[10rem]">
+    <div className="relative flex flex-col gap-10 w-full px-5 sm:px-14 md:px-24 lg:px-40 xl:px-52 2xl:px-56">
+      {/* Heading */}
       <h1
-        className={`${gloock.className} text-[8rem] text-primary uppercase text-center font-black subpixel-antialiased tracking-tight leading-[7rem]`}
+        className={`text-5xl md:text-6xl lg:text-7xl min-[1713px]:text-7xl text-primary font-black text-center 2xl:text-end cursor-pointer ${gloock.className}`}
       >
-        Discover the Power of Smart Fashion
+        STYLE MADE <br />
+        <p>SMARTER</p>
       </h1>
 
-      <motion.div
-        className="relative flex flex-row items-center px-4 md:px-[10rem] h-auto md:h-[300px]"
-        variants={revealVariants}
-        initial="hidden"
-        whileInView="visible"
-        viewport={{ once: true }}
-      >
-        <AnimatePresence custom={direction} mode="wait">
-          <motion.div
-            key={currentIndex}
-            custom={direction}
-            variants={variants}
-            initial="enter"
-            animate="center"
-            exit="exit"
-            transition={{
-              x: { type: "spring", stiffness: 300, damping: 30 },
-              opacity: { duration: 0.3 },
-            }}
-            className="flex flex-row gap-10 items-center"
-          >
-            <NextImage
-              src={src}
-              width={300}
-              height={300}
-              quality={100}
-              className="rounded-2xl shadow-pure shadow-md min-w-[300px] max-w-[300px]"
-              alt={title}
-            />
-            <div>
-              <h2
-                className={`${gloock.className} text-[2rem] text-primary uppercase text-start font-black subpixel-antialiased tracking-tight leading-[2.5rem]`}
-              >
-                {title}
-              </h2>
-              <p className="uppercase font-thin text-lg w-full text-[1.25rem] text-primary text-start">
-                {desc}
-              </p>
+      <div className="relative w-full h-[900px]">
+        {/* Outer Grid: 2 columns */}
+        <div className="grid grid-cols-2 gap-2 lg:gap-3 h-full">
+          {/* Left Column: 2 rows */}
+          <div className="grid grid-rows-2 gap-2 lg:gap-3 h-full">
+            {/* Card 1 */}
+            <div className="relative group cursor-pointer overflow-hidden">
+              <Image
+                src="/images/carousel-1.png"
+                alt="Carousel Image 1"
+                fill
+                quality={100}
+                className="object-cover shadow-pure shadow-md saturate-0 group-hover:saturate-100 transition-all duration-700 ease-in-out"
+              />
+              <div className="absolute inset-0 bg-black/45 backdrop-blur-[5px] transition-opacity duration-700 ease-in-out group-hover:opacity-100"></div>
+              <div className="absolute bottom-0 left-0 right-0 p-4 text-white">
+                <h3 className="xl:text-base 2xl:text-xl font-semibold uppercase">
+                  AI-Powered Suggestion
+                </h3>
+                <div className="overflow-hidden transition-all duration-700 ease-in-out max-h-0 group-hover:max-h-48">
+                  <p className="text-sm mt-2">
+                    Our advanced AI technology crafts unique outfit combinations
+                    tailored to your body type, preferences, and individual
+                    style, ensuring a flawless look every time.
+                  </p>
+                </div>
+              </div>
             </div>
-          </motion.div>
-        </AnimatePresence>
-      </motion.div>
 
-      <div className="flex flex-row gap-5">
-        <motion.div
-          whileHover={{ scale: 1.05 }}
-          whileTap={{
-            scale: 1.15,
-            transition: { type: "spring", stiffness: 300, damping: 10 },
-          }}
-          onClick={() => paginate(-1)}
-          className="cursor-pointer border-[1px] p-3 border-primary/50 rounded-full flex items-center justify-center transition-colors duration-300 hover:border-primary"
-        >
-          <MoveLeft />
-        </motion.div>
-        <motion.div
-          whileHover={{ scale: 1.05 }}
-          whileTap={{
-            scale: 1.15,
-            transition: { type: "spring", stiffness: 300, damping: 10 },
-          }}
-          onClick={() => paginate(1)}
-          className="cursor-pointer border-[1px] p-3 border-primary/50 rounded-full flex items-center justify-center transition-colors duration-300 hover:border-primary"
-        >
-          <MoveRight />
-        </motion.div>
+            {/* Card 2 */}
+            <div className="relative group cursor-pointer overflow-hidden">
+              <Image
+                src="/images/carousel-2.png"
+                alt="Carousel Image 2"
+                fill
+                quality={100}
+                className="object-cover shadow-pure shadow-md saturate-0 group-hover:saturate-100 transition-all duration-700 ease-in-out"
+              />
+              <div className="absolute inset-0 bg-black/45 backdrop-blur-[5px] transition-opacity duration-700 ease-in-out group-hover:opacity-100"></div>
+              <div className="absolute bottom-0 left-0 right-0 p-4 text-white">
+                <h3 className="xl:text-base 2xl:text-xl font-semibold uppercase">
+                  Skintone Color Matching
+                </h3>
+                <div className="overflow-hidden transition-all duration-700 ease-in-out max-h-0 group-hover:max-h-48">
+                  <p className="text-sm mt-2">
+                    Get expert color combination recommendations that perfectly
+                    complement your skin tone, enhancing your natural beauty and
+                    personal aesthetic.
+                  </p>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          {/* Right Column: 3 rows */}
+          <div className="grid grid-rows-3 gap-2 lg:gap-3 h-full">
+            {/* Card 3 */}
+            <div className="relative group cursor-pointer overflow-hidden">
+              <Image
+                src="/images/carousel-3.jpg"
+                alt="Carousel Image 3"
+                fill
+                quality={100}
+                className="object-cover shadow-pure shadow-md saturate-0 group-hover:saturate-100 transition-all duration-700 ease-in-out"
+              />
+              <div className="absolute inset-0 bg-black/45 backdrop-blur-[5px] transition-opacity duration-700 ease-in-out group-hover:opacity-100"></div>
+              <div className="absolute bottom-0 left-0 right-0 p-4 text-white">
+                <h3 className="xl:text-base 2xl:text-xl font-semibold uppercase">
+                  Effortless Ordering
+                </h3>
+                <div className="overflow-hidden transition-all duration-700 ease-in-out max-h-0 group-hover:max-h-48">
+                  <p className="text-sm mt-2">
+                    Once your outfit is generated, place your order effortlessly
+                    with just a few clicks. Enjoy a smooth journey from
+                    selection to doorstep delivery.
+                  </p>
+                </div>
+              </div>
+            </div>
+
+            {/* Card 4 */}
+            <div className="relative group cursor-pointer overflow-hidden">
+              <Image
+                src="/images/carousel-4.png"
+                alt="Carousel Image 4"
+                fill
+                quality={100}
+                className="object-cover shadow-pure shadow-md saturate-0 group-hover:saturate-100 transition-all duration-700 ease-in-out"
+              />
+              <div className="absolute inset-0 bg-black/45 backdrop-blur-[5px] transition-opacity duration-700 ease-in-out group-hover:opacity-100"></div>
+              <div className="absolute bottom-0 left-0 right-0 p-4 text-white">
+                <h3 className="xl:text-base 2xl:text-xl font-semibold uppercase">
+                  Virtual Fitting Room
+                </h3>
+                <div className="overflow-hidden transition-all duration-700 ease-in-out max-h-0 group-hover:max-h-48">
+                  <p className="text-sm mt-2">
+                    Try on outfits virtually and visualize the perfect fit
+                    before purchasing. Explore styles and sizes tailored to your
+                    preferences.
+                  </p>
+                </div>
+              </div>
+            </div>
+
+            {/* Card 5 */}
+            <div className="relative group cursor-pointer overflow-hidden">
+              <Image
+                src="/images/carousel-5.png"
+                alt="Carousel Image 5"
+                fill
+                quality={100}
+                className="object-cover shadow-pure shadow-md saturate-0 group-hover:saturate-100 transition-all duration-700 ease-in-out"
+              />
+              <div className="absolute inset-0 bg-black/45 backdrop-blur-[5px] transition-opacity duration-700 ease-in-out group-hover:opacity-100"></div>
+              <div className="absolute bottom-0 left-0 right-0 p-4 text-white">
+                <h3 className="xl:text-base 2xl:text-xl font-semibold uppercase">
+                  Seamless Shopping
+                </h3>
+                <div className="overflow-hidden transition-all duration-700 ease-in-out max-h-0 group-hover:max-h-48">
+                  <p className="text-sm mt-2">
+                    Effortlessly explore, compare, and purchase outfits from
+                    multiple partnered stores—all within one convenient app.
+                  </p>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      {/* Bottom Section */}
+      <div className="flex flex-col items-center 2xl:items-end gap-4">
+        <div className="flex flex-col">
+          <h1
+            className={`${gloock.className} text-[2rem] text-primary uppercase font-black text-center 2xl:text-end`}
+          >
+            Discover the Power of Smart Fashion
+          </h1>
+          <div className="flex flex-col items-end">
+            <p className="text-base w-full 2xl:text-lg text-primary/75 text-center 2xl:text-end max-w-3xl">
+              Our innovative AI technology not only helps you create
+              personalized outfits, but also matches colors to your skin tone
+              and connects you to the perfect wardrobe pieces hrough seamless
+              shopping. Ready to elevate your look with cutting-edge fashion
+              tech?
+            </p>
+          </div>
+        </div>
       </div>
     </div>
   );

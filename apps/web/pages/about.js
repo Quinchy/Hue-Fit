@@ -7,7 +7,7 @@ import Footer from "@/components/ui/footer";
 export default function About() {
   return (
     <>
-      <div className="flex flex-col w-[100%] px-[15rem] gap-[30rem] mt-[15rem] mb-[15rem]">
+      <div className="flex flex-col w-[100%] gap-96 mb-56">
         <Hero />
         <Section1 />
         <Section2 />

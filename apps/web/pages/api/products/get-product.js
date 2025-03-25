@@ -11,7 +11,7 @@ export default async function handler(req, res) {
 
     const { page = 1, search = '', type = '' } = req.query;
     const pageNumber = parseInt(page, 10);
-    const ITEMS_PER_PAGE = 9;
+    const ITEMS_PER_PAGE = 10;
 
     const baseWhere = {
       shopId,

@@ -84,19 +84,18 @@ const MapPicker = ({
   return (
     <div style={{ position: "relative", height: "700px" }}>
       <div
-        className="absolute top-14 left-2 bg-card/90 border border-primary/50 p-4 rounded-lg shadow-card shadow-md z-10"
-        style={{ maxWidth: "300px" }}
+        className="absolute flex bottom-2 left-4 bg-primary mt-[2px] text-pure p-2 z-10 shadow-pure/25 shadow select-none gap-4 items-center w-fit rounded-[2px]"
       >
-        <h3 className="text-lg font-bold uppercase">Location Details:</h3>
-        <p className="text-sm font-light">
+        <h3 className="text-base font-bold">Location Details:</h3>
+        <p className="text-sm">
           <strong className="font-bold">Latitude:</strong>{" "}
           {selectedPosition?.lat ?? "N/A"}
         </p>
-        <p className="text-sm font-light">
+        <p className="text-sm">
           <strong className="font-bold">Longitude:</strong>{" "}
           {selectedPosition?.lng ?? "N/A"}
         </p>
-        <p className="text-sm font-light">
+        <p className="text-sm">
           <strong className="font-bold">Place Name:</strong> {placeName}
         </p>
       </div>
@@ -106,7 +105,7 @@ const MapPicker = ({
         zoom={selectedPosition ? 15 : 10}
         onClick={handleMapClick}
         onLoad={handleMapLoad}
-        options={{ disableDefaultUI: false, mapTypeControl: true }}
+        options={{ disableDefaultUI: false, mapTypeControl: true, streetViewControl: false }}
       >
         {selectedPosition && <MarkerF position={selectedPosition} />}
       </GoogleMap>

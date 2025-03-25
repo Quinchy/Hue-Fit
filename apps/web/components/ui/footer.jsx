@@ -28,7 +28,7 @@ const Footer = ({ bgClass = "bg-card", className = "" }) => {
             <Link href={routes.home}>
               <HueFitLogo height={50} className="fill-primary" />
             </Link>
-            <p className="max-w-[30rem] text-primary/75 ml-2 text-center lg:text-start">
+            <p className="max-w-[30rem] text-primary/75 ml-2 text-center text-sm md:text-base lg:text-start">
               Boosting {"men's"} confidence and redefining shopping with
               Artificial Intelligence and Augmented Reality.
             </p>
@@ -77,7 +77,7 @@ const Footer = ({ bgClass = "bg-card", className = "" }) => {
         <div className="flex flex-col min-[1598px]:flex-row items-center lg:items-start gap-14">
           <div className="flex flex-col items-center lg:items-start gap-2">
             <h1 className="text-base lg:text-lg font-bold">Quick Links</h1>
-            <div className="flex min-[1598px]:flex-col items-start gap-2">
+            <div className="flex text-sm md:text-base min-[1598px]:flex-col items-start gap-2">
               <MotionLink
                 href={routes.home}
                 className={navLinkClasses}
@@ -126,7 +126,7 @@ const Footer = ({ bgClass = "bg-card", className = "" }) => {
           </div>
           <div className="flex flex-col items-center lg:items-start gap-2">
             <h1 className="text-base lg:text-lg font-bold">About Us</h1>
-            <div className="flex min-[1598px]:flex-col items-start gap-2">
+            <div className="flex text-sm md:text-base min-[1598px]:flex-col items-start gap-2">
               <MotionLink
                 href={routes.about}
                 className={navLinkClasses}
@@ -164,7 +164,7 @@ const Footer = ({ bgClass = "bg-card", className = "" }) => {
           </div>
           <div className="flex flex-col items-center lg:items-start gap-2">
             <h1 className="text-base lg:text-lg font-bold">Contact Info</h1>
-            <div className="flex flex-col items-center lg:items-start gap-2">
+            <div className="flex flex-col text-sm md:text-base  items-center lg:items-start gap-2">
               <div className="flex flex-row gap-2">
                 <MapPin className="stroke-primary/75" />
                 <p className="text-primary/75">
