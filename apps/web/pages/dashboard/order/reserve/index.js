@@ -80,7 +80,7 @@ export default function Reserves() {
     <DashboardLayoutWrapper>
       <div className="flex flex-row justify-between">
         <CardTitle className="text-4xl">Reserved Orders</CardTitle>
-        <div className="flex flex-row gap-5">
+        <div className="flex flex-row items-center gap-2">
           <Input
             type="text"
             className="min-w-[30rem]"

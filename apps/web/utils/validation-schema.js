@@ -131,41 +131,76 @@ const quantitySchema = Yup.object().shape({
     .required("Quantity is required.")
 });
 
-const variantsSchema = Yup.array().of(
-  Yup.object().shape({
-    price: Yup.number()
-      .transform((value, originalValue) => originalValue === '' ? undefined : value)
-      .typeError("Price must be a number.")
-      .positive("Price must be a positive number.")
-      .required("Price is required."),
-    color: Yup.string().required("Color is required."),
-    sizes: Yup.array().of(Yup.string().required()).min(1, "At least one size is required."),
-    images: Yup.array()
-      .of(
-        Yup.object().shape({
-          file: Yup.mixed().required("Image file is required."),
-          url: Yup.string().required("Image url is required.")
-        })
-      )
-      .min(1, "At least one image is required."),
-    quantities: Yup.array().of(quantitySchema)
-      .min(1, "At least one quantity is required."),
-  })
-).min(1, "At least one variant of the product is added.");
+const variantsSchema = Yup.array()
+  .of(
+    Yup.object().shape({
+      price: Yup.number()
+        .transform((value, originalValue) =>
+          originalValue === "" ? undefined : value
+        )
+        .typeError("Price must be a number.")
+        .positive("Price must be a positive number.")
+        .required("Price is required."),
+      color: Yup.string().required("Color is required."),
+      sizes: Yup.array()
+        .of(Yup.string().required())
+        .min(1, "At least one size is required."),
+      images: Yup.array()
+        .of(
+          Yup.object().shape({
+            file: Yup.mixed().required("Image file is required."),
+            url: Yup.string().required("Image url is required."),
+          })
+        )
+        .min(1, "At least one image is required."),
+      quantities: Yup.array()
+        .of(quantitySchema)
+        .min(1, "At least one quantity is required."),
+      pngClothe: Yup.mixed()
+        .nullable()
+        .test(
+          "pngClothe-required",
+          "PNG clothe is required.",
+          function (value) {
+            const { path, createError, options, parent } = this;
+            // Retrieve typeName either from context or from the parent object
+            const typeName = options.context?.typeName || parent.type;
+            // Only enforce requirement if the type is one of these
+            if (["UPPERWEAR", "OUTERWEAR", "LOWERWEAR"].includes(typeName)) {
+              // Expect the value to be an object with a truthy "url" property.
+              if (!value || typeof value !== "object" || !value.url) {
+                return createError({
+                  path,
+                  message: "PNG clothe is required.",
+                });
+              }
+            }
+            return true;
+          }
+        ),
+    })
+  )
+  .min(1, "At least one variant of the product is added.");
+
 
 export const productSchema = Yup.object().shape({
-  thumbnail: Yup.object().shape({
-    file: Yup.mixed().required("Thumbnail is required.")
-  }).required("Thumbnail is required."),
+  thumbnail: Yup.object()
+    .shape({
+      file: Yup.mixed().required("Thumbnail is required."),
+    })
+    .required("Thumbnail is required."),
   name: Yup.string().required("Name is required."),
   description: Yup.string().nullable(),
-  type: Yup.string().required("Type is required."),
+  type: Yup.string().required("Type is required."), // expect type id or type name here
   category: Yup.string().required("Category is required."),
   tags: Yup.string().required("Tag is required."),
-  sizes: Yup.array().of(Yup.string().required()).min(1, "At least one size for the product is added."),
+  sizes: Yup.array()
+    .of(Yup.string().required())
+    .min(1, "At least one size for the product is added."),
   measurements: measurementsSchema,
-  variants: variantsSchema
+  variants: variantsSchema,
 });
+
 export const addSizeSchema = Yup.object({
   name: Yup.string().required("Size name is required."),
   abbreviation: Yup.string().required("An Abbreviation is required."),

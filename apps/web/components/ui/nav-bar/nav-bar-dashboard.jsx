@@ -76,9 +76,9 @@ const NavbarDashboard = () => {
   return (
     <div className="fixed flex flex-col justify-between items-center min-w-[15rem] border-r-[1px] border-border bg-card text-white h-full z-10 pt-5">
       <div className="flex flex-col items-center w-full space-y-5">
-        <div className="flex flex-row justify-between w-full px-5">
-          <Link href={routes.dashboard} className="mb-3">
-            <HueFitLogo height={50} className="fill-primary" />
+        <div className="flex flex-row justify-between w-full px-3">
+          <Link href={routes.dashboard}>
+            <HueFitLogo height={40} className="fill-primary" />
           </Link>
           <ModeToggle />
         </div>
@@ -92,7 +92,7 @@ const NavbarDashboard = () => {
                 <Link
                   key={route}
                   href={route}
-                  className="text-sm py-2 w-full hover:bg-accent duration-500 ease-in-out"
+                  className="text-sm py-2 w-full hover:bg-accent duration-500 ease-in-out select-none"
                 >
                   <div className="pl-5 flex flex-row items-center gap-2 text-primary uppercase">
                     {icon}
@@ -104,7 +104,7 @@ const NavbarDashboard = () => {
         )}
       </div>
 
-      <DropdownMenu className="mt-auto">
+      <DropdownMenu>
         <DropdownMenuTrigger className="w-full focus-visible:outline-none">
           <div className="flex flex-row justify-start items-center gap-3 py-7 w-full hover:bg-accent duration-300 ease-in-out">
             {/* If session is still loading, skeleton the profile portion only */}
@@ -121,12 +121,12 @@ const NavbarDashboard = () => {
               <div className="flex flex-row pl-5 items-center gap-2">
                 <Image
                   src="/images/profile-picture.png"
-                  width={50}
-                  height={50}
-                  className="rounded-full border-2 border-background/75"
+                  width={35}
+                  height={35}
+                  className="rounded-full select-none"
                   alt="Profile Picture"
                 />
-                <div className="flex flex-col items-start text-sm text-primary">
+                <div className="flex flex-col items-start text-sm text-primary select-none">
                   <p className="font-semibold">Guest</p>
                   <p className="font-light">Not Logged In</p>
                 </div>
@@ -139,12 +139,12 @@ const NavbarDashboard = () => {
                     session?.user?.profilePicture ||
                     "/images/profile-picture.png"
                   }
-                  width={50}
-                  height={50}
-                  className="rounded-full border-2 border-background/75"
+                  width={35}
+                  height={35}
+                  className="rounded-full select-none"
                   alt="Profile Picture"
                 />
-                <div className="flex flex-col items-start text-sm text-primary">
+                <div className="flex flex-col items-start text-[0.80rem] text-primary select-none">
                   <p className="font-semibold">
                     {session?.user?.firstName} {session?.user?.lastName}
                   </p>
@@ -154,13 +154,15 @@ const NavbarDashboard = () => {
             )}
           </div>
         </DropdownMenuTrigger>
-        <DropdownMenuContent className="min-w-[18rem]">
-          <DropdownMenuLabel className="uppercase">Account</DropdownMenuLabel>
+        <DropdownMenuContent className="min-w-[15rem] rounded-none">
+          <DropdownMenuLabel className="uppercase">
+            Your Account
+          </DropdownMenuLabel>
           <DropdownMenuSeparator />
           <DropdownMenuItem>
             <Link
               href={routes.profile}
-              className="flex justify-start items-center gap-2 text-sm font-semibold py-1 px-5 rounded w-full uppercase"
+              className="flex justify-start items-center gap-1 text-sm font-medium rounded w-full uppercase"
             >
               <User className="scale-75" /> Profile
             </Link>
@@ -170,7 +172,7 @@ const NavbarDashboard = () => {
             <DropdownMenuItem>
               <Link
                 href={routes.shopProfile}
-                className="flex justify-start items-center gap-2 text-sm font-semibold py-1 px-5 rounded w-full uppercase"
+                className="flex justify-start items-center gap-1 text-sm font-medium rounded w-full uppercase"
               >
                 <Store className="scale-75" /> Shop
               </Link>
@@ -181,7 +183,7 @@ const NavbarDashboard = () => {
               onClick={() => {
                 signOut({ callbackUrl: "/" });
               }}
-              className="flex items-center gap-2 text-sm justify-start shadow-none text-red-500 font-semibold py-1 px-5 rounded w-full uppercase"
+              className="flex justify-start items-center gap-1 text-sm font-medium rounded w-full uppercase text-warning"
             >
               <LogOut className="scale-75" /> Logout
             </button>

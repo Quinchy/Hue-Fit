@@ -3,7 +3,7 @@ import hueFitLoading from "@/public/animations/hue-fit-loading.json";
 
 export default function Loading({ message = "Loading...", speed = 1.5 }) {
   return (
-    <div className="flex flex-col justify-center items-center mt-[9.5rem]">
+    <div className="flex flex-col justify-center items-center mt-[9.5rem] overflow-hidden">
       <Lottie
         animationData={hueFitLoading}
         loop

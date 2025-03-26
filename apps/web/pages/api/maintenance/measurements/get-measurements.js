@@ -38,8 +38,8 @@ export default async function handler(req, res) {
           },
         },
       },
-      skip: (pageNumber - 1) * 9,
-      take: 9,
+      skip: (pageNumber - 1) * 13,
+      take: 13,
       orderBy: {
         created_at: "desc",
       },
@@ -54,7 +54,7 @@ export default async function handler(req, res) {
         },
       },
     });
-    const totalPages = Math.ceil(totalMeasurements / 9);
+    const totalPages = Math.ceil(totalMeasurements / 13);
 
     return res.status(200).json({
       measurements: measurements,

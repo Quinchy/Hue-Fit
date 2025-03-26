@@ -1,5 +1,10 @@
-// pages/colors/components/add-color.jsx
-import { Dialog, DialogTrigger, DialogContent, DialogHeader, DialogFooter } from "@/components/ui/dialog";
+import {
+  Dialog,
+  DialogTrigger,
+  DialogContent,
+  DialogHeader,
+  DialogFooter,
+} from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Upload, Plus, Asterisk } from "lucide-react";
@@ -7,7 +12,10 @@ import { Label } from "@/components/ui/label";
 import { useState, useEffect } from "react";
 import { useFormik } from "formik";
 import { addColorSchema } from "@/utils/validation-schema";
-import { InputErrorMessage, InputErrorStyle } from "@/components/ui/error-message";
+import {
+  InputErrorMessage,
+  InputErrorStyle,
+} from "@/components/ui/error-message";
 import { ImageColorPicker } from "react-image-color-picker";
 import { CardTitle } from "@/components/ui/card";
 import { LoadingMessage } from "@/components/ui/loading-message";
@@ -16,10 +24,17 @@ const rgbToHex = (rgb) => {
   const result = rgb.match(/\d+/g);
   if (!result || result.length < 3) return "#000000";
   const [r, g, b] = result.map(Number);
-  return `#${((1 << 24) + (r << 16) + (g << 8) + b).toString(16).slice(1).toUpperCase()}`;
+  return `#${((1 << 24) + (r << 16) + (g << 8) + b)
+    .toString(16)
+    .slice(1)
+    .toUpperCase()}`;
 };
 
-export default function AddColorDialog({ buttonClassName = "", buttonName = "Add Color", onColorAdded }) {
+export default function AddColorDialog({
+  buttonClassName = "",
+  buttonName = "Add Color",
+  onColorAdded,
+}) {
   const [uploadedImage, setUploadedImage] = useState(null);
   const [isDialogOpen, setIsDialogOpen] = useState(false);
   const [loading, setLoading] = useState(false);
@@ -36,16 +51,20 @@ export default function AddColorDialog({ buttonClassName = "", buttonName = "Add
           body: JSON.stringify(values),
         });
         if (response.ok) {
-          onColorAdded("Color added successfully.", "success");
+          onColorAdded("Color added successfully.", "success", "Success");
           resetForm();
           setUploadedImage(null);
           setIsDialogOpen(false);
         } else {
           const errorData = await response.json();
-          onColorAdded(errorData.error || "Failed to add color.", "error");
+          onColorAdded(
+            errorData.error || "Failed to add color.",
+            "error",
+            "Error"
+          );
         }
       } catch {
-        onColorAdded("An unexpected error occurred.", "error");
+        onColorAdded("An unexpected error occurred.", "error", "Error");
       } finally {
         setLoading(false);
       }
@@ -98,12 +117,21 @@ export default function AddColorDialog({ buttonClassName = "", buttonName = "Add
                   value={formik.values.name}
                   onChange={formik.handleChange}
                   onBlur={formik.handleBlur}
-                  className={InputErrorStyle(formik.errors.name, formik.touched.name)}
+                  className={InputErrorStyle(
+                    formik.errors.name,
+                    formik.touched.name
+                  )}
                 />
-                <InputErrorMessage error={formik.errors.name} touched={formik.touched.name} />
+                <InputErrorMessage
+                  error={formik.errors.name}
+                  touched={formik.touched.name}
+                />
               </div>
               <div className="flex flex-col gap-2">
-                <Label htmlFor="hexCode" className="font-bold flex items-center">
+                <Label
+                  htmlFor="hexCode"
+                  className="font-bold flex items-center"
+                >
                   Hex Code <Asterisk className="w-4 h-4 " />
                 </Label>
                 <div className="flex gap-2">
@@ -121,10 +149,16 @@ export default function AddColorDialog({ buttonClassName = "", buttonName = "Add
                     value={formik.values.hexCode}
                     onChange={formik.handleChange}
                     onBlur={formik.handleBlur}
-                    className={`w-[15rem] ${InputErrorStyle(formik.errors.hexCode, formik.touched.hexCode)}`}
+                    className={`w-[15rem] ${InputErrorStyle(
+                      formik.errors.hexCode,
+                      formik.touched.hexCode
+                    )}`}
                   />
                 </div>
-                <InputErrorMessage error={formik.errors.hexCode} touched={formik.touched.hexCode} />
+                <InputErrorMessage
+                  error={formik.errors.hexCode}
+                  touched={formik.touched.hexCode}
+                />
               </div>
             </div>
             <div className="flex flex-col gap-4 w-1/2">
@@ -133,7 +167,9 @@ export default function AddColorDialog({ buttonClassName = "", buttonName = "Add
                 <label htmlFor="image" className="cursor-pointer text-center">
                   <div className="flex flex-col items-center gap-2">
                     <Upload className="stroke-primary/50" />
-                    <span className="text-primary/50 font-thin">Click here to upload an image</span>
+                    <span className="text-primary/50 font-thin">
+                      Click here to upload an image
+                    </span>
                   </div>
                   <input
                     id="image"
@@ -162,7 +198,11 @@ export default function AddColorDialog({ buttonClassName = "", buttonName = "Add
             <Button type="submit" disabled={loading} className="w-1/2">
               {loading ? <LoadingMessage message="Saving..." /> : "Save"}
             </Button>
-            <Button variant="outline" onClick={() => setIsDialogOpen(false)} className="w-1/2">
+            <Button
+              variant="outline"
+              onClick={() => setIsDialogOpen(false)}
+              className="w-1/2"
+            >
               Cancel
             </Button>
           </DialogFooter>

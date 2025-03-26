@@ -32,8 +32,8 @@ export default async function handler(req, res) {
         },
       },
       select: { id: true, name: true, abbreviation: true, nextId: true },
-      skip: (pageNumber - 1) * 9,
-      take: 9,
+      skip: (pageNumber - 1) * 13,
+      take: 13,
     });
 
     const totalSizes = await prisma.size.count({
@@ -45,7 +45,7 @@ export default async function handler(req, res) {
         },
       },
     });
-    const totalPages = Math.ceil(totalSizes / 9);
+    const totalPages = Math.ceil(totalSizes / 13);
 
     // Apply ordering by nextId
     const orderedSizes = orderSizesByNextId(sizes);

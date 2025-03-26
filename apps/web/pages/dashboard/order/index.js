@@ -70,6 +70,7 @@ export default function Orders() {
     }
   );
 
+  const statusCountMap = data?.statusCountMap || {};
   // Log the response from the API whenever it changes
   useEffect(() => {
     if (data) {
@@ -111,7 +112,7 @@ export default function Orders() {
     <DashboardLayoutWrapper>
       <div className="flex flex-row justify-between">
         <CardTitle className="text-4xl">Orders</CardTitle>
-        <div className="flex flex-row gap-5">
+        <div className="flex flex-row items-center gap-2">
           <Input
             type="text"
             className="min-w-[30rem]"
@@ -150,7 +151,7 @@ export default function Orders() {
                       variant="none"
                       onClick={() => handleStatusFilter(filterStatus)}
                     >
-                      {filterStatus}
+                      {filterStatus} ({statusCountMap[filterStatus] || 0})
                     </Button>
                   </DropdownMenuItem>
                 ))}

@@ -67,10 +67,15 @@ export default async function handler(req, res) {
         },
       },
     });
-
-    // Log the complete response for debugging purposes.
-    console.log("Fetched orders:", orders);
-
+    const statusCounts = await prisma.order.groupBy({
+      by: ["status"],
+      where: { shopId },
+      _count: { status: true },
+    });
+    const statusCountMap = statusCounts.reduce((acc, item) => {
+      acc[item.status] = item._count.status;
+      return acc;
+    }, {});
     const totalCount = await prisma.order.count({
       where: whereConditions,
     });
@@ -81,6 +86,7 @@ export default async function handler(req, res) {
       currentPage: pageNumber,
       totalPages,
       totalCount,
+      statusCountMap,
     });
   } catch (error) {
     console.error("Error fetching orders:", error);

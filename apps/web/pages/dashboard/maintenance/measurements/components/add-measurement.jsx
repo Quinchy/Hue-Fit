@@ -1,15 +1,31 @@
-import { Dialog, DialogTrigger, DialogContent, DialogHeader, DialogFooter } from "@/components/ui/dialog";
+import { useState, useEffect } from "react";
+import { useFormik } from "formik";
+import {
+  Dialog,
+  DialogTrigger,
+  DialogContent,
+  DialogHeader,
+  DialogFooter,
+} from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Plus, Asterisk } from "lucide-react";
 import { Label } from "@/components/ui/label";
-import { Select, SelectTrigger, SelectContent, SelectGroup, SelectItem, SelectValue } from "@/components/ui/select";
-import { useFormik } from "formik";
-import { CardTitle } from "@/components/ui/card";
-import { useState, useEffect } from "react";
+import {
+  Select,
+  SelectTrigger,
+  SelectValue,
+  SelectContent,
+  SelectGroup,
+  SelectItem,
+} from "@/components/ui/select";
+import {
+  InputErrorMessage,
+  InputErrorStyle,
+} from "@/components/ui/error-message";
 import { addMeasurementSchema } from "@/utils/validation-schema";
-import { InputErrorMessage, InputErrorStyle } from "@/components/ui/error-message";
 import { LoadingMessage } from "@/components/ui/loading-message";
+import { CardTitle } from "@/components/ui/card";
 
 export default function AddMeasurementDialog({
   buttonClassName = "",
@@ -51,23 +67,37 @@ export default function AddMeasurementDialog({
     onSubmit: async (values, { resetForm }) => {
       setLoading(true);
       try {
-        const response = await fetch("/api/maintenance/measurements/add-measurement", {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify(values),
-        });
+        const response = await fetch(
+          "/api/maintenance/measurements/add-measurement",
+          {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify(values),
+          }
+        );
         if (response.ok) {
           const { measurement } = await response.json();
-          onMeasurementAdded && onMeasurementAdded("Measurement added successfully.", "success");
+          onMeasurementAdded &&
+            onMeasurementAdded(
+              "Measurement added successfully.",
+              "success",
+              "Success"
+            );
           resetForm();
           setIsDialogOpen(false);
         } else {
           const errorData = await response.json();
-          onMeasurementAdded && onMeasurementAdded(errorData.error || "Failed to add measurement.", "error");
+          onMeasurementAdded &&
+            onMeasurementAdded(
+              errorData.error || "Failed to add measurement.",
+              "error",
+              "Error"
+            );
         }
       } catch (error) {
         console.error("Error adding measurement:", error);
-        onMeasurementAdded && onMeasurementAdded("An unexpected error occurred.", "error");
+        onMeasurementAdded &&
+          onMeasurementAdded("An unexpected error occurred.", "error", "Error");
       } finally {
         setLoading(false);
       }
@@ -87,7 +117,10 @@ export default function AddMeasurementDialog({
         </DialogHeader>
         <form onSubmit={formik.handleSubmit} className="flex flex-col gap-4">
           <div className="flex flex-col gap-1">
-            <Label htmlFor="name" className="font-bold flex flex-row items-center">
+            <Label
+              htmlFor="name"
+              className="font-bold flex flex-row items-center"
+            >
               Measurement Name <Asterisk className="w-4" />
             </Label>
             <Input
@@ -97,12 +130,21 @@ export default function AddMeasurementDialog({
               value={formik.values.name}
               onChange={formik.handleChange}
               onBlur={formik.handleBlur}
-              className={InputErrorStyle(formik.errors.name, formik.touched.name)}
+              className={InputErrorStyle(
+                formik.errors.name,
+                formik.touched.name
+              )}
             />
-            <InputErrorMessage error={formik.errors.name} touched={formik.touched.name} />
+            <InputErrorMessage
+              error={formik.errors.name}
+              touched={formik.touched.name}
+            />
           </div>
           <div className="flex flex-col gap-1">
-            <Label htmlFor="assignTo" className="font-bold flex flex-row items-center">
+            <Label
+              htmlFor="assignTo"
+              className="font-bold flex flex-row items-center"
+            >
               Assign to <Asterisk className="w-4" />
             </Label>
             <Select
@@ -110,7 +152,12 @@ export default function AddMeasurementDialog({
               onValueChange={(value) => formik.setFieldValue("assignTo", value)}
               value={formik.values.assignTo}
             >
-              <SelectTrigger className={InputErrorStyle(formik.errors.assignTo, formik.touched.assignTo)}>
+              <SelectTrigger
+                className={InputErrorStyle(
+                  formik.errors.assignTo,
+                  formik.touched.assignTo
+                )}
+              >
                 <SelectValue placeholder="Select a clothing type" />
               </SelectTrigger>
               <SelectContent>
@@ -123,13 +170,21 @@ export default function AddMeasurementDialog({
                 </SelectGroup>
               </SelectContent>
             </Select>
-            <InputErrorMessage error={formik.errors.assignTo} touched={formik.touched.assignTo} />
+            <InputErrorMessage
+              error={formik.errors.assignTo}
+              touched={formik.touched.assignTo}
+            />
           </div>
           <DialogFooter className="mt-10">
             <Button type="submit" disabled={loading} className="w-1/2">
               {loading ? <LoadingMessage message="Saving..." /> : "Save"}
             </Button>
-            <Button type="button" variant="outline" onClick={() => setIsDialogOpen(false)} className="w-1/2">
+            <Button
+              type="button"
+              variant="outline"
+              onClick={() => setIsDialogOpen(false)}
+              className="w-1/2"
+            >
               Cancel
             </Button>
           </DialogFooter>

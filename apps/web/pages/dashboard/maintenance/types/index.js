@@ -138,7 +138,10 @@ export default function Types() {
       <div className="flex justify-between items-center">
         <CardTitle className="text-4xl">Types</CardTitle>
         <div className="flex gap-3 items-center">
-          <Button variant="outline" onClick={() => router.push(routes.maintenance)}>
+          <Button
+            variant="outline"
+            onClick={() => router.push(routes.maintenance)}
+          >
             <MoveLeft className="scale-125" />
             Back to Maintenance
           </Button>
@@ -162,56 +165,61 @@ export default function Types() {
             </TableRow>
           </TableHeader>
           <TableBody>
-            {loadingNextPage
-              ? Array.from({ length: 8 }).map((_, index) => (
-                  <TableRow key={index}>
-                    <TableCell>
-                      <Skeleton className="h-14 w-[70rem]" />
-                    </TableCell>
-                    <TableCell>
-                      <Skeleton className="h-14 w-24 text-end" />
-                    </TableCell>
-                  </TableRow>
-                ))
-              : typesData.length > 0
-              ? typesData.map((item) => (
-                  <TableRow key={item.id}>
-                    <TableCell className="w-[80%]">{item.name.toUpperCase()}</TableCell>
-                    <TableCell className="w-[20%]">
-                      <DropdownMenu>
-                        <DropdownMenuTrigger asChild>
-                          <Button variant="outline" className="font-normal flex items-center gap-1">
-                            Action <ChevronDown className="scale-125" />
-                          </Button>
-                        </DropdownMenuTrigger>
-                        <DropdownMenuContent className="w-50">
-                          <DropdownMenuGroup>
-                            <DropdownMenuItem className="justify-center">
-                              <Button
-                                variant="none"
-                                onClick={() => handleEdit(item)}
-                                className="flex items-center gap-2"
-                              >
-                                <Pencil className="scale-125" />
-                                Edit
-                              </Button>
-                            </DropdownMenuItem>
-                          </DropdownMenuGroup>
-                        </DropdownMenuContent>
-                      </DropdownMenu>
-                    </TableCell>
-                  </TableRow>
-                ))
-              : (
-                <TableRow>
-                  <TableCell
-                    colSpan={2}
-                    className="text-center align-middle h-[43rem] text-primary/50 text-lg font-thin tracking-wide"
-                  >
-                    No types found.
+            {loadingNextPage ? (
+              Array.from({ length: 13 }).map((_, index) => (
+                <TableRow key={index}>
+                  <TableCell>
+                    <Skeleton className="h-[2.5rem] w-[70rem]" />
+                  </TableCell>
+                  <TableCell>
+                    <Skeleton className="h-[2.5rem] w-24 text-end" />
                   </TableCell>
                 </TableRow>
-              )}
+              ))
+            ) : typesData.length > 0 ? (
+              typesData.map((item) => (
+                <TableRow key={item.id}>
+                  <TableCell className="w-[80%]">
+                    {item.name.toUpperCase()}
+                  </TableCell>
+                  <TableCell className="w-[20%]">
+                    <DropdownMenu>
+                      <DropdownMenuTrigger asChild>
+                        <Button
+                          variant="outline"
+                          className="font-normal flex items-center gap-1"
+                        >
+                          Action <ChevronDown className="scale-125" />
+                        </Button>
+                      </DropdownMenuTrigger>
+                      <DropdownMenuContent className="w-50">
+                        <DropdownMenuGroup>
+                          <DropdownMenuItem className="justify-center">
+                            <Button
+                              variant="none"
+                              onClick={() => handleEdit(item)}
+                              className="flex items-center gap-2"
+                            >
+                              <Pencil className="scale-125" />
+                              Edit
+                            </Button>
+                          </DropdownMenuItem>
+                        </DropdownMenuGroup>
+                      </DropdownMenuContent>
+                    </DropdownMenu>
+                  </TableCell>
+                </TableRow>
+              ))
+            ) : (
+              <TableRow>
+                <TableCell
+                  colSpan={2}
+                  className="text-center align-middle h-[43rem] text-primary/50 text-lg font-thin tracking-wide"
+                >
+                  No types found.
+                </TableCell>
+              </TableRow>
+            )}
           </TableBody>
         </Table>
 
@@ -219,15 +227,23 @@ export default function Types() {
           <Pagination className="flex justify-end">
             <PaginationContent>
               {currentPage > 1 && (
-                <PaginationPrevious onClick={() => handlePageChange(currentPage - 1)} />
+                <PaginationPrevious
+                  onClick={() => handlePageChange(currentPage - 1)}
+                />
               )}
-              {Array.from({ length: totalPages }, (_, i) => i + 1).map((page) => (
-                <PaginationItem key={page} active={page === currentPage}>
-                  <PaginationLink onClick={() => handlePageChange(page)}>{page}</PaginationLink>
-                </PaginationItem>
-              ))}
+              {Array.from({ length: totalPages }, (_, i) => i + 1).map(
+                (page) => (
+                  <PaginationItem key={page} active={page === currentPage}>
+                    <PaginationLink onClick={() => handlePageChange(page)}>
+                      {page}
+                    </PaginationLink>
+                  </PaginationItem>
+                )
+              )}
               {currentPage < totalPages && (
-                <PaginationNext onClick={() => handlePageChange(currentPage + 1)} />
+                <PaginationNext
+                  onClick={() => handlePageChange(currentPage + 1)}
+                />
               )}
             </PaginationContent>
           </Pagination>

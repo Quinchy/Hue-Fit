@@ -1,11 +1,10 @@
-// specific-measurements.jsx
 import { FieldArray } from "formik";
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Plus, Trash2, Asterisk } from "lucide-react";
 import {
   InputErrorMessage,
-  InputErrorStyle
+  InputErrorStyle,
 } from "@/components/ui/error-message";
 import {
   Select,
@@ -13,7 +12,7 @@ import {
   SelectGroup,
   SelectItem,
   SelectTrigger,
-  SelectValue
+  SelectValue,
 } from "@/components/ui/select";
 import { Input } from "@/components/ui/input";
 import {
@@ -22,7 +21,7 @@ import {
   TableBody,
   TableRow,
   TableHead,
-  TableCell
+  TableCell,
 } from "@/components/ui/table";
 
 /*
@@ -30,7 +29,7 @@ import {
   we safely return null to avoid SSR prerender errors.
 */
 
-export default function SpecificMeasurements({
+export default function SpecificMeasurementRow({
   measurementsData,
   selectedSizes,
   measurements,
@@ -39,7 +38,7 @@ export default function SpecificMeasurements({
   setFieldValue,
   handleBlur,
   handleChange,
-  sizes
+  sizes,
 }) {
   // If there's no data or no array of measurements, safely return null
   if (!measurementsData || !measurementsData.measurements) {
@@ -51,7 +50,11 @@ export default function SpecificMeasurements({
 
   // Safely handle the sizes array
   const selectedOrderedSizes = Array.isArray(sizes)
-    ? sizes.filter((size) => Array.isArray(selectedSizes) && selectedSizes.includes(size.abbreviation))
+    ? sizes.filter(
+        (size) =>
+          Array.isArray(selectedSizes) &&
+          selectedSizes.includes(size.abbreviation)
+      )
     : [];
 
   return (
@@ -93,7 +96,10 @@ export default function SpecificMeasurements({
                       <TableCell className="border px-4 py-2">
                         <Select
                           onValueChange={(val) =>
-                            setFieldValue(`measurements.${index}.measurementName`, val)
+                            setFieldValue(
+                              `measurements.${index}.measurementName`,
+                              val
+                            )
                           }
                           value={measurement.measurementName || ""}
                         >
@@ -132,7 +138,8 @@ export default function SpecificMeasurements({
                       {/* Measurement Values Per Size */}
                       {measurement.values.map((valObj, valIndex) => {
                         const valError = rowError?.values?.[valIndex]?.value;
-                        const valTouched = rowTouched?.values?.[valIndex]?.value;
+                        const valTouched =
+                          rowTouched?.values?.[valIndex]?.value;
 
                         return (
                           <TableCell
@@ -147,21 +154,26 @@ export default function SpecificMeasurements({
                               onBlur={handleBlur}
                               className={InputErrorStyle(valError, valTouched)}
                             />
-                            <InputErrorMessage error={valError} touched={valTouched} />
+                            <InputErrorMessage
+                              error={valError}
+                              touched={valTouched}
+                            />
                           </TableCell>
                         );
                       })}
 
-                      {/* Remove Row Button */}
+                      {/* Remove Row Button (only if not first row) */}
                       <TableCell className="border min-w-14 max-w-14 text-center">
-                        <Button
-                          variant="ghost"
-                          type="button"
-                          className="text-red-500 hover:bg-red-500 w-10"
-                          onClick={() => remove(index)}
-                        >
-                          <Trash2 className="scale-110 stroke-[2px]" />
-                        </Button>
+                        {index > 0 && (
+                          <Button
+                            variant="ghost"
+                            type="button"
+                            className="text-red-500 hover:bg-red-500 w-10 transition-all duration-500 ease-in-out active:scale-90"
+                            onClick={() => remove(index)}
+                          >
+                            <Trash2 className="scale-110 stroke-[2px]" />
+                          </Button>
+                        )}
                       </TableCell>
                     </TableRow>
                   );

@@ -1,17 +1,37 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useFormik } from "formik";
-import { Dialog, DialogTrigger, DialogContent, DialogHeader, DialogFooter } from "@/components/ui/dialog";
+import {
+  Dialog,
+  DialogTrigger,
+  DialogContent,
+  DialogHeader,
+  DialogFooter,
+} from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Plus, Asterisk } from "lucide-react";
 import { Label } from "@/components/ui/label";
-import { Select, SelectTrigger, SelectValue, SelectContent, SelectItem } from "@/components/ui/select";
-import { InputErrorStyle, InputErrorMessage } from "@/components/ui/error-message";
+import {
+  Select,
+  SelectTrigger,
+  SelectValue,
+  SelectContent,
+  SelectGroup,
+  SelectItem,
+} from "@/components/ui/select";
+import {
+  InputErrorStyle,
+  InputErrorMessage,
+} from "@/components/ui/error-message";
 import { addTagSchema } from "@/utils/validation-schema";
 import { LoadingMessage } from "@/components/ui/loading-message";
 import { CardTitle } from "@/components/ui/card";
 
-export default function AddTagDialog({ buttonClassName = "", buttonName = "Add Tag", onTagAdded }) {
+export default function AddTagDialog({
+  buttonClassName = "",
+  buttonName = "Add Tag",
+  onTagAdded,
+}) {
   const [isOpen, setIsOpen] = useState(false);
   const [loading, setLoading] = useState(false);
   const [types, setTypes] = useState([]);
@@ -39,23 +59,35 @@ export default function AddTagDialog({ buttonClassName = "", buttonName = "Add T
         });
 
         if (response.ok) {
-          onTagAdded("Tag added successfully.", "success");
+          onTagAdded("Tag added successfully.", "success", "Success");
           resetForm();
           setIsOpen(false);
         } else {
           const errorData = await response.json();
-          onTagAdded(errorData.error || "Failed to add tag.", "error");
+          onTagAdded(errorData.error || "Failed to add tag.", "error", "Error");
         }
       } catch {
-        onTagAdded("An unexpected error occurred.", "error");
+        onTagAdded("An unexpected error occurred.", "error", "Error");
       } finally {
         setLoading(false);
       }
     },
   });
 
+  useEffect(() => {
+    if (!isOpen) {
+      formik.resetForm();
+    }
+  }, [isOpen]);
+
   return (
-    <Dialog open={isOpen} onOpenChange={(open) => { setIsOpen(open); if (open) fetchTypes(); }}>
+    <Dialog
+      open={isOpen}
+      onOpenChange={(open) => {
+        setIsOpen(open);
+        if (open) fetchTypes();
+      }}
+    >
       <DialogTrigger asChild>
         <Button className={buttonClassName}>
           <Plus /> {buttonName}
@@ -78,9 +110,15 @@ export default function AddTagDialog({ buttonClassName = "", buttonName = "Add T
                 value={formik.values.name}
                 onChange={formik.handleChange}
                 onBlur={formik.handleBlur}
-                className={InputErrorStyle(formik.errors.name, formik.touched.name)}
+                className={InputErrorStyle(
+                  formik.errors.name,
+                  formik.touched.name
+                )}
               />
-              <InputErrorMessage error={formik.errors.name} touched={formik.touched.name} />
+              <InputErrorMessage
+                error={formik.errors.name}
+                touched={formik.touched.name}
+              />
             </div>
             <div className="flex flex-col gap-2">
               <Label htmlFor="typeName" className="font-bold flex items-center">
@@ -88,10 +126,15 @@ export default function AddTagDialog({ buttonClassName = "", buttonName = "Add T
               </Label>
               <Select
                 value={formik.values.typeName}
-                onValueChange={(value) => formik.setFieldValue("typeName", value)}
+                onValueChange={(value) =>
+                  formik.setFieldValue("typeName", value)
+                }
               >
                 <SelectTrigger
-                  className={InputErrorStyle(formik.errors.typeName, formik.touched.typeName)}
+                  className={InputErrorStyle(
+                    formik.errors.typeName,
+                    formik.touched.typeName
+                  )}
                 >
                   <SelectValue placeholder="Select a type" />
                 </SelectTrigger>
@@ -103,14 +146,22 @@ export default function AddTagDialog({ buttonClassName = "", buttonName = "Add T
                   ))}
                 </SelectContent>
               </Select>
-              <InputErrorMessage error={formik.errors.typeName} touched={formik.touched.typeName} />
+              <InputErrorMessage
+                error={formik.errors.typeName}
+                touched={formik.touched.typeName}
+              />
             </div>
           </div>
           <DialogFooter className="mt-10">
             <Button type="submit" disabled={loading} className="w-1/2">
               {loading ? <LoadingMessage message="Adding..." /> : "Save"}
             </Button>
-            <Button variant="outline" type="button" onClick={() => setIsOpen(false)} className="w-1/2">
+            <Button
+              variant="outline"
+              type="button"
+              onClick={() => setIsOpen(false)}
+              className="w-1/2"
+            >
               Cancel
             </Button>
           </DialogFooter>

@@ -1,17 +1,10 @@
-import { Card, CardTitle } from "@/components/ui/card";
+import { useState, useEffect } from "react";
 import DashboardLayoutWrapper from "@/components/ui/dashboard-layout";
-import {
-  Table,
-  TableHead,
-  TableHeader,
-  TableBody,
-  TableCell,
-  TableRow,
-} from "@/components/ui/table";
+import { CardTitle, Card } from "@/components/ui/card";
+import { Button } from "@/components/ui/button";
 import Link from "next/link";
 import { buttonVariants } from "@/components/ui/button";
 import routes from "@/routes";
-import { Plus } from "lucide-react";
 
 import AddTypeDialog from "./types/components/add-type";
 import AddCategoryDialog from "./categories/components/add-category";
@@ -20,33 +13,73 @@ import AddColorDialog from "./colors/components/add-color";
 import AddSizeDialog from "./sizes/components/add-size";
 import AddMeasurementDialog from "./measurements/components/add-measurement";
 
+import {
+  Table,
+  TableHead,
+  TableHeader,
+  TableBody,
+  TableCell,
+  TableRow,
+} from "@/components/ui/table";
 import { Skeleton } from "@/components/ui/skeleton";
 import useSWR from "swr";
+import { Alert, AlertTitle, AlertDescription } from "@/components/ui/alert";
+import { X, CircleCheck, CircleAlert } from "lucide-react";
+import { Button as IconButton } from "@/components/ui/button";
 
-// Simple fetcher for SWR
 const fetcher = (url) => fetch(url).then((res) => res.json());
 
 export default function Maintenance() {
-  // Use SWR to fetch data from the API
   const {
-    data: totals, // "totals" will hold our fetched data
+    data: totals,
     error,
-    isLoading, // in SWR v2+, you have isLoading; otherwise use (!data && !error)
+    isLoading,
+    mutate,
   } = useSWR("/api/maintenance/get-items-total", fetcher);
 
-  // Handle any errors
-  if (error) {
-    console.error("Error fetching totals:", error);
-    return <div>Failed to load totals</div>;
-  }
-
-  // Helper to render either a skeleton or the total value
-  const renderSkeletonOrTotal = (value) => {
-    return isLoading ? <Skeleton className="h-4 w-8" /> : value;
+  const [alert, setAlert] = useState({ message: "", type: "", title: "" });
+  const handleAlert = (message, type, title) => {
+    setAlert({ message, type, title });
+    if (type === "success") {
+      mutate();
+    }
+    setTimeout(() => setAlert({ message: "", type: "", title: "" }), 5000);
   };
 
   return (
     <DashboardLayoutWrapper>
+      {alert.message && (
+        <Alert className="flex flex-row items-center fixed z-50 w-[30rem] right-14 bottom-12 shadow-lg rounded-lg p-4">
+          {alert.type === "success" ? (
+            <CircleCheck className="ml-4 scale-[200%] h-[60%] stroke-green-500" />
+          ) : (
+            <CircleAlert className="ml-4 scale-[200%] h-[60%] stroke-red-500" />
+          )}
+          <div className="flex flex-col justify-center ml-10">
+            <AlertTitle
+              className={`text-lg font-bold ${
+                alert.type === "success" ? "text-green-500" : "text-red-500"
+              }`}
+            >
+              {alert.title}
+            </AlertTitle>
+            <AlertDescription
+              className={`tracking-wide font-light ${
+                alert.type === "success" ? "text-green-300" : "text-red-300"
+              }`}
+            >
+              {alert.message}
+            </AlertDescription>
+          </div>
+          <IconButton
+            variant="ghost"
+            className="ml-auto p-2"
+            onClick={() => setAlert({ message: "", type: "", title: "" })}
+          >
+            <X className="scale-150 stroke-primary/50 -translate-x-2" />
+          </IconButton>
+        </Alert>
+      )}
       <CardTitle className="text-4xl">Maintenance</CardTitle>
       <Card className="flex flex-col p-5 gap-5 justify-between min-h-[49.1rem]">
         <Table>
@@ -60,10 +93,14 @@ export default function Maintenance() {
           <TableBody>
             <TableRow>
               <TableCell>Types</TableCell>
-              <TableCell>{renderSkeletonOrTotal(totals?.types)}</TableCell>
+              <TableCell>
+                {isLoading ? <Skeleton className="h-4 w-8" /> : totals?.types}
+              </TableCell>
               <TableCell className="text-end">
                 <Link
-                  className={`${buttonVariants({ variant: "outline" })} mr-3 px-8 align-middle`}
+                  className={`${buttonVariants({
+                    variant: "outline",
+                  })} mr-3 px-8 align-middle`}
                   href={routes.types}
                 >
                   View Records
@@ -71,16 +108,25 @@ export default function Maintenance() {
                 <AddTypeDialog
                   buttonClassName="align-middle px-8"
                   buttonName="Add More"
+                  onAdd={handleAlert}
                 />
               </TableCell>
             </TableRow>
 
             <TableRow>
               <TableCell>Categories</TableCell>
-              <TableCell>{renderSkeletonOrTotal(totals?.categories)}</TableCell>
+              <TableCell>
+                {isLoading ? (
+                  <Skeleton className="h-4 w-8" />
+                ) : (
+                  totals?.categories
+                )}
+              </TableCell>
               <TableCell className="text-end">
                 <Link
-                  className={`${buttonVariants({ variant: "outline" })} mr-3 px-8 align-middle`}
+                  className={`${buttonVariants({
+                    variant: "outline",
+                  })} mr-3 px-8 align-middle`}
                   href={routes.categories}
                 >
                   View Records
@@ -88,16 +134,21 @@ export default function Maintenance() {
                 <AddCategoryDialog
                   buttonClassName="align-middle px-8"
                   buttonName="Add More"
+                  onAdd={handleAlert}
                 />
               </TableCell>
             </TableRow>
 
             <TableRow>
               <TableCell>Tags</TableCell>
-              <TableCell>{renderSkeletonOrTotal(totals?.tags)}</TableCell>
+              <TableCell>
+                {isLoading ? <Skeleton className="h-4 w-8" /> : totals?.tags}
+              </TableCell>
               <TableCell className="text-end">
                 <Link
-                  className={`${buttonVariants({ variant: "outline" })} mr-3 px-8 align-middle`}
+                  className={`${buttonVariants({
+                    variant: "outline",
+                  })} mr-3 px-8 align-middle`}
                   href={routes.tags}
                 >
                   View Records
@@ -105,16 +156,21 @@ export default function Maintenance() {
                 <AddTagDialog
                   buttonClassName="align-middle px-8"
                   buttonName="Add More"
+                  onTagAdded={handleAlert}
                 />
               </TableCell>
             </TableRow>
 
             <TableRow>
               <TableCell>Colors</TableCell>
-              <TableCell>{renderSkeletonOrTotal(totals?.colors)}</TableCell>
+              <TableCell>
+                {isLoading ? <Skeleton className="h-4 w-8" /> : totals?.colors}
+              </TableCell>
               <TableCell className="text-end">
                 <Link
-                  className={`${buttonVariants({ variant: "outline" })} mr-3 px-8 align-middle`}
+                  className={`${buttonVariants({
+                    variant: "outline",
+                  })} mr-3 px-8 align-middle`}
                   href={routes.colors}
                 >
                   View Records
@@ -122,16 +178,21 @@ export default function Maintenance() {
                 <AddColorDialog
                   buttonClassName="align-middle px-8"
                   buttonName="Add More"
+                  onColorAdded={handleAlert}
                 />
               </TableCell>
             </TableRow>
 
             <TableRow>
               <TableCell>Sizes</TableCell>
-              <TableCell>{renderSkeletonOrTotal(totals?.sizes)}</TableCell>
+              <TableCell>
+                {isLoading ? <Skeleton className="h-4 w-8" /> : totals?.sizes}
+              </TableCell>
               <TableCell className="text-end">
                 <Link
-                  className={`${buttonVariants({ variant: "outline" })} mr-3 px-8 align-middle`}
+                  className={`${buttonVariants({
+                    variant: "outline",
+                  })} mr-3 px-8 align-middle`}
                   href={routes.sizes}
                 >
                   View Records
@@ -139,16 +200,25 @@ export default function Maintenance() {
                 <AddSizeDialog
                   buttonClassName="align-middle px-8"
                   buttonName="Add More"
+                  onSizeAdded={handleAlert}
                 />
               </TableCell>
             </TableRow>
 
             <TableRow>
               <TableCell>Measurements</TableCell>
-              <TableCell>{renderSkeletonOrTotal(totals?.measurements)}</TableCell>
+              <TableCell>
+                {isLoading ? (
+                  <Skeleton className="h-4 w-8" />
+                ) : (
+                  totals?.measurements
+                )}
+              </TableCell>
               <TableCell className="text-end">
                 <Link
-                  className={`${buttonVariants({ variant: "outline" })} mr-3 px-8 align-middle`}
+                  className={`${buttonVariants({
+                    variant: "outline",
+                  })} mr-3 px-8 align-middle`}
                   href={routes.measurements}
                 >
                   View Records
@@ -156,6 +226,7 @@ export default function Maintenance() {
                 <AddMeasurementDialog
                   buttonClassName="align-middle px-8"
                   buttonName="Add More"
+                  onMeasurementAdded={handleAlert}
                 />
               </TableCell>
             </TableRow>

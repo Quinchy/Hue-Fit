@@ -183,16 +183,16 @@ export default function Sizes() {
           </TableHeader>
           <TableBody>
             {loadingNextPage
-              ? Array.from({ length: 8 }).map((_, index) => (
+              ? Array.from({ length: 13 }).map((_, index) => (
                   <TableRow key={index}>
                     <TableCell>
-                      <Skeleton className="h-[3.25rem] w-[10rem]" />
+                      <Skeleton className="h-[2.5rem] w-[10rem]" />
                     </TableCell>
                     <TableCell>
-                      <Skeleton className="h-[3.25rem] w-[10rem]" />
+                      <Skeleton className="h-[2.5rem] w-[10rem]" />
                     </TableCell>
                     <TableCell>
-                      <Skeleton className="h-[3.25rem] w-[10rem]" />
+                      <Skeleton className="h-[2.5rem] w-[10rem]" />
                     </TableCell>
                   </TableRow>
                 ))

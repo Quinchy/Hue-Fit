@@ -22,12 +22,14 @@ export default async function handler(req, res) {
     const shopId = await getSessionShopId(req, res);
     const productNo = uuidv4();
     const { fields, files } = await parseFormData(req);
-
+    console.log("fields:", fields);
     const name = fields.name?.[0] || "";
     const description = fields.description?.[0] || "";
     const typeId = parseInt(fields.type?.[0] || "0", 10);
+    console.log("typeId:", typeId);
     const categoryName = fields.category?.[0] || "";
-    const tagId = parseInt(fields.tags?.[0] || "0", 10);
+    const tagId = parseInt(fields.tag?.[0] || "0", 10);
+    console.log("tagId:", tagId);
 
     const categoryId = await getCategoryIdByName(prisma, categoryName, shopId);
 

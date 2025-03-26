@@ -158,16 +158,16 @@ export default function Colors() {
           </TableHeader>
           <TableBody>
             {loadingNextPage
-              ? Array.from({ length: 9 }).map((_, index) => (
+              ? Array.from({ length: 13 }).map((_, index) => (
                   <TableRow key={index}>
                     <TableCell>
-                      <Skeleton className="h-[3.25rem] w-[10rem]" />
+                      <Skeleton className="h-[2.5rem] w-[10rem]" />
                     </TableCell>
                     <TableCell>
-                      <Skeleton className="h-[3.25rem] w-[10rem]" />
+                      <Skeleton className="h-[2.5rem] w-[10rem]" />
                     </TableCell>
                     <TableCell>
-                      <Skeleton className="h-[3.25rem] w-[10rem]" />
+                      <Skeleton className="h-[2.5rem] w-[10rem]" />
                     </TableCell>
                   </TableRow>
                 ))

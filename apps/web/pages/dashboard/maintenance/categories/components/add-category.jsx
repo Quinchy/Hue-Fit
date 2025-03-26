@@ -1,17 +1,29 @@
-// pages/categories/components/add-category.jsx
+import { useState, useEffect } from "react";
 import { useFormik } from "formik";
-import { Dialog, DialogTrigger, DialogContent, DialogHeader, DialogFooter } from "@/components/ui/dialog";
+import {
+  Dialog,
+  DialogTrigger,
+  DialogContent,
+  DialogHeader,
+  DialogFooter,
+} from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Plus, Asterisk } from "lucide-react";
 import { Label } from "@/components/ui/label";
-import { InputErrorStyle, InputErrorMessage } from "@/components/ui/error-message";
+import {
+  InputErrorStyle,
+  InputErrorMessage,
+} from "@/components/ui/error-message";
 import { addCategorySchema } from "@/utils/validation-schema";
 import { CardTitle } from "@/components/ui/card";
 import { LoadingMessage } from "@/components/ui/loading-message";
-import { useState, useEffect } from "react";
 
-export default function AddCategoryDialog({ buttonClassName = "", buttonName = "Add Category", onAdd }) {
+export default function AddCategoryDialog({
+  buttonClassName = "",
+  buttonName = "Add Category",
+  onAdd,
+}) {
   const [isDialogOpen, setIsDialogOpen] = useState(false);
   const [loading, setLoading] = useState(false);
 
@@ -21,21 +33,24 @@ export default function AddCategoryDialog({ buttonClassName = "", buttonName = "
     onSubmit: async (values, { resetForm }) => {
       setLoading(true);
       try {
-        const response = await fetch("/api/maintenance/categories/add-category", {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify(values),
-        });
+        const response = await fetch(
+          "/api/maintenance/categories/add-category",
+          {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify(values),
+          }
+        );
         if (response.ok) {
-          onAdd("Category added successfully.", "success");
+          onAdd("Category added successfully.", "success", "Success");
           resetForm();
           setIsDialogOpen(false);
         } else {
           const errorData = await response.json();
-          onAdd(errorData.error || "Failed to add category.", "error");
+          onAdd(errorData.error || "Failed to add category.", "error", "Error");
         }
       } catch {
-        onAdd("An unexpected error occurred.", "error");
+        onAdd("An unexpected error occurred.", "error", "Error");
       } finally {
         setLoading(false);
       }
@@ -71,15 +86,26 @@ export default function AddCategoryDialog({ buttonClassName = "", buttonName = "
               value={formik.values.name}
               onChange={formik.handleChange}
               onBlur={formik.handleBlur}
-              className={InputErrorStyle(formik.errors.name, formik.touched.name)}
+              className={InputErrorStyle(
+                formik.errors.name,
+                formik.touched.name
+              )}
             />
-            <InputErrorMessage error={formik.errors.name} touched={formik.touched.name} />
+            <InputErrorMessage
+              error={formik.errors.name}
+              touched={formik.touched.name}
+            />
           </div>
           <DialogFooter className="mt-10">
             <Button type="submit" disabled={loading} className="w-1/2">
               {loading ? <LoadingMessage message="Adding..." /> : "Save"}
             </Button>
-            <Button variant="outline" onClick={() => setIsDialogOpen(false)} className="w-1/2">
+            <Button
+              variant="outline"
+              type="button"
+              onClick={() => setIsDialogOpen(false)}
+              className="w-1/2"
+            >
               Cancel
             </Button>
           </DialogFooter>

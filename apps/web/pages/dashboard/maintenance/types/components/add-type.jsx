@@ -1,4 +1,10 @@
-import { Dialog, DialogTrigger, DialogContent, DialogHeader, DialogFooter } from "@/components/ui/dialog";
+import {
+  Dialog,
+  DialogTrigger,
+  DialogContent,
+  DialogHeader,
+  DialogFooter,
+} from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Plus, Asterisk } from "lucide-react";
@@ -6,11 +12,18 @@ import { Label } from "@/components/ui/label";
 import { useState } from "react";
 import { useFormik } from "formik";
 import { addTypeSchema } from "@/utils/validation-schema";
-import { InputErrorMessage, InputErrorStyle } from "@/components/ui/error-message";
+import {
+  InputErrorMessage,
+  InputErrorStyle,
+} from "@/components/ui/error-message";
 import { CardTitle } from "@/components/ui/card";
 import { LoadingMessage } from "@/components/ui/loading-message";
 
-export default function AddTypeDialog({ buttonClassName = "", buttonName = "Add Type", onAdd }) {
+export default function AddTypeDialog({
+  buttonClassName = "",
+  buttonName = "Add Type",
+  onAdd,
+}) {
   const [open, setOpen] = useState(false);
   const [loading, setLoading] = useState(false);
 
@@ -25,17 +38,16 @@ export default function AddTypeDialog({ buttonClassName = "", buttonName = "Add 
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify(values),
         });
-
         if (response.ok) {
-          onAdd("Type added successfully.", "success");
+          onAdd("Type added successfully.", "success", "Success");
           resetForm();
-          setOpen(false); // Close the dialog after successful submission
+          setOpen(false);
         } else {
           const errorData = await response.json();
-          onAdd(errorData.error || "Failed to add type.", "error");
+          onAdd(errorData.error || "Failed to add type.", "error", "Error");
         }
       } catch (error) {
-        onAdd("An unexpected error occurred.", "error");
+        onAdd("An unexpected error occurred.", "error", "Error");
       } finally {
         setLoading(false);
       }
@@ -46,8 +58,7 @@ export default function AddTypeDialog({ buttonClassName = "", buttonName = "Add 
     <Dialog open={open} onOpenChange={setOpen}>
       <DialogTrigger asChild>
         <Button className={buttonClassName}>
-          <Plus />
-          {buttonName}
+          <Plus /> {buttonName}
         </Button>
       </DialogTrigger>
       <DialogContent className="min-w-[40rem]">
@@ -67,9 +78,15 @@ export default function AddTypeDialog({ buttonClassName = "", buttonName = "Add 
                 value={formik.values.name}
                 onChange={formik.handleChange}
                 onBlur={formik.handleBlur}
-                className={InputErrorStyle(formik.errors.name, formik.touched.name)}
+                className={InputErrorStyle(
+                  formik.errors.name,
+                  formik.touched.name
+                )}
               />
-              <InputErrorMessage error={formik.errors.name} touched={formik.touched.name} />
+              <InputErrorMessage
+                error={formik.errors.name}
+                touched={formik.touched.name}
+              />
             </div>
           </div>
           <DialogFooter className="mt-10">
@@ -81,7 +98,7 @@ export default function AddTypeDialog({ buttonClassName = "", buttonName = "Add 
               type="button"
               onClick={() => {
                 formik.resetForm();
-                setOpen(false); // Close the dialog
+                setOpen(false);
               }}
               className="w-1/2"
             >

@@ -1,18 +1,20 @@
-// product-variant-pictures.jsx
 import { useState } from "react";
 import Image from "next/image";
 import { Plus, Trash2, Asterisk } from "lucide-react";
 import { Label } from "@/components/ui/label";
 import { useFormikContext } from "formik";
+import {
+  InputErrorStyle,
+  InputErrorMessage,
+} from "@/components/ui/error-message";
 
 export default function ProductVariantPictures({ variantIndex }) {
-  const formikCtx = useFormikContext() || {};
-  const {
-    values = {},
-    setFieldValue = () => {},
-  } = formikCtx;
-
+  const { values, errors, touched, setFieldValue } = useFormikContext() || {};
   const images = values?.variants?.[variantIndex]?.images || [];
+
+  // Extract error and touched info for this field.
+  const fieldError = errors?.variants?.[variantIndex]?.images;
+  const fieldTouched = touched?.variants?.[variantIndex]?.images;
 
   const handleImageUpload = (event) => {
     const file = event.target.files[0];
@@ -35,12 +37,13 @@ export default function ProductVariantPictures({ variantIndex }) {
       <Label className="font-bold flex flex-row items-center">
         Product Variant Pictures <Asterisk className="w-4" />
       </Label>
+      {/* Wrap the image container with error style */}
       <div className="overflow-x-auto">
         <div className="flex gap-3 w-max">
           {images.map((image, idx) => (
             <div
               key={image.id}
-              className="relative bg-accent rounded border-8 border-border w-[320px] h-[320px] overflow-hidden mb-5"
+              className="relative bg-accent rounded border-2 border-border w-[320px] h-[320px] overflow-hidden mb-5"
             >
               <Image
                 src={image.url}
@@ -59,7 +62,12 @@ export default function ProductVariantPictures({ variantIndex }) {
               </button>
             </div>
           ))}
-          <label className="flex flex-col items-center text-primary/25 justify-center w-[320px] h-[320px] border-4 rounded-lg border-dashed cursor-pointer">
+          <label
+            className={`flex flex-col items-center text-primary/25 justify-center w-[320px] h-[320px] border-2 rounded-lg border-dashed cursor-pointer ${InputErrorStyle(
+              fieldError,
+              fieldTouched
+            )}`}
+          >
             <Plus className="scale-110 stroke-[3px] mr-2" />
             <p className="text-xl font-semibold">Add Picture</p>
             <input

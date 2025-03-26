@@ -142,6 +142,11 @@
   font-family: 'Geist' !important;
 }
 
+[data-scroll-locked][data-scroll-locked]  {
+  overflow: visible !important;
+  margin-right: 0 !important;
+} 
+
 @layer utilities {
   @keyframes marquee {
     0% {

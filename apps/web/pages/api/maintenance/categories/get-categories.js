@@ -26,8 +26,8 @@ export default async function handler(req, res) {
         },
       },
       select: { id: true, name: true },
-      skip: (pageNumber - 1) * 9,
-      take: 9,
+      skip: (pageNumber - 1) * 13,
+      take: 13,
       orderBy: { id: "asc" },
     });
 
@@ -40,7 +40,7 @@ export default async function handler(req, res) {
         },
       },
     });
-    const totalPages = Math.ceil(totalCategories / 9);
+    const totalPages = Math.ceil(totalCategories / 13);
 
     return res.status(200).json({
       categories,

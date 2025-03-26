@@ -13,7 +13,7 @@ export default async function handler(req, res) {
     }
 
     const { page = 1, search = "" } = req.query; // Add search query param
-    const PAGE_SIZE = 9;
+    const PAGE_SIZE = 13;
 
     const searchTerm = search.trim().toLowerCase();
 
