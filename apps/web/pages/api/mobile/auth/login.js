@@ -27,7 +27,6 @@ export default async function handler(req, res) {
       },
     });
 
-    // If user not found, send invalid credentials error
     if (!user) {
       return res.status(404).json({ message: "Invalid credentials: User not found" });
     }

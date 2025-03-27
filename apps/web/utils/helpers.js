@@ -9,6 +9,7 @@ import { v4 as uuidv4 } from 'uuid';
 
 const prisma = new PrismaClient();
 const supabase = createClient(process.env.NEXT_PUBLIC_SUPABASE_URL, process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY);
+export default prisma;
 
 // Helper to get session with user ID on the server
 export async function getSessionUser(req, res) {
@@ -127,5 +128,3 @@ export function parseFormData(req) {
     });
   });
 }
-
-export default prisma; // Export PrismaClient for direct use when needed

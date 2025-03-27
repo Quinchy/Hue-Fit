@@ -39,13 +39,15 @@ export default function LoginScreen() {
       if (contentType && contentType.includes('application/json')) {
         const data = await response.json();
         if (response.ok) {
-          await AsyncStorage.setItem('user', JSON.stringify(data));
-          await AsyncStorage.setItem('firstName', data.firstName);
-          await AsyncStorage.setItem('lastName', data.lastName);
-          await AsyncStorage.setItem('profilePicture', data.profilePicture || '');
-          navigation.reset({ index: 0, routes: [{ name: 'Main' }] });
+          await AsyncStorage.setItem("user", JSON.stringify(data));
+          await AsyncStorage.setItem("userId", data.id.toString());
+          await AsyncStorage.setItem("username", data.username);
+          await AsyncStorage.setItem("firstName", data.firstName);
+          await AsyncStorage.setItem("lastName", data.lastName);
+          await AsyncStorage.setItem("profilePicture", data.profilePicture || "");
+          navigation.reset({ index: 0, routes: [{ name: "Main" }] });
         } else {
-          Alert.alert('Login Failed', data.message || 'Invalid credentials');
+          Alert.alert("Login Failed", data.message || "Invalid credentials");
         }
       } else {
         Alert.alert('Login Failed', 'Unexpected response format');
