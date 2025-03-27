@@ -1,11 +1,13 @@
+// pages/dashboard/order/index.js
 import { useState, useEffect } from "react";
 import { useRouter } from "next/router";
+import axios from "axios";
 import DashboardLayoutWrapper from "@/components/ui/dashboard-layout";
 import { Card, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import DashboardPagesNavigation from "@/components/ui/dashboard-pages-navigation";
 import routes from "@/routes";
-import { Button } from "@/components/ui/button";
+import { Button, buttonVariants } from "@/components/ui/button";
 import {
   Table,
   TableHead,
@@ -29,28 +31,27 @@ import {
   PaginationNext,
   PaginationLink,
 } from "@/components/ui/pagination";
-import { Pencil, Search, ChevronDown, Wrench } from "lucide-react";
+import { Pencil, Search, ChevronDown, Wrench, CircleOff } from "lucide-react";
 import { Skeleton } from "@/components/ui/skeleton";
 import useSWR from "swr";
 import Link from "next/link";
-import { buttonVariants } from "@/components/ui/button";
 
-// A simple fetcher function that returns JSON
+import CancelOrderDialog from "@/components/ui/order/cancel-order-dialog";
+
 const fetcher = (url) => fetch(url).then((res) => res.json());
 
 export default function Orders() {
   const router = useRouter();
   const [currentPage, setCurrentPage] = useState(1);
   const [search, setSearch] = useState("");
-  // Set default status to "PENDING" so the UI fetches pending orders by default.
   const [status, setStatus] = useState("PENDING");
+  const [cancelOrder, setCancelOrder] = useState(null);
 
   const navItems = [
     { label: "Orders", href: routes.order },
     { label: "Reserves", href: routes.orderReserve },
   ];
 
-  // Define status color mapping using shadcn colors
   const statusColors = {
     PENDING: "bg-blue-400",
     PROCESSING: "bg-amber-500",
@@ -59,7 +60,6 @@ export default function Orders() {
     CANCELLED: "bg-red-500",
   };
 
-  // Use SWR to fetch orders.
   const { data, isLoading } = useSWR(
     `/api/orders/get-orders?page=${currentPage}&search=${search}&status=${status}`,
     fetcher,
@@ -71,14 +71,13 @@ export default function Orders() {
   );
 
   const statusCountMap = data?.statusCountMap || {};
-  // Log the response from the API whenever it changes
+
   useEffect(() => {
     if (data) {
       console.log("Received orders data:", data);
     }
   }, [data]);
 
-  // Use client-side sorting logic in case ordering from API doesn't match your needs
   const orderPriority = {
     PENDING: 1,
     PROCESSING: 2,
@@ -108,6 +107,15 @@ export default function Orders() {
     setCurrentPage(1);
   };
 
+  const handleCancelConfirm = async (orderId, reason) => {
+    try {
+      await axios.post("/api/orders/cancel-order", { orderId, reason });
+      // Optionally refetch data after cancellation
+    } catch (error) {
+      console.error(error);
+    }
+  };
+
   return (
     <DashboardLayoutWrapper>
       <div className="flex flex-row justify-between">
@@ -131,11 +139,6 @@ export default function Orders() {
             </DropdownMenuTrigger>
             <DropdownMenuContent className="w-48">
               <DropdownMenuGroup>
-                <DropdownMenuItem key="All" className="justify-center">
-                  <Button variant="none" onClick={() => handleStatusFilter("")}>
-                    All Status
-                  </Button>
-                </DropdownMenuItem>
                 {[
                   "PENDING",
                   "PROCESSING",
@@ -217,28 +220,23 @@ export default function Orders() {
                   const maxItemsToShow = 2;
                   const items = order.OrderItems || [];
                   const limitedItems = items.slice(0, maxItemsToShow);
-
                   const productNames = limitedItems.map((item) => {
                     const color = item.ProductVariant?.Color?.name || "";
                     const product = item.ProductVariant?.Product?.name || "";
                     return `${color} ${product}`.trim();
                   });
-
                   const sizes = limitedItems.map(
                     (item) => item.ProductVariantSize?.Size?.name || "N/A"
                   );
-
                   const quantities = limitedItems.map((item) =>
                     String(item.quantity || 0)
                   );
-
                   const prices = limitedItems.map((item) => {
                     const p = item.ProductVariant?.price
                       ? parseFloat(item.ProductVariant.price).toFixed(2)
                       : "0.00";
                     return `PHP ${p}`;
                   });
-
                   const hasMoreItems = items.length > maxItemsToShow;
 
                   return (
@@ -281,7 +279,7 @@ export default function Orders() {
                               <ChevronDown className="scale-125" />
                             </Button>
                           </DropdownMenuTrigger>
-                          <DropdownMenuContent className="w-40">
+                          <DropdownMenuContent className="w-20">
                             <DropdownMenuGroup>
                               <DropdownMenuItem className="justify-center">
                                 <Button
@@ -290,10 +288,23 @@ export default function Orders() {
                                     handleUpdateClick(order.orderNo)
                                   }
                                 >
-                                  <Pencil className="scale-125 mr-2" />
+                                  <Pencil className="mr-1" />
                                   Update
                                 </Button>
                               </DropdownMenuItem>
+                              {!["CANCELLED", "COMPLETED"].includes(
+                                order.status.toUpperCase()
+                              ) && (
+                                <DropdownMenuItem className="justify-center text-red-500">
+                                  <Button
+                                    variant="none"
+                                    onClick={() => setCancelOrder(order.id)}
+                                  >
+                                    <CircleOff className="mr-1" />
+                                    Cancel
+                                  </Button>
+                                </DropdownMenuItem>
+                              )}
                             </DropdownMenuGroup>
                           </DropdownMenuContent>
                         </DropdownMenu>
@@ -313,7 +324,6 @@ export default function Orders() {
               )}
             </TableBody>
           </Table>
-
           {orders.length > 0 && (
             <Pagination className="flex flex-col items-end">
               <PaginationContent>
@@ -341,6 +351,14 @@ export default function Orders() {
           )}
         </div>
       </Card>
+      {cancelOrder && (
+        <CancelOrderDialog
+          orderNo={cancelOrder}
+          open={!!cancelOrder}
+          onClose={() => setCancelOrder(null)}
+          onConfirm={handleCancelConfirm}
+        />
+      )}
     </DashboardLayoutWrapper>
   );
 }

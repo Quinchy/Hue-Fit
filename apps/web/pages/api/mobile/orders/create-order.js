@@ -86,7 +86,7 @@ const createOrder = async (req, res) => {
           orderNo,
           userId: userIdInt,
           shopId: shopIdInt,
-          paymentMethod: isReserveMode ? 'RESERVE_MODE' : paymentMethod,
+          paymentMethod: isReserveMode ? 'COD' : paymentMethod,
           status,
           OrderItems: {
             create: orderItemsData.map((item) => ({

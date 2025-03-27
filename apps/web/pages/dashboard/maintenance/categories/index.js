@@ -4,12 +4,39 @@ import DashboardLayoutWrapper from "@/components/ui/dashboard-layout";
 import { Button } from "@/components/ui/button";
 import { useRouter } from "next/router";
 import routes from "@/routes";
-import AddCategoryDialog from "./components/add-category";
-import EditCategoryDialog from "./components/edit-category";
-import { Table, TableHead, TableHeader, TableBody, TableCell, TableRow } from "@/components/ui/table";
-import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger, DropdownMenuGroup } from "@/components/ui/dropdown-menu";
-import { MoveLeft, ChevronDown, Pencil, X, CircleCheck, CircleAlert } from "lucide-react";
-import { Pagination, PaginationPrevious, PaginationContent, PaginationItem, PaginationNext, PaginationLink } from "@/components/ui/pagination";
+import AddCategoryDialog from "@/components/ui/maintenance/category/add-category";
+import EditCategoryDialog from "@/components/ui/maintenance/category/edit-category";
+import {
+  Table,
+  TableHead,
+  TableHeader,
+  TableBody,
+  TableCell,
+  TableRow,
+} from "@/components/ui/table";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+  DropdownMenuGroup,
+} from "@/components/ui/dropdown-menu";
+import {
+  MoveLeft,
+  ChevronDown,
+  Pencil,
+  X,
+  CircleCheck,
+  CircleAlert,
+} from "lucide-react";
+import {
+  Pagination,
+  PaginationPrevious,
+  PaginationContent,
+  PaginationItem,
+  PaginationNext,
+  PaginationLink,
+} from "@/components/ui/pagination";
 import Loading from "@/components/ui/loading";
 import { Skeleton } from "@/components/ui/skeleton";
 import { useState, useEffect } from "react";
@@ -29,11 +56,16 @@ export default function Categories() {
   const [debouncedSearchTerm, setDebouncedSearchTerm] = useState("");
   const [alert, setAlert] = useState({ message: "", type: "", title: "" });
 
-  const fetchCategories = async (page = currentPage, search = debouncedSearchTerm) => {
+  const fetchCategories = async (
+    page = currentPage,
+    search = debouncedSearchTerm
+  ) => {
     setLoadingNextPage(true);
     try {
       const response = await fetch(
-        `/api/maintenance/categories/get-categories?page=${page}&search=${encodeURIComponent(search)}`
+        `/api/maintenance/categories/get-categories?page=${page}&search=${encodeURIComponent(
+          search
+        )}`
       );
       const data = await response.json();
       setCategories(data.categories || []);
@@ -133,7 +165,10 @@ export default function Categories() {
       <div className="flex justify-between items-center">
         <CardTitle className="text-4xl">Categories</CardTitle>
         <div className="flex gap-3 items-center">
-          <Button variant="outline" onClick={() => router.push(routes.maintenance)}>
+          <Button
+            variant="outline"
+            onClick={() => router.push(routes.maintenance)}
+          >
             <MoveLeft className="scale-125" />
             Back to Maintenance
           </Button>
@@ -156,73 +191,82 @@ export default function Categories() {
             </TableRow>
           </TableHeader>
           <TableBody>
-            {loadingNextPage
-              ? Array.from({ length: 13 }).map((_, index) => (
-                  <TableRow key={index}>
-                    <TableCell>
-                      <Skeleton className="h-[2.5rem] w-[10rem]" />
-                    </TableCell>
-                    <TableCell>
-                      <Skeleton className="h-[2.5rem] w-[10rem]" />
-                    </TableCell>
-                  </TableRow>
-                ))
-              : categories.length > 0
-              ? categories.map((category) => (
-                  <TableRow key={category.id}>
-                    <TableCell>{category.name}</TableCell>
-                    <TableCell>
-                      <DropdownMenu>
-                        <DropdownMenuTrigger asChild>
-                          <Button variant="outline" className="font-normal flex items-center gap-1">
-                            Action <ChevronDown className="scale-125" />
-                          </Button>
-                        </DropdownMenuTrigger>
-                        <DropdownMenuContent className="w-50">
-                          <DropdownMenuGroup>
-                            <DropdownMenuItem className="justify-center">
-                              <Button
-                                variant="none"
-                                onClick={() => handleEdit(category)}
-                                className="flex items-center gap-2"
-                              >
-                                <Pencil className="scale-125" />
-                                Edit
-                              </Button>
-                            </DropdownMenuItem>
-                          </DropdownMenuGroup>
-                        </DropdownMenuContent>
-                      </DropdownMenu>
-                    </TableCell>
-                  </TableRow>
-                ))
-              : (
-                <TableRow>
-                  <TableCell
-                    colSpan={2}
-                    className="text-center align-middle h-[43rem] text-primary/50 text-lg font-thin tracking-wide"
-                  >
-                    No categories found.
+            {loadingNextPage ? (
+              Array.from({ length: 13 }).map((_, index) => (
+                <TableRow key={index}>
+                  <TableCell>
+                    <Skeleton className="h-[2.5rem] w-[10rem]" />
+                  </TableCell>
+                  <TableCell>
+                    <Skeleton className="h-[2.5rem] w-[10rem]" />
                   </TableCell>
                 </TableRow>
-              )}
+              ))
+            ) : categories.length > 0 ? (
+              categories.map((category) => (
+                <TableRow key={category.id}>
+                  <TableCell>{category.name}</TableCell>
+                  <TableCell>
+                    <DropdownMenu>
+                      <DropdownMenuTrigger asChild>
+                        <Button
+                          variant="outline"
+                          className="font-normal flex items-center gap-1"
+                        >
+                          Action <ChevronDown className="scale-125" />
+                        </Button>
+                      </DropdownMenuTrigger>
+                      <DropdownMenuContent className="w-50">
+                        <DropdownMenuGroup>
+                          <DropdownMenuItem className="justify-center">
+                            <Button
+                              variant="none"
+                              onClick={() => handleEdit(category)}
+                              className="flex items-center gap-2"
+                            >
+                              <Pencil className="scale-125" />
+                              Edit
+                            </Button>
+                          </DropdownMenuItem>
+                        </DropdownMenuGroup>
+                      </DropdownMenuContent>
+                    </DropdownMenu>
+                  </TableCell>
+                </TableRow>
+              ))
+            ) : (
+              <TableRow>
+                <TableCell
+                  colSpan={2}
+                  className="text-center align-middle h-[43rem] text-primary/50 text-lg font-thin tracking-wide"
+                >
+                  No categories found.
+                </TableCell>
+              </TableRow>
+            )}
           </TableBody>
         </Table>
         {categories.length > 0 && (
           <Pagination className="flex flex-col items-end">
             <PaginationContent>
               {currentPage > 1 && (
-                <PaginationPrevious onClick={() => handlePageChange(currentPage - 1)} />
+                <PaginationPrevious
+                  onClick={() => handlePageChange(currentPage - 1)}
+                />
               )}
-              {Array.from({ length: totalPages }, (_, i) => i + 1).map((page) => (
-                <PaginationItem key={page} active={page === currentPage}>
-                  <PaginationLink onClick={() => handlePageChange(page)}>
-                    {page}
-                  </PaginationLink>
-                </PaginationItem>
-              ))}
+              {Array.from({ length: totalPages }, (_, i) => i + 1).map(
+                (page) => (
+                  <PaginationItem key={page} active={page === currentPage}>
+                    <PaginationLink onClick={() => handlePageChange(page)}>
+                      {page}
+                    </PaginationLink>
+                  </PaginationItem>
+                )
+              )}
               {currentPage < totalPages && (
-                <PaginationNext onClick={() => handlePageChange(currentPage + 1)} />
+                <PaginationNext
+                  onClick={() => handlePageChange(currentPage + 1)}
+                />
               )}
             </PaginationContent>
           </Pagination>

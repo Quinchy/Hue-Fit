@@ -22,7 +22,7 @@ import { Label } from "@/components/ui/label";
 import routes from "@/routes";
 import { Alert, AlertTitle, AlertDescription } from "@/components/ui/alert";
 import Image from "next/image";
-import Loading from "@/components/ui/loading"; // Overall page loading
+import Loading from "@/components/ui/loading";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import {
   Select,
@@ -36,6 +36,7 @@ import {
   InputErrorMessage,
   InputErrorStyle,
 } from "@/components/ui/error-message";
+import CancelOrderDialog from "@/components/ui/order/cancel-order-dialog";
 
 const ORDER_STEPS_DATA = [
   { id: "PENDING", label: "Pending", Icon: Loader2 },
@@ -60,6 +61,7 @@ export default function EditOrder() {
   const [error, setError] = useState(null);
   const [showAlert, setShowAlert] = useState(false);
   const [showCancelAlert, setShowCancelAlert] = useState(false);
+  const [showCancelOrderDialog, setShowCancelOrderDialog] = useState(false);
 
   useEffect(() => {
     if (orderNo) {
@@ -97,7 +99,6 @@ export default function EditOrder() {
     }
   };
 
-  // Cancellation Formik instance with enhanced Yup validation.
   const cancellationFormik = useFormik({
     initialValues: {
       cancellationResponse: "",
@@ -125,7 +126,6 @@ export default function EditOrder() {
         };
         await axios.post("/api/orders/cancellation-response", payload);
         setShowCancelAlert(true);
-        // Re-fetch order details to update the UI after submission
         fetchOrderDetails(orderNo);
         resetForm();
       } catch (err) {
@@ -135,6 +135,22 @@ export default function EditOrder() {
       }
     },
   });
+
+  const handleCancelOrder = async (orderId, reason) => {
+    try {
+      setLoading(true);
+      await axios.post("/api/orders/cancel-order", {
+        orderId: orderDetails.id,
+        reason,
+      });
+      setShowCancelAlert(true);
+      fetchOrderDetails(orderNo);
+    } catch (err) {
+      setError("Failed to cancel order.");
+    } finally {
+      setLoading(false);
+    }
+  };
 
   if (error) return <div>{error}</div>;
 
@@ -146,7 +162,6 @@ export default function EditOrder() {
     );
   }
 
-  // Calculate totals and order information
   const totalEarnings =
     orderDetails.OrderItems?.reduce((sum, item) => {
       const price = parseFloat(item.ProductVariant?.price || 0);
@@ -201,6 +216,10 @@ export default function EditOrder() {
     CANCELLED: "bg-red-500",
   };
 
+  const canCancel = ["PENDING", "PROCESSING", "DELIVERING"].includes(
+    orderDetails.status.toUpperCase()
+  );
+
   return (
     <DashboardLayoutWrapper>
       <div className="flex justify-between items-center">
@@ -209,7 +228,7 @@ export default function EditOrder() {
             Order: {orderDetails.orderNo}
           </CardTitle>
           <p
-            className={`px-3 py-1 min-w-[10rem] text-center rounded text-card font-bold ${
+            className={`px-3 py-1 min-w-[10rem] mt-2 text-center rounded text-card font-bold ${
               statusColors[orderDetails.status.toUpperCase()]
             }`}
           >
@@ -223,7 +242,6 @@ export default function EditOrder() {
       </div>
 
       <Card className="p-10 flex flex-col gap-8 mb-20">
-        {/* Progress Bar */}
         <div className="relative flex items-center justify-between px-2 h-20">
           <div className="absolute top-4 left-0 right-0 h-0.5 border-t-2 border-dashed border-border" />
           <div
@@ -268,7 +286,6 @@ export default function EditOrder() {
           })}
         </div>
 
-        {/* Order Items */}
         <div>
           <CardTitle className="text-2xl mb-2">Order Items</CardTitle>
           <ScrollArea className="h-72 border rounded-md p-3">
@@ -317,7 +334,6 @@ export default function EditOrder() {
           </ScrollArea>
         </div>
 
-        {/* Customer Information */}
         <div>
           <CardTitle className="text-2xl">Customer Information</CardTitle>
           <div className="flex items-center gap-4 mt-4">
@@ -338,7 +354,6 @@ export default function EditOrder() {
           </div>
         </div>
 
-        {/* Order Status & Total Payment */}
         <div className="flex flex-col gap-6 md:flex-row md:justify-between md:items-center">
           <div>
             <CardTitle className="text-2xl">Order Status</CardTitle>
@@ -350,19 +365,32 @@ export default function EditOrder() {
               <p className="mt-2 text-muted-foreground italic">
                 This order is already completed.
               </p>
-            ) : canAdvance ? (
-              <Button
-                onClick={handleAdvanceStep}
-                className="mt-2 min-w-[15rem]"
-                disabled={loading}
-              >
-                {loading ? (
-                  <LoadingMessage message="Advancing..." />
-                ) : (
-                  "Advance to Next Step"
+            ) : (
+              <div className="flex gap-2 mt-2">
+                {canAdvance && (
+                  <Button
+                    onClick={handleAdvanceStep}
+                    className="min-w-[15rem]"
+                    disabled={loading}
+                  >
+                    {loading ? (
+                      <LoadingMessage message="Advancing..." />
+                    ) : (
+                      "Advance to Next Step"
+                    )}
+                  </Button>
                 )}
-              </Button>
-            ) : null}
+                {canCancel && (
+                  <Button
+                    variant="outline"
+                    className="min-w-[15rem] border-red-500 text-red-500 bg-transparent hover:text-red-500"
+                    onClick={() => setShowCancelOrderDialog(true)}
+                  >
+                    Cancel Order
+                  </Button>
+                )}
+              </div>
+            )}
           </div>
           <div className="text-right">
             <CardTitle className="text-xl">Total Payment</CardTitle>
@@ -377,7 +405,6 @@ export default function EditOrder() {
           </div>
         </div>
 
-        {/* Cancellation Response Section */}
         {orderDetails.askingForCancel &&
           orderDetails.status.toUpperCase() !== "CANCELLED" && (
             <div className="flex flex-col gap-4 border-t">
@@ -473,7 +500,6 @@ export default function EditOrder() {
           )}
       </Card>
 
-      {/* Order Status Update Alert */}
       {showAlert && (
         <Alert className="fixed z-50 w-[30rem] right-14 bottom-10 flex items-center shadow-lg rounded-lg">
           <CheckCircle2 className="h-10 w-10 stroke-green-500" />
@@ -494,7 +520,6 @@ export default function EditOrder() {
         </Alert>
       )}
 
-      {/* Cancellation Response Alert */}
       {showCancelAlert && (
         <Alert className="fixed z-50 w-[30rem] right-14 bottom-10 flex items-center shadow-lg rounded-lg">
           <CheckCircle2 className="h-10 w-10 stroke-green-500" />
@@ -513,6 +538,15 @@ export default function EditOrder() {
             ✕
           </button>
         </Alert>
+      )}
+
+      {showCancelOrderDialog && (
+        <CancelOrderDialog
+          orderNo={orderDetails.id}
+          open={showCancelOrderDialog}
+          onClose={() => setShowCancelOrderDialog(false)}
+          onConfirm={handleCancelOrder}
+        />
       )}
     </DashboardLayoutWrapper>
   );

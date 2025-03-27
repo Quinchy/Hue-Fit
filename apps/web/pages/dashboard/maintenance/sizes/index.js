@@ -2,12 +2,26 @@
 import { Card, CardTitle } from "@/components/ui/card";
 import DashboardLayoutWrapper from "@/components/ui/dashboard-layout";
 import { Button } from "@/components/ui/button";
-import { MoveLeft, ChevronDown, Pencil, X, CircleCheck, CircleAlert } from "lucide-react";
+import {
+  MoveLeft,
+  ChevronDown,
+  Pencil,
+  X,
+  CircleCheck,
+  CircleAlert,
+} from "lucide-react";
 import { useRouter } from "next/router";
 import routes from "@/routes";
-import AddSizeDialog from "./components/add-size";
-import EditSizeDialog from "./components/edit-size";
-import { Table, TableHead, TableHeader, TableBody, TableCell, TableRow } from "@/components/ui/table";
+import AddSizeDialog from "@/components/ui/maintenance/size/add-size";
+import EditSizeDialog from "@/components/ui/maintenance/size/edit-size";
+import {
+  Table,
+  TableHead,
+  TableHeader,
+  TableBody,
+  TableCell,
+  TableRow,
+} from "@/components/ui/table";
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -47,11 +61,16 @@ export default function Sizes() {
   const [alert, setAlert] = useState({ message: "", type: "", title: "" });
 
   // Fetch sizes
-  const fetchSizes = async (page = currentPage, search = debouncedSearchTerm) => {
+  const fetchSizes = async (
+    page = currentPage,
+    search = debouncedSearchTerm
+  ) => {
     setLoadingNextPage(true);
     try {
       const response = await fetch(
-        `/api/maintenance/sizes/get-sizes?page=${page}&search=${encodeURIComponent(search)}`
+        `/api/maintenance/sizes/get-sizes?page=${page}&search=${encodeURIComponent(
+          search
+        )}`
       );
       const data = await response.json();
       setSizes(data.sizes || []);
@@ -157,7 +176,10 @@ export default function Sizes() {
       <div className="flex justify-between items-center">
         <CardTitle className="text-4xl">Sizes</CardTitle>
         <div className="flex gap-3 items-center">
-          <Button variant="outline" onClick={() => router.push(routes.maintenance)}>
+          <Button
+            variant="outline"
+            onClick={() => router.push(routes.maintenance)}
+          >
             <MoveLeft className="scale-125" />
             Back to Maintenance
           </Button>
@@ -182,77 +204,86 @@ export default function Sizes() {
             </TableRow>
           </TableHeader>
           <TableBody>
-            {loadingNextPage
-              ? Array.from({ length: 13 }).map((_, index) => (
-                  <TableRow key={index}>
-                    <TableCell>
-                      <Skeleton className="h-[2.5rem] w-[10rem]" />
-                    </TableCell>
-                    <TableCell>
-                      <Skeleton className="h-[2.5rem] w-[10rem]" />
-                    </TableCell>
-                    <TableCell>
-                      <Skeleton className="h-[2.5rem] w-[10rem]" />
-                    </TableCell>
-                  </TableRow>
-                ))
-              : sizes.length > 0
-              ? sizes.map((size) => (
-                  <TableRow key={size.id}>
-                    <TableCell>{size.name}</TableCell>
-                    <TableCell>{size.abbreviation}</TableCell>
-                    <TableCell>
-                      <DropdownMenu>
-                        <DropdownMenuTrigger asChild>
-                          <Button variant="outline" className="font-normal flex items-center gap-1">
-                            Action <ChevronDown className="scale-125" />
-                          </Button>
-                        </DropdownMenuTrigger>
-                        <DropdownMenuContent className="w-50">
-                          <DropdownMenuGroup>
-                            <DropdownMenuItem className="justify-center">
-                              <Button
-                                variant="none"
-                                onClick={() => handleEdit(size)}
-                                className="flex items-center gap-2"
-                              >
-                                <Pencil className="scale-125" />
-                                Edit
-                              </Button>
-                            </DropdownMenuItem>
-                          </DropdownMenuGroup>
-                        </DropdownMenuContent>
-                      </DropdownMenu>
-                    </TableCell>
-                  </TableRow>
-                ))
-              : (
-                <TableRow>
-                  <TableCell
-                    colSpan={3}
-                    className="text-center align-middle h-[43rem] text-primary/50 text-lg font-thin tracking-wide"
-                  >
-                    No sizes found.
+            {loadingNextPage ? (
+              Array.from({ length: 13 }).map((_, index) => (
+                <TableRow key={index}>
+                  <TableCell>
+                    <Skeleton className="h-[2.5rem] w-[10rem]" />
+                  </TableCell>
+                  <TableCell>
+                    <Skeleton className="h-[2.5rem] w-[10rem]" />
+                  </TableCell>
+                  <TableCell>
+                    <Skeleton className="h-[2.5rem] w-[10rem]" />
                   </TableCell>
                 </TableRow>
-              )}
+              ))
+            ) : sizes.length > 0 ? (
+              sizes.map((size) => (
+                <TableRow key={size.id}>
+                  <TableCell>{size.name}</TableCell>
+                  <TableCell>{size.abbreviation}</TableCell>
+                  <TableCell>
+                    <DropdownMenu>
+                      <DropdownMenuTrigger asChild>
+                        <Button
+                          variant="outline"
+                          className="font-normal flex items-center gap-1"
+                        >
+                          Action <ChevronDown className="scale-125" />
+                        </Button>
+                      </DropdownMenuTrigger>
+                      <DropdownMenuContent className="w-50">
+                        <DropdownMenuGroup>
+                          <DropdownMenuItem className="justify-center">
+                            <Button
+                              variant="none"
+                              onClick={() => handleEdit(size)}
+                              className="flex items-center gap-2"
+                            >
+                              <Pencil className="scale-125" />
+                              Edit
+                            </Button>
+                          </DropdownMenuItem>
+                        </DropdownMenuGroup>
+                      </DropdownMenuContent>
+                    </DropdownMenu>
+                  </TableCell>
+                </TableRow>
+              ))
+            ) : (
+              <TableRow>
+                <TableCell
+                  colSpan={3}
+                  className="text-center align-middle h-[43rem] text-primary/50 text-lg font-thin tracking-wide"
+                >
+                  No sizes found.
+                </TableCell>
+              </TableRow>
+            )}
           </TableBody>
         </Table>
         {sizes.length > 0 && (
           <Pagination className="flex flex-col items-end">
             <PaginationContent>
               {currentPage > 1 && (
-                <PaginationPrevious onClick={() => handlePageChange(currentPage - 1)} />
+                <PaginationPrevious
+                  onClick={() => handlePageChange(currentPage - 1)}
+                />
               )}
-              {Array.from({ length: totalPages }, (_, i) => i + 1).map((page) => (
-                <PaginationItem key={page} active={page === currentPage}>
-                  <PaginationLink onClick={() => handlePageChange(page)}>
-                    {page}
-                  </PaginationLink>
-                </PaginationItem>
-              ))}
+              {Array.from({ length: totalPages }, (_, i) => i + 1).map(
+                (page) => (
+                  <PaginationItem key={page} active={page === currentPage}>
+                    <PaginationLink onClick={() => handlePageChange(page)}>
+                      {page}
+                    </PaginationLink>
+                  </PaginationItem>
+                )
+              )}
               {currentPage < totalPages && (
-                <PaginationNext onClick={() => handlePageChange(currentPage + 1)} />
+                <PaginationNext
+                  onClick={() => handlePageChange(currentPage + 1)}
+                />
               )}
             </PaginationContent>
           </Pagination>

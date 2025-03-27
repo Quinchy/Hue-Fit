@@ -1,17 +1,16 @@
-import { useState, useEffect } from "react";
+import { useState } from "react";
 import DashboardLayoutWrapper from "@/components/ui/dashboard-layout";
 import { CardTitle, Card } from "@/components/ui/card";
-import { Button } from "@/components/ui/button";
 import Link from "next/link";
 import { buttonVariants } from "@/components/ui/button";
 import routes from "@/routes";
 
-import AddTypeDialog from "./types/components/add-type";
-import AddCategoryDialog from "./categories/components/add-category";
-import AddTagDialog from "./tags/components/add-tag";
-import AddColorDialog from "./colors/components/add-color";
-import AddSizeDialog from "./sizes/components/add-size";
-import AddMeasurementDialog from "./measurements/components/add-measurement";
+import AddTypeDialog from "@/components/ui/maintenance/type/add-type";
+import AddCategoryDialog from "@/components/ui/maintenance/category/add-category";
+import AddTagDialog from "@/components/ui/maintenance/tag/add-tag";
+import AddColorDialog from "@/components/ui/maintenance/color/add-color";
+import AddSizeDialog from "@/components/ui/maintenance/size/add-size";
+import AddMeasurementDialog from "@/components/ui/maintenance/measurement/add-measurement";
 
 import {
   Table,

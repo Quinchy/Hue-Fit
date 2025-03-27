@@ -2,14 +2,41 @@
 import { Card, CardTitle } from "@/components/ui/card";
 import DashboardLayoutWrapper from "@/components/ui/dashboard-layout";
 import { Button } from "@/components/ui/button";
-import { MoveLeft, Pencil, ChevronDown, X, CircleCheck, CircleAlert } from "lucide-react";
+import {
+  MoveLeft,
+  Pencil,
+  ChevronDown,
+  X,
+  CircleCheck,
+  CircleAlert,
+} from "lucide-react";
 import { useRouter } from "next/router";
 import routes from "@/routes";
-import AddTypeDialog from "./components/add-type";
-import EditTypeDialog from "./components/edit-type";
-import { Table, TableHead, TableHeader, TableBody, TableCell, TableRow } from "@/components/ui/table";
-import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger, DropdownMenuGroup } from "@/components/ui/dropdown-menu";
-import { Pagination, PaginationPrevious, PaginationContent, PaginationItem, PaginationNext, PaginationLink } from "@/components/ui/pagination";
+import AddTypeDialog from "@/components/ui/maintenance/type/add-type";
+import EditTypeDialog from "@/components/ui/maintenance/type/edit-type";
+import {
+  Table,
+  TableHead,
+  TableHeader,
+  TableBody,
+  TableCell,
+  TableRow,
+} from "@/components/ui/table";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+  DropdownMenuGroup,
+} from "@/components/ui/dropdown-menu";
+import {
+  Pagination,
+  PaginationPrevious,
+  PaginationContent,
+  PaginationItem,
+  PaginationNext,
+  PaginationLink,
+} from "@/components/ui/pagination";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Input } from "@/components/ui/input";
 import { useState, useEffect } from "react";
@@ -33,11 +60,16 @@ export default function Types() {
 
   const [alert, setAlert] = useState({ message: "", type: "", title: "" });
 
-  const fetchTypes = async (page = currentPage, search = debouncedSearchTerm) => {
+  const fetchTypes = async (
+    page = currentPage,
+    search = debouncedSearchTerm
+  ) => {
     setLoadingNextPage(true);
     try {
       const response = await fetch(
-        `/api/maintenance/types/get-types?page=${page}&search=${encodeURIComponent(search)}`
+        `/api/maintenance/types/get-types?page=${page}&search=${encodeURIComponent(
+          search
+        )}`
       );
       const data = await response.json();
       setTypesData(data.types || []);

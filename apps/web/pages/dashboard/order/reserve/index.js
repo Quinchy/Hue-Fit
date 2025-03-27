@@ -2,6 +2,7 @@
 
 import React, { useEffect, useState } from "react";
 import { useRouter } from "next/router";
+import axios from "axios";
 import DashboardLayoutWrapper from "@/components/ui/dashboard-layout";
 import { Card, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
@@ -33,9 +34,10 @@ import {
   PaginationNext,
   PaginationLink,
 } from "@/components/ui/pagination";
-import { Pencil, Search, ChevronDown, Wrench } from "lucide-react";
+import { Pencil, Search, ChevronDown, Wrench, CircleOff } from "lucide-react";
 import { Skeleton } from "@/components/ui/skeleton";
-
+import useSWR from "swr";
+import CancelOrderDialog from "@/components/ui/order/cancel-order-dialog";
 
 export default function Reserves() {
   const router = useRouter();
@@ -45,13 +47,18 @@ export default function Reserves() {
   const [search, setSearch] = useState("");
   const [status, setStatus] = useState("RESERVED"); // Default to "RESERVED"
   const [loading, setLoading] = useState(false);
+  const [cancelOrder, setCancelOrder] = useState(null);
 
   const navItems = [
     { label: "Orders", href: routes.order },
     { label: "Reserves", href: routes.orderReserve },
   ];
 
-  const fetchReserves = async (page = 1, searchQuery = "", statusFilter = "RESERVED") => {
+  const fetchReserves = async (
+    page = 1,
+    searchQuery = "",
+    statusFilter = "RESERVED"
+  ) => {
     setLoading(true);
     try {
       const response = await fetch(
@@ -76,6 +83,25 @@ export default function Reserves() {
     router.push(`/dashboard/order/edit/${orderNo}`);
   };
 
+  const handleStatusFilter = (filterStatus) => {
+    setStatus(filterStatus);
+    setCurrentPage(1);
+  };
+
+  const handleSearchChange = (e) => {
+    setSearch(e.target.value);
+    setCurrentPage(1);
+  };
+
+  const handleCancelConfirm = async (orderId, reason) => {
+    try {
+      await axios.post("/api/orders/cancel-order", { orderId, reason });
+      fetchReserves(currentPage, search, status);
+    } catch (error) {
+      console.error(error);
+    }
+  };
+
   return (
     <DashboardLayoutWrapper>
       <div className="flex flex-row justify-between">
@@ -91,7 +117,9 @@ export default function Reserves() {
             onChange={(e) => setSearch(e.target.value)}
           />
           <Link
-            className={`${buttonVariants({ variant: "default" })} px-8 align-middle`}
+            className={`${buttonVariants({
+              variant: "default",
+            })} px-8 align-middle`}
             href={routes.manageFee}
           >
             <Wrench />
@@ -113,6 +141,7 @@ export default function Reserves() {
                 <TableHead className="text-center">Quantity</TableHead>
                 <TableHead className="text-center">Price</TableHead>
                 <TableHead className="text-center">Status</TableHead>
+                <TableHead className="text-center">Action</TableHead>
               </TableRow>
             </TableHeader>
             <TableBody>
@@ -158,8 +187,8 @@ export default function Reserves() {
                     (item) => item.ProductVariantSize?.Size?.name || "N/A"
                   );
 
-                  const quantities = limitedItems.map(
-                    (item) => String(item.quantity || 0)
+                  const quantities = limitedItems.map((item) =>
+                    String(item.quantity || 0)
                   );
 
                   const prices = limitedItems.map((item) => {
@@ -174,31 +203,39 @@ export default function Reserves() {
                   return (
                     <TableRow key={order.id}>
                       <TableCell>{order.orderNo}</TableCell>
-
                       <TableCell className="overflow-hidden whitespace-pre-line">
-                        {productNames.length > 0 ? productNames.join("\n") : "No items"}
-                        {hasMoreItems && `\n... +${items.length - maxItemsToShow} more`}
+                        {productNames.length > 0
+                          ? productNames.join("\n")
+                          : "No items"}
+                        {hasMoreItems &&
+                          `\n... +${items.length - maxItemsToShow} more`}
                       </TableCell>
-
                       <TableCell className="text-center whitespace-pre-line">
                         {sizes.join("\n")}
                         {hasMoreItems && "\n..."}
                       </TableCell>
-
                       <TableCell className="text-center whitespace-pre-line">
                         {quantities.join("\n")}
                         {hasMoreItems && "\n..."}
                       </TableCell>
-
                       <TableCell className="text-center whitespace-pre-line">
                         {prices.join("\n")}
                         {hasMoreItems && "\n..."}
                       </TableCell>
-
                       <TableCell className="text-center">
-                        <p className="py-1 w-full rounded font-bold text-card bg-rose-500 uppercase">
+                        <p className="py-1 w-full rounded font-bold uppercase text-white bg-rose-500">
                           {order.status}
                         </p>
+                      </TableCell>
+                      <TableCell className="text-center text-red-500/75">
+                        <Button
+                          variant="none"
+                          onClick={() => setCancelOrder(order.id)}
+                          className="hover:bg-muted px-5 py-1 border-[1px] border-red-500/75"
+                        >
+                          <CircleOff className="mr-1" />
+                          Cancel
+                        </Button>
                       </TableCell>
                     </TableRow>
                   );
@@ -206,7 +243,7 @@ export default function Reserves() {
               ) : (
                 <TableRow>
                   <TableCell
-                    colSpan={7}
+                    colSpan={8}
                     className="text-center align-middle h-[39rem] text-primary/50 text-lg font-thin tracking-wide"
                   >
                     No reserved orders found.
@@ -220,23 +257,37 @@ export default function Reserves() {
             <Pagination className="flex flex-col items-end">
               <PaginationContent>
                 {currentPage > 1 && (
-                  <PaginationPrevious onClick={() => setCurrentPage((prev) => prev - 1)} />
+                  <PaginationPrevious
+                    onClick={() => setCurrentPage((prev) => prev - 1)}
+                  />
                 )}
-                {Array.from({ length: totalPages }, (_, i) => i + 1).map((page) => (
-                  <PaginationItem key={page} active={page === currentPage}>
-                    <PaginationLink onClick={() => setCurrentPage(page)}>
-                      {page}
-                    </PaginationLink>
-                  </PaginationItem>
-                ))}
+                {Array.from({ length: totalPages }, (_, i) => i + 1).map(
+                  (page) => (
+                    <PaginationItem key={page} active={page === currentPage}>
+                      <PaginationLink onClick={() => setCurrentPage(page)}>
+                        {page}
+                      </PaginationLink>
+                    </PaginationItem>
+                  )
+                )}
                 {currentPage < totalPages && (
-                  <PaginationNext onClick={() => setCurrentPage((prev) => prev + 1)} />
+                  <PaginationNext
+                    onClick={() => setCurrentPage((prev) => prev + 1)}
+                  />
                 )}
               </PaginationContent>
             </Pagination>
           )}
         </div>
       </Card>
+      {cancelOrder && (
+        <CancelOrderDialog
+          orderNo={cancelOrder}
+          open={!!cancelOrder}
+          onClose={() => setCancelOrder(null)}
+          onConfirm={handleCancelConfirm}
+        />
+      )}
     </DashboardLayoutWrapper>
   );
 }

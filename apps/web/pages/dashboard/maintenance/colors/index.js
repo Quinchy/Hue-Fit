@@ -4,12 +4,39 @@ import DashboardLayoutWrapper from "@/components/ui/dashboard-layout";
 import { Button } from "@/components/ui/button";
 import { useRouter } from "next/router";
 import routes from "@/routes";
-import AddColorDialog from "./components/add-color";
-import EditColorDialog from "./components/edit-color";
-import { Table, TableHead, TableHeader, TableBody, TableCell, TableRow } from "@/components/ui/table";
-import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger, DropdownMenuGroup } from "@/components/ui/dropdown-menu";
-import { MoveLeft, ChevronDown, Pencil, X, CircleCheck, CircleAlert } from "lucide-react";
-import { Pagination, PaginationPrevious, PaginationContent, PaginationItem, PaginationNext, PaginationLink } from "@/components/ui/pagination";
+import AddColorDialog from "@/components/ui/maintenance/color/add-color";
+import EditColorDialog from "@/components/ui/maintenance/color/edit-color";
+import {
+  Table,
+  TableHead,
+  TableHeader,
+  TableBody,
+  TableCell,
+  TableRow,
+} from "@/components/ui/table";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+  DropdownMenuGroup,
+} from "@/components/ui/dropdown-menu";
+import {
+  MoveLeft,
+  ChevronDown,
+  Pencil,
+  X,
+  CircleCheck,
+  CircleAlert,
+} from "lucide-react";
+import {
+  Pagination,
+  PaginationPrevious,
+  PaginationContent,
+  PaginationItem,
+  PaginationNext,
+  PaginationLink,
+} from "@/components/ui/pagination";
 import Loading from "@/components/ui/loading";
 import { Skeleton } from "@/components/ui/skeleton";
 import { useState, useEffect } from "react";
@@ -29,11 +56,16 @@ export default function Colors() {
   const [debouncedSearchTerm, setDebouncedSearchTerm] = useState("");
   const [alert, setAlert] = useState({ message: "", type: "", title: "" });
 
-  const fetchColors = async (page = currentPage, search = debouncedSearchTerm) => {
+  const fetchColors = async (
+    page = currentPage,
+    search = debouncedSearchTerm
+  ) => {
     setLoadingNextPage(true);
     try {
       const response = await fetch(
-        `/api/maintenance/colors/get-colors?page=${page}&search=${encodeURIComponent(search)}`
+        `/api/maintenance/colors/get-colors?page=${page}&search=${encodeURIComponent(
+          search
+        )}`
       );
       const data = await response.json();
       setColors(data.colors || []);
@@ -133,7 +165,10 @@ export default function Colors() {
       <div className="flex justify-between items-center">
         <CardTitle className="text-4xl">Colors</CardTitle>
         <div className="flex gap-3 items-center">
-          <Button variant="outline" onClick={() => router.push(routes.maintenance)}>
+          <Button
+            variant="outline"
+            onClick={() => router.push(routes.maintenance)}
+          >
             <MoveLeft className="scale-125" />
             Back to Maintenance
           </Button>
@@ -157,88 +192,97 @@ export default function Colors() {
             </TableRow>
           </TableHeader>
           <TableBody>
-            {loadingNextPage
-              ? Array.from({ length: 13 }).map((_, index) => (
-                  <TableRow key={index}>
-                    <TableCell>
-                      <Skeleton className="h-[2.5rem] w-[10rem]" />
-                    </TableCell>
-                    <TableCell>
-                      <Skeleton className="h-[2.5rem] w-[10rem]" />
-                    </TableCell>
-                    <TableCell>
-                      <Skeleton className="h-[2.5rem] w-[10rem]" />
-                    </TableCell>
-                  </TableRow>
-                ))
-              : colors.length > 0
-              ? colors.map((color) => (
-                  <TableRow key={color.id}>
-                    <TableCell>{color.name}</TableCell>
-                    <TableCell>
-                      <div
-                        className="flex items-center gap-2 text-base font-medium"
-                        style={{ color: color.hexcode }}
-                      >
-                        <span
-                          className="w-7 h-7 rounded-sm"
-                          style={{ backgroundColor: color.hexcode }}
-                        ></span>
-                        {color.hexcode}
-                      </div>
-                    </TableCell>
-                    <TableCell>
-                      <DropdownMenu>
-                        <DropdownMenuTrigger asChild>
-                          <Button variant="outline" className="font-normal flex items-center gap-1">
-                            Action <ChevronDown className="scale-125" />
-                          </Button>
-                        </DropdownMenuTrigger>
-                        <DropdownMenuContent className="w-50">
-                          <DropdownMenuGroup>
-                            <DropdownMenuItem className="justify-center">
-                              <Button
-                                variant="none"
-                                onClick={() => handleEdit(color)}
-                                className="flex items-center gap-2"
-                              >
-                                <Pencil className="scale-125" />
-                                Edit
-                              </Button>
-                            </DropdownMenuItem>
-                          </DropdownMenuGroup>
-                        </DropdownMenuContent>
-                      </DropdownMenu>
-                    </TableCell>
-                  </TableRow>
-                ))
-              : (
-                <TableRow>
-                  <TableCell
-                    colSpan={3}
-                    className="text-center align-middle h-[43rem] text-primary/50 text-lg font-thin tracking-wide"
-                  >
-                    No colors found.
+            {loadingNextPage ? (
+              Array.from({ length: 13 }).map((_, index) => (
+                <TableRow key={index}>
+                  <TableCell>
+                    <Skeleton className="h-[2.5rem] w-[10rem]" />
+                  </TableCell>
+                  <TableCell>
+                    <Skeleton className="h-[2.5rem] w-[10rem]" />
+                  </TableCell>
+                  <TableCell>
+                    <Skeleton className="h-[2.5rem] w-[10rem]" />
                   </TableCell>
                 </TableRow>
-              )}
+              ))
+            ) : colors.length > 0 ? (
+              colors.map((color) => (
+                <TableRow key={color.id}>
+                  <TableCell>{color.name}</TableCell>
+                  <TableCell>
+                    <div
+                      className="flex items-center gap-2 text-base font-medium"
+                      style={{ color: color.hexcode }}
+                    >
+                      <span
+                        className="w-7 h-7 rounded-sm"
+                        style={{ backgroundColor: color.hexcode }}
+                      ></span>
+                      {color.hexcode}
+                    </div>
+                  </TableCell>
+                  <TableCell>
+                    <DropdownMenu>
+                      <DropdownMenuTrigger asChild>
+                        <Button
+                          variant="outline"
+                          className="font-normal flex items-center gap-1"
+                        >
+                          Action <ChevronDown className="scale-125" />
+                        </Button>
+                      </DropdownMenuTrigger>
+                      <DropdownMenuContent className="w-50">
+                        <DropdownMenuGroup>
+                          <DropdownMenuItem className="justify-center">
+                            <Button
+                              variant="none"
+                              onClick={() => handleEdit(color)}
+                              className="flex items-center gap-2"
+                            >
+                              <Pencil className="scale-125" />
+                              Edit
+                            </Button>
+                          </DropdownMenuItem>
+                        </DropdownMenuGroup>
+                      </DropdownMenuContent>
+                    </DropdownMenu>
+                  </TableCell>
+                </TableRow>
+              ))
+            ) : (
+              <TableRow>
+                <TableCell
+                  colSpan={3}
+                  className="text-center align-middle h-[43rem] text-primary/50 text-lg font-thin tracking-wide"
+                >
+                  No colors found.
+                </TableCell>
+              </TableRow>
+            )}
           </TableBody>
         </Table>
         {colors.length > 0 && (
           <Pagination className="flex flex-col items-end">
             <PaginationContent>
               {currentPage > 1 && (
-                <PaginationPrevious onClick={() => handlePageChange(currentPage - 1)} />
+                <PaginationPrevious
+                  onClick={() => handlePageChange(currentPage - 1)}
+                />
               )}
-              {Array.from({ length: totalPages }, (_, i) => i + 1).map((page) => (
-                <PaginationItem key={page} active={page === currentPage}>
-                  <PaginationLink onClick={() => handlePageChange(page)}>
-                    {page}
-                  </PaginationLink>
-                </PaginationItem>
-              ))}
+              {Array.from({ length: totalPages }, (_, i) => i + 1).map(
+                (page) => (
+                  <PaginationItem key={page} active={page === currentPage}>
+                    <PaginationLink onClick={() => handlePageChange(page)}>
+                      {page}
+                    </PaginationLink>
+                  </PaginationItem>
+                )
+              )}
               {currentPage < totalPages && (
-                <PaginationNext onClick={() => handlePageChange(currentPage + 1)} />
+                <PaginationNext
+                  onClick={() => handlePageChange(currentPage + 1)}
+                />
               )}
             </PaginationContent>
           </Pagination>
