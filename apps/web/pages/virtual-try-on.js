@@ -1,3 +1,4 @@
+// pages/virtual-try-on.js
 import React, { useRef, useState, useCallback, useEffect } from "react";
 import { useRouter } from "next/router";
 import * as tf from "@tensorflow/tfjs-core";
@@ -6,14 +7,14 @@ import "@tensorflow/tfjs-backend-webgl";
 import "@tensorflow/tfjs-backend-wasm";
 import "@tensorflow/tfjs-converter";
 import * as posedetection from "@tensorflow-models/pose-detection";
-import { RotateCcw, Camera as CameraIcon, CameraOff, Timer } from "lucide-react";
+import { SwitchCamera } from "lucide-react";
 
 // Set WASM paths if needed
 setWasmPaths("/wasm/");
 
 export default function VirtualTryOnPage() {
   const router = useRouter();
-  // Extract URL parameters.
+  // Extract both single and multiple PNG URL parameters.
   const { pngClotheURL, upperWearPng, lowerWearPng, outerWearPng, type, tag } = router.query;
 
   // Refs for HTML elements.
@@ -34,13 +35,10 @@ export default function VirtualTryOnPage() {
   const [isCameraReady, setIsCameraReady] = useState(false);
   const [statusMessage, setStatusMessage] = useState("");
   const [mounted, setMounted] = useState(false);
+  const [isPortrait, setIsPortrait] = useState(true);
   const [facingMode, setFacingMode] = useState("environment");
 
-  // UI controls state:
-  const [showUI, setShowUI] = useState(true);
-  const [snapshotDelay, setSnapshotDelay] = useState(0); // 0 means no delay
-  const [countdown, setCountdown] = useState(null); // current countdown number
-
+  // Mark the component as mounted.
   useEffect(() => {
     setMounted(true);
   }, []);
@@ -56,8 +54,10 @@ export default function VirtualTryOnPage() {
     tempCanvas.height = h;
     const tempCtx = tempCanvas.getContext("2d");
     tempCtx.drawImage(img, 0, 0);
+
     const imageData = tempCtx.getImageData(0, 0, w, h);
     const { data } = imageData;
+
     let top = h, left = w, right = 0, bottom = 0;
     for (let y = 0; y < h; y++) {
       for (let x = 0; x < w; x++) {
@@ -74,16 +74,30 @@ export default function VirtualTryOnPage() {
     if (right < left || bottom < top) {
       return { croppedImg: img, imageData };
     }
+
     const croppedWidth = right - left + 1;
     const croppedHeight = bottom - top + 1;
     const croppedCanvas = document.createElement("canvas");
     croppedCanvas.width = croppedWidth;
     croppedCanvas.height = croppedHeight;
     const croppedCtx = croppedCanvas.getContext("2d");
-    croppedCtx.drawImage(tempCanvas, left, top, croppedWidth, croppedHeight, 0, 0, croppedWidth, croppedHeight);
+
+    croppedCtx.drawImage(
+      tempCanvas,
+      left,
+      top,
+      croppedWidth,
+      croppedHeight,
+      0,
+      0,
+      croppedWidth,
+      croppedHeight
+    );
+
     const croppedImageData = croppedCtx.getImageData(0, 0, croppedWidth, croppedHeight);
     const croppedImg = new Image();
     croppedImg.src = croppedCanvas.toDataURL();
+
     return { croppedImg, imageData: croppedImageData };
   }
 
@@ -104,7 +118,9 @@ export default function VirtualTryOnPage() {
       };
       loadImage(upperWearPng, upperWearImageRef);
       loadImage(lowerWearPng, lowerWearImageRef);
-      if (outerWearPng) loadImage(outerWearPng, outerWearImageRef);
+      if (outerWearPng) {
+        loadImage(outerWearPng, outerWearImageRef);
+      }
     } else if (pngClotheURL) {
       const img = new Image();
       img.crossOrigin = "anonymous";
@@ -118,7 +134,7 @@ export default function VirtualTryOnPage() {
   }, [router.isReady, pngClotheURL, upperWearPng, lowerWearPng, outerWearPng]);
 
   /**
-   * Initialize pose detector with MoveNet.
+   * Initialize the pose detector with tf.js MoveNet.
    */
   const initializePoseDetector = async () => {
     try {
@@ -137,8 +153,8 @@ export default function VirtualTryOnPage() {
   };
 
   /**
-   * Compute overlay parameters.
-   * (This is a placeholder – replace with your full logic as needed.)
+   * Compute overlay parameters based on clothing type.
+   * (Replace this placeholder with your full overlay logic as needed.)
    */
   function computeOverlayParams(clothingType, scaleX, scaleY, keypoints, aspectRatio) {
     if (clothingType === "UPPERWEAR") {
@@ -236,7 +252,7 @@ export default function VirtualTryOnPage() {
   }
 
   /**
-   * Draw clothing overlay based on the detected pose.
+   * Draw clothing overlay based on the user's pose.
    */
   const renderClothingOverlay = useCallback(
     (poses, canvasContext) => {
@@ -245,17 +261,17 @@ export default function VirtualTryOnPage() {
       if (!keypointsArray || keypointsArray.length === 0) return;
 
       const kp = {
-        left_shoulder: keypointsArray.find(kp => kp.name === "left_shoulder" && kp.score > 0.5),
-        right_shoulder: keypointsArray.find(kp => kp.name === "right_shoulder" && kp.score > 0.5),
-        left_hip: keypointsArray.find(kp => kp.name === "left_hip" && kp.score > 0.5),
-        right_hip: keypointsArray.find(kp => kp.name === "right_hip" && kp.score > 0.5),
-        left_knee: keypointsArray.find(kp => kp.name === "left_knee" && kp.score > 0.5),
-        right_knee: keypointsArray.find(kp => kp.name === "right_knee" && kp.score > 0.5),
-        left_ankle: keypointsArray.find(kp => kp.name === "left_ankle" && kp.score > 0.5),
-        right_ankle: keypointsArray.find(kp => kp.name === "right_ankle" && kp.score > 0.5),
+        left_shoulder: keypointsArray.find((kp) => kp.name === "left_shoulder" && kp.score > 0.5),
+        right_shoulder: keypointsArray.find((kp) => kp.name === "right_shoulder" && kp.score > 0.5),
+        left_hip: keypointsArray.find((kp) => kp.name === "left_hip" && kp.score > 0.5),
+        right_hip: keypointsArray.find((kp) => kp.name === "right_hip" && kp.score > 0.5),
+        left_knee: keypointsArray.find((kp) => kp.name === "left_knee" && kp.score > 0.5),
+        right_knee: keypointsArray.find((kp) => kp.name === "right_knee" && kp.score > 0.5),
+        left_ankle: keypointsArray.find((kp) => kp.name === "left_ankle" && kp.score > 0.5),
+        right_ankle: keypointsArray.find((kp) => kp.name === "right_ankle" && kp.score > 0.5),
       };
 
-      // Calculate a fit percentage.
+      // Compute a fit percentage based on the average confidence of required keypoints.
       let requiredKeypointNames = [];
       const multiOverlayMode = upperWearPng && lowerWearPng;
       if (multiOverlayMode) {
@@ -277,10 +293,15 @@ export default function VirtualTryOnPage() {
           }
         }
       }
-      const relevantKps = requiredKeypointNames.map(name => kp[name]).filter(k => k != null);
-      const fitPercentage = (relevantKps.length > 0)
-        ? Math.round((relevantKps.reduce((acc, k) => acc + k.score, 0) / relevantKps.length) * 100)
-        : 0;
+      const relevantKps = requiredKeypointNames
+        .map((name) => kp[name])
+        .filter((k) => k != null);
+      const fitPercentage =
+        relevantKps.length > 0
+          ? Math.round(
+              (relevantKps.reduce((acc, k) => acc + k.score, 0) / relevantKps.length) * 100
+            )
+          : 0;
 
       const videoWidth = videoElementRef.current.videoWidth;
       const videoHeight = videoElementRef.current.videoHeight;
@@ -289,7 +310,7 @@ export default function VirtualTryOnPage() {
       const scaleX = canvasWidth / videoWidth;
       const scaleY = canvasHeight / videoHeight;
 
-      // Clear canvas.
+      // Clear the canvas.
       canvasContext.clearRect(0, 0, canvasWidth, canvasHeight);
 
       if (multiOverlayMode) {
@@ -344,7 +365,7 @@ export default function VirtualTryOnPage() {
             outerParams.overlayHeight
           );
         }
-        setStatusMessage(`Clothing applied. All layers. Fit: ${fitPercentage}%`);
+        setStatusMessage(`Clothing applied. Display mode: All layers. Fit: ${fitPercentage}%`);
       } else {
         if (!clothingImageElementRef.current) {
           setStatusMessage("No clothing image loaded.");
@@ -353,7 +374,7 @@ export default function VirtualTryOnPage() {
         let overlayX = 0, overlayY = 0, overlayWidth = 0, overlayHeight = 0;
         if (type === "UPPERWEAR" || type === "OUTERWEAR") {
           if (!kp.left_shoulder || !kp.right_shoulder) {
-            setStatusMessage("Upper body not fully detected. Ensure proper lighting and frame.");
+            setStatusMessage("Upper body not fully detected. Move into frame and ensure good lighting.");
             return;
           }
           const leftShoulderX = kp.left_shoulder.x * scaleX;
@@ -383,7 +404,7 @@ export default function VirtualTryOnPage() {
           overlayY = shoulderCenterY - overlayHeight * 0.12 - 30;
         } else if (type === "LOWERWEAR") {
           if (!kp.left_hip || !kp.right_hip) {
-            setStatusMessage("Lower body not fully detected. Move back to show hips.");
+            setStatusMessage("Lower body not fully detected (hips). Please move back to show hips.");
             return;
           }
           const leftHipX = kp.left_hip.x * scaleX;
@@ -395,7 +416,7 @@ export default function VirtualTryOnPage() {
           let lowerPointY = null;
           if (tag === "SHORTS") {
             if (!kp.left_knee || !kp.right_knee) {
-              setStatusMessage("Knees not detected. Ensure full lower body is in frame.");
+              setStatusMessage("Knees not detected. Move back to show full lower body.");
               return;
             }
             const leftKneeY = kp.left_knee.y * scaleY;
@@ -403,7 +424,7 @@ export default function VirtualTryOnPage() {
             lowerPointY = (leftKneeY + rightKneeY) / 2;
           } else {
             if (!kp.left_ankle || !kp.right_ankle) {
-              setStatusMessage("Ankles not detected. Ensure full lower body is visible.");
+              setStatusMessage("Ankles not detected. Move back to show full lower body.");
               return;
             }
             const leftAnkleY = kp.left_ankle.y * scaleY;
@@ -433,7 +454,12 @@ export default function VirtualTryOnPage() {
    * Perform pose detection and update the overlay.
    */
   const performPoseDetection = useCallback(async () => {
-    if (!videoElementRef.current || !poseDetector || !canvasElementRef.current || !isCameraReady) {
+    if (
+      !videoElementRef.current ||
+      !poseDetector ||
+      !canvasElementRef.current ||
+      !isCameraReady
+    ) {
       if (!isCameraReady) setStatusMessage("Waiting for camera...");
       return;
     }
@@ -441,11 +467,16 @@ export default function VirtualTryOnPage() {
       const canvasElement = canvasElementRef.current;
       const canvasContext = canvasElement.getContext("2d", { alpha: true });
       canvasContext.clearRect(0, 0, canvasElement.width, canvasElement.height);
-      const detectedPoses = await poseDetector.estimatePoses(videoElementRef.current, { flipHorizontal: false });
+
+      const detectedPoses = await poseDetector.estimatePoses(videoElementRef.current, {
+        flipHorizontal: false,
+      });
+
       if (!detectedPoses || detectedPoses.length === 0) {
         setStatusMessage("No human detected. Please step into frame.");
         return;
       }
+
       renderClothingOverlay(detectedPoses, canvasContext);
     } catch (error) {
       console.error("Error in pose detection:", error);
@@ -462,10 +493,12 @@ export default function VirtualTryOnPage() {
       try {
         if (videoElementRef.current && videoElementRef.current.srcObject) {
           const tracks = videoElementRef.current.srcObject.getTracks();
-          tracks.forEach(track => track.stop());
+          tracks.forEach((track) => track.stop());
         }
         const stream = await navigator.mediaDevices.getUserMedia({
-          video: { facingMode: { ideal: facingMode } },
+          video: {
+            facingMode: { ideal: facingMode },
+          },
           audio: false,
         });
         videoElementRef.current.srcObject = stream;
@@ -502,63 +535,11 @@ export default function VirtualTryOnPage() {
   }, [isCameraReady, poseDetector, performPoseDetection]);
 
   /**
-   * Snapshot function: combine video and canvas into one image.
-   */
-  const takeSnapshot = () => {
-    if (!videoElementRef.current || !canvasElementRef.current) return;
-    // Create an offscreen canvas to merge video and overlay.
-    const offscreenCanvas = document.createElement("canvas");
-    const width = videoElementRef.current.videoWidth;
-    const height = videoElementRef.current.videoHeight;
-    offscreenCanvas.width = width;
-    offscreenCanvas.height = height;
-    const ctx = offscreenCanvas.getContext("2d");
-    // Draw video frame.
-    ctx.drawImage(videoElementRef.current, 0, 0, width, height);
-    // Draw overlay canvas on top.
-    ctx.drawImage(canvasElementRef.current, 0, 0, width, height);
-    // Get the image data URL.
-    const imageDataURL = offscreenCanvas.toDataURL("image/png");
-    // Open snapshot in a new window (or you could trigger a download).
-    const win = window.open();
-    if (win) win.document.write(`<img src="${imageDataURL}" alt="Snapshot" />`);
-  };
-
-  /**
-   * Handle snapshot with optional timer.
-   */
-  const handleSnapshot = () => {
-    if (snapshotDelay > 0) {
-      // Start countdown.
-      let count = snapshotDelay;
-      setCountdown(count);
-      const interval = setInterval(() => {
-        count -= 1;
-        setCountdown(count);
-        if (count <= 0) {
-          clearInterval(interval);
-          setCountdown(null);
-          takeSnapshot();
-        }
-      }, 1000);
-    } else {
-      takeSnapshot();
-    }
-  };
-
-  /**
-   * Toggle UI controls (hide/unhide labels and buttons).
-   */
-  const toggleUI = () => {
-    setShowUI(!showUI);
-  };
-
-  /**
    * Toggle between front and back cameras.
    */
   const toggleCamera = () => {
     setIsCameraReady(false);
-    setFacingMode(prev => (prev === "user" ? "environment" : "user"));
+    setFacingMode((prev) => (prev === "user" ? "environment" : "user"));
   };
 
   /**
@@ -566,8 +547,6 @@ export default function VirtualTryOnPage() {
    */
   useEffect(() => {
     const handleOrientationChange = () => {
-      // In a browser, use window dimensions.
-      // (Adjust logic if needed for mobile.)
       setIsPortrait(window.innerHeight > window.innerWidth);
     };
     handleOrientationChange();
@@ -589,44 +568,10 @@ export default function VirtualTryOnPage() {
       <div style={styles.cameraContainer}>
         <video ref={videoElementRef} style={styles.video} muted playsInline autoPlay />
         <canvas ref={canvasElementRef} style={styles.canvas} />
-        {showUI && (
-          <>
-            {/* Timer indicator at top center */}
-            {countdown !== null && (
-              <div style={styles.timerIndicator}>
-                <span style={styles.timerText}>{countdown}</span>
-              </div>
-            )}
-            {/* Bottom center: Switch camera icon */}
-            <div style={styles.bottomControls}>
-              <button style={styles.iconButton} onClick={toggleCamera}>
-                <RotateCcw size={32} color="#fff" />
-              </button>
-              {/* Snapshot button */}
-              <button style={styles.snapshotButton} onClick={handleSnapshot}>
-                <CameraIcon size={32} color="#fff" />
-              </button>
-              {/* Timer selection */}
-              <div style={styles.timerOptions}>
-                <button style={styles.timerOptionButton} onClick={() => setSnapshotDelay(10)}>
-                  10s
-                </button>
-                <button style={styles.timerOptionButton} onClick={() => setSnapshotDelay(15)}>
-                  15s
-                </button>
-                <button style={styles.timerOptionButton} onClick={() => setSnapshotDelay(20)}>
-                  20s
-                </button>
-              </div>
-            </div>
-            {/* UI toggle button (e.g., top right) */}
-            <button style={styles.uiToggleButton} onClick={toggleUI}>
-              {showUI ? <CameraOff size={24} color="#fff" /> : <CameraIcon size={24} color="#fff" />}
-            </button>
-          </>
-        )}
-        {/* Status message (if UI is shown) */}
-        {showUI && <div style={styles.statusMessage}>{statusMessage}</div>}
+        <button style={styles.toggleButton} onClick={toggleCamera}>
+          <SwitchCamera size={24} color="#fff" />
+        </button>
+        <div style={styles.statusMessage}>{statusMessage}</div>
       </div>
     </div>
   );
@@ -678,69 +623,16 @@ const styles = {
     maxWidth: "90%",
     textAlign: "center",
   },
-  bottomControls: {
-    position: "absolute",
-    bottom: "5%",
-    left: "50%",
-    transform: "translateX(-50%)",
-    display: "flex",
-    flexDirection: "row",
-    alignItems: "center",
-    zIndex: 4,
-    gap: "10px",
-  },
-  iconButton: {
-    backgroundColor: "rgba(0,0,0,0.7)",
-    border: "none",
-    borderRadius: "50%",
-    padding: "10px",
-    cursor: "pointer",
-  },
-  snapshotButton: {
-    backgroundColor: "rgba(0,0,0,0.7)",
-    border: "none",
-    borderRadius: "50%",
-    padding: "10px",
-    cursor: "pointer",
-  },
-  timerOptions: {
-    display: "flex",
-    flexDirection: "row",
-    gap: "5px",
-  },
-  timerOptionButton: {
-    backgroundColor: "rgba(0,0,0,0.7)",
-    border: "none",
-    borderRadius: "5px",
-    padding: "5px 10px",
-    color: "#fff",
-    cursor: "pointer",
-    fontSize: "14px",
-  },
-  timerIndicator: {
-    position: "absolute",
-    top: "5%",
-    left: "50%",
-    transform: "translateX(-50%)",
-    backgroundColor: "rgba(0,0,0,0.7)",
-    padding: "5px 10px",
-    borderRadius: "5px",
-    zIndex: 5,
-  },
-  timerText: {
-    color: "#fff",
-    fontSize: "24px",
-    fontWeight: "bold",
-  },
-  uiToggleButton: {
+  toggleButton: {
     position: "absolute",
     top: "5%",
     right: "5%",
     backgroundColor: "rgba(0,0,0,0.7)",
+    color: "#fff",
     border: "none",
-    borderRadius: "50%",
-    padding: "8px",
-    zIndex: 6,
+    padding: "10px 15px",
+    borderRadius: "5px",
+    zIndex: 4,
     cursor: "pointer",
   },
 };
