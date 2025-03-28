@@ -81,7 +81,6 @@ const ProfileSettingsScreen = () => {
     try {
       setLoading(true);
       const storedUserId = await AsyncStorage.getItem("userId");
-      console.log("Stored User ID:", storedUserId); // Debugging line
       if (storedUserId) {
         const response = await fetch(
           `${EXPO_PUBLIC_API_URL}/api/mobile/profile/get-user`,
@@ -128,12 +127,15 @@ const ProfileSettingsScreen = () => {
     }
   };
 
+  // Updated tabs array with 4 tabs, including "Reserved"
   const tabs = [
     { name: "Pending", icon: MonitorCog },
     { name: "Processing", icon: Package },
     { name: "Delivering", icon: Truck },
+    { name: "Reserved", icon: Archive },
   ];
 
+  // Navigate to Reserved screen or OrderTransactionScreen based on tab name
   const handleNavigate = (tabName) => {
     navigation.navigate("OrderTransactionScreen", { initialTab: tabName });
   };
@@ -175,11 +177,16 @@ const ProfileSettingsScreen = () => {
           {loading ? (
             <View style={styles.userInfoContainer}>
               <View style={[styles.profileImage, styles.skeleton]} />
-              <View style={[styles.skeletonBar, { width: 140, height: 20 }]} />
               <View
                 style={[
                   styles.skeletonBar,
-                  { width: 100, height: 16, marginTop: 4 },
+                  { width: 140, height: 20, marginTop: 3 },
+                ]}
+              />
+              <View
+                style={[
+                  styles.skeletonBar,
+                  { width: 100, height: 14, marginTop: 4 },
                 ]}
               />
             </View>
@@ -207,7 +214,7 @@ const ProfileSettingsScreen = () => {
             )
           )}
 
-          {/* Order Tabs */}
+          {/* Tabs Section */}
           <View style={styles.tabsContainer}>
             {tabs.map(({ name, icon: IconComponent }) => (
               <Pressable
@@ -222,7 +229,7 @@ const ProfileSettingsScreen = () => {
                 ]}
               >
                 <IconComponent
-                  size={24}
+                  size={20}
                   stroke={theme.colors.white}
                   strokeWidth={2}
                 />
@@ -233,7 +240,7 @@ const ProfileSettingsScreen = () => {
             ))}
           </View>
 
-          {/* Settings Options using AnimatedPressable */}
+          {/* Settings Options */}
           <GradientCard
             style={[
               styles.settingsCard,
@@ -244,7 +251,7 @@ const ProfileSettingsScreen = () => {
               onPress={() => navigation.navigate("EditProfile")}
               style={styles.menuItem}
             >
-              <Pencil size={24} stroke={theme.colors.white} strokeWidth={2} />
+              <Pencil size={15} stroke={theme.colors.white} strokeWidth={2} />
               <Text style={[styles.menuText, { color: theme.colors.white }]}>
                 Edit Profile
               </Text>
@@ -253,7 +260,7 @@ const ProfileSettingsScreen = () => {
               onPress={() => navigation.navigate("OrderHistory")}
               style={styles.menuItem}
             >
-              <Archive size={24} stroke={theme.colors.white} strokeWidth={2} />
+              <Archive size={15} stroke={theme.colors.white} strokeWidth={2} />
               <Text style={[styles.menuText, { color: theme.colors.white }]}>
                 Order History
               </Text>
@@ -262,13 +269,13 @@ const ProfileSettingsScreen = () => {
               onPress={() => navigation.navigate("GeneratedOutfitList")}
               style={styles.menuItem}
             >
-              <Shirt size={24} stroke={theme.colors.white} strokeWidth={2} />
+              <Shirt size={15} stroke={theme.colors.white} strokeWidth={2} />
               <Text style={[styles.menuText, { color: theme.colors.white }]}>
                 Generated Outfits
               </Text>
             </AnimatedPressable>
             <AnimatedPressable onPress={handleLogout} style={styles.menuItem}>
-              <LogOut size={24} stroke={theme.colors.white} strokeWidth={2} />
+              <LogOut size={15} stroke={theme.colors.white} strokeWidth={2} />
               <Text style={[styles.menuText, { color: theme.colors.white }]}>
                 Log Out
               </Text>
@@ -286,9 +293,9 @@ const styles = StyleSheet.create({
     flexDirection: "row",
     justifyContent: "space-between",
     alignItems: "center",
-    paddingHorizontal: 25,
-    marginTop: 40,
-    marginBottom: 15,
+    paddingHorizontal: 15,
+    marginTop: 50,
+    marginBottom: 20,
   },
   headerTitle: {
     fontSize: 28,
@@ -300,13 +307,13 @@ const styles = StyleSheet.create({
   },
   userInfoContainer: {
     alignItems: "center",
-    marginBottom: 30,
+    marginBottom: 20,
   },
   profileImage: {
     width: 100,
     height: 100,
     borderRadius: 50,
-    marginBottom: 10,
+    marginBottom: 5,
   },
   name: {
     fontSize: 18,
@@ -320,18 +327,19 @@ const styles = StyleSheet.create({
     flexDirection: "row",
     justifyContent: "space-between",
     width: "100%",
-    marginBottom: 30,
-    paddingHorizontal: 15,
+    marginBottom: 20,
+    paddingHorizontal: 10,
   },
   tab: {
-    padding: 15,
-    borderRadius: 10,
+    paddingHorizontal: 10,
+    paddingVertical: 15,
+    borderRadius: 5,
     alignItems: "center",
     flex: 1,
-    marginHorizontal: 5,
+    marginHorizontal: 2,
   },
   tabText: {
-    marginTop: 8,
+    marginTop: 5,
     fontSize: 14,
   },
   settingsCard: {
@@ -344,9 +352,9 @@ const styles = StyleSheet.create({
     flexDirection: "row",
     alignItems: "center",
     paddingVertical: 14,
-    borderRadius: 10,
+    borderRadius: 5,
     paddingHorizontal: 10,
-    marginVertical: 5,
+    marginVertical: 2,
   },
   menuText: {
     fontSize: 16,
@@ -358,7 +366,7 @@ const styles = StyleSheet.create({
   },
   skeletonBar: {
     borderRadius: 4,
-    marginTop: 8,
+    backgroundColor: "rgba(255,255,255,0.2)",
   },
 });
 

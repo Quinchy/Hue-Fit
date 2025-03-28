@@ -483,7 +483,7 @@ const CartScreen = ({ navigation, route }) => {
                 </VStack>
               ))
             ) : (
-              <VStack alignItems="center" justifyContent="center" marginTop={75}>
+              <VStack alignItems="center" justifyContent="center" marginTop={125}>
                 <Image
                   source={require('../../assets/empty-cart.png')}
                   style={styles.emptyCartImage}
@@ -656,7 +656,7 @@ const styles = StyleSheet.create({
   cartTitle: {
     fontSize: 28,
     fontWeight: 'bold',
-    paddingTop: 30,
+    paddingTop: 35,
   },
   shopGroup: {
     flexDirection: 'column',
@@ -725,13 +725,13 @@ const styles = StyleSheet.create({
   emptyCartImage: {
     width: 150,
     height: 150,
-    marginBottom: 20,
+    marginBottom: 10,
   },
   emptyCartTitle: {
-    fontSize: 20,
+    fontSize: 24,
     fontWeight: 'bold',
     textAlign: 'center',
-    marginBottom: 10,
+    marginBottom: 5,
   },
   emptyCartSubtitle: {
     fontSize: 14,

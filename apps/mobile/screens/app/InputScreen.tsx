@@ -239,7 +239,7 @@ const InputScreen: React.FC<any> = ({ navigation }) => {
 
   return (
     <ScrollView style={{ backgroundColor: theme.colors.darkGrey }}>
-      <View style={{ marginTop: 45, marginLeft: 15, marginBottom: 20 }}>
+      <View style={{ marginTop: 50, marginLeft: 15, marginBottom: 10 }}>
         <Text fontSize={28} fontWeight="bold" color={theme.colors.white}>
           Generate Outfit
         </Text>
@@ -258,7 +258,7 @@ const InputScreen: React.FC<any> = ({ navigation }) => {
         <View>
           <Text fontSize="lg" fontWeight="bold" color={theme.colors.white} mt={4}>
             Outfit Style{" "}
-            <Asterisk size={12} color={theme.colors.greyWhite} style={{ marginLeft: 4, marginTop: 2 }} />
+            <Asterisk size={12} color={theme.colors.greyWhite} style={{ marginLeft: 2, marginTop: 2 }} />
           </Text>
           <Text fontSize="md" color={theme.colors.greyWhite} fontWeight="light">
             Select a fashion style and generate outfit.
@@ -295,7 +295,7 @@ const styles = StyleSheet.create({
     textAlign: "center",
   },
   cardContainer: {
-    marginHorizontal: 15,
+    marginHorizontal: 12,
     marginBottom: 20,
     borderRadius: 8,
     padding: 4,
