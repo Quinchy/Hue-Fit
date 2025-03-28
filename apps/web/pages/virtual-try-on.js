@@ -14,24 +14,19 @@ setWasmPaths("/wasm/");
 
 export default function VirtualTryOnPage() {
   const router = useRouter();
-  // Extract both single and multiple PNG URL parameters.
   const { pngClotheURL, upperWearPng, lowerWearPng, outerWearPng, type, tag } =
     router.query;
 
-  // Refs for HTML elements.
   const videoElementRef = useRef(null);
   const canvasElementRef = useRef(null);
   const containerRef = useRef(null);
 
-  // Refs for clothing images (for multi-overlay mode).
   const upperWearImageRef = useRef(null);
   const lowerWearImageRef = useRef(null);
   const outerWearImageRef = useRef(null);
-  // Fallback for single overlay mode.
   const clothingImageElementRef = useRef(null);
   const clothingPixelDataRef = useRef(null);
 
-  // State for pose detector, camera status, etc.
   const [poseDetector, setPoseDetector] = useState(null);
   const [isCameraReady, setIsCameraReady] = useState(false);
   const [statusMessage, setStatusMessage] = useState("");
@@ -39,16 +34,13 @@ export default function VirtualTryOnPage() {
   const [isPortrait, setIsPortrait] = useState(true);
   const [facingMode, setFacingMode] = useState("environment");
 
-  // Mark the component as mounted.
   useEffect(() => {
     setMounted(true);
   }, []);
 
   // Disable scrolling and zooming
   useEffect(() => {
-    // Disable scrolling
     document.body.style.overflow = "hidden";
-    // Prevent pinch-zoom or double-tap zoom
     document.addEventListener(
       "touchmove",
       (e) => {
@@ -58,12 +50,8 @@ export default function VirtualTryOnPage() {
       },
       { passive: false }
     );
-    // Optionally, set meta viewport if you can inject it.
   }, []);
 
-  /**
-   * Crop transparent edges from a PNG image.
-   */
   function cropTransparentImage(img) {
     const w = img.naturalWidth;
     const h = img.naturalHeight;
@@ -72,10 +60,8 @@ export default function VirtualTryOnPage() {
     tempCanvas.height = h;
     const tempCtx = tempCanvas.getContext("2d");
     tempCtx.drawImage(img, 0, 0);
-
     const imageData = tempCtx.getImageData(0, 0, w, h);
     const { data } = imageData;
-
     let top = h,
       left = w,
       right = 0,
@@ -95,14 +81,12 @@ export default function VirtualTryOnPage() {
     if (right < left || bottom < top) {
       return { croppedImg: img, imageData };
     }
-
     const croppedWidth = right - left + 1;
     const croppedHeight = bottom - top + 1;
     const croppedCanvas = document.createElement("canvas");
     croppedCanvas.width = croppedWidth;
     croppedCanvas.height = croppedHeight;
     const croppedCtx = croppedCanvas.getContext("2d");
-
     croppedCtx.drawImage(
       tempCanvas,
       left,
@@ -114,7 +98,6 @@ export default function VirtualTryOnPage() {
       croppedWidth,
       croppedHeight
     );
-
     const croppedImageData = croppedCtx.getImageData(
       0,
       0,
@@ -123,13 +106,9 @@ export default function VirtualTryOnPage() {
     );
     const croppedImg = new Image();
     croppedImg.src = croppedCanvas.toDataURL();
-
     return { croppedImg, imageData: croppedImageData };
   }
 
-  /**
-   * Load clothing PNG(s) once the URLs are available.
-   */
   useEffect(() => {
     if (!router.isReady) return;
     if (upperWearPng && lowerWearPng) {
@@ -159,9 +138,6 @@ export default function VirtualTryOnPage() {
     }
   }, [router.isReady, pngClotheURL, upperWearPng, lowerWearPng, outerWearPng]);
 
-  /**
-   * Initialize the pose detector with tf.js MoveNet.
-   */
   const initializePoseDetector = async () => {
     try {
       await tf.setBackend("wasm");
@@ -183,9 +159,6 @@ export default function VirtualTryOnPage() {
     }
   };
 
-  /**
-   * Compute overlay parameters based on clothing type.
-   */
   function computeOverlayParams(
     clothingType,
     scaleX,
@@ -293,9 +266,6 @@ export default function VirtualTryOnPage() {
     return null;
   }
 
-  /**
-   * Draw clothing overlay based on the user's pose.
-   */
   const renderClothingOverlay = useCallback(
     (poses, canvasContext) => {
       if (!poses || poses.length === 0) return;
@@ -329,7 +299,6 @@ export default function VirtualTryOnPage() {
         ),
       };
 
-      // Compute a fit percentage based on the average confidence of required keypoints.
       let requiredKeypointNames = [];
       const multiOverlayMode = upperWearPng && lowerWearPng;
       if (multiOverlayMode) {
@@ -380,7 +349,6 @@ export default function VirtualTryOnPage() {
       const scaleX = canvasWidth / videoWidth;
       const scaleY = canvasHeight / videoHeight;
 
-      // Clear the canvas.
       canvasContext.clearRect(0, 0, canvasWidth, canvasHeight);
 
       if (multiOverlayMode) {
@@ -579,10 +547,6 @@ export default function VirtualTryOnPage() {
     [type, tag, upperWearPng, outerWearPng]
   );
 
-  /**
-   * Take a snapshot of both the user video and the virtual clothing overlay and send it to the native app.
-   * In a React Native Expo WebView, we use window.ReactNativeWebView.postMessage to send the Base64 image data.
-   */
   const takeSnapshot = () => {
     const video = videoElementRef.current;
     const overlayCanvas = canvasElementRef.current;
@@ -590,16 +554,11 @@ export default function VirtualTryOnPage() {
       setStatusMessage("Video or overlay not available.");
       return;
     }
-
-    // Create an offscreen canvas matching the overlay dimensions.
     const snapshotCanvas = document.createElement("canvas");
     snapshotCanvas.width = overlayCanvas.width;
     snapshotCanvas.height = overlayCanvas.height;
     const ctx = snapshotCanvas.getContext("2d");
-
-    // Draw the current video frame.
     ctx.drawImage(video, 0, 0, snapshotCanvas.width, snapshotCanvas.height);
-    // Draw the overlay on top.
     ctx.drawImage(
       overlayCanvas,
       0,
@@ -607,26 +566,16 @@ export default function VirtualTryOnPage() {
       snapshotCanvas.width,
       snapshotCanvas.height
     );
-
-    // Convert the result to a Base64 data URL.
     const imageDataUrl = snapshotCanvas.toDataURL("image/png");
-
-    // Send the image data to the native side via postMessage.
     const message = JSON.stringify({
       type: "SAVE_SNAPSHOT",
       data: imageDataUrl,
     });
-    if (window.ReactNativeWebView && window.ReactNativeWebView.postMessage) {
-      window.ReactNativeWebView.postMessage(message);
-      setStatusMessage("Snapshot sent for saving!");
-    } else {
-      setStatusMessage("Native saving not available.");
-    }
+    // Send the image data to the native side.
+    window.ReactNativeWebView.postMessage(message);
+    setStatusMessage("Snapshot sent for saving!");
   };
 
-  /**
-   * Perform pose detection and update the overlay.
-   */
   const performPoseDetection = useCallback(async () => {
     if (
       !videoElementRef.current ||
@@ -641,17 +590,14 @@ export default function VirtualTryOnPage() {
       const canvasElement = canvasElementRef.current;
       const canvasContext = canvasElement.getContext("2d", { alpha: true });
       canvasContext.clearRect(0, 0, canvasElement.width, canvasElement.height);
-
       const detectedPoses = await poseDetector.estimatePoses(
         videoElementRef.current,
         { flipHorizontal: false }
       );
-
       if (!detectedPoses || detectedPoses.length === 0) {
         setStatusMessage("No human detected. Please step into frame.");
         return;
       }
-
       renderClothingOverlay(detectedPoses, canvasContext);
     } catch (error) {
       console.error("Error in pose detection:", error);
@@ -659,9 +605,6 @@ export default function VirtualTryOnPage() {
     }
   }, [isCameraReady, poseDetector, renderClothingOverlay]);
 
-  /**
-   * Initialize camera stream whenever facingMode changes.
-   */
   useEffect(() => {
     const initCameraStream = async () => {
       setIsCameraReady(false);
@@ -696,9 +639,6 @@ export default function VirtualTryOnPage() {
     initCameraStream();
   }, [facingMode]);
 
-  /**
-   * Start the pose detection loop using setInterval (30 FPS).
-   */
   useEffect(() => {
     let detectionInterval;
     if (isCameraReady && poseDetector) {
@@ -711,17 +651,11 @@ export default function VirtualTryOnPage() {
     };
   }, [isCameraReady, poseDetector, performPoseDetection]);
 
-  /**
-   * Toggle between front and back cameras.
-   */
   const toggleCamera = () => {
     setIsCameraReady(false);
     setFacingMode((prev) => (prev === "user" ? "environment" : "user"));
   };
 
-  /**
-   * Handle device orientation changes.
-   */
   useEffect(() => {
     const handleOrientationChange = () => {
       setIsPortrait(window.innerHeight > window.innerWidth);
@@ -731,9 +665,6 @@ export default function VirtualTryOnPage() {
     return () => window.removeEventListener("resize", handleOrientationChange);
   }, []);
 
-  /**
-   * Initialize pose detector on mount.
-   */
   useEffect(() => {
     initializePoseDetector();
   }, []);
@@ -754,7 +685,6 @@ export default function VirtualTryOnPage() {
         <button style={styles.toggleButton} onClick={toggleCamera}>
           <SwitchCamera size={24} color="#fff" />
         </button>
-        {/* Centered snapshot button styled as a camera shutter */}
         <button style={styles.snapshotButton} onClick={takeSnapshot}>
           <Camera size={28} color="#000" />
         </button>
