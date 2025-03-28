@@ -7,7 +7,7 @@ import "@tensorflow/tfjs-backend-webgl";
 import "@tensorflow/tfjs-backend-wasm";
 import "@tensorflow/tfjs-converter";
 import * as posedetection from "@tensorflow-models/pose-detection";
-import { SwitchCamera } from "lucide-react";
+import { SwitchCamera, Camera } from "lucide-react";
 
 // Set WASM paths if needed
 setWasmPaths("/wasm/");
@@ -563,7 +563,7 @@ export default function VirtualTryOnPage() {
   );
 
   /**
-   * Take a snapshot of both the user video and the virtual clothing overlay.
+   * Take a snapshot of both the user video and the virtual clothing overlay and trigger a download.
    */
   const takeSnapshot = () => {
     const video = videoElementRef.current;
@@ -593,11 +593,15 @@ export default function VirtualTryOnPage() {
     // Convert the result to a data URL.
     const imageDataUrl = snapshotCanvas.toDataURL("image/png");
 
-    // Open the snapshot in a new tab.
-    const newTab = window.open();
-    newTab.document.body.innerHTML = `<img src="${imageDataUrl}" alt="Snapshot" />`;
+    // Create a temporary anchor element and trigger the download.
+    const link = document.createElement("a");
+    link.href = imageDataUrl;
+    link.download = "virtual-try-on-snapshot.png";
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
 
-    setStatusMessage("Snapshot taken!");
+    setStatusMessage("Snapshot saved to device!");
   };
 
   /**
@@ -734,9 +738,9 @@ export default function VirtualTryOnPage() {
         <button style={styles.toggleButton} onClick={toggleCamera}>
           <SwitchCamera size={24} color="#fff" />
         </button>
-        {/* Snapshot button added here */}
+        {/* Centered snapshot button styled as a camera shutter */}
         <button style={styles.snapshotButton} onClick={takeSnapshot}>
-          Take Snapshot
+          <Camera size={28} color="#000" />
         </button>
         <div style={styles.statusMessage}>{statusMessage}</div>
       </div>
@@ -769,8 +773,8 @@ const styles = {
   },
   canvas: {
     position: "absolute",
-    top: "0",
-    left: "0",
+    top: 0,
+    left: 0,
     zIndex: 2,
     width: "100%",
     height: "100%",
@@ -805,13 +809,18 @@ const styles = {
   snapshotButton: {
     position: "absolute",
     bottom: "5%",
-    right: "5%",
-    backgroundColor: "rgba(0,0,0,0.7)",
-    color: "#fff",
+    left: "50%",
+    transform: "translateX(-50%)",
+    width: "60px",
+    height: "60px",
+    borderRadius: "50%",
+    backgroundColor: "rgba(255,255,255,0.8)",
     border: "none",
-    padding: "10px 15px",
-    borderRadius: "5px",
-    zIndex: 4,
+    display: "flex",
+    alignItems: "center",
+    justifyContent: "center",
     cursor: "pointer",
+    boxShadow: "0px 2px 6px rgba(0,0,0,0.3)",
+    zIndex: 4,
   },
 };
