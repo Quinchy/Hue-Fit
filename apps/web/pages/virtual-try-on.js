@@ -44,6 +44,23 @@ export default function VirtualTryOnPage() {
     setMounted(true);
   }, []);
 
+  // Disable scrolling and zooming
+  useEffect(() => {
+    // Disable scrolling
+    document.body.style.overflow = "hidden";
+    // Prevent pinch-zoom or double-tap zoom
+    document.addEventListener(
+      "touchmove",
+      (e) => {
+        if (e.scale !== 1) {
+          e.preventDefault();
+        }
+      },
+      { passive: false }
+    );
+    // Optionally, set meta viewport if you can inject it.
+  }, []);
+
   /**
    * Crop transparent edges from a PNG image.
    */
@@ -563,7 +580,8 @@ export default function VirtualTryOnPage() {
   );
 
   /**
-   * Take a snapshot of both the user video and the virtual clothing overlay and trigger a download.
+   * Take a snapshot of both the user video and the virtual clothing overlay and send it to the native app.
+   * In a React Native Expo WebView, we use window.ReactNativeWebView.postMessage to send the Base64 image data.
    */
   const takeSnapshot = () => {
     const video = videoElementRef.current;
@@ -590,18 +608,20 @@ export default function VirtualTryOnPage() {
       snapshotCanvas.height
     );
 
-    // Convert the result to a data URL.
+    // Convert the result to a Base64 data URL.
     const imageDataUrl = snapshotCanvas.toDataURL("image/png");
 
-    // Create a temporary anchor element and trigger the download.
-    const link = document.createElement("a");
-    link.href = imageDataUrl;
-    link.download = "virtual-try-on-snapshot.png";
-    document.body.appendChild(link);
-    link.click();
-    document.body.removeChild(link);
-
-    setStatusMessage("Snapshot saved to device!");
+    // Send the image data to the native side via postMessage.
+    const message = JSON.stringify({
+      type: "SAVE_SNAPSHOT",
+      data: imageDataUrl,
+    });
+    if (window.ReactNativeWebView && window.ReactNativeWebView.postMessage) {
+      window.ReactNativeWebView.postMessage(message);
+      setStatusMessage("Snapshot sent for saving!");
+    } else {
+      setStatusMessage("Native saving not available.");
+    }
   };
 
   /**
@@ -624,9 +644,7 @@ export default function VirtualTryOnPage() {
 
       const detectedPoses = await poseDetector.estimatePoses(
         videoElementRef.current,
-        {
-          flipHorizontal: false,
-        }
+        { flipHorizontal: false }
       );
 
       if (!detectedPoses || detectedPoses.length === 0) {
@@ -653,9 +671,7 @@ export default function VirtualTryOnPage() {
           tracks.forEach((track) => track.stop());
         }
         const stream = await navigator.mediaDevices.getUserMedia({
-          video: {
-            facingMode: { ideal: facingMode },
-          },
+          video: { facingMode: { ideal: facingMode } },
           audio: false,
         });
         videoElementRef.current.srcObject = stream;
