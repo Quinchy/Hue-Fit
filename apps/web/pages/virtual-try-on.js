@@ -201,7 +201,7 @@ export default function VirtualTryOnPage() {
       }
       overlayWidth = overlayWidth * 1.5;
       const overlayX = shoulderCenterX - overlayWidth / 2;
-      const overlayY = shoulderCenterY - overlayHeight * 0.12;
+      const overlayY = shoulderCenterY;
       return { overlayX, overlayY, overlayWidth, overlayHeight };
     } else if (clothingType === "OUTERWEAR") {
       // OUTERWEAR parameters
@@ -219,7 +219,7 @@ export default function VirtualTryOnPage() {
         const rightHipY = keypoints.right_hip.y * scaleY;
         const hipCenterY = (leftHipY + rightHipY) / 2;
         const torsoHeight = hipCenterY - shoulderCenterY;
-        overlayHeight = torsoHeight * 1.5;
+        overlayHeight = torsoHeight * 2;
         overlayWidth = overlayHeight * aspectRatio;
       } else {
         overlayWidth = shoulderWidth * 1.2;
@@ -232,7 +232,7 @@ export default function VirtualTryOnPage() {
       overlayWidth = overlayWidth * 1.85;
 
       const overlayX = shoulderCenterX - overlayWidth / 2;
-      const overlayY = shoulderCenterY - overlayHeight * 0.12 - 30;
+      const overlayY = shoulderCenterY;
       return { overlayX, overlayY, overlayWidth, overlayHeight };
     } else if (clothingType === "LOWERWEAR") {
       // LOWERWEAR parameters: Mimic single overlay values.
@@ -493,7 +493,7 @@ export default function VirtualTryOnPage() {
           }
           overlayWidth = overlayWidth * 1.85;
           overlayX = shoulderCenterX - overlayWidth / 2;
-          overlayY = shoulderCenterY - overlayHeight * 0.12 - 30;
+          overlayY = shoulderCenterY;
         } else if (type === "LOWERWEAR") {
           if (!kp.left_hip || !kp.right_hip) {
             setStatusMessage(
