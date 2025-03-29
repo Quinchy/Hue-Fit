@@ -251,7 +251,7 @@ export default function VirtualTryOnPage() {
         overlayWidth = hipWidth * 1.1;
         overlayHeight = overlayWidth / aspectRatio;
       }
-      overlayWidth = overlayWidth * 1.65;
+      overlayWidth = overlayWidth * 1.625;
       const overlayX = hipCenterX - overlayWidth / 2;
       const overlayY = hipCenterY - 40;
       return { overlayX, overlayY, overlayWidth, overlayHeight };
