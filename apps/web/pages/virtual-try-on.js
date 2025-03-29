@@ -175,7 +175,7 @@ export default function VirtualTryOnPage() {
       overlayWidth = overlayWidth * 1.5;
       const originalOverlayY = shoulderCenterY - overlayHeight * 0.12;
       // MODIFY VERTICAL STRETCH HERE: change verticalStretchFactor as needed
-      const verticalStretchFactor = 1.2;
+      const verticalStretchFactor = 4;
       const newOverlayHeight = overlayHeight * verticalStretchFactor;
       const overlayX = shoulderCenterX - overlayWidth / 2;
       const overlayY = originalOverlayY;
@@ -213,7 +213,7 @@ export default function VirtualTryOnPage() {
       overlayWidth = overlayWidth * 1.85;
       const originalOverlayY = shoulderCenterY - overlayHeight * 0.12;
       // MODIFY VERTICAL STRETCH HERE: change verticalStretchFactor as needed
-      const verticalStretchFactor = 1.2;
+      const verticalStretchFactor = 4;
       const newOverlayHeight = overlayHeight * verticalStretchFactor;
       const overlayX = shoulderCenterX - overlayWidth / 2;
       const overlayY = originalOverlayY;
