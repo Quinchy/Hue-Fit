@@ -175,7 +175,7 @@ export default function VirtualTryOnPage() {
       overlayWidth = overlayWidth * 1.5;
       const originalOverlayY = shoulderCenterY - overlayHeight * 0.12;
       // MODIFY VERTICAL STRETCH HERE: change verticalStretchFactor as needed
-      const verticalStretchFactor = 1;
+      const verticalStretchFactor = 1.1;
       const newOverlayHeight = overlayHeight * verticalStretchFactor;
       const overlayX = shoulderCenterX - overlayWidth / 2;
       const overlayY = originalOverlayY;
@@ -213,7 +213,7 @@ export default function VirtualTryOnPage() {
       overlayWidth = overlayWidth * 1.85;
       const originalOverlayY = shoulderCenterY - overlayHeight * 0.12;
       // MODIFY VERTICAL STRETCH HERE: change verticalStretchFactor as needed
-      const verticalStretchFactor = 1;
+      const verticalStretchFactor = 1.1;
       const newOverlayHeight = overlayHeight * verticalStretchFactor;
       const overlayX = shoulderCenterX - overlayWidth / 2;
       const overlayY = originalOverlayY;
@@ -463,7 +463,7 @@ export default function VirtualTryOnPage() {
           overlayX = shoulderCenterX - overlayWidth / 2;
           overlayY = shoulderCenterY - overlayHeight * 0.12;
           // MODIFY VERTICAL STRETCH HERE: change verticalStretchFactor as needed
-          const verticalStretchFactor = 1;
+          const verticalStretchFactor = 1.1;
           overlayHeight = overlayHeight * verticalStretchFactor;
         } else if (type === "LOWERWEAR") {
           if (!kp.left_hip || !kp.right_hip) {
