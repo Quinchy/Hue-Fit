@@ -201,7 +201,7 @@ export default function VirtualTryOnPage() {
       }
       overlayWidth = overlayWidth * 1.5;
       const overlayX = shoulderCenterX - overlayWidth / 2;
-      const overlayY = shoulderCenterY - overlayHeight * 0.05;
+      const overlayY = shoulderCenterY;
       return { overlayX, overlayY, overlayWidth, overlayHeight };
     } else if (clothingType === "OUTERWEAR") {
       // OUTERWEAR parameters
