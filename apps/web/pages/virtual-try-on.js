@@ -189,7 +189,7 @@ export default function VirtualTryOnPage() {
         const rightHipY = keypoints.right_hip.y * scaleY;
         const hipCenterY = (leftHipY + rightHipY) / 2;
         const torsoHeight = hipCenterY - shoulderCenterY;
-        overlayHeight = torsoHeight * 2;
+        overlayHeight = torsoHeight * 1.5;
         overlayWidth = overlayHeight * aspectRatio;
       } else {
         overlayWidth = shoulderWidth * 1.2;
@@ -219,7 +219,7 @@ export default function VirtualTryOnPage() {
         const rightHipY = keypoints.right_hip.y * scaleY;
         const hipCenterY = (leftHipY + rightHipY) / 2;
         const torsoHeight = hipCenterY - shoulderCenterY;
-        overlayHeight = torsoHeight * 2;
+        overlayHeight = torsoHeight * 1.5;
         overlayWidth = overlayHeight * aspectRatio;
       } else {
         overlayWidth = shoulderWidth * 1.2;
@@ -471,7 +471,7 @@ export default function VirtualTryOnPage() {
             const rightHipY = kp.right_hip.y * scaleY;
             const hipCenterY = (leftHipY + rightHipY) / 2;
             const torsoHeight = hipCenterY - shoulderCenterY;
-            overlayHeight = torsoHeight * 2;
+            overlayHeight = torsoHeight * 1.5;
             overlayWidth =
               overlayHeight *
               (clothingImageElementRef.current.naturalWidth /
