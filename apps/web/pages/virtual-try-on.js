@@ -9,28 +9,27 @@ import "@tensorflow/tfjs-converter";
 import * as posedetection from "@tensorflow-models/pose-detection";
 import { SwitchCamera } from "lucide-react";
 
-// Set WASM paths if needed
+// Set WASM paths (if needed)
 setWasmPaths("/wasm/");
 
 export default function VirtualTryOnPage() {
   const router = useRouter();
   // Extract both single and multiple PNG URL parameters.
-  const { pngClotheURL, upperWearPng, lowerWearPng, outerWearPng, type, tag } = router.query;
+  const { pngClotheURL, upperWearPng, lowerWearPng, outerWearPng, type, tag } =
+    router.query;
 
-  // Refs for HTML elements.
   const videoElementRef = useRef(null);
   const canvasElementRef = useRef(null);
   const containerRef = useRef(null);
 
-  // Refs for clothing images (for multi-overlay mode).
+  // Refs for multi-overlay mode images
   const upperWearImageRef = useRef(null);
   const lowerWearImageRef = useRef(null);
   const outerWearImageRef = useRef(null);
-  // Fallback for single overlay mode.
+  // Fallback for single image mode
   const clothingImageElementRef = useRef(null);
   const clothingPixelDataRef = useRef(null);
 
-  // State for pose detector, camera status, etc.
   const [poseDetector, setPoseDetector] = useState(null);
   const [isCameraReady, setIsCameraReady] = useState(false);
   const [statusMessage, setStatusMessage] = useState("");
@@ -38,13 +37,12 @@ export default function VirtualTryOnPage() {
   const [isPortrait, setIsPortrait] = useState(true);
   const [facingMode, setFacingMode] = useState("environment");
 
-  // Mark the component as mounted.
   useEffect(() => {
     setMounted(true);
   }, []);
 
   /**
-   * Crop transparent edges from a PNG image.
+   * Crop transparent edges from the loaded PNG image.
    */
   function cropTransparentImage(img) {
     const w = img.naturalWidth;
@@ -58,7 +56,10 @@ export default function VirtualTryOnPage() {
     const imageData = tempCtx.getImageData(0, 0, w, h);
     const { data } = imageData;
 
-    let top = h, left = w, right = 0, bottom = 0;
+    let top = h,
+      left = w,
+      right = 0,
+      bottom = 0;
     for (let y = 0; y < h; y++) {
       for (let x = 0; x < w; x++) {
         const idx = (y * w + x) * 4;
@@ -94,7 +95,12 @@ export default function VirtualTryOnPage() {
       croppedHeight
     );
 
-    const croppedImageData = croppedCtx.getImageData(0, 0, croppedWidth, croppedHeight);
+    const croppedImageData = croppedCtx.getImageData(
+      0,
+      0,
+      croppedWidth,
+      croppedHeight
+    );
     const croppedImg = new Image();
     croppedImg.src = croppedCanvas.toDataURL();
 
@@ -102,7 +108,7 @@ export default function VirtualTryOnPage() {
   }
 
   /**
-   * Load clothing PNG(s) once the URLs are available.
+   * Load clothing PNG(s) once the URL(s) are known.
    */
   useEffect(() => {
     if (!router.isReady) return;
@@ -134,7 +140,7 @@ export default function VirtualTryOnPage() {
   }, [router.isReady, pngClotheURL, upperWearPng, lowerWearPng, outerWearPng]);
 
   /**
-   * Initialize the pose detector with tf.js MoveNet.
+   * Initialize Pose Detector with tf.js MoveNet.
    */
   const initializePoseDetector = async () => {
     try {
@@ -144,20 +150,31 @@ export default function VirtualTryOnPage() {
       const detectorConfig = {
         modelType: posedetection.movenet.modelType.SINGLEPOSE_LIGHTNING,
       };
-      const detectorInstance = await posedetection.createDetector(detectionModel, detectorConfig);
+      const detectorInstance = await posedetection.createDetector(
+        detectionModel,
+        detectorConfig
+      );
       setPoseDetector(detectorInstance);
     } catch (error) {
       console.error("Error initializing pose detector:", error);
-      setStatusMessage("Failed to initialize pose detector. Please refresh the page.");
+      setStatusMessage(
+        "Failed to initialize pose detector. Please refresh the page."
+      );
     }
   };
 
   /**
    * Compute overlay parameters based on clothing type.
-   * (Replace this placeholder with your full overlay logic as needed.)
    */
-  function computeOverlayParams(clothingType, scaleX, scaleY, keypoints, aspectRatio) {
+  function computeOverlayParams(
+    clothingType,
+    scaleX,
+    scaleY,
+    keypoints,
+    aspectRatio
+  ) {
     if (clothingType === "UPPERWEAR") {
+      // UPPERWEAR parameters
       if (!keypoints.left_shoulder || !keypoints.right_shoulder) return null;
       const leftShoulderX = keypoints.left_shoulder.x * scaleX;
       const leftShoulderY = keypoints.left_shoulder.y * scaleY;
@@ -187,6 +204,7 @@ export default function VirtualTryOnPage() {
       const overlayY = shoulderCenterY - overlayHeight * 0.12;
       return { overlayX, overlayY, overlayWidth, overlayHeight };
     } else if (clothingType === "OUTERWEAR") {
+      // OUTERWEAR parameters
       if (!keypoints.left_shoulder || !keypoints.right_shoulder) return null;
       const leftShoulderX = keypoints.left_shoulder.x * scaleX;
       const leftShoulderY = keypoints.left_shoulder.y * scaleY;
@@ -212,10 +230,12 @@ export default function VirtualTryOnPage() {
         overlayHeight = overlayWidth / aspectRatio;
       }
       overlayWidth = overlayWidth * 1.85;
+
       const overlayX = shoulderCenterX - overlayWidth / 2;
       const overlayY = shoulderCenterY - overlayHeight * 0.12 - 30;
       return { overlayX, overlayY, overlayWidth, overlayHeight };
     } else if (clothingType === "LOWERWEAR") {
+      // LOWERWEAR parameters: Mimic single overlay values.
       if (!keypoints.left_hip || !keypoints.right_hip) return null;
       const leftHipX = keypoints.left_hip.x * scaleX;
       const leftHipY = keypoints.left_hip.y * scaleY;
@@ -236,12 +256,13 @@ export default function VirtualTryOnPage() {
         lowerPointY = (leftAnkleY + rightAnkleY) / 2;
       }
       const lowerBodyHeight = lowerPointY - hipCenterY;
+      // Use the same multiplier (1.2) as in the single overlay mode.
       let overlayHeight = lowerBodyHeight * 1.2;
-      let overlayWidth = overlayHeight * (clothingImageElementRef.current.naturalWidth / clothingImageElementRef.current.naturalHeight);
+      let overlayWidth = overlayHeight * aspectRatio;
       const hipWidth = Math.abs(rightHipX - leftHipX);
       if (overlayWidth < hipWidth * 1.1) {
         overlayWidth = hipWidth * 1.1;
-        overlayHeight = overlayWidth / (clothingImageElementRef.current.naturalWidth / clothingImageElementRef.current.naturalHeight);
+        overlayHeight = overlayWidth / aspectRatio;
       }
       overlayWidth = overlayWidth * 1.6;
       const overlayX = hipCenterX - overlayWidth / 2;
@@ -261,35 +282,63 @@ export default function VirtualTryOnPage() {
       if (!keypointsArray || keypointsArray.length === 0) return;
 
       const kp = {
-        left_shoulder: keypointsArray.find((kp) => kp.name === "left_shoulder" && kp.score > 0.5),
-        right_shoulder: keypointsArray.find((kp) => kp.name === "right_shoulder" && kp.score > 0.5),
-        left_hip: keypointsArray.find((kp) => kp.name === "left_hip" && kp.score > 0.5),
-        right_hip: keypointsArray.find((kp) => kp.name === "right_hip" && kp.score > 0.5),
-        left_knee: keypointsArray.find((kp) => kp.name === "left_knee" && kp.score > 0.5),
-        right_knee: keypointsArray.find((kp) => kp.name === "right_knee" && kp.score > 0.5),
-        left_ankle: keypointsArray.find((kp) => kp.name === "left_ankle" && kp.score > 0.5),
-        right_ankle: keypointsArray.find((kp) => kp.name === "right_ankle" && kp.score > 0.5),
+        left_shoulder: keypointsArray.find(
+          (kp) => kp.name === "left_shoulder" && kp.score > 0.5
+        ),
+        right_shoulder: keypointsArray.find(
+          (kp) => kp.name === "right_shoulder" && kp.score > 0.5
+        ),
+        left_hip: keypointsArray.find(
+          (kp) => kp.name === "left_hip" && kp.score > 0.5
+        ),
+        right_hip: keypointsArray.find(
+          (kp) => kp.name === "right_hip" && kp.score > 0.5
+        ),
+        left_knee: keypointsArray.find(
+          (kp) => kp.name === "left_knee" && kp.score > 0.5
+        ),
+        right_knee: keypointsArray.find(
+          (kp) => kp.name === "right_knee" && kp.score > 0.5
+        ),
+        left_ankle: keypointsArray.find(
+          (kp) => kp.name === "left_ankle" && kp.score > 0.5
+        ),
+        right_ankle: keypointsArray.find(
+          (kp) => kp.name === "right_ankle" && kp.score > 0.5
+        ),
       };
 
-      // Compute a fit percentage based on the average confidence of required keypoints.
+      // Compute a fit percentage based on the average confidence of the required keypoints.
       let requiredKeypointNames = [];
       const multiOverlayMode = upperWearPng && lowerWearPng;
       if (multiOverlayMode) {
-        requiredKeypointNames = ['left_shoulder', 'right_shoulder', 'left_hip', 'right_hip'];
+        // For multi overlay, require shoulders, hips, and either knees (for shorts) or ankles.
+        requiredKeypointNames = [
+          "left_shoulder",
+          "right_shoulder",
+          "left_hip",
+          "right_hip",
+        ];
         if (tag === "SHORTS") {
-          requiredKeypointNames.push('left_knee', 'right_knee');
+          requiredKeypointNames.push("left_knee", "right_knee");
         } else {
-          requiredKeypointNames.push('left_ankle', 'right_ankle');
+          requiredKeypointNames.push("left_ankle", "right_ankle");
         }
       } else {
+        // For single overlay, the required keypoints depend on the type.
         if (type === "UPPERWEAR" || type === "OUTERWEAR") {
-          requiredKeypointNames = ['left_shoulder', 'right_shoulder', 'left_hip', 'right_hip'];
+          requiredKeypointNames = [
+            "left_shoulder",
+            "right_shoulder",
+            "left_hip",
+            "right_hip",
+          ];
         } else if (type === "LOWERWEAR") {
-          requiredKeypointNames = ['left_hip', 'right_hip'];
+          requiredKeypointNames = ["left_hip", "right_hip"];
           if (tag === "SHORTS") {
-            requiredKeypointNames.push('left_knee', 'right_knee');
+            requiredKeypointNames.push("left_knee", "right_knee");
           } else {
-            requiredKeypointNames.push('left_ankle', 'right_ankle');
+            requiredKeypointNames.push("left_ankle", "right_ankle");
           }
         }
       }
@@ -299,7 +348,9 @@ export default function VirtualTryOnPage() {
       const fitPercentage =
         relevantKps.length > 0
           ? Math.round(
-              (relevantKps.reduce((acc, k) => acc + k.score, 0) / relevantKps.length) * 100
+              (relevantKps.reduce((acc, k) => acc + k.score, 0) /
+                relevantKps.length) *
+                100
             )
           : 0;
 
@@ -310,10 +361,11 @@ export default function VirtualTryOnPage() {
       const scaleX = canvasWidth / videoWidth;
       const scaleY = canvasHeight / videoHeight;
 
-      // Clear the canvas.
+      // Clear the canvas before drawing.
       canvasContext.clearRect(0, 0, canvasWidth, canvasHeight);
 
       if (multiOverlayMode) {
+        // Multi-overlay mode: Draw separate images for upperwear, lowerwear, and outerwear.
         const upperImg = upperWearImageRef.current;
         const lowerImg = lowerWearImageRef.current;
         if (!upperImg || !lowerImg) {
@@ -324,16 +376,38 @@ export default function VirtualTryOnPage() {
         const lowerAspect = lowerImg.naturalWidth / lowerImg.naturalHeight;
         let outerAspect = null;
         if (outerWearPng && outerWearImageRef.current) {
-          outerAspect = outerWearImageRef.current.naturalWidth / outerWearImageRef.current.naturalHeight;
+          outerAspect =
+            outerWearImageRef.current.naturalWidth /
+            outerWearImageRef.current.naturalHeight;
         }
 
-        const upperParams = computeOverlayParams("UPPERWEAR", scaleX, scaleY, kp, upperAspect);
-        const lowerParams = computeOverlayParams("LOWERWEAR", scaleX, scaleY, kp, lowerAspect);
+        const upperParams = computeOverlayParams(
+          "UPPERWEAR",
+          scaleX,
+          scaleY,
+          kp,
+          upperAspect
+        );
+        const lowerParams = computeOverlayParams(
+          "LOWERWEAR",
+          scaleX,
+          scaleY,
+          kp,
+          lowerAspect
+        );
         let outerParams = null;
         if (outerWearPng && outerWearImageRef.current) {
-          outerParams = computeOverlayParams("OUTERWEAR", scaleX, scaleY, kp, outerAspect);
+          // Always display outerwear if available.
+          outerParams = computeOverlayParams(
+            "OUTERWEAR",
+            scaleX,
+            scaleY,
+            kp,
+            outerAspect
+          );
         }
 
+        // Adjust UPPERWEAR upward if OUTERWEAR is provided.
         if (upperParams && outerWearPng) {
           upperParams.overlayY -= 30;
         }
@@ -365,16 +439,24 @@ export default function VirtualTryOnPage() {
             outerParams.overlayHeight
           );
         }
-        setStatusMessage(`Clothing applied. Display mode: All layers. Fit: ${fitPercentage}%`);
+        setStatusMessage(
+          `Clothing applied. Display mode: All layers. Fit: ${fitPercentage}%`
+        );
       } else {
+        // Single overlay mode: Use the fallback clothing image.
         if (!clothingImageElementRef.current) {
           setStatusMessage("No clothing image loaded.");
           return;
         }
-        let overlayX = 0, overlayY = 0, overlayWidth = 0, overlayHeight = 0;
+        let overlayX = 0,
+          overlayY = 0,
+          overlayWidth = 0,
+          overlayHeight = 0;
         if (type === "UPPERWEAR" || type === "OUTERWEAR") {
           if (!kp.left_shoulder || !kp.right_shoulder) {
-            setStatusMessage("Upper body not fully detected. Move into frame and ensure good lighting.");
+            setStatusMessage(
+              "Upper body not fully detected. Move into frame and ensure good lighting."
+            );
             return;
           }
           const leftShoulderX = kp.left_shoulder.x * scaleX;
@@ -390,21 +472,33 @@ export default function VirtualTryOnPage() {
             const hipCenterY = (leftHipY + rightHipY) / 2;
             const torsoHeight = hipCenterY - shoulderCenterY;
             overlayHeight = torsoHeight * 1.2;
-            overlayWidth = overlayHeight * (clothingImageElementRef.current.naturalWidth / clothingImageElementRef.current.naturalHeight);
+            overlayWidth =
+              overlayHeight *
+              (clothingImageElementRef.current.naturalWidth /
+                clothingImageElementRef.current.naturalHeight);
           } else {
             overlayWidth = shoulderWidth * 1.2;
-            overlayHeight = (overlayWidth / (clothingImageElementRef.current.naturalWidth / clothingImageElementRef.current.naturalHeight)) * 1.15;
+            overlayHeight =
+              (overlayWidth /
+                (clothingImageElementRef.current.naturalWidth /
+                  clothingImageElementRef.current.naturalHeight)) *
+              1.15;
           }
           if (overlayWidth < shoulderWidth * 1.2) {
             overlayWidth = shoulderWidth * 1.2;
-            overlayHeight = overlayWidth / (clothingImageElementRef.current.naturalWidth / clothingImageElementRef.current.naturalHeight);
+            overlayHeight =
+              overlayWidth /
+              (clothingImageElementRef.current.naturalWidth /
+                clothingImageElementRef.current.naturalHeight);
           }
           overlayWidth = overlayWidth * 1.85;
           overlayX = shoulderCenterX - overlayWidth / 2;
           overlayY = shoulderCenterY - overlayHeight * 0.12 - 30;
         } else if (type === "LOWERWEAR") {
           if (!kp.left_hip || !kp.right_hip) {
-            setStatusMessage("Lower body not fully detected (hips). Please move back to show hips.");
+            setStatusMessage(
+              "Lower body not fully detected (hips). Please move back to show hips."
+            );
             return;
           }
           const leftHipX = kp.left_hip.x * scaleX;
@@ -416,7 +510,9 @@ export default function VirtualTryOnPage() {
           let lowerPointY = null;
           if (tag === "SHORTS") {
             if (!kp.left_knee || !kp.right_knee) {
-              setStatusMessage("Knees not detected. Move back to show full lower body.");
+              setStatusMessage(
+                "Knees not detected. Move back to show full lower body."
+              );
               return;
             }
             const leftKneeY = kp.left_knee.y * scaleY;
@@ -424,7 +520,9 @@ export default function VirtualTryOnPage() {
             lowerPointY = (leftKneeY + rightKneeY) / 2;
           } else {
             if (!kp.left_ankle || !kp.right_ankle) {
-              setStatusMessage("Ankles not detected. Move back to show full lower body.");
+              setStatusMessage(
+                "Ankles not detected. Move back to show full lower body."
+              );
               return;
             }
             const leftAnkleY = kp.left_ankle.y * scaleY;
@@ -433,18 +531,34 @@ export default function VirtualTryOnPage() {
           }
           const lowerBodyHeight = lowerPointY - hipCenterY;
           overlayHeight = lowerBodyHeight * 1.2;
-          overlayWidth = overlayHeight * (clothingImageElementRef.current.naturalWidth / clothingImageElementRef.current.naturalHeight);
+          overlayWidth =
+            overlayHeight *
+            (clothingImageElementRef.current.naturalWidth /
+              clothingImageElementRef.current.naturalHeight);
           const hipWidth = Math.abs(rightHipX - leftHipX);
           if (overlayWidth < hipWidth * 1.1) {
             overlayWidth = hipWidth * 1.1;
-            overlayHeight = overlayWidth / (clothingImageElementRef.current.naturalWidth / clothingImageElementRef.current.naturalHeight);
+            overlayHeight =
+              overlayWidth /
+              (clothingImageElementRef.current.naturalWidth /
+                clothingImageElementRef.current.naturalHeight);
           }
           overlayWidth = overlayWidth * 1.6;
           overlayX = hipCenterX - overlayWidth / 2;
           overlayY = hipCenterY - 40;
         }
-        canvasContext.drawImage(clothingImageElementRef.current, overlayX, overlayY, overlayWidth, overlayHeight);
-        setStatusMessage(`Clothing applied. Type: ${type}${type === "LOWERWEAR" ? ", Tag: " + tag : ""}. Fit: ${fitPercentage}%`);
+        canvasContext.drawImage(
+          clothingImageElementRef.current,
+          overlayX,
+          overlayY,
+          overlayWidth,
+          overlayHeight
+        );
+        setStatusMessage(
+          `Clothing applied. Type: ${type}${
+            type === "LOWERWEAR" ? ", Tag: " + tag : ""
+          }. Fit: ${fitPercentage}%`
+        );
       }
     },
     [type, tag, upperWearPng, outerWearPng]
@@ -468,9 +582,12 @@ export default function VirtualTryOnPage() {
       const canvasContext = canvasElement.getContext("2d", { alpha: true });
       canvasContext.clearRect(0, 0, canvasElement.width, canvasElement.height);
 
-      const detectedPoses = await poseDetector.estimatePoses(videoElementRef.current, {
-        flipHorizontal: false,
-      });
+      const detectedPoses = await poseDetector.estimatePoses(
+        videoElementRef.current,
+        {
+          flipHorizontal: false,
+        }
+      );
 
       if (!detectedPoses || detectedPoses.length === 0) {
         setStatusMessage("No human detected. Please step into frame.");
@@ -506,14 +623,18 @@ export default function VirtualTryOnPage() {
         videoElementRef.current.onloadedmetadata = async () => {
           await videoElementRef.current.play();
           const ratio = window.devicePixelRatio || 1;
-          canvasElementRef.current.width = videoElementRef.current.videoWidth * ratio;
-          canvasElementRef.current.height = videoElementRef.current.videoHeight * ratio;
+          canvasElementRef.current.width =
+            videoElementRef.current.videoWidth * ratio;
+          canvasElementRef.current.height =
+            videoElementRef.current.videoHeight * ratio;
           setIsCameraReady(true);
           setStatusMessage("Camera ready, detecting poses...");
         };
       } catch (error) {
         console.error("Error accessing camera:", error);
-        setStatusMessage("Unable to access camera. Please allow camera permissions.");
+        setStatusMessage(
+          "Unable to access camera. Please allow camera permissions."
+        );
       }
     };
     initCameraStream();
@@ -566,10 +687,16 @@ export default function VirtualTryOnPage() {
   return (
     <div style={styles.container} ref={containerRef}>
       <div style={styles.cameraContainer}>
-        <video ref={videoElementRef} style={styles.video} muted playsInline autoPlay />
+        <video
+          ref={videoElementRef}
+          style={styles.video}
+          muted
+          playsInline
+          autoPlay
+        />
         <canvas ref={canvasElementRef} style={styles.canvas} />
         <button style={styles.toggleButton} onClick={toggleCamera}>
-          <SwitchCamera size={24} color="#fff" />
+          <SwitchCamera size={24} color="white" />
         </button>
         <div style={styles.statusMessage}>{statusMessage}</div>
       </div>
@@ -631,7 +758,7 @@ const styles = {
     color: "#fff",
     border: "none",
     padding: "10px 15px",
-    borderRadius: "5px",
+    borderRadius: "25px",
     zIndex: 4,
     cursor: "pointer",
   },

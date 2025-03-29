@@ -81,6 +81,8 @@ const ProfileSettingsScreen = () => {
     try {
       setLoading(true);
       const storedUserId = await AsyncStorage.getItem("userId");
+      console.log(`${EXPO_PUBLIC_API_URL}/api/mobile/profile/get-user`); // Debugging line
+      
       if (storedUserId) {
         const response = await fetch(
           `${EXPO_PUBLIC_API_URL}/api/mobile/profile/get-user`,

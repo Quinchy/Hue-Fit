@@ -1,32 +1,100 @@
 // pages/dashboard/product/index.js
-import { useState } from 'react';
-import { Input } from '@/components/ui/input';
-import { useRouter } from 'next/router';
-import routes from '@/routes';
-import DashboardLayoutWrapper from '@/components/ui/dashboard-layout';
-import { Card, CardTitle } from '@/components/ui/card';
-import Link from 'next/link';
-import Image from 'next/image';
-import { X, Plus, NotepadText, Search, ChevronDown, Eye, Package, Copy, CheckCircle2, CircleAlert } from 'lucide-react';
-import { buttonVariants, Button } from '@/components/ui/button';
-import { Pagination, PaginationPrevious, PaginationContent, PaginationItem, PaginationNext, PaginationLink } from '@/components/ui/pagination';
-import { Table, TableHead, TableHeader, TableBody, TableCell, TableRow } from '@/components/ui/table';
-import { DropdownMenu, DropdownMenuContent, DropdownMenuGroup, DropdownMenuItem, DropdownMenuTrigger } from '@/components/ui/dropdown-menu';
-import { Alert, AlertTitle, AlertDescription } from '@/components/ui/alert';
-import { Skeleton } from '@/components/ui/skeleton';
-import useSWR from 'swr';
+import { useState } from "react";
+import { Input } from "@/components/ui/input";
+import { useRouter } from "next/router";
+import routes from "@/routes";
+import DashboardLayoutWrapper from "@/components/ui/dashboard-layout";
+import { Card, CardTitle } from "@/components/ui/card";
+import Link from "next/link";
+import Image from "next/image";
+import {
+  X,
+  Plus,
+  NotepadText,
+  Search,
+  ChevronDown,
+  Eye,
+  Package,
+  Copy,
+  CheckCircle2,
+  CircleAlert,
+} from "lucide-react";
+import { buttonVariants, Button } from "@/components/ui/button";
+import {
+  Pagination,
+  PaginationPrevious,
+  PaginationContent,
+  PaginationItem,
+  PaginationNext,
+  PaginationLink,
+} from "@/components/ui/pagination";
+import {
+  Table,
+  TableHead,
+  TableHeader,
+  TableBody,
+  TableCell,
+  TableRow,
+} from "@/components/ui/table";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuGroup,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
+import { Alert, AlertTitle, AlertDescription } from "@/components/ui/alert";
+import { Skeleton } from "@/components/ui/skeleton";
+import useSWR from "swr";
 
 const fetcher = (url) => fetch(url).then((res) => res.json());
 
+// New component for the copyable product number with tooltip
+function CopyableText({ text, displayText }) {
+  const [copied, setCopied] = useState(false);
+
+  const handleCopy = () => {
+    navigator.clipboard.writeText(text);
+    setCopied(true);
+    setTimeout(() => setCopied(false), 1000);
+  };
+
+  return (
+    <div className="flex items-center justify-between gap-2 mr-4 relative">
+      {displayText}
+      <Button
+        variant="none"
+        onClick={handleCopy}
+        className="transition-all active:scale-75 hover:opacity-75 duration-300 ease-in-out"
+      >
+        <Copy className="scale-100" />
+      </Button>
+      <div
+        className={`absolute top-0 -right-2 -translate-x-1/2 mt-1 px-2 py-1 bg-primary text-pure rounded shadow text-xs transition-opacity ease-in-out duration-500 ${
+          copied ? "opacity-100" : "opacity-0"
+        }`}
+      >
+        Copied!
+      </div>
+    </div>
+  );
+}
+
 export default function ProductsPage() {
   const [currentPage, setCurrentPage] = useState(1);
-  const [searchTerm, setSearchTerm] = useState('');
-  const [selectedType, setSelectedType] = useState('ALL');
+  const [searchTerm, setSearchTerm] = useState("");
+  const [selectedType, setSelectedType] = useState("ALL");
   const router = useRouter();
   const [showAlert, setShowAlert] = useState(false);
 
-  const { data: productsData, error, isLoading } = useSWR(
-    `/api/products/get-product?page=${currentPage}&search=${searchTerm}&type=${selectedType !== 'ALL' ? selectedType : ''}`,
+  const {
+    data: productsData,
+    error,
+    isLoading,
+  } = useSWR(
+    `/api/products/get-product?page=${currentPage}&search=${searchTerm}&type=${
+      selectedType !== "ALL" ? selectedType : ""
+    }`,
     fetcher,
     { refreshInterval: 5000 }
   );
@@ -42,11 +110,11 @@ export default function ProductsPage() {
   };
 
   const handleViewClick = (productNo) => {
-    router.push(routes.productView.replace('[productNo]', productNo));
+    router.push(routes.productView.replace("[productNo]", productNo));
   };
 
   const handleStockClick = (productNo) => {
-    router.push(routes.productStock.replace('[productNo]', productNo));
+    router.push(routes.productStock.replace("[productNo]", productNo));
   };
 
   const handleTypeSelect = (type) => {
@@ -54,12 +122,12 @@ export default function ProductsPage() {
     setCurrentPage(1);
   };
 
-  if (router.query.success === 'true' && !showAlert) {
+  if (router.query.success === "true" && !showAlert) {
     setShowAlert(true);
     setTimeout(() => {
       setShowAlert(false);
     }, 5000);
-    router.replace('/dashboard/product', undefined, { shallow: true });
+    router.replace("/dashboard/product", undefined, { shallow: true });
   }
 
   return (
@@ -136,12 +204,12 @@ export default function ProductsPage() {
         <Table>
           <TableHeader>
             <TableRow>
-              <TableHead className="w-[2rem] text-center"></TableHead>
-              <TableHead className="w-[12rem]">Product Number</TableHead>
-              <TableHead className="w-7/12">Name</TableHead>
-              <TableHead className="w-[6rem] text-center">Quantity</TableHead>
-              <TableHead className="w-[9rem] text-center">Type</TableHead>
-              <TableHead className="w-[9rem] text-center">Action</TableHead>
+              <TableHead className="w-10"></TableHead>
+              <TableHead className="w-44">Product Number</TableHead>
+              <TableHead>Name</TableHead>
+              <TableHead>Quantity</TableHead>
+              <TableHead>Type</TableHead>
+              <TableHead>Action</TableHead>
             </TableRow>
           </TableHeader>
           <TableBody>
@@ -189,31 +257,25 @@ export default function ProductsPage() {
                     : product.productNo;
                 return (
                   <TableRow key={product.id}>
-                    <TableCell className="text-center">
-                      <div className="relative w-[2.5rem] h-[2.5rem] inline-block">
+                    <TableCell>
+                      <div className="relative w-10 h-10">
                         <Image
                           src={product.thumbnailURL}
                           alt={product.name}
                           fill
                           quality={75}
-                          className="object-cover rounded-[0.1rem]"
+                          className="object-cover rounded-[0.25rem]"
                         />
                       </div>
                     </TableCell>
-                    <TableCell className="h-[4rem] flex items-center justify-between mr-4 gap-2">
-                      {shortProductNo}
-                      <Button
-                        variant="none"
-                        onClick={() =>
-                          navigator.clipboard.writeText(product.productNo)
-                        }
-                        className="hover:opacity-75 duration-300 ease-in-out"
-                      >
-                        <Copy className="scale-100" />
-                      </Button>
+                    <TableCell>
+                      <CopyableText
+                        text={product.productNo}
+                        displayText={shortProductNo}
+                      />
                     </TableCell>
                     <TableCell>{product.name}</TableCell>
-                    <TableCell className="text-center">
+                    <TableCell>
                       {product.totalQuantity}
                       {product.ProductVariant &&
                         product.ProductVariant.some(
@@ -229,9 +291,9 @@ export default function ProductsPage() {
                           />
                         )}
                     </TableCell>
-                    <TableCell className="text-center">
+                    <TableCell>
                       <p
-                        className={`py-1 w-full rounded font-bold ${
+                        className={`py-1 w-full rounded text-center font-bold ${
                           product.Type.name === "UPPERWEAR"
                             ? "bg-blue-500"
                             : product.Type.name === "LOWERWEAR"
@@ -246,7 +308,7 @@ export default function ProductsPage() {
                         {product.Type.name}
                       </p>
                     </TableCell>
-                    <TableCell className="text-center">
+                    <TableCell>
                       <DropdownMenu>
                         <DropdownMenuTrigger asChild>
                           <Button variant="outline" className="font-normal">
