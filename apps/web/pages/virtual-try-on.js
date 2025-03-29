@@ -172,9 +172,9 @@ export default function VirtualTryOnPage() {
         overlayWidth = shoulderWidth * 1.2;
         overlayHeight = overlayWidth / aspectRatio;
       }
-      overlayWidth = overlayWidth * 1.5;
+      overlayWidth = overlayWidth * 1.4;
       // MODIFY UPPERWEAR POSITION HERE: adjust multiplier to move the overlay up
-      const originalOverlayY = shoulderCenterY - overlayHeight * 0.20;
+      const originalOverlayY = shoulderCenterY - overlayHeight * 0.18;
       const verticalStretchFactor = 1.15;
       const newOverlayHeight = overlayHeight * verticalStretchFactor;
       const overlayX = shoulderCenterX - overlayWidth / 2;
@@ -210,9 +210,9 @@ export default function VirtualTryOnPage() {
         overlayWidth = shoulderWidth * 1.2;
         overlayHeight = overlayWidth / aspectRatio;
       }
-      overlayWidth = overlayWidth * 1.85;
+      overlayWidth = overlayWidth * 1.75;
       // MODIFY OUTERWEAR POSITION HERE: adjust multiplier to move the overlay up
-      const originalOverlayY = shoulderCenterY - overlayHeight * 0.20;
+      const originalOverlayY = shoulderCenterY - overlayHeight * 0.18;
       const verticalStretchFactor = 1.15;
       const newOverlayHeight = overlayHeight * verticalStretchFactor;
       const overlayX = shoulderCenterX - overlayWidth / 2;
@@ -251,7 +251,7 @@ export default function VirtualTryOnPage() {
         overlayWidth = hipWidth * 1.1;
         overlayHeight = overlayWidth / aspectRatio;
       }
-      overlayWidth = overlayWidth * 1.6;
+      overlayWidth = overlayWidth * 1.65;
       const overlayX = hipCenterX - overlayWidth / 2;
       const overlayY = hipCenterY - 40;
       return { overlayX, overlayY, overlayWidth, overlayHeight };
@@ -461,7 +461,7 @@ export default function VirtualTryOnPage() {
           }
           overlayWidth = overlayWidth * 1.85;
           overlayX = shoulderCenterX - overlayWidth / 2;
-          overlayY = shoulderCenterY - overlayHeight * 0.20; // MODIFY UPPERWEAR/OUTERWEAR POSITION HERE (single-overlay): adjust this value to move it up
+          overlayY = shoulderCenterY - overlayHeight * 0.18; // MODIFY UPPERWEAR/OUTERWEAR POSITION HERE (single-overlay): adjust this value to move it up
           const verticalStretchFactor = 1.15;
           overlayHeight = overlayHeight * verticalStretchFactor;
         } else if (type === "LOWERWEAR") {
