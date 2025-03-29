@@ -175,7 +175,7 @@ export default function VirtualTryOnPage() {
       overlayWidth = overlayWidth * 1.5;
       const originalOverlayY = shoulderCenterY - overlayHeight * 0.12;
       // MODIFY VERTICAL STRETCH HERE: change verticalStretchFactor as needed
-      const verticalStretchFactor = 8;
+      const verticalStretchFactor = 2;
       const newOverlayHeight = overlayHeight * verticalStretchFactor;
       const overlayX = shoulderCenterX - overlayWidth / 2;
       const overlayY = originalOverlayY;
@@ -213,7 +213,7 @@ export default function VirtualTryOnPage() {
       overlayWidth = overlayWidth * 1.85;
       const originalOverlayY = shoulderCenterY - overlayHeight * 0.12;
       // MODIFY VERTICAL STRETCH HERE: change verticalStretchFactor as needed
-      const verticalStretchFactor = 8;
+      const verticalStretchFactor = 2;
       const newOverlayHeight = overlayHeight * verticalStretchFactor;
       const overlayX = shoulderCenterX - overlayWidth / 2;
       const overlayY = originalOverlayY;
@@ -462,6 +462,9 @@ export default function VirtualTryOnPage() {
           overlayWidth = overlayWidth * 1.85;
           overlayX = shoulderCenterX - overlayWidth / 2;
           overlayY = shoulderCenterY - overlayHeight * 0.12;
+          // MODIFY VERTICAL STRETCH HERE: change verticalStretchFactor as needed
+          const verticalStretchFactor = 2;
+          overlayHeight = overlayHeight * verticalStretchFactor;
         } else if (type === "LOWERWEAR") {
           if (!kp.left_hip || !kp.right_hip) {
             setStatusMessage(
@@ -548,9 +551,7 @@ export default function VirtualTryOnPage() {
       canvasContext.clearRect(0, 0, canvasElement.width, canvasElement.height);
       const detectedPoses = await poseDetector.estimatePoses(
         videoElementRef.current,
-        {
-          flipHorizontal: false,
-        }
+        { flipHorizontal: false }
       );
       if (!detectedPoses || detectedPoses.length === 0) {
         setStatusMessage("No human detected. Please step into frame.");
