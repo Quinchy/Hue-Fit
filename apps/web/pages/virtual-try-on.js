@@ -175,7 +175,7 @@ export default function VirtualTryOnPage() {
       overlayWidth = overlayWidth * 1.5;
       // MODIFY UPPERWEAR POSITION HERE: adjust multiplier to move the overlay up
       const originalOverlayY = shoulderCenterY - overlayHeight * 0.20;
-      const verticalStretchFactor = 1.1;
+      const verticalStretchFactor = 1.15;
       const newOverlayHeight = overlayHeight * verticalStretchFactor;
       const overlayX = shoulderCenterX - overlayWidth / 2;
       const overlayY = originalOverlayY;
@@ -213,7 +213,7 @@ export default function VirtualTryOnPage() {
       overlayWidth = overlayWidth * 1.85;
       // MODIFY OUTERWEAR POSITION HERE: adjust multiplier to move the overlay up
       const originalOverlayY = shoulderCenterY - overlayHeight * 0.20;
-      const verticalStretchFactor = 1.1;
+      const verticalStretchFactor = 1.15;
       const newOverlayHeight = overlayHeight * verticalStretchFactor;
       const overlayX = shoulderCenterX - overlayWidth / 2;
       const overlayY = originalOverlayY;
@@ -462,7 +462,7 @@ export default function VirtualTryOnPage() {
           overlayWidth = overlayWidth * 1.85;
           overlayX = shoulderCenterX - overlayWidth / 2;
           overlayY = shoulderCenterY - overlayHeight * 0.20; // MODIFY UPPERWEAR/OUTERWEAR POSITION HERE (single-overlay): adjust this value to move it up
-          const verticalStretchFactor = 1.1;
+          const verticalStretchFactor = 1.15;
           overlayHeight = overlayHeight * verticalStretchFactor;
         } else if (type === "LOWERWEAR") {
           if (!kp.left_hip || !kp.right_hip) {
