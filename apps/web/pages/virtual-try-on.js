@@ -173,7 +173,7 @@ export default function VirtualTryOnPage() {
         overlayHeight = overlayWidth / aspectRatio;
       }
       overlayWidth = overlayWidth * 1.5;
-      const originalOverlayY = shoulderCenterY - overlayHeight * 0.05;
+      const originalOverlayY = shoulderCenterY - overlayHeight * 0.12;
       // MODIFY VERTICAL STRETCH HERE: change verticalStretchFactor as needed
       const verticalStretchFactor = 1.2;
       const newOverlayHeight = overlayHeight * verticalStretchFactor;
@@ -211,7 +211,7 @@ export default function VirtualTryOnPage() {
         overlayHeight = overlayWidth / aspectRatio;
       }
       overlayWidth = overlayWidth * 1.85;
-      const originalOverlayY = shoulderCenterY - overlayHeight * 0.05;
+      const originalOverlayY = shoulderCenterY - overlayHeight * 0.12;
       // MODIFY VERTICAL STRETCH HERE: change verticalStretchFactor as needed
       const verticalStretchFactor = 1.2;
       const newOverlayHeight = overlayHeight * verticalStretchFactor;
@@ -461,7 +461,7 @@ export default function VirtualTryOnPage() {
           }
           overlayWidth = overlayWidth * 1.85;
           overlayX = shoulderCenterX - overlayWidth / 2;
-          overlayY = shoulderCenterY - overlayHeight * 0.05;
+          overlayY = shoulderCenterY - overlayHeight * 0.12;
         } else if (type === "LOWERWEAR") {
           if (!kp.left_hip || !kp.right_hip) {
             setStatusMessage(
