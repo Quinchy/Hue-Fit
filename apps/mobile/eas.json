@@ -1,6 +1,7 @@
 {
   "cli": {
-    "version": ">= 0.38.0"
+    "version": ">= 0.38.0",
+    "requireCommit": true
   },
   "build": {
     "production": {
