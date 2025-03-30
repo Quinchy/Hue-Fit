@@ -206,7 +206,7 @@ const ProductViewScreen = ({ route, navigation }) => {
       <Formik
         initialValues={{
           productId,
-          shopId: shopDetails?.id || '',
+          shopId: shopDetails?.id || "",
           selectedVariant,
           selectedSize,
           quantity,
@@ -223,9 +223,9 @@ const ProductViewScreen = ({ route, navigation }) => {
               await handleAddToCart(values);
               animateAddToCart(values);
               toast.show({
-                description: 'Item added to cart.',
+                description: "Item added to cart.",
                 duration: 3000,
-                placement: 'top',
+                placement: "top",
               });
             } catch (error) {
               console.error(error);
@@ -256,7 +256,10 @@ const ProductViewScreen = ({ route, navigation }) => {
               />
             )}
             <View style={styles.overlayButtonsContainer}>
-              <TouchableOpacity style={styles.backButton} onPress={() => navigation.goBack()}>
+              <TouchableOpacity
+                style={styles.backButton}
+                onPress={() => navigation.goBack()}
+              >
                 <ArrowLeft color={theme.colors.white} size={24} />
               </TouchableOpacity>
               <View style={styles.topRightButtons}>
@@ -264,14 +267,14 @@ const ProductViewScreen = ({ route, navigation }) => {
                   style={[
                     styles.backButton,
                     { marginLeft: 10 },
-                    !values.selectedVariant?.pngClotheURL && { opacity: 0.5 }
+                    !values.selectedVariant?.pngClotheURL && { opacity: 0.5 },
                   ]}
                   onPress={() => {
                     if (values.selectedVariant?.pngClotheURL) {
-                      navigation.navigate('VirtualFitting', {
+                      navigation.navigate("VirtualFitting", {
                         pngClotheURL: values.selectedVariant.pngClotheURL,
-                        type: parentProduct?.typeName ?? '',
-                        tag: parentProduct?.tagName ?? '',
+                        type: parentProduct?.typeName ?? "",
+                        tag: parentProduct?.tagName ?? "",
                       });
                     }
                   }}
@@ -282,15 +285,15 @@ const ProductViewScreen = ({ route, navigation }) => {
                 <TouchableOpacity
                   style={[
                     styles.backButton,
-                    !values.selectedVariant?.pngClotheURL && { opacity: 0.5 }
+                    !values.selectedVariant?.pngClotheURL && { opacity: 0.5 },
                   ]}
                   onPress={() => {
                     if (values.selectedVariant?.pngClotheURL) {
-                      navigation.navigate('AiTryOn', {
+                      navigation.navigate("AiTryOn", {
                         pngClotheURL: values.selectedVariant.pngClotheURL,
                         variantImage: values.selectedVariant.images[0],
-                        type: parentProduct?.typeName ?? '',
-                        tag: parentProduct?.tagName ?? '',
+                        type: parentProduct?.typeName ?? "",
+                        tag: parentProduct?.tagName ?? "",
                       });
                     }
                   }}
@@ -300,14 +303,16 @@ const ProductViewScreen = ({ route, navigation }) => {
                 </TouchableOpacity>
                 <TouchableOpacity
                   style={styles.cartButton}
-                  onPress={() => navigation.navigate('Cart', { fromProduct: true })}
+                  onPress={() =>
+                    navigation.navigate("Cart", { fromProduct: true })
+                  }
                 >
                   <ShoppingCart color={theme.colors.white} size={24} />
                 </TouchableOpacity>
               </View>
             </View>
             <FlatList
-              data={['placeholder']}
+              data={["placeholder"]}
               renderItem={() => null}
               ListHeaderComponent={
                 <View style={{ flex: 1, backgroundColor: theme.colors.dark }}>
@@ -317,7 +322,9 @@ const ProductViewScreen = ({ route, navigation }) => {
                       horizontal
                       showsHorizontalScrollIndicator={false}
                       pagingEnabled
-                      keyExtractor={(img, index) => `${values.selectedVariant.id}-${index}`}
+                      keyExtractor={(img, index) =>
+                        `${values.selectedVariant.id}-${index}`
+                      }
                       renderItem={({ item: imageUrl }) => (
                         <View>
                           <Image
@@ -344,10 +351,11 @@ const ProductViewScreen = ({ route, navigation }) => {
                   <View style={styles.productInfo}>
                     <View style={styles.productTitleContainer}>
                       <Text style={styles.productTitle}>
-                        {parentProduct?.name || 'Product Name'}
+                        {parentProduct?.name || "Product Name"}
                       </Text>
                       <Text style={styles.productDescription}>
-                        {parentProduct?.description || 'No description available.'}
+                        {parentProduct?.description ||
+                          "No description available."}
                       </Text>
                     </View>
                     <View style={styles.variantContainer}>
@@ -368,12 +376,12 @@ const ProductViewScreen = ({ route, navigation }) => {
                               },
                             ]}
                             onPress={() => {
-                              setFieldValue('selectedVariant', item);
+                              setFieldValue("selectedVariant", item);
                               setSelectedVariant(item);
-                              setFieldValue('selectedSize', null);
+                              setFieldValue("selectedSize", null);
                               setSelectedSize(null);
                               setQuantity(1);
-                              setFieldValue('quantity', 1);
+                              setFieldValue("quantity", 1);
                             }}
                           >
                             <Text style={{ color: theme.colors.dark }}>
@@ -383,20 +391,24 @@ const ProductViewScreen = ({ route, navigation }) => {
                         )}
                       />
                       {errors.selectedVariant && touched.selectedVariant && (
-                        <Text style={styles.errorText}>{errors.selectedVariant}</Text>
+                        <Text style={styles.errorText}>
+                          {errors.selectedVariant}
+                        </Text>
                       )}
                     </View>
                     {values.selectedVariant && (
                       <View style={styles.sizeContainer}>
-                        <Text style={styles.sectionTitle}>
-                          Sizes:
-                        </Text>
+                        <Text style={styles.sectionTitle}>Sizes:</Text>
                         <FlatList
                           data={values.selectedVariant.sizes}
                           horizontal
-                          keyExtractor={(size, idx) => `${values.selectedVariant.id}-size-${idx}`}
+                          keyExtractor={(size, idx) =>
+                            `${values.selectedVariant.id}-size-${idx}`
+                          }
                           renderItem={({ item: size }) => {
-                            const isSelected = values.selectedSize?.abbreviation === size.abbreviation;
+                            const isSelected =
+                              values.selectedSize?.abbreviation ===
+                              size.abbreviation;
                             return (
                               <TouchableOpacity
                                 style={[
@@ -408,10 +420,10 @@ const ProductViewScreen = ({ route, navigation }) => {
                                   },
                                 ]}
                                 onPress={() => {
-                                  setFieldValue('selectedSize', size);
+                                  setFieldValue("selectedSize", size);
                                   setSelectedSize(size);
                                   setQuantity(1);
-                                  setFieldValue('quantity', 1);
+                                  setFieldValue("quantity", 1);
                                 }}
                               >
                                 <Text style={{ color: theme.colors.dark }}>
@@ -422,7 +434,9 @@ const ProductViewScreen = ({ route, navigation }) => {
                           }}
                         />
                         {errors.selectedSize && touched.selectedSize && (
-                          <Text style={styles.errorText}>{errors.selectedSize}</Text>
+                          <Text style={styles.errorText}>
+                            {errors.selectedSize}
+                          </Text>
                         )}
                         {values.selectedSize && (
                           <Text style={styles.availableText}>
@@ -432,27 +446,42 @@ const ProductViewScreen = ({ route, navigation }) => {
                       </View>
                     )}
                     <View style={styles.quantitySection}>
-                      <Text style={styles.sectionTitle}>
-                        Quantity:
-                      </Text>
+                      <Text style={styles.sectionTitle}>Quantity:</Text>
                       <View style={styles.quantityContainer}>
                         <TouchableOpacity
                           style={styles.quantityButton}
                           onPress={() => {
                             if (quantity > 1) {
                               setQuantity(quantity - 1);
-                              setFieldValue('quantity', quantity - 1);
+                              setFieldValue("quantity", quantity - 1);
                             }
                           }}
                         >
                           <Text style={styles.quantityButtonText}>-</Text>
                         </TouchableOpacity>
-                        <Text style={styles.quantityText}>{values.quantity}</Text>
+                        <Text style={styles.quantityText}>
+                          {values.quantity}
+                        </Text>
                         <TouchableOpacity
                           style={styles.quantityButton}
                           onPress={() => {
-                            setQuantity(quantity + 1);
-                            setFieldValue('quantity', quantity + 1);
+                            // If a size is selected and available stock is greater than 5,
+                            // restrict maximum order to (available pieces - 5)
+                            if (
+                              values.selectedSize &&
+                              values.selectedSize.quantity > 5
+                            ) {
+                              const maxOrder = values.selectedSize.quantity - 5;
+                              if (quantity < maxOrder) {
+                                setQuantity(quantity + 1);
+                                setFieldValue("quantity", quantity + 1);
+                              }
+                            } else {
+                              // Reserve mode: available pieces are already 5 (or less),
+                              // so no limit applies to ordering.
+                              setQuantity(quantity + 1);
+                              setFieldValue("quantity", quantity + 1);
+                            }
                           }}
                         >
                           <Text style={styles.quantityButtonText}>+</Text>
@@ -463,16 +492,14 @@ const ProductViewScreen = ({ route, navigation }) => {
                       )}
                     </View>
                     <View style={styles.sizeChartSection}>
-                      <Text style={styles.sectionTitle}>
-                        Size Chart:
-                      </Text>
+                      <Text style={styles.sectionTitle}>Size Chart:</Text>
                       <View style={styles.sizeChartContainer}>
                         <View style={styles.chartHeaderRow}>
-                          <Text style={styles.chartHeaderText}>
-                            Size
-                          </Text>
+                          <Text style={styles.chartHeaderText}>Size</Text>
                           {Object.keys(
-                            measurementChart[Object.keys(measurementChart)[0]] || {}
+                            measurementChart[
+                              Object.keys(measurementChart)[0]
+                            ] || {}
                           ).map((measurement) => (
                             <Text
                               key={measurement}
@@ -482,24 +509,25 @@ const ProductViewScreen = ({ route, navigation }) => {
                             </Text>
                           ))}
                         </View>
-                        {Object.entries(measurementChart).map(([sizeName, measurements]) => (
-                          <View
-                            key={sizeName}
-                            style={styles.chartRow}
-                          >
-                            <Text style={styles.chartRowText}>
-                              {sizeName}
-                            </Text>
-                            {Object.values(measurements).map((value, index) => (
-                              <Text
-                                key={index}
-                                style={styles.chartRowValue}
-                              >
-                                {value}
+                        {Object.entries(measurementChart).map(
+                          ([sizeName, measurements]) => (
+                            <View key={sizeName} style={styles.chartRow}>
+                              <Text style={styles.chartRowText}>
+                                {sizeName}
                               </Text>
-                            ))}
-                          </View>
-                        ))}
+                              {Object.values(measurements).map(
+                                (value, index) => (
+                                  <Text
+                                    key={index}
+                                    style={styles.chartRowValue}
+                                  >
+                                    {value}
+                                  </Text>
+                                )
+                              )}
+                            </View>
+                          )
+                        )}
                       </View>
                     </View>
                     <View style={styles.shopInfoSection}>
@@ -520,31 +548,42 @@ const ProductViewScreen = ({ route, navigation }) => {
               <TouchableOpacity
                 style={[
                   styles.addToCartButton,
-                  addingToCart && { opacity: 0.7 }
+                  addingToCart && { opacity: 0.7 },
                 ]}
                 onPress={handleSubmit}
                 disabled={addingToCart}
               >
                 {addingToCart ? (
-                  <View style={{ flexDirection: 'row', alignItems: 'center' }}>
+                  <View style={{ flexDirection: "row", alignItems: "center" }}>
                     <Animated.View style={{ transform: [{ rotate: spin }] }}>
-                      <Loader2 size={24} color={theme.colors.dark} style={{ marginRight: 8 }} />
+                      <Loader2
+                        size={24}
+                        color={theme.colors.dark}
+                        style={{ marginRight: 8 }}
+                      />
                     </Animated.View>
                     <Text style={styles.buttonText}>Adding to Cart...</Text>
                   </View>
                 ) : (
-                  <View style={{ flexDirection: 'row', alignItems: 'center' }}>
-                    <ShoppingCart color={theme.colors.dark} size={24} style={{ marginRight: 8 }} />
+                  <View style={{ flexDirection: "row", alignItems: "center" }}>
+                    <ShoppingCart
+                      color={theme.colors.dark}
+                      size={24}
+                      style={{ marginRight: 8 }}
+                    />
                     <Text style={styles.buttonText}>Add to Cart</Text>
                   </View>
                 )}
               </TouchableOpacity>
             </View>
-            <Actionsheet isOpen={showReserveWarning} onClose={() => setShowReserveWarning(false)}>
+            <Actionsheet
+              isOpen={showReserveWarning}
+              onClose={() => setShowReserveWarning(false)}
+            >
               <Actionsheet.Content style={styles.actionsheetContent}>
                 <Text style={styles.actionsheetText}>
-                  The selected size has low stock (5 or fewer).
-                  If you proceed, it will be reserved once you check out.
+                  The selected size has low stock (5 or fewer). If you proceed,
+                  it will be reserved once you check out.
                 </Text>
                 <TouchableOpacity
                   style={[styles.addToCartButton, styles.proceedButton]}
@@ -556,9 +595,9 @@ const ProductViewScreen = ({ route, navigation }) => {
                         await handleAddToCart(pendingCartValues);
                         animateAddToCart(pendingCartValues);
                         toast.show({
-                          description: 'Item reserved to cart.',
+                          description: "Item reserved to cart.",
                           duration: 3000,
-                          placement: 'top',
+                          placement: "top",
                         });
                       } catch (err) {
                         console.error(err);
@@ -568,9 +607,7 @@ const ProductViewScreen = ({ route, navigation }) => {
                     }
                   }}
                 >
-                  <Text style={styles.proceedButtonText}>
-                    Proceed Anyway
-                  </Text>
+                  <Text style={styles.proceedButtonText}>Proceed Anyway</Text>
                 </TouchableOpacity>
                 <TouchableOpacity
                   style={[styles.addToCartButton, styles.cancelButton]}
@@ -578,9 +615,7 @@ const ProductViewScreen = ({ route, navigation }) => {
                     setShowReserveWarning(false);
                   }}
                 >
-                  <Text style={styles.cancelButtonText}>
-                    Cancel
-                  </Text>
+                  <Text style={styles.cancelButtonText}>Cancel</Text>
                 </TouchableOpacity>
               </Actionsheet.Content>
             </Actionsheet>

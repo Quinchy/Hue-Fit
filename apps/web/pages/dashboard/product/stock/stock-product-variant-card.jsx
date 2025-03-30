@@ -6,7 +6,10 @@ import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { Pencil, MoveRight, Loader2, TriangleAlert } from "lucide-react";
 import { Formik, Form } from "formik";
-import { InputErrorMessage, InputErrorStyle } from "@/components/ui/error-message";
+import {
+  InputErrorMessage,
+  InputErrorStyle,
+} from "@/components/ui/error-message";
 
 export default function StockProductVariantCard({
   variant,
@@ -38,7 +41,7 @@ export default function StockProductVariantCard({
   const [isEditing, setIsEditing] = useState(false);
   const [isUpdating, setIsUpdating] = useState(false);
 
-  // Handle the change for the increment input (used when not using Formik)
+  // Handle the change for the increment input (when not using Formik)
   const handleIncrementChange = (sizeAbbr, value) => {
     if (!isEditing) return;
     const parsedValue = parseInt(value, 10);
@@ -48,9 +51,18 @@ export default function StockProductVariantCard({
     }));
   };
 
-  // Update the stock by calling the update API endpoint (used when not using Formik)
+  // Non-Formik update handler with effective increment calculation.
   const handleUpdate = async () => {
     setIsUpdating(true);
+    // Calculate effective increments: effective = max(0, entered - reserved)
+    let effectiveIncrements = {};
+    sortedVariantSizes.forEach((vq) => {
+      const sizeAbbr = vq?.Size?.abbreviation;
+      const entered = Number(increments[sizeAbbr]) || 0;
+      const reserved = reservedQuantitiesMap[vq.id] || 0;
+      effectiveIncrements[sizeAbbr] = Math.max(0, entered - reserved);
+    });
+
     try {
       const response = await fetch("/api/products/update-product-stocks", {
         method: "POST",
@@ -59,17 +71,17 @@ export default function StockProductVariantCard({
         },
         body: JSON.stringify({
           productVariantId: variant.id,
-          increments,
+          increments: effectiveIncrements,
         }),
       });
 
       const data = await response.json();
 
       if (response.ok) {
-        // Update the current quantities with the new increments.
+        // Update the current quantities with the effective increments.
         const newQuantities = { ...quantities };
-        Object.keys(increments).forEach((sizeAbbr) => {
-          newQuantities[sizeAbbr] += increments[sizeAbbr];
+        Object.keys(effectiveIncrements).forEach((sizeAbbr) => {
+          newQuantities[sizeAbbr] += Number(effectiveIncrements[sizeAbbr]);
         });
         setQuantities(newQuantities);
         // Reset the increments to zero
@@ -165,7 +177,9 @@ export default function StockProductVariantCard({
             {!isEditing &&
               sortedVariantSizes.map((vq) => {
                 const sizeAbbr = vq?.Size?.abbreviation;
-                const sizeObj = sizes.find((sz) => sz.abbreviation === sizeAbbr);
+                const sizeObj = sizes.find(
+                  (sz) => sz.abbreviation === sizeAbbr
+                );
                 if (!sizeObj) return null;
 
                 const currentStock = quantities[sizeAbbr] || 0;
@@ -188,7 +202,10 @@ export default function StockProductVariantCard({
                       {currentStock <= threshold && reservedQuantity > 0 && (
                         <p className="text-red-500 text-sm flex flex-row items-center gap-2 bg-red-400/10 px-3 py-1 rounded-md border border-red-600/25">
                           <TriangleAlert width={20} />
-                          This product size needs at least {reservedQuantity} stocks!
+                          This product size needs at least {
+                            reservedQuantity
+                          }{" "}
+                          stocks!
                         </p>
                       )}
                     </div>
@@ -204,8 +221,13 @@ export default function StockProductVariantCard({
                   sortedVariantSizes.forEach((vq) => {
                     const sizeAbbr = vq?.Size?.abbreviation;
                     const reservedQuantity = reservedQuantitiesMap[vq.id] || 0;
-                    if (reservedQuantity > 0 && Number(values[sizeAbbr]) < reservedQuantity) {
-                      errors[sizeAbbr] = `Must add at least ${reservedQuantity} stocks`;
+                    if (
+                      reservedQuantity > 0 &&
+                      Number(values[sizeAbbr]) < reservedQuantity
+                    ) {
+                      errors[
+                        sizeAbbr
+                      ] = `Must add at least ${reservedQuantity} stocks`;
                     }
                     if (Number(values[sizeAbbr]) < 0) {
                       errors[sizeAbbr] = "Cannot be negative";
@@ -214,6 +236,18 @@ export default function StockProductVariantCard({
                   return errors;
                 }}
                 onSubmit={(values, { setSubmitting }) => {
+                  // Calculate effective increments: effective = max(0, entered - reserved)
+                  let effectiveIncrements = {};
+                  sortedVariantSizes.forEach((vq) => {
+                    const sizeAbbr = vq?.Size?.abbreviation;
+                    const enteredIncrement = Number(values[sizeAbbr]) || 0;
+                    const reservedQuantity = reservedQuantitiesMap[vq.id] || 0;
+                    effectiveIncrements[sizeAbbr] = Math.max(
+                      0,
+                      enteredIncrement - reservedQuantity
+                    );
+                  });
+
                   setIsUpdating(true);
                   fetch("/api/products/update-product-stocks", {
                     method: "POST",
@@ -222,7 +256,7 @@ export default function StockProductVariantCard({
                     },
                     body: JSON.stringify({
                       productVariantId: variant.id,
-                      increments: values,
+                      increments: effectiveIncrements,
                     }),
                   })
                     .then((response) =>
@@ -230,10 +264,12 @@ export default function StockProductVariantCard({
                     )
                     .then(({ response, data }) => {
                       if (response.ok) {
-                        // Update the current quantities with the new increments.
+                        // Update the current quantities with the effective increments.
                         const newQuantities = { ...quantities };
-                        Object.keys(values).forEach((sizeAbbr) => {
-                          newQuantities[sizeAbbr] += Number(values[sizeAbbr]);
+                        Object.keys(effectiveIncrements).forEach((sizeAbbr) => {
+                          newQuantities[sizeAbbr] += Number(
+                            effectiveIncrements[sizeAbbr]
+                          );
                         });
                         setQuantities(newQuantities);
                         // Reset the increments to zero
@@ -250,7 +286,9 @@ export default function StockProductVariantCard({
                           title: "Success",
                         });
                       } else {
-                        throw new Error(data.message || "Failed to update stock.");
+                        throw new Error(
+                          data.message || "Failed to update stock."
+                        );
                       }
                     })
                     .catch((error) => {
@@ -266,15 +304,25 @@ export default function StockProductVariantCard({
                     });
                 }}
               >
-                {({ isSubmitting, values, handleChange, handleBlur, errors, touched }) => (
+                {({
+                  isSubmitting,
+                  values,
+                  handleChange,
+                  handleBlur,
+                  errors,
+                  touched,
+                }) => (
                   <Form>
                     {sortedVariantSizes.map((vq) => {
                       const sizeAbbr = vq?.Size?.abbreviation;
-                      const sizeObj = sizes.find((sz) => sz.abbreviation === sizeAbbr);
+                      const sizeObj = sizes.find(
+                        (sz) => sz.abbreviation === sizeAbbr
+                      );
                       if (!sizeObj) return null;
 
                       const currentStock = quantities[sizeAbbr] || 0;
-                      const reservedQuantity = reservedQuantitiesMap[vq.id] || 0;
+                      const reservedQuantity =
+                        reservedQuantitiesMap[vq.id] || 0;
                       return (
                         <div key={sizeAbbr} className="flex flex-col gap-1">
                           <Label className="font-bold">
@@ -291,7 +339,10 @@ export default function StockProductVariantCard({
                                   name={sizeAbbr}
                                   min="0"
                                   placeholder="Amount to add"
-                                  className={`w-full ${InputErrorStyle(errors[sizeAbbr], touched[sizeAbbr])}`}
+                                  className={`w-full ${InputErrorStyle(
+                                    errors[sizeAbbr],
+                                    touched[sizeAbbr]
+                                  )}`}
                                   value={values[sizeAbbr]}
                                   onChange={handleChange}
                                   onBlur={handleBlur}
@@ -317,12 +368,14 @@ export default function StockProductVariantCard({
                                   disabled
                                   className="w-full"
                                 />
-                                {currentStock <= threshold && reservedQuantity > 0 && (
-                                  <p className="text-red-500 text-sm flex flex-row items-center gap-2 bg-red-400/10 px-3 py-1 rounded-md border border-red-600/25">
-                                    <TriangleAlert width={20} />
-                                    This product size needs at least {reservedQuantity} stocks!
-                                  </p>
-                                )}
+                                {currentStock <= threshold &&
+                                  reservedQuantity > 0 && (
+                                    <p className="text-red-500 text-sm flex flex-row items-center gap-2 bg-red-400/10 px-3 py-1 rounded-md border border-red-600/25">
+                                      <TriangleAlert width={20} />
+                                      This product size needs at least{" "}
+                                      {reservedQuantity} stocks!
+                                    </p>
+                                  )}
                               </div>
                             </div>
                           </div>
