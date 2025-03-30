@@ -10,6 +10,57 @@ import { SwitchCamera } from "lucide-react";
 
 setWasmPaths("/wasm/");
 
+function cropTransparentImage(img) {
+  const w = img.naturalWidth,
+    h = img.naturalHeight;
+  const tempCanvas = document.createElement("canvas");
+  tempCanvas.width = w;
+  tempCanvas.height = h;
+  const tempCtx = tempCanvas.getContext("2d");
+  tempCtx.drawImage(img, 0, 0);
+  const imageData = tempCtx.getImageData(0, 0, w, h);
+  const { data } = imageData;
+  let top = h,
+    left = w,
+    right = 0,
+    bottom = 0;
+  for (let y = 0; y < h; y++) {
+    for (let x = 0; x < w; x++) {
+      const idx = (y * w + x) * 4;
+      if (data[idx + 3] > 0) {
+        if (x < left) left = x;
+        if (x > right) right = x;
+        if (y < top) top = y;
+        if (y > bottom) bottom = y;
+      }
+    }
+  }
+  if (right < left || bottom < top) return { croppedImg: img, imageData };
+  const croppedWidth = right - left + 1;
+  const croppedHeight = bottom - top + 1;
+  const croppedCanvas = document.createElement("canvas");
+  croppedCanvas.width = croppedWidth;
+  croppedCanvas.height = croppedHeight;
+  const croppedCtx = croppedCanvas.getContext("2d");
+  croppedCtx.drawImage(
+    tempCanvas,
+    left,
+    top,
+    croppedWidth,
+    croppedHeight,
+    0,
+    0,
+    croppedWidth,
+    croppedHeight
+  );
+  const croppedImg = new Image();
+  croppedImg.src = croppedCanvas.toDataURL();
+  return {
+    croppedImg,
+    imageData: croppedCtx.getImageData(0, 0, croppedWidth, croppedHeight),
+  };
+}
+
 export default function VirtualTryOnPage() {
   const router = useRouter();
   const { pngClotheURL, upperWearPng, lowerWearPng, outerWearPng, type, tag } =
@@ -33,63 +84,6 @@ export default function VirtualTryOnPage() {
     setMounted(true);
   }, []);
 
-  function cropTransparentImage(img) {
-    const w = img.naturalWidth;
-    const h = img.naturalHeight;
-    const tempCanvas = document.createElement("canvas");
-    tempCanvas.width = w;
-    tempCanvas.height = h;
-    const tempCtx = tempCanvas.getContext("2d");
-    tempCtx.drawImage(img, 0, 0);
-    const imageData = tempCtx.getImageData(0, 0, w, h);
-    const { data } = imageData;
-    let top = h,
-      left = w,
-      right = 0,
-      bottom = 0;
-    for (let y = 0; y < h; y++) {
-      for (let x = 0; x < w; x++) {
-        const idx = (y * w + x) * 4;
-        const alpha = data[idx + 3];
-        if (alpha > 0) {
-          if (x < left) left = x;
-          if (x > right) right = x;
-          if (y < top) top = y;
-          if (y > bottom) bottom = y;
-        }
-      }
-    }
-    if (right < left || bottom < top) {
-      return { croppedImg: img, imageData };
-    }
-    const croppedWidth = right - left + 1;
-    const croppedHeight = bottom - top + 1;
-    const croppedCanvas = document.createElement("canvas");
-    croppedCanvas.width = croppedWidth;
-    croppedCanvas.height = croppedHeight;
-    const croppedCtx = croppedCanvas.getContext("2d");
-    croppedCtx.drawImage(
-      tempCanvas,
-      left,
-      top,
-      croppedWidth,
-      croppedHeight,
-      0,
-      0,
-      croppedWidth,
-      croppedHeight
-    );
-    const croppedImageData = croppedCtx.getImageData(
-      0,
-      0,
-      croppedWidth,
-      croppedHeight
-    );
-    const croppedImg = new Image();
-    croppedImg.src = croppedCanvas.toDataURL();
-    return { croppedImg, imageData: croppedImageData };
-  }
-
   useEffect(() => {
     if (!router.isReady) return;
     if (upperWearPng && lowerWearPng) {
@@ -104,9 +98,7 @@ export default function VirtualTryOnPage() {
       };
       loadImage(upperWearPng, upperWearImageRef);
       loadImage(lowerWearPng, lowerWearImageRef);
-      if (outerWearPng) {
-        loadImage(outerWearPng, outerWearImageRef);
-      }
+      if (outerWearPng) loadImage(outerWearPng, outerWearImageRef);
     } else if (pngClotheURL) {
       const img = new Image();
       img.crossOrigin = "anonymous";
@@ -123,13 +115,9 @@ export default function VirtualTryOnPage() {
     try {
       await tf.setBackend("wasm");
       await tf.ready();
-      const detectionModel = posedetection.SupportedModels.MoveNet;
-      const detectorConfig = {
-        modelType: posedetection.movenet.modelType.SINGLEPOSE_LIGHTNING,
-      };
       const detectorInstance = await posedetection.createDetector(
-        detectionModel,
-        detectorConfig
+        posedetection.SupportedModels.MoveNet,
+        { modelType: posedetection.movenet.modelType.SINGLEPOSE_LIGHTNING }
       );
       setPoseDetector(detectorInstance);
     } catch (error) {
@@ -140,83 +128,29 @@ export default function VirtualTryOnPage() {
     }
   };
 
-  function computeOverlayParams(
-    clothingType,
-    scaleX,
-    scaleY,
-    keypoints,
-    aspectRatio
-  ) {
-    if (clothingType === "UPPERWEAR") {
-      if (!keypoints.left_shoulder || !keypoints.right_shoulder) return null;
-      const leftShoulderX = keypoints.left_shoulder.x * scaleX;
-      const leftShoulderY = keypoints.left_shoulder.y * scaleY;
-      const rightShoulderX = keypoints.right_shoulder.x * scaleX;
-      const rightShoulderY = keypoints.right_shoulder.y * scaleY;
-      const shoulderCenterX = (leftShoulderX + rightShoulderX) / 2;
-      const shoulderCenterY = (leftShoulderY + rightShoulderY) / 2;
-      const shoulderWidth = Math.abs(rightShoulderX - leftShoulderX);
-      let overlayWidth, overlayHeight;
-      if (keypoints.left_hip && keypoints.right_hip) {
-        const leftHipY = keypoints.left_hip.y * scaleY;
-        const rightHipY = keypoints.right_hip.y * scaleY;
-        const hipCenterY = (leftHipY + rightHipY) / 2;
-        const torsoHeight = hipCenterY - shoulderCenterY;
-        overlayHeight = torsoHeight * 1.2;
-        overlayWidth = overlayHeight * aspectRatio;
-      } else {
-        overlayWidth = shoulderWidth * 1.2;
-        overlayHeight = (overlayWidth / aspectRatio) * 1.15;
-      }
-      if (overlayWidth < shoulderWidth * 1.2) {
-        overlayWidth = shoulderWidth * 1.2;
-        overlayHeight = overlayWidth / aspectRatio;
-      }
-      overlayWidth = overlayWidth * 1.4;
-      // MODIFY UPPERWEAR POSITION HERE: adjust multiplier to move the overlay up
-      const originalOverlayY = shoulderCenterY - overlayHeight * 0.18;
-      const verticalStretchFactor = 1.15;
-      const newOverlayHeight = overlayHeight * verticalStretchFactor;
+  // Modified computeOverlayParamsSimple:
+  // For both UPPERWEAR/OUTERWEAR and LOWERWEAR, horizontal width is computed from the shoulder-to-shoulder distance.
+  function computeOverlayParamsSimple(clothingType, scaleX, scaleY, kp, image) {
+    if (!image) return null;
+    if (!kp.left_shoulder || !kp.right_shoulder) return null;
+    const shoulderCenterX =
+      ((kp.left_shoulder.x + kp.right_shoulder.x) / 2) * scaleX;
+    const shoulderWidth =
+      Math.abs(kp.right_shoulder.x - kp.left_shoulder.x) * scaleX;
+
+    if (clothingType === "UPPERWEAR" || clothingType === "OUTERWEAR") {
+      if (!kp.left_hip || !kp.right_hip) return null;
+      const shoulderCenterY =
+        ((kp.left_shoulder.y + kp.right_shoulder.y) / 2) * scaleY;
+      const hipCenterY = ((kp.left_hip.y + kp.right_hip.y) / 2) * scaleY;
+      const originalOverlayHeight = hipCenterY - shoulderCenterY;
+      const topOffset = originalOverlayHeight * 0.22;
+      const newOverlayHeight = originalOverlayHeight + topOffset;
+      const scaleFactor = newOverlayHeight / image.naturalHeight;
+      // Force overlay width to be equal to the shoulder-to-shoulder distance.
+      const overlayWidth = shoulderWidth;
       const overlayX = shoulderCenterX - overlayWidth / 2;
-      const overlayY = originalOverlayY;
-      return {
-        overlayX,
-        overlayY,
-        overlayWidth,
-        overlayHeight: newOverlayHeight,
-      };
-    } else if (clothingType === "OUTERWEAR") {
-      if (!keypoints.left_shoulder || !keypoints.right_shoulder) return null;
-      const leftShoulderX = keypoints.left_shoulder.x * scaleX;
-      const leftShoulderY = keypoints.left_shoulder.y * scaleY;
-      const rightShoulderX = keypoints.right_shoulder.x * scaleX;
-      const rightShoulderY = keypoints.right_shoulder.y * scaleY;
-      const shoulderCenterX = (leftShoulderX + rightShoulderX) / 2;
-      const shoulderCenterY = (leftShoulderY + rightShoulderY) / 2;
-      const shoulderWidth = Math.abs(rightShoulderX - leftShoulderX);
-      let overlayWidth, overlayHeight;
-      if (keypoints.left_hip && keypoints.right_hip) {
-        const leftHipY = keypoints.left_hip.y * scaleY;
-        const rightHipY = keypoints.right_hip.y * scaleY;
-        const hipCenterY = (leftHipY + rightHipY) / 2;
-        const torsoHeight = hipCenterY - shoulderCenterY;
-        overlayHeight = torsoHeight * 1.2;
-        overlayWidth = overlayHeight * aspectRatio;
-      } else {
-        overlayWidth = shoulderWidth * 1.2;
-        overlayHeight = (overlayWidth / aspectRatio) * 1.15;
-      }
-      if (overlayWidth < shoulderWidth * 1.2) {
-        overlayWidth = shoulderWidth * 1.2;
-        overlayHeight = overlayWidth / aspectRatio;
-      }
-      overlayWidth = overlayWidth * 1.75;
-      // MODIFY OUTERWEAR POSITION HERE: adjust multiplier to move the overlay up
-      const originalOverlayY = shoulderCenterY - overlayHeight * 0.18;
-      const verticalStretchFactor = 1.15;
-      const newOverlayHeight = overlayHeight * verticalStretchFactor;
-      const overlayX = shoulderCenterX - overlayWidth / 2;
-      const overlayY = originalOverlayY;
+      const overlayY = shoulderCenterY - topOffset;
       return {
         overlayX,
         overlayY,
@@ -224,36 +158,27 @@ export default function VirtualTryOnPage() {
         overlayHeight: newOverlayHeight,
       };
     } else if (clothingType === "LOWERWEAR") {
-      if (!keypoints.left_hip || !keypoints.right_hip) return null;
-      const leftHipX = keypoints.left_hip.x * scaleX;
-      const leftHipY = keypoints.left_hip.y * scaleY;
-      const rightHipX = keypoints.right_hip.x * scaleX;
-      const rightHipY = keypoints.right_hip.y * scaleY;
-      const hipCenterX = (leftHipX + rightHipX) / 2;
-      const hipCenterY = (leftHipY + rightHipY) / 2;
-      let lowerPointY = null;
+      if (!kp.left_hip || !kp.right_hip) return null;
+      const hipCenterY = ((kp.left_hip.y + kp.right_hip.y) / 2) * scaleY;
+      let lowerBoundaryY;
       if (tag === "SHORTS") {
-        if (!keypoints.left_knee || !keypoints.right_knee) return null;
-        const leftKneeY = keypoints.left_knee.y * scaleY;
-        const rightKneeY = keypoints.right_knee.y * scaleY;
-        lowerPointY = (leftKneeY + rightKneeY) / 2;
+        if (!kp.left_knee && !kp.right_knee) return null;
+        const kneeY = kp.left_knee ? kp.left_knee.y : kp.right_knee.y;
+        lowerBoundaryY = kneeY * scaleY;
       } else {
-        if (!keypoints.left_ankle || !keypoints.right_ankle) return null;
-        const leftAnkleY = keypoints.left_ankle.y * scaleY;
-        const rightAnkleY = keypoints.right_ankle.y * scaleY;
-        lowerPointY = (leftAnkleY + rightAnkleY) / 2;
+        if (!kp.left_ankle && !kp.right_ankle) return null;
+        const ankleY = kp.left_ankle ? kp.left_ankle.y : kp.right_ankle.y;
+        lowerBoundaryY = ankleY * scaleY;
       }
-      const lowerBodyHeight = lowerPointY - hipCenterY;
-      let overlayHeight = lowerBodyHeight * 1.2;
-      let overlayWidth = overlayHeight * aspectRatio;
-      const hipWidth = Math.abs(rightHipX - leftHipX);
-      if (overlayWidth < hipWidth * 1.1) {
-        overlayWidth = hipWidth * 1.1;
-        overlayHeight = overlayWidth / aspectRatio;
-      }
-      overlayWidth = overlayWidth * 1.625;
-      const overlayX = hipCenterX - overlayWidth / 2;
-      const overlayY = hipCenterY - 40;
+      const originalHeight = lowerBoundaryY - hipCenterY;
+      const topOffset = originalHeight * 0.05;
+      let bottomOffset = tag === "SHORTS" ? 0 : originalHeight * 0.01;
+      const overlayY = hipCenterY - topOffset;
+      const overlayHeight = originalHeight + topOffset - bottomOffset;
+      const scaleFactor = overlayHeight / image.naturalHeight;
+      // Use shoulder width for lowerwear as well.
+      const overlayWidth = shoulderWidth;
+      const overlayX = shoulderCenterX - overlayWidth / 2;
       return { overlayX, overlayY, overlayWidth, overlayHeight };
     }
     return null;
@@ -264,272 +189,204 @@ export default function VirtualTryOnPage() {
       if (!poses || poses.length === 0) return;
       const keypointsArray = poses[0].keypoints;
       if (!keypointsArray || keypointsArray.length === 0) return;
-      const kp = {
-        left_shoulder: keypointsArray.find(
-          (kp) => kp.name === "left_shoulder" && kp.score > 0.5
-        ),
-        right_shoulder: keypointsArray.find(
-          (kp) => kp.name === "right_shoulder" && kp.score > 0.5
-        ),
-        left_hip: keypointsArray.find(
-          (kp) => kp.name === "left_hip" && kp.score > 0.5
-        ),
-        right_hip: keypointsArray.find(
-          (kp) => kp.name === "right_hip" && kp.score > 0.5
-        ),
-        left_knee: keypointsArray.find(
-          (kp) => kp.name === "left_knee" && kp.score > 0.5
-        ),
-        right_knee: keypointsArray.find(
-          (kp) => kp.name === "right_knee" && kp.score > 0.5
-        ),
-        left_ankle: keypointsArray.find(
-          (kp) => kp.name === "left_ankle" && kp.score > 0.5
-        ),
-        right_ankle: keypointsArray.find(
-          (kp) => kp.name === "right_ankle" && kp.score > 0.5
-        ),
-      };
-      let requiredKeypointNames = [];
-      const multiOverlayMode = upperWearPng && lowerWearPng;
-      if (multiOverlayMode) {
-        requiredKeypointNames = [
-          "left_shoulder",
-          "right_shoulder",
-          "left_hip",
-          "right_hip",
-        ];
-        if (tag === "SHORTS") {
-          requiredKeypointNames.push("left_knee", "right_knee");
-        } else {
-          requiredKeypointNames.push("left_ankle", "right_ankle");
-        }
-      } else {
-        if (type === "UPPERWEAR" || type === "OUTERWEAR") {
-          requiredKeypointNames = [
-            "left_shoulder",
-            "right_shoulder",
-            "left_hip",
-            "right_hip",
-          ];
-        } else if (type === "LOWERWEAR") {
-          requiredKeypointNames = ["left_hip", "right_hip"];
-          if (tag === "SHORTS") {
-            requiredKeypointNames.push("left_knee", "right_knee");
-          } else {
-            requiredKeypointNames.push("left_ankle", "right_ankle");
-          }
-        }
-      }
-      const relevantKps = requiredKeypointNames
-        .map((name) => kp[name])
-        .filter((k) => k != null);
-      const fitPercentage =
-        relevantKps.length > 0
-          ? Math.round(
-              (relevantKps.reduce((acc, k) => acc + k.score, 0) /
-                relevantKps.length) *
-                100
-            )
-          : 0;
+      const allowedKeypoints = [
+        "left_shoulder",
+        "right_shoulder",
+        "left_hip",
+        "right_hip",
+        "left_knee",
+        "right_knee",
+        "left_ankle",
+        "right_ankle",
+      ];
+      const kp = {};
+      allowedKeypoints.forEach((name) => {
+        const found = keypointsArray.find(
+          (k) => k.name === name && k.score > 0.5
+        );
+        if (found) kp[name] = found;
+      });
+
       const videoWidth = videoElementRef.current.videoWidth;
       const videoHeight = videoElementRef.current.videoHeight;
       const canvasWidth = canvasElementRef.current.width;
       const canvasHeight = canvasElementRef.current.height;
-      const scaleX = canvasWidth / videoWidth;
-      const scaleY = canvasHeight / videoHeight;
+      const sX = canvasWidth / videoWidth;
+      const sY = canvasHeight / videoHeight;
       canvasContext.clearRect(0, 0, canvasWidth, canvasHeight);
+
+      // Scaling factors: modify these values to scale clothes horizontally/vertically
+      const upperHScale = 2.2,
+        upperVScale = 1.2,
+        lowerHScale = 1.5,
+        lowerVScale = 1.0;
+      const multiOverlayMode = upperWearPng && lowerWearPng;
       if (multiOverlayMode) {
-        const upperImg = upperWearImageRef.current;
-        const lowerImg = lowerWearImageRef.current;
-        if (!upperImg || !lowerImg) {
-          setStatusMessage("Clothing images not loaded yet.");
-          return;
+        if (outerWearPng) {
+          const upperImg = upperWearImageRef.current;
+          if (upperImg) {
+            let upperParams = computeOverlayParamsSimple(
+              "UPPERWEAR",
+              sX,
+              sY,
+              kp,
+              upperImg
+            );
+            if (upperParams) {
+              const centerX =
+                upperParams.overlayX + upperParams.overlayWidth / 2;
+              upperParams.overlayWidth *= upperHScale;
+              upperParams.overlayX = centerX - upperParams.overlayWidth / 2;
+              upperParams.overlayHeight *= upperVScale;
+              canvasContext.drawImage(
+                upperImg,
+                upperParams.overlayX,
+                upperParams.overlayY,
+                upperParams.overlayWidth,
+                upperParams.overlayHeight
+              );
+            }
+          }
+          const lowerImg = lowerWearImageRef.current;
+          if (lowerImg) {
+            let lowerParams = computeOverlayParamsSimple(
+              "LOWERWEAR",
+              sX,
+              sY,
+              kp,
+              lowerImg
+            );
+            if (lowerParams) {
+              const centerX =
+                lowerParams.overlayX + lowerParams.overlayWidth / 2;
+              lowerParams.overlayWidth *= lowerHScale;
+              lowerParams.overlayX = centerX - lowerParams.overlayWidth / 2;
+              lowerParams.overlayHeight *= lowerVScale;
+              canvasContext.drawImage(
+                lowerImg,
+                lowerParams.overlayX,
+                lowerParams.overlayY,
+                lowerParams.overlayWidth,
+                lowerParams.overlayHeight
+              );
+            }
+          }
+          let outerImg = outerWearImageRef.current;
+          if (outerImg) {
+            let outerParams = computeOverlayParamsSimple(
+              "OUTERWEAR",
+              sX,
+              sY,
+              kp,
+              outerImg
+            );
+            if (outerParams) {
+              const centerX =
+                outerParams.overlayX + outerParams.overlayWidth / 2;
+              outerParams.overlayWidth *= upperHScale;
+              outerParams.overlayX = centerX - outerParams.overlayWidth / 2;
+              outerParams.overlayHeight *= upperVScale;
+              canvasContext.drawImage(
+                outerImg,
+                outerParams.overlayX,
+                outerParams.overlayY,
+                outerParams.overlayWidth,
+                outerParams.overlayHeight
+              );
+            }
+          }
+        } else {
+          const lowerImg = lowerWearImageRef.current;
+          if (lowerImg) {
+            let lowerParams = computeOverlayParamsSimple(
+              "LOWERWEAR",
+              sX,
+              sY,
+              kp,
+              lowerImg
+            );
+            if (lowerParams) {
+              const centerX =
+                lowerParams.overlayX + lowerParams.overlayWidth / 2;
+              lowerParams.overlayWidth *= lowerHScale;
+              lowerParams.overlayX = centerX - lowerParams.overlayWidth / 2;
+              lowerParams.overlayHeight *= lowerVScale;
+              canvasContext.drawImage(
+                lowerImg,
+                lowerParams.overlayX,
+                lowerParams.overlayY,
+                lowerParams.overlayWidth,
+                lowerParams.overlayHeight
+              );
+            }
+          }
+          const upperImg = upperWearImageRef.current;
+          if (upperImg) {
+            let upperParams = computeOverlayParamsSimple(
+              "UPPERWEAR",
+              sX,
+              sY,
+              kp,
+              upperImg
+            );
+            if (upperParams) {
+              const centerX =
+                upperParams.overlayX + upperParams.overlayWidth / 2;
+              upperParams.overlayWidth *= upperHScale;
+              upperParams.overlayX = centerX - upperParams.overlayWidth / 2;
+              upperParams.overlayHeight *= upperVScale;
+              canvasContext.drawImage(
+                upperImg,
+                upperParams.overlayX,
+                upperParams.overlayY,
+                upperParams.overlayWidth,
+                upperParams.overlayHeight
+              );
+            }
+          }
         }
-        const upperAspect = upperImg.naturalWidth / upperImg.naturalHeight;
-        const lowerAspect = lowerImg.naturalWidth / lowerImg.naturalHeight;
-        let outerAspect = null;
-        if (outerWearPng && outerWearImageRef.current) {
-          outerAspect =
-            outerWearImageRef.current.naturalWidth /
-            outerWearImageRef.current.naturalHeight;
-        }
-        const upperParams = computeOverlayParams(
-          "UPPERWEAR",
-          scaleX,
-          scaleY,
-          kp,
-          upperAspect
-        );
-        const lowerParams = computeOverlayParams(
-          "LOWERWEAR",
-          scaleX,
-          scaleY,
-          kp,
-          lowerAspect
-        );
-        let outerParams = null;
-        if (outerWearPng && outerWearImageRef.current) {
-          outerParams = computeOverlayParams(
-            "OUTERWEAR",
-            scaleX,
-            scaleY,
-            kp,
-            outerAspect
-          );
-        }
-        if (upperParams && outerWearPng) {
-          upperParams.overlayY -= 0; // MODIFY UPPERWEAR POSITION HERE (multi-overlay): adjust this value to move upperwear up
-        }
-        if (upperParams) {
-          canvasContext.drawImage(
-            upperImg,
-            upperParams.overlayX,
-            upperParams.overlayY,
-            upperParams.overlayWidth,
-            upperParams.overlayHeight
-          );
-        }
-        if (lowerParams) {
-          canvasContext.drawImage(
-            lowerImg,
-            lowerParams.overlayX,
-            lowerParams.overlayY,
-            lowerParams.overlayWidth,
-            lowerParams.overlayHeight
-          );
-        }
-        if (outerParams) {
-          canvasContext.drawImage(
-            outerWearImageRef.current,
-            outerParams.overlayX,
-            outerParams.overlayY,
-            outerParams.overlayWidth,
-            outerParams.overlayHeight
-          );
-        }
-        setStatusMessage(
-          `Clothing applied. Display mode: All layers. Fit: ${fitPercentage}%`
-        );
+        setStatusMessage("Clothing applied. Multi-layer mode.");
       } else {
-        if (!clothingImageElementRef.current) {
+        let image, clothingType;
+        if (type === "LOWERWEAR") {
+          image = clothingImageElementRef.current;
+          clothingType = "LOWERWEAR";
+        } else if (type === "UPPERWEAR" || type === "OUTERWEAR") {
+          image = clothingImageElementRef.current;
+          clothingType = type;
+        }
+        if (!image) {
           setStatusMessage("No clothing image loaded.");
           return;
         }
-        let overlayX = 0,
-          overlayY = 0,
-          overlayWidth = 0,
-          overlayHeight = 0;
-        if (type === "UPPERWEAR" || type === "OUTERWEAR") {
-          if (!kp.left_shoulder || !kp.right_shoulder) {
-            setStatusMessage(
-              "Upper body not fully detected. Move into frame and ensure good lighting."
-            );
-            return;
-          }
-          const leftShoulderX = kp.left_shoulder.x * scaleX;
-          const leftShoulderY = kp.left_shoulder.y * scaleY;
-          const rightShoulderX = kp.right_shoulder.x * scaleX;
-          const rightShoulderY = kp.right_shoulder.y * scaleY;
-          const shoulderCenterX = (leftShoulderX + rightShoulderX) / 2;
-          const shoulderCenterY = (leftShoulderY + rightShoulderY) / 2;
-          const shoulderWidth = Math.abs(rightShoulderX - leftShoulderX);
-          if (kp.left_hip && kp.right_hip) {
-            const leftHipY = kp.left_hip.y * scaleY;
-            const rightHipY = kp.right_hip.y * scaleY;
-            const hipCenterY = (leftHipY + rightHipY) / 2;
-            const torsoHeight = hipCenterY - shoulderCenterY;
-            overlayHeight = torsoHeight * 1.2;
-            overlayWidth =
-              overlayHeight *
-              (clothingImageElementRef.current.naturalWidth /
-                clothingImageElementRef.current.naturalHeight);
+        let params = computeOverlayParamsSimple(
+          clothingType,
+          sX,
+          sY,
+          kp,
+          image
+        );
+        if (params) {
+          const centerX = params.overlayX + params.overlayWidth / 2;
+          if (clothingType === "LOWERWEAR") {
+            params.overlayWidth *= lowerHScale;
+            params.overlayHeight *= lowerVScale;
           } else {
-            overlayWidth = shoulderWidth * 1.2;
-            overlayHeight =
-              (overlayWidth /
-                (clothingImageElementRef.current.naturalWidth /
-                  clothingImageElementRef.current.naturalHeight)) *
-              1.15;
+            params.overlayWidth *= upperHScale;
+            params.overlayHeight *= upperVScale;
           }
-          if (overlayWidth < shoulderWidth * 1.2) {
-            overlayWidth = shoulderWidth * 1.2;
-            overlayHeight =
-              overlayWidth /
-              (clothingImageElementRef.current.naturalWidth /
-                clothingImageElementRef.current.naturalHeight);
-          }
-          overlayWidth = overlayWidth * 1.85;
-          overlayX = shoulderCenterX - overlayWidth / 2;
-          overlayY = shoulderCenterY - overlayHeight * 0.18; // MODIFY UPPERWEAR/OUTERWEAR POSITION HERE (single-overlay): adjust this value to move it up
-          const verticalStretchFactor = 1.15;
-          overlayHeight = overlayHeight * verticalStretchFactor;
-        } else if (type === "LOWERWEAR") {
-          if (!kp.left_hip || !kp.right_hip) {
-            setStatusMessage(
-              "Lower body not fully detected (hips). Please move back to show hips."
-            );
-            return;
-          }
-          const leftHipX = kp.left_hip.x * scaleX;
-          const leftHipY = kp.left_hip.y * scaleY;
-          const rightHipX = kp.right_hip.x * scaleX;
-          const rightHipY = kp.right_hip.y * scaleY;
-          const hipCenterX = (leftHipX + rightHipX) / 2;
-          const hipCenterY = (leftHipY + rightHipY) / 2;
-          let lowerPointY = null;
-          if (tag === "SHORTS") {
-            if (!kp.left_knee || !kp.right_knee) {
-              setStatusMessage(
-                "Knees not detected. Move back to show full lower body."
-              );
-              return;
-            }
-            const leftKneeY = kp.left_knee.y * scaleY;
-            const rightKneeY = kp.right_knee.y * scaleY;
-            lowerPointY = (leftKneeY + rightKneeY) / 2;
-          } else {
-            if (!kp.left_ankle || !kp.right_ankle) {
-              setStatusMessage(
-                "Ankles not detected. Move back to show full lower body."
-              );
-              return;
-            }
-            const leftAnkleY = kp.left_ankle.y * scaleY;
-            const rightAnkleY = kp.right_ankle.y * scaleY;
-            lowerPointY = (leftAnkleY + rightAnkleY) / 2;
-          }
-          const lowerBodyHeight = lowerPointY - hipCenterY;
-          overlayHeight = lowerBodyHeight * 1.2;
-          overlayWidth =
-            overlayHeight *
-            (clothingImageElementRef.current.naturalWidth /
-              clothingImageElementRef.current.naturalHeight);
-          const hipWidth = Math.abs(rightHipX - leftHipX);
-          if (overlayWidth < hipWidth * 1.1) {
-            overlayWidth = hipWidth * 1.1;
-            overlayHeight =
-              overlayWidth /
-              (clothingImageElementRef.current.naturalWidth /
-                clothingImageElementRef.current.naturalHeight);
-          }
-          overlayWidth = overlayWidth * 1.6;
-          overlayX = hipCenterX - overlayWidth / 2;
-          overlayY = hipCenterY - 40;
+          params.overlayX = centerX - params.overlayWidth / 2;
+          canvasContext.drawImage(
+            image,
+            params.overlayX,
+            params.overlayY,
+            params.overlayWidth,
+            params.overlayHeight
+          );
+          setStatusMessage(`Clothing applied. Type: ${type}.`);
         }
-        canvasContext.drawImage(
-          clothingImageElementRef.current,
-          overlayX,
-          overlayY,
-          overlayWidth,
-          overlayHeight
-        );
-        setStatusMessage(
-          `Clothing applied. Type: ${type}${
-            type === "LOWERWEAR" ? ", Tag: " + tag : ""
-          }. Fit: ${fitPercentage}%`
-        );
       }
+      // Skeleton drawing removed.
     },
     [type, tag, upperWearPng, outerWearPng]
   );
@@ -545,9 +402,15 @@ export default function VirtualTryOnPage() {
       return;
     }
     try {
-      const canvasElement = canvasElementRef.current;
-      const canvasContext = canvasElement.getContext("2d", { alpha: true });
-      canvasContext.clearRect(0, 0, canvasElement.width, canvasElement.height);
+      const canvasContext = canvasElementRef.current.getContext("2d", {
+        alpha: true,
+      });
+      canvasContext.clearRect(
+        0,
+        0,
+        canvasElementRef.current.width,
+        canvasElementRef.current.height
+      );
       const detectedPoses = await poseDetector.estimatePoses(
         videoElementRef.current,
         { flipHorizontal: false }
@@ -568,8 +431,9 @@ export default function VirtualTryOnPage() {
       setIsCameraReady(false);
       try {
         if (videoElementRef.current && videoElementRef.current.srcObject) {
-          const tracks = videoElementRef.current.srcObject.getTracks();
-          tracks.forEach((track) => track.stop());
+          videoElementRef.current.srcObject
+            .getTracks()
+            .forEach((track) => track.stop());
         }
         const stream = await navigator.mediaDevices.getUserMedia({
           video: { facingMode: { ideal: facingMode } },
@@ -661,11 +525,7 @@ const styles = {
     margin: 0,
     padding: 0,
   },
-  cameraContainer: {
-    position: "relative",
-    width: "100%",
-    height: "100%",
-  },
+  cameraContainer: { position: "relative", width: "100%", height: "100%" },
   video: {
     width: "100%",
     height: "100%",
@@ -674,8 +534,8 @@ const styles = {
   },
   canvas: {
     position: "absolute",
-    top: "0",
-    left: "0",
+    top: 0,
+    left: 0,
     zIndex: 2,
     width: "100%",
     height: "100%",
