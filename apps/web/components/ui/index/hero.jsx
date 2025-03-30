@@ -37,7 +37,7 @@ export default function Hero() {
 
   const handleDownload = () => {
     const link = document.createElement("a");
-    link.href = "/HueFit-ver1.0.0.apk"; // Ensure the APK is in your public folder
+    link.href = "/HueFit.apk"; // Ensure the APK is in your public folder
     link.download = "HueFit.apk"; // Optional: specify the default filename
     document.body.appendChild(link);
     link.click();

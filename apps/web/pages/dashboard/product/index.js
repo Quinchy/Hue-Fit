@@ -204,35 +204,35 @@ export default function ProductsPage() {
         <Table>
           <TableHeader>
             <TableRow>
-              <TableHead className="w-10"></TableHead>
-              <TableHead className="w-44">Product Number</TableHead>
-              <TableHead>Name</TableHead>
-              <TableHead>Quantity</TableHead>
-              <TableHead>Type</TableHead>
-              <TableHead>Action</TableHead>
+              <TableHead className="w-[5%]"></TableHead>
+              <TableHead className="w-[11%]">Product Number</TableHead>
+              <TableHead className="w-[60%]">Name</TableHead>
+              <TableHead className="w-[10%] text-center">Quantity</TableHead>
+              <TableHead className="w-[10%] text-center">Type</TableHead>
+              <TableHead className="w-[10%] text-center">Action</TableHead>
             </TableRow>
           </TableHeader>
           <TableBody>
             {isLoading || !productsData ? (
-              Array.from({ length: 10 }).map((_, index) => (
+              Array.from({ length: 13 }).map((_, index) => (
                 <TableRow key={index}>
                   <TableCell>
-                    <Skeleton className="w-full h-14" />
+                    <Skeleton className="w-full h-10" />
                   </TableCell>
                   <TableCell>
-                    <Skeleton className="w-full h-14" />
+                    <Skeleton className="w-full h-10" />
                   </TableCell>
                   <TableCell>
-                    <Skeleton className="w-full h-14" />
+                    <Skeleton className="w-full h-10" />
                   </TableCell>
                   <TableCell className="text-center">
-                    <Skeleton className="w-full h-14" />
+                    <Skeleton className="w-full h-10" />
                   </TableCell>
                   <TableCell className="text-center">
-                    <Skeleton className="w-full h-14" />
+                    <Skeleton className="w-full h-10" />
                   </TableCell>
                   <TableCell className="text-center">
-                    <Skeleton className="w-full h-14" />
+                    <Skeleton className="w-full h-10" />
                   </TableCell>
                 </TableRow>
               ))
@@ -275,7 +275,7 @@ export default function ProductsPage() {
                       />
                     </TableCell>
                     <TableCell>{product.name}</TableCell>
-                    <TableCell>
+                    <TableCell className="text-center">
                       {product.totalQuantity}
                       {product.ProductVariant &&
                         product.ProductVariant.some(
@@ -291,7 +291,7 @@ export default function ProductsPage() {
                           />
                         )}
                     </TableCell>
-                    <TableCell>
+                    <TableCell className="text-center">
                       <p
                         className={`py-1 w-full rounded text-center font-bold ${
                           product.Type.name === "UPPERWEAR"

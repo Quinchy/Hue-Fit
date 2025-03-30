@@ -2,16 +2,26 @@ import DashboardLayoutWrapper from "@/components/ui/dashboard-layout";
 import { Label } from "@/components/ui/label";
 import { useSession } from "next-auth/react";
 import { useMemo, useState, useEffect } from "react";
-import { Shirt, Tag, BellRing, Store, CreditCard, PackageSearch } from "lucide-react";
+import {
+  Shirt,
+  Tag,
+  BellRing,
+  Store,
+  CreditCard,
+  PackageSearch,
+} from "lucide-react";
 import routes from "@/routes";
 import Link from "next/link";
-import { Pie, PieChart, Bar, BarChart, CartesianGrid, XAxis, Cell } from "recharts";
 import {
-  Card,
-  CardContent,
-  CardHeader,
-  CardTitle,
-} from "@/components/ui/card";
+  Pie,
+  PieChart,
+  Bar,
+  BarChart,
+  CartesianGrid,
+  XAxis,
+  Cell,
+} from "recharts";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import {
   ChartContainer,
   ChartTooltip,
@@ -133,10 +143,13 @@ export default function VendorDashboard() {
           <DialogContent className="sm:max-w-[525px]">
             <DialogHeader>
               <DialogTitle className="flex items-center gap-2 uppercase mb-5">
-                <Store className="stroke-[2px] mr-2" /> Welcome to Your Shop Dashboard!
+                <Store className="stroke-[2px] mr-2" /> Welcome to Your Shop
+                Dashboard!
               </DialogTitle>
               <DialogDescription className="text-base font-thin italic">
-                You can now start adding products, efficiently manage your orders, and customize your shop to maximize your business growth.
+                You can now start adding products, efficiently manage your
+                orders, and customize your shop to maximize your business
+                growth.
               </DialogDescription>
             </DialogHeader>
             <button
@@ -149,30 +162,42 @@ export default function VendorDashboard() {
         </Dialog>
       )}
       {isLoading ? (
-        <Skeleton className="w-full h-full" />
+        <>
+          {/* Skeleton for Welcome text */}
+          <Skeleton className="w-full h-14" />
+          <div className="flex flex-row gap-4 min-h-[49rem]">
+            {/* Left Column */}
+            <div className="flex flex-col gap-4 w-full">
+              {/* Row with two card skeletons */}
+              <div className="flex flex-row gap-4">
+                <Skeleton className="w-full p-6 h-[200px]" />
+                <Skeleton className="w-full p-6 h-[200px]" />
+              </div>
+              {/* Product Types card skeleton */}
+              <Skeleton className="w-full p-5 h-full" />
+            </div>
+            {/* Right Column */}
+            <div className="flex flex-col gap-4 w-full">
+              {/* Payments card skeleton */}
+              <Skeleton className="w-full p-5 h-full" />
+              {/* Notifications card skeleton */}
+              <Skeleton className="w-full p-5 h-full" />
+            </div>
+          </div>
+        </>
       ) : error ? (
         <p>Error: {error.message}</p>
       ) : (
         <>
           <p className="uppercase">
             {session?.user?.firstName ? (
-              <div className="flex items-center gap-2">
-                <p className="font-medium text-[2.50rem] leading-[2.5rem] tracking-tight">
-                  Welcome,{" "}
-                </p>
-                <CardTitle className="text-[2.35rem] leading-[2.5rem] tracking-widest">
-                  {session.user.firstName}
-                </CardTitle>
-              </div>
+              <CardTitle className="text-[2.35rem] leading-[2.5rem] tracking-widest">
+                Welcome, {session.user.firstName}
+              </CardTitle>
             ) : (
-              <div className="flex items-center gap-2">
-                <p className="font-medium text-[2.50rem] leading-[2.5rem] tracking-tight">
-                  Welcome,{" "}
-                </p>
-                <CardTitle className="text-[2.35rem] leading-[2.5rem] tracking-widest">
-                  User
-                </CardTitle>
-              </div>
+              <CardTitle className="text-[2.35rem] leading-[2.5rem] tracking-widest">
+                Welcome, User
+              </CardTitle>
             )}
           </p>
           <div className="flex flex-row gap-4 min-h-[49rem]">
@@ -227,7 +252,9 @@ export default function VendorDashboard() {
                 <CardHeader className="flex flex-col p-0 pb-5">
                   <div className="flex flex-row items-center gap-2">
                     <PackageSearch className="w-5" />
-                    <Label className="uppercase font-medium">Product Types</Label>
+                    <Label className="uppercase font-medium">
+                      Product Types
+                    </Label>
                   </div>
                   <div className="font-extralight text-base text-primary/75 leading-none">
                     Showing all product types available in your shop.
@@ -239,10 +266,21 @@ export default function VendorDashboard() {
                       {"You haven't created any products yet."}
                     </p>
                   ) : (
-                    <ChartContainer config={chartConfig} className="w-full h-fit-content">
+                    <ChartContainer
+                      config={chartConfig}
+                      className="w-full h-fit-content"
+                    >
                       <PieChart width="100%" height="100%">
-                        <ChartTooltip cursor={false} content={<ChartTooltipContent hideLabel />} />
-                        <Pie data={chartData} dataKey="visitors" nameKey="browser" innerRadius={110} />
+                        <ChartTooltip
+                          cursor={false}
+                          content={<ChartTooltipContent hideLabel />}
+                        />
+                        <Pie
+                          data={chartData}
+                          dataKey="visitors"
+                          nameKey="browser"
+                          innerRadius={110}
+                        />
                       </PieChart>
                     </ChartContainer>
                   )}
@@ -261,9 +299,17 @@ export default function VendorDashboard() {
                   </div>
                 </CardHeader>
                 <CardContent>
-                  {dashboardData.paymentChartData && dashboardData.paymentChartData.length > 0 ? (
-                    <ChartContainer config={paymentChartConfig} className="w-full h-64">
-                      <BarChart data={dashboardData.paymentChartData} width={400} height={250}>
+                  {dashboardData.paymentChartData &&
+                  dashboardData.paymentChartData.length > 0 ? (
+                    <ChartContainer
+                      config={paymentChartConfig}
+                      className="w-full h-64"
+                    >
+                      <BarChart
+                        data={dashboardData.paymentChartData}
+                        width={400}
+                        height={250}
+                      >
                         <CartesianGrid vertical={false} />
                         <XAxis
                           dataKey="month"
@@ -277,12 +323,18 @@ export default function VendorDashboard() {
                           content={<ChartTooltipContent indicator="dashed" />}
                         />
                         <Bar dataKey="total" radius={4}>
-                          {dashboardData.paymentChartData.map((entry, index) => (
-                            <Cell
-                              key={`cell-${index}`}
-                              fill={['#3b82f6', '#14b8a6', '#8b5cf6', '#06b6d4'][index % 4]}
-                            />
-                          ))}
+                          {dashboardData.paymentChartData.map(
+                            (entry, index) => (
+                              <Cell
+                                key={`cell-${index}`}
+                                fill={
+                                  ["#3b82f6", "#14b8a6", "#8b5cf6", "#06b6d4"][
+                                    index % 4
+                                  ]
+                                }
+                              />
+                            )
+                          )}
                         </Bar>
                       </BarChart>
                     </ChartContainer>
@@ -294,12 +346,17 @@ export default function VendorDashboard() {
                 </CardContent>
               </Card>
               <Card className="flex flex-col w-full p-5 h-full">
-                <div className="flex flex-row items-center justify-between gap-4 mb-4">                    
+                <div className="flex flex-row items-center justify-between gap-4 mb-4">
                   <div className="flex flex-row items-center gap-2">
                     <BellRing className="w-5" />
-                    <Label className="uppercase font-medium">Notifications:</Label>
+                    <Label className="uppercase font-medium">
+                      Notifications:
+                    </Label>
                   </div>
-                  <Link href={routes.notification} className="text-primary/50 text-base uppercase font-light hover:underline">
+                  <Link
+                    href={routes.notification}
+                    className="text-primary/50 text-base uppercase font-light hover:underline"
+                  >
                     See all
                   </Link>
                 </div>
@@ -311,8 +368,12 @@ export default function VendorDashboard() {
                         className="flex flex-col p-2 border-l-4 bg-muted rounded-lg rounded-ss-none mr-2 rounded-es-none"
                       >
                         <div className="flex flex-col items-start gap-2 ml-1">
-                          <p className="text-base uppercase font-bold">{notification.title}</p>
-                          <p className="text-base font-extralight">{notification.message}</p>
+                          <p className="text-base uppercase font-bold">
+                            {notification.title}
+                          </p>
+                          <p className="text-base font-extralight">
+                            {notification.message}
+                          </p>
                         </div>
                         <p className="font-thin text-sm text-primary/50 text-end">
                           {formatRelativeTime(notification.created_at)}

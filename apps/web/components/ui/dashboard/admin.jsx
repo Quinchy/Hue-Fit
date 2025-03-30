@@ -110,8 +110,8 @@ export default function AdminDashboard() {
                 Admin Dashboard
               </DialogTitle>
               <DialogDescription className="text-base font-thin italic">
-                This is your admin control center, where you can manage shops, shop requests, 
-                and more. Happy overseeing!
+                This is your admin control center, where you can manage shops,
+                shop requests, and more. Happy overseeing!
               </DialogDescription>
             </DialogHeader>
             <button
@@ -125,20 +125,34 @@ export default function AdminDashboard() {
       )}
 
       {isLoading ? (
-        <Skeleton className="w-full h-full" />
+        <>
+          {/* Skeleton for Welcome text */}
+          <Skeleton className="w-full h-14" />
+          <div className="flex flex-row gap-4 min-h-[49rem]">
+            {/* Left Column */}
+            <div className="flex flex-col gap-4 w-full">
+              {/* Row with two card skeletons */}
+              <div className="flex flex-row gap-4">
+                <Skeleton className="w-full p-6 h-[200px]" />
+                <Skeleton className="w-full p-6 h-[200px]" />
+              </div>
+              {/* Product Types card skeleton */}
+              <Skeleton className="w-full p-5 h-full" />
+            </div>
+            {/* Right Column */}
+            <div className="flex flex-col gap-4 w-full">
+              <Skeleton className="w-full p-5 h-full" />
+            </div>
+          </div>
+        </>
       ) : error ? (
         <p className="text-red-500">Error: {error.message}</p>
       ) : (
         <>
-          <div className="flex items-center gap-2 uppercase">
-            <p className="font-medium text-[2.50rem] leading-[2.5rem] tracking-tight">
+          <CardTitle className="text-[2.35rem] leading-[2.5rem] tracking-widest">
             {"Welcome, "}
-            </p>
-            <CardTitle className="text-[2.35rem] leading-[2.5rem] tracking-widest">
-              {session?.user?.firstName || "Admin"}
-            </CardTitle>
-          </div>
-
+            {session?.user?.firstName || "Admin"}
+          </CardTitle>
           <div className="flex flex-col gap-4">
             <div className="flex flex-row gap-4 h-[47rem]">
               {/* Left Column */}
@@ -155,8 +169,12 @@ export default function AdminDashboard() {
                   <Card className="w-full flex flex-col justify-center p-6">
                     <User width={30} height={30} className="mb-2 stroke-2" />
                     <div className="flex flex-col">
-                      <Label className="uppercase font-medium">Shop Requests</Label>
-                      <p className="text-6xl font-bold">{data.allShopRequestsCount}</p>
+                      <Label className="uppercase font-medium">
+                        Shop Requests
+                      </Label>
+                      <p className="text-6xl font-bold">
+                        {data.allShopRequestsCount}
+                      </p>
                     </div>
                   </Card>
                 </div>
@@ -166,14 +184,19 @@ export default function AdminDashboard() {
                   <CardHeader className="items-start pb-0">
                     <div className="flex flex-row items-center gap-2">
                       <CircleUserRound className="w-5" />
-                      <Label className="uppercase font-medium">Number of new users per month</Label>
+                      <Label className="uppercase font-medium">
+                        Number of new users per month
+                      </Label>
                     </div>
                     <div className="leading-none text-muted-foreground">
                       Displays the count of newly registered users each month.
                     </div>
                   </CardHeader>
                   <CardContent className="flex-1 mt-5 w-full">
-                    <ChartContainer config={chartConfig} className="w-full h-full">
+                    <ChartContainer
+                      config={chartConfig}
+                      className="w-full h-full"
+                    >
                       <BarChart data={barChartData} width={500} height={300}>
                         <CartesianGrid vertical={false} strokeDasharray="3 3" />
                         <XAxis
@@ -191,7 +214,11 @@ export default function AdminDashboard() {
                           cursor={{ fill: "transparent" }}
                           content={<ChartTooltipContent />}
                         />
-                        <Bar dataKey="count" fill="var(--color-count)" radius={4} />
+                        <Bar
+                          dataKey="count"
+                          fill="var(--color-count)"
+                          radius={4}
+                        />
                       </BarChart>
                     </ChartContainer>
                   </CardContent>
@@ -200,12 +227,17 @@ export default function AdminDashboard() {
 
               {/* Right Column - Notifications */}
               <Card className="w-full h-full p-5">
-                <div className="flex flex-row items-center justify-between gap-4 mb-4">                    
+                <div className="flex flex-row items-center justify-between gap-4 mb-4">
                   <div className="flex flex-row items-center gap-2">
                     <BellRing className="w-5" />
-                    <Label className="uppercase font-medium">Notifications:</Label>
+                    <Label className="uppercase font-medium">
+                      Notifications:
+                    </Label>
                   </div>
-                  <Link href={routes.notification} className="text-primary/50 text-base uppercase font-light hover:underline">
+                  <Link
+                    href={routes.notification}
+                    className="text-primary/50 text-base uppercase font-light hover:underline"
+                  >
                     See all
                   </Link>
                 </div>
@@ -217,8 +249,12 @@ export default function AdminDashboard() {
                         className="flex flex-col p-2 border-l-4 bg-muted rounded-lg rounded-ss-none mr-2 rounded-es-none"
                       >
                         <div className="flex flex-col items-start gap-2 ml-1">
-                          <p className="text-base uppercase font-bold">{notification.title}</p>
-                          <p className="text-base font-extralight">{notification.message}</p>
+                          <p className="text-base uppercase font-bold">
+                            {notification.title}
+                          </p>
+                          <p className="text-base font-extralight">
+                            {notification.message}
+                          </p>
                         </div>
                         <p className="font-thin text-sm text-primary/50 text-end">
                           {formatRelativeTime(notification.created_at)}

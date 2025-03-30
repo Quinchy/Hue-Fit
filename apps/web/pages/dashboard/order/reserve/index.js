@@ -104,7 +104,7 @@ export default function Reserves() {
 
   return (
     <DashboardLayoutWrapper>
-      <div className="flex flex-row justify-between">
+      <div className="flex flex-row items-center justify-between">
         <CardTitle className="text-4xl">Reserved Orders</CardTitle>
         <div className="flex flex-row items-center gap-2">
           <Input
@@ -135,39 +135,39 @@ export default function Reserves() {
           <Table>
             <TableHeader>
               <TableRow>
-                <TableHead>Order Number</TableHead>
-                <TableHead>Product Name</TableHead>
-                <TableHead className="text-center">Size</TableHead>
-                <TableHead className="text-center">Quantity</TableHead>
-                <TableHead className="text-center">Price</TableHead>
-                <TableHead className="text-center">Status</TableHead>
+                <TableHead className="w-[12%]">Order Number</TableHead>
+                <TableHead className="w-[50%]">Product Name</TableHead>
+                <TableHead className="w-[8%] text-center">Size</TableHead>
+                <TableHead className="w-[5%] text-center">Quantity</TableHead>
+                <TableHead className="w-[10%] text-center">Price</TableHead>
+                <TableHead className="w-[10%] text-center">Status</TableHead>
                 <TableHead className="text-center">Action</TableHead>
               </TableRow>
             </TableHeader>
             <TableBody>
               {loading ? (
-                Array.from({ length: 8 }).map((_, index) => (
+                Array.from({ length: 10 }).map((_, index) => (
                   <TableRow key={index}>
                     <TableCell>
-                      <Skeleton className="h-14 w-full" />
+                      <Skeleton className="h-10 w-full" />
                     </TableCell>
                     <TableCell>
-                      <Skeleton className="h-14 w-full" />
+                      <Skeleton className="h-10 w-full" />
                     </TableCell>
                     <TableCell>
-                      <Skeleton className="h-14 w-full" />
+                      <Skeleton className="h-10 w-full" />
                     </TableCell>
                     <TableCell>
-                      <Skeleton className="h-14 w-full" />
+                      <Skeleton className="h-10 w-full" />
                     </TableCell>
                     <TableCell>
-                      <Skeleton className="h-14 w-full" />
+                      <Skeleton className="h-10 w-full" />
                     </TableCell>
                     <TableCell>
-                      <Skeleton className="h-14 w-full" />
+                      <Skeleton className="h-10 w-full" />
                     </TableCell>
                     <TableCell>
-                      <Skeleton className="h-14 w-full" />
+                      <Skeleton className="h-10 w-full" />
                     </TableCell>
                   </TableRow>
                 ))

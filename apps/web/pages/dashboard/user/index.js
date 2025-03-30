@@ -88,9 +88,9 @@ export default function UsersPage() {
 
   return (
     <DashboardLayoutWrapper>
-      <div className="flex flex-row justify-between">
+      <div className="flex flex-row items-center justify-between">
         <CardTitle className="text-4xl">Users</CardTitle>
-        <div className="flex flex-row gap-5">
+        <div className="flex flex-row gap-2">
           <Input
             type="text"
             className="min-w-[30rem]"

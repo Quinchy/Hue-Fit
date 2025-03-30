@@ -10,7 +10,7 @@ export default function AddProduct() {
 
   return (
     <DashboardLayoutWrapper>
-      <div className="flex justify-between items-center">
+      <div className="flex -mb-8 justify-between items-center">
         <CardTitle className="text-4xl">Add Product</CardTitle>
         <Button
           variant="outline"

@@ -48,7 +48,7 @@ export default function Variations({
           </div>
           <Button
             variant="outline"
-            className="w-full mt-4 mb-4"
+            className="w-full mt-2 mb-4"
             type="button"
             onClick={() => {
               const newVariant = {

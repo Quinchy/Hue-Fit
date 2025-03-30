@@ -241,19 +241,8 @@ export default function ProductForm() {
 
   return (
     <DashboardLayoutWrapper>
-      {productError && (
-        <div className="mb-4 bg-red-600 text-white p-3 rounded">
-          Failed to load product data
-        </div>
-      )}
-      {measurementError && (
-        <div className="mb-4 bg-red-600 text-white p-3 rounded">
-          Failed to load measurements
-        </div>
-      )}
-
       <FormikProvider value={formik}>
-        <form onSubmit={formik.handleSubmit} className="flex flex-col gap-10">
+        <form onSubmit={formik.handleSubmit} className="flex flex-col gap-5">
           <GeneralInformation
             values={values}
             errors={errors}
