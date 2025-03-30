@@ -51,7 +51,7 @@ export default function UsersPage() {
   const [selectedRole, setSelectedRole] = useState("ALL");
   const router = useRouter();
 
-  const { data: usersData } = useSWR(
+  const { data: usersData, isValidating } = useSWR(
     `/api/users/get-users?page=${currentPage}&search=${encodeURIComponent(
       searchTerm
     )}&role=${selectedRole !== "ALL" ? selectedRole : ""}`,
@@ -134,7 +134,7 @@ export default function UsersPage() {
         <Table>
           <TableHeader>
             <TableRow>
-              <TableHead className="w-[5rem]">Picture</TableHead>
+              <TableHead className="min-w-[5rem]">Picture</TableHead>
               <TableHead className="w-1/2">Name</TableHead>
               <TableHead className="w-1/2">Username/Email</TableHead>
               <TableHead className="min-w-[10rem] text-center">Role</TableHead>
@@ -143,22 +143,22 @@ export default function UsersPage() {
           </TableHeader>
           <TableBody>
             {!usersData ? (
-              Array.from({ length: 8 }).map((_, idx) => (
+              Array.from({ length: 12 }).map((_, idx) => (
                 <TableRow key={idx}>
                   <TableCell>
-                    <Skeleton className="w-full h-14" />
+                    <Skeleton className="w-full h-10" />
                   </TableCell>
                   <TableCell>
-                    <Skeleton className="w-full h-14" />
+                    <Skeleton className="w-full h-10" />
                   </TableCell>
                   <TableCell>
-                    <Skeleton className="w-full h-14" />
+                    <Skeleton className="w-full h-10" />
                   </TableCell>
                   <TableCell className="text-center">
-                    <Skeleton className="w-full h-14" />
+                    <Skeleton className="w-full h-10" />
                   </TableCell>
                   <TableCell className="text-center">
-                    <Skeleton className="w-full h-14" />
+                    <Skeleton className="w-full h-10" />
                   </TableCell>
                 </TableRow>
               ))
@@ -197,8 +197,8 @@ export default function UsersPage() {
                       <Image
                         src={picture}
                         alt="Profile"
-                        width={60}
-                        height={60}
+                        width={45}
+                        height={45}
                         className="rounded-full"
                       />
                     </TableCell>

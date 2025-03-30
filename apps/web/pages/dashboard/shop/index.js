@@ -168,22 +168,22 @@ export default function Shop() {
             </TableHeader>
             <TableBody>
               {!data ? (
-                Array.from({ length: 7 }).map((_, index) => (
+                Array.from({ length: 12 }).map((_, index) => (
                   <TableRow key={index}>
                     <TableCell className="max-w-[1rem]">
-                      <Skeleton className="h-14 w-full" />
+                      <Skeleton className="h-10 w-full" />
                     </TableCell>
                     <TableCell className="max-w-[3rem]">
-                      <Skeleton className="h-14 w-full" />
+                      <Skeleton className="h-10 w-full" />
                     </TableCell>
                     <TableCell className="max-w-[4rem]">
-                      <Skeleton className="h-14 w-full" />
+                      <Skeleton className="h-10 w-full" />
                     </TableCell>
                     <TableCell className="max-w-[1rem] text-center">
-                      <Skeleton className="h-14 w-full" />
+                      <Skeleton className="h-10 w-full" />
                     </TableCell>
                     <TableCell className="max-w-[1rem] text-center">
-                      <Skeleton className="h-14 w-full" />
+                      <Skeleton className="h-10 w-full" />
                     </TableCell>
                   </TableRow>
                 ))

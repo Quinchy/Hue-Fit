@@ -188,13 +188,13 @@ export default function ShopRequests() {
             <TableBody>
               {!data ? (
                 // No data available yet, show skeletons (initial loading state)
-                Array.from({ length: 7 }).map((_, index) => (
+                Array.from({ length: 12 }).map((_, index) => (
                   <TableRow key={index}>
-                    <TableCell><Skeleton className="h-14 w-full" /></TableCell>
-                    <TableCell><Skeleton className="h-14 w-full" /></TableCell>
-                    <TableCell><Skeleton className="h-14 w-full" /></TableCell>
-                    <TableCell><Skeleton className="h-14 w-full" /></TableCell>
-                    <TableCell><Skeleton className="h-14 w-full" /></TableCell>
+                    <TableCell><Skeleton className="h-10 w-full" /></TableCell>
+                    <TableCell><Skeleton className="h-10 w-full" /></TableCell>
+                    <TableCell><Skeleton className="h-10 w-full" /></TableCell>
+                    <TableCell><Skeleton className="h-10 w-full" /></TableCell>
+                    <TableCell><Skeleton className="h-10 w-full" /></TableCell>
                   </TableRow>
                 ))
               ) : requests.length > 0 ? (

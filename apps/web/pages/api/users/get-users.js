@@ -5,7 +5,7 @@ export default async function handler(req, res) {
   try {
     const { page = 1, search = "", role = "" } = req.query;
     const pageNumber = parseInt(page, 10);
-    const ITEMS_PER_PAGE = 8;
+    const ITEMS_PER_PAGE = 12;
 
     const activeFilter = { status: "ACTIVE" };
     const roleFilter = role ? { Role: { name: role } } : {};

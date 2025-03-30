@@ -2,7 +2,7 @@
 import prisma, { disconnectPrisma } from "@/utils/helpers";
 
 export default async function handler(req, res) {
-  const { page = 1, perPage = 7, status = "PENDING", search = "" } = req.query;
+  const { page = 1, perPage = 12, status = "PENDING", search = "" } = req.query;
 
   try {
     const whereClause = { status };

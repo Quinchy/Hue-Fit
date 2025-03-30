@@ -2,7 +2,7 @@
 import prisma, { disconnectPrisma } from "@/utils/helpers";
 
 export default async function handler(req, res) {
-  const { page = 1, limit = 7, status = "ALL", search = "" } = req.query;
+  const { page = 1, limit = 12, status = "ALL", search = "" } = req.query;
   const offset = (page - 1) * limit;
 
   try {

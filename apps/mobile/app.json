@@ -29,7 +29,8 @@
       },
       "permissions": ["CAMERA"],
       "package": "com.yourcompany.huefit",
-      "versionCode": 1
+      "versionCode": 1,
+      "minSdkVersion": 24
     },
     "web": {
       "favicon": "./assets/favicon.png",
