@@ -12,13 +12,22 @@ const gloock = Gloock({
   subsets: ["latin"],
 });
 
-// Framer Motion Reveal Animation
+// Simplified fade-in reveal animation variants
 const revealVariants = {
-  hidden: { opacity: 0, y: 50 },
-  visible: { opacity: 1, y: 0, transition: { duration: 0.8, ease: "easeOut", staggerChildren: 0.2 } },
+  hidden: { opacity: 0 },
+  visible: { opacity: 1, transition: { duration: 0.8 } },
 };
 
 export default function Section3() {
+  const handleDownload = () => {
+    const link = document.createElement("a");
+    link.href = "/HueFit.apk"; // Ensure the APK is in your public folder
+    link.download = "HueFit.apk"; // Optional: specify the default filename
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+  };
+
   return (
     <motion.section
       className="relative w-full flex flex-col"
@@ -43,7 +52,6 @@ export default function Section3() {
             className="absolute -top-[8rem] z-0"
             animate={{ rotate: 360 }}
             transition={{ duration: 16, ease: "linear", repeat: Infinity }}
-            // Apply an initial 90° offset via a wrapping div
           >
             <div className="rotate-90">
               {/* Inner layer for scale and opacity animation */}
@@ -84,17 +92,18 @@ export default function Section3() {
         >
           <div className="flex flex-col items-center">
             <div className="flex flex-row items-center gap-2">
-              <LetterSwapPingPong label="EFFORTLESS." staggerFrom={"last"} />
-              <LetterSwapPingPong label="PERSONALIZED" staggerFrom={"last"} />
+              <LetterSwapPingPong label="EFFORTLESS." staggerFrom="last" />
+              <LetterSwapPingPong label="PERSONALIZED" staggerFrom="last" />
             </div>
             <p>
-              <LetterSwapPingPong label="STYLISH." staggerFrom={"last"} />
+              <LetterSwapPingPong label="STYLISH." staggerFrom="last" />
             </p>
           </div>
         </motion.h1>
 
-        {/* Try Hue-Fit Button */}
+        {/* Download HueFit Button */}
         <motion.button
+          onClick={handleDownload}
           className="flex flex-row items-center justify-center drop-shadow-2xl bg-[linear-gradient(90deg,_var(--rainbow1)_0%,_var(--rainbow2)_20%,_var(--rainbow3)_40%,_var(--rainbow4)_60%,_var(--rainbow5)_80%,_var(--rainbow6)_100%)] bg-[length:200%_200%] bg-[position:0%_50%] transition-all duration-500 min-w-48 lg:min-w-64 py-3 lg:py-4 z-20 hover:bg-[position:100%_50%]"
           variants={revealVariants}
         >

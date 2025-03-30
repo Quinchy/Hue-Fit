@@ -216,7 +216,7 @@ export default function VirtualTryOnPage() {
       canvasContext.clearRect(0, 0, canvasWidth, canvasHeight);
 
       // Scaling factors: modify these values to scale clothes horizontally/vertically
-      const upperHScale = 2.25,
+      const upperHScale = 2.30,
         upperVScale = 1.2,
         lowerHScale = 1.55,
         lowerVScale = 1.0;
