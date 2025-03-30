@@ -146,19 +146,19 @@ export default function UsersPage() {
               Array.from({ length: 12 }).map((_, idx) => (
                 <TableRow key={idx}>
                   <TableCell>
-                    <Skeleton className="w-full h-10" />
+                    <Skeleton className="w-full h-12" />
                   </TableCell>
                   <TableCell>
-                    <Skeleton className="w-full h-10" />
+                    <Skeleton className="w-full h-12" />
                   </TableCell>
                   <TableCell>
-                    <Skeleton className="w-full h-10" />
+                    <Skeleton className="w-full h-12" />
                   </TableCell>
                   <TableCell className="text-center">
-                    <Skeleton className="w-full h-10" />
+                    <Skeleton className="w-full h-12" />
                   </TableCell>
                   <TableCell className="text-center">
-                    <Skeleton className="w-full h-10" />
+                    <Skeleton className="w-full h-12" />
                   </TableCell>
                 </TableRow>
               ))

@@ -160,8 +160,8 @@ export default function Shop() {
             <TableHeader>
               <TableRow>
                 <TableHead className="max-w-[1rem]">Shop Number</TableHead>
-                <TableHead className="max-w-[3rem]">Shop Name</TableHead>
-                <TableHead className="max-w-[4rem]">Address</TableHead>
+                <TableHead className="max-w-[2rem]">Shop Name</TableHead>
+                <TableHead className="min-w-[7rem]">Address</TableHead>
                 <TableHead className="max-w-[1rem] text-center">Status</TableHead>
                 <TableHead className="max-w-[1rem] text-center">Action</TableHead>
               </TableRow>

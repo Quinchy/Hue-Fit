@@ -17,7 +17,7 @@ const socialLinkClasses =
 const navLinkClasses =
   "transition-colors duration-300 hover:text-primary items-center justify-center flex flex-col text-primary/75";
 
-const Footer = ({ bgClass = "bg-card", className = "" }) => {
+const Footer = ({ bgClass = "bg-pure", className = "" }) => {
   return (
     <footer
       className={`flex flex-col items-center gap-10 justify-between w-full pt-32 pb-10 px-8 sm:px-14 md:px-24 lg:px-32 xl:px-52 border-t-2 ${bgClass} ${className}`}

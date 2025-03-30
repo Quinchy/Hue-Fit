@@ -66,7 +66,7 @@ const BusinessLicense = ({ imageUrl }) => {
         </DialogTrigger>
         <DialogContent
           onInteractOutside={handleCloseModal}
-          className="fixed bg-transparent border-none p-20 flex items-center justify-center min-w-full h-full "
+          className="fixed bg-transparent border-none p-20 flex items-center justify-center min-w-full h-full"
         >
           <div className="w-screen h-full flex justify-center items-center">
             {isPdf ? (
@@ -77,13 +77,14 @@ const BusinessLicense = ({ imageUrl }) => {
                 title="PDF Viewer"
               />
             ) : (
-              <Image
-                src={imageUrl}
-                alt="Business License Full View"
-                width={1250}
-                height={1250}
-                className="object-contain"
-              />
+              <div className="relative min-w-[40rem] min-h-[45rem] max-w-[40rem] max-h-[45rem]">
+                <Image
+                  src={imageUrl}
+                  alt="Business License Full View"
+                  fill
+                  className="object-contain"
+                />
+              </div>
             )}
           </div>
         </DialogContent>

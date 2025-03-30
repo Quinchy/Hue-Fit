@@ -2,8 +2,8 @@
 import prisma, { disconnectPrisma } from "@/utils/helpers";
 
 export default async function handler(req, res) {
-  // Default page is 1, default limit is 8 inquiries per page.
-  const { page = 1, limit = 8, status = "ALL", search = "" } = req.query;
+  // Default page is 1, default limit is 13 inquiries per page.
+  const { page = 1, limit = 13, status = "ALL", search = "" } = req.query;
   const offset = (page - 1) * limit;
 
   try {

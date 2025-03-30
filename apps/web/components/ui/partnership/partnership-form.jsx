@@ -250,13 +250,13 @@ export default function PartnershipForm() {
 
   return (
     <>
-      <div className="justify-center items-center">
+      <div className="flex relative justify-center items-center">
         <div className="flex flex-col md:flex-row items-start gap-10 md:gap-20 w-full px-4 md:px-10 lg:px-44">
           {/* Left Column */}
           <div className="flex flex-col items-start gap-5 mt-5 w-full md:w-1/2">
             <CardTitle className="text-2xl text-start font-black tracking-wide">
-              We empower vendors with a modern platform to redefine
-              fashion retail and seamless e-commerce integration.
+              We empower vendors with a modern platform to redefine fashion
+              retail and seamless e-commerce integration.
             </CardTitle>
             <div className="relative w-full">
               <Image
@@ -581,8 +581,14 @@ export default function PartnershipForm() {
             </Card>
           </div>
         </div>
+        <div
+          className="absolute inset-0 -z-10 w-full h-96 top-[50rem]"
+          style={{
+            background:
+              "linear-gradient(to top, hsl(var(--pure)) 0%, transparent 100%)",
+          }}
+        ></div>
       </div>
-
       <Dialog open={otpDialogOpen} onOpenChange={setOtpDialogOpen}>
         <DialogContent>
           <DialogHeader>

@@ -132,22 +132,22 @@ export default function Inquiries() {
             </TableHeader>
             <TableBody>
               {!data ? (
-                Array.from({ length: 8 }).map((_, index) => (
+                Array.from({ length: 13 }).map((_, index) => (
                   <TableRow key={index}>
                     <TableCell>
-                      <Skeleton className="h-14 w-full" />
+                      <Skeleton className="h-10 w-full" />
                     </TableCell>
                     <TableCell>
-                      <Skeleton className="h-14 w-full" />
+                      <Skeleton className="h-10 w-full" />
                     </TableCell>
                     <TableCell>
-                      <Skeleton className="h-14 w-full" />
+                      <Skeleton className="h-10 w-full" />
                     </TableCell>
                     <TableCell>
-                      <Skeleton className="h-14 w-full" />
+                      <Skeleton className="h-10 w-full" />
                     </TableCell>
                     <TableCell>
-                      <Skeleton className="h-14 w-full" />
+                      <Skeleton className="h-10 w-full" />
                     </TableCell>
                   </TableRow>
                 ))
