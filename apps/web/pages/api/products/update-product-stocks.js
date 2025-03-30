@@ -1,19 +1,22 @@
-import prisma from '@/utils/helpers';
+import prisma from "@/utils/helpers";
 
 export default async function handler(req, res) {
   if (req.method !== "POST") {
+    console.log("Method not allowed, only POST accepted.");
     return res
       .status(405)
       .json({ message: "Method not allowed. Use POST instead." });
   }
 
   const { productVariantId, increments } = req.body;
+  console.log("Received increments:", increments);
 
   if (
     typeof productVariantId !== "number" ||
     typeof increments !== "object" ||
     increments === null
   ) {
+    console.log("Invalid request data:", { productVariantId, increments });
     return res.status(400).json({ message: "Invalid request data." });
   }
 
@@ -28,63 +31,98 @@ export default async function handler(req, res) {
         Product: true,
       },
     });
+    console.log("Found productVariant:", productVariant);
 
     if (!productVariant) {
+      console.log("Product variant not found for id:", productVariantId);
       return res.status(404).json({ message: "Product variant not found." });
     }
 
-    // Update or create ProductVariantSize entries
-    for (const [sizeAbbr, increment] of Object.entries(increments)) {
-      if (increment > 0) {
-        // Find the ProductVariantSize by size abbreviation
+    // Loop through each size update
+    for (const [sizeAbbr, enteredIncrement] of Object.entries(increments)) {
+      console.log(
+        `Processing size: ${sizeAbbr}, entered increment: ${enteredIncrement}`
+      );
+      if (enteredIncrement > 0) {
         const pvs = productVariant.ProductVariantSize.find(
           (p) => p.Size.abbreviation === sizeAbbr
         );
 
         if (pvs) {
-          // Update existing ProductVariantSize
-          await prisma.productVariantSize.update({
-            where: { id: pvs.id },
-            data: {
-              quantity: {
-                increment: increment,
-              },
-            },
-          });
-        } else {
-          // Find Size by abbreviation
-          const size = await prisma.size.findUnique({
-            where: { abbreviation: sizeAbbr },
-          });
+          const reservedQuantity = pvs.reservedQuantity || 0;
+          // Calculate effective increment: extra stock beyond reserved.
+          const effectiveIncrement = Math.max(
+            0,
+            enteredIncrement - reservedQuantity
+          );
+          console.log(
+            `For size ${sizeAbbr}: reservedQuantity=${reservedQuantity}, effectiveIncrement=${effectiveIncrement}`
+          );
 
-          if (size) {
-            // Create new ProductVariantSize
-            await prisma.productVariantSize.create({
+          if (effectiveIncrement > 0) {
+            console.log(
+              `Updating ProductVariantSize (id: ${pvs.id}) with effective increment: ${effectiveIncrement}`
+            );
+            await prisma.productVariantSize.update({
+              where: { id: pvs.id },
               data: {
-                productVariantId: productVariantId,
-                sizeId: size.id,
-                quantity: increment,
+                quantity: {
+                  increment: effectiveIncrement,
+                },
               },
             });
           } else {
-            return res
-              .status(400)
-              .json({ message: `Size abbreviation "${sizeAbbr}" not found.` });
+            console.log(
+              `Effective increment is 0 for size ${sizeAbbr} (entered equals reserved)`
+            );
+          }
+        } else {
+          console.log(
+            `No ProductVariantSize record found for size abbreviation: ${sizeAbbr}`
+          );
+          if (enteredIncrement > 0) {
+            const size = await prisma.size.findUnique({
+              where: { abbreviation: sizeAbbr },
+            });
+
+            if (size) {
+              console.log(
+                `Creating new ProductVariantSize for size ${sizeAbbr} with quantity: ${enteredIncrement}`
+              );
+              await prisma.productVariantSize.create({
+                data: {
+                  productVariantId: productVariantId,
+                  sizeId: size.id,
+                  quantity: enteredIncrement,
+                },
+              });
+            } else {
+              console.log(
+                `Size abbreviation "${sizeAbbr}" not found in sizes table.`
+              );
+              return res.status(400).json({
+                message: `Size abbreviation "${sizeAbbr}" not found.`,
+              });
+            }
           }
         }
       }
     }
 
     // Recalculate totalQuantity for ProductVariant
-    const updatedProductVariantSizes = await prisma.productVariantSize.findMany({
-      where: { productVariantId },
-      select: { quantity: true },
-    });
+    const updatedProductVariantSizes = await prisma.productVariantSize.findMany(
+      {
+        where: { productVariantId },
+        select: { quantity: true },
+      }
+    );
+    console.log("Updated ProductVariantSizes:", updatedProductVariantSizes);
 
     const newTotalQuantity = updatedProductVariantSizes.reduce(
       (acc, pvs) => acc + pvs.quantity,
       0
     );
+    console.log("New total quantity for productVariant:", newTotalQuantity);
 
     // Update ProductVariant's totalQuantity
     await prisma.productVariant.update({
@@ -99,11 +137,13 @@ export default async function handler(req, res) {
       where: { productId: productVariant.productId },
       select: { totalQuantity: true },
     });
+    console.log("All product variants for product:", allProductVariants);
 
     const newProductTotalQuantity = allProductVariants.reduce(
       (acc, pv) => acc + pv.totalQuantity,
       0
     );
+    console.log("New total quantity for product:", newProductTotalQuantity);
 
     // Update Product's totalQuantity
     await prisma.product.update({
@@ -113,21 +153,30 @@ export default async function handler(req, res) {
       },
     });
 
-    // Update orders: For all orders in RESERVED status that contain order items referencing
-    // updated ProductVariantSize entries, update their status to PENDING.
+    // Build updatedSizes array for order update.
+    // Update orders if a ProductVariantSize exists and either:
+    // - The seller entered a positive increment, or
+    // - The reserved quantity is greater than 0.
     const updatedSizes = [];
-    for (const [sizeAbbr, increment] of Object.entries(increments)) {
-      if (increment > 0) {
-        const pvs = productVariant.ProductVariantSize.find(
-          (p) => p.Size.abbreviation === sizeAbbr
-        );
-        if (pvs) {
+    for (const [sizeAbbr, enteredIncrement] of Object.entries(increments)) {
+      const pvs = productVariant.ProductVariantSize.find(
+        (p) => p.Size.abbreviation === sizeAbbr
+      );
+      if (pvs) {
+        const reservedQuantity = pvs.reservedQuantity || 0;
+        // Even if enteredIncrement is 0, if reservedQuantity > 0, we add this size for update.
+        if (enteredIncrement > 0 || reservedQuantity > 0) {
           updatedSizes.push(pvs.id);
+          console.log(
+            `Size ${sizeAbbr} (id: ${pvs.id}) added for order status update (reservedQuantity: ${reservedQuantity}, enteredIncrement: ${enteredIncrement})`
+          );
         }
       }
     }
+    console.log("Final updatedSizes array:", updatedSizes);
+
     if (updatedSizes.length > 0) {
-      await prisma.order.updateMany({
+      const orderUpdateResult = await prisma.order.updateMany({
         where: {
           status: "RESERVED",
           OrderItems: {
@@ -140,6 +189,7 @@ export default async function handler(req, res) {
           status: "PENDING",
         },
       });
+      console.log("Order update result:", orderUpdateResult);
     }
 
     return res.status(200).json({ message: "Stock updated successfully." });

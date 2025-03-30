@@ -202,10 +202,8 @@ export default function StockProductVariantCard({
                       {currentStock <= threshold && reservedQuantity > 0 && (
                         <p className="text-red-500 text-sm flex flex-row items-center gap-2 bg-red-400/10 px-3 py-1 rounded-md border border-red-600/25">
                           <TriangleAlert width={20} />
-                          This product size needs at least {
-                            reservedQuantity
-                          }{" "}
-                          stocks!
+                          This product size needs at least{" "}
+                          {reservedQuantity + 5} stocks!
                         </p>
                       )}
                     </div>
@@ -221,13 +219,14 @@ export default function StockProductVariantCard({
                   sortedVariantSizes.forEach((vq) => {
                     const sizeAbbr = vq?.Size?.abbreviation;
                     const reservedQuantity = reservedQuantitiesMap[vq.id] || 0;
+                    // Now the minimum required is reservedQuantity + 5
                     if (
                       reservedQuantity > 0 &&
-                      Number(values[sizeAbbr]) < reservedQuantity
+                      Number(values[sizeAbbr]) < reservedQuantity + 5
                     ) {
-                      errors[
-                        sizeAbbr
-                      ] = `Must add at least ${reservedQuantity} stocks`;
+                      errors[sizeAbbr] = `Must add at least ${
+                        reservedQuantity + 5
+                      } stocks`;
                     }
                     if (Number(values[sizeAbbr]) < 0) {
                       errors[sizeAbbr] = "Cannot be negative";
