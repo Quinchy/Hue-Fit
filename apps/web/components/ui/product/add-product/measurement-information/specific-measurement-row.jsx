@@ -166,9 +166,9 @@ export default function SpecificMeasurementRow({
                       <TableCell className="border min-w-14 max-w-14 text-center">
                         {index > 0 && (
                           <Button
-                            variant="ghost"
+                            variant="destructive"
                             type="button"
-                            className="text-red-500 hover:bg-red-500 w-10 transition-all duration-500 ease-in-out active:scale-90"
+                            className="bg-red-500/10 text-red-500 hover:bg-red-500/25 w-10 transition-all duration-500 ease-in-out active:scale-90"
                             onClick={() => remove(index)}
                           >
                             <Trash2 className="scale-110 stroke-[2px]" />

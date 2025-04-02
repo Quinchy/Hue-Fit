@@ -34,7 +34,14 @@ import {
   PaginationNext,
   PaginationLink,
 } from "@/components/ui/pagination";
-import { Pencil, Search, ChevronDown, Wrench, CircleOff } from "lucide-react";
+import {
+  Pencil,
+  Search,
+  ChevronDown,
+  Wrench,
+  CircleOff,
+  Copy,
+} from "lucide-react";
 import { Skeleton } from "@/components/ui/skeleton";
 import useSWR from "swr";
 import CancelOrderDialog from "@/components/ui/order/cancel-order-dialog";
@@ -48,6 +55,7 @@ export default function Reserves() {
   const [status, setStatus] = useState("RESERVED"); // Default to "RESERVED"
   const [loading, setLoading] = useState(false);
   const [cancelOrder, setCancelOrder] = useState(null);
+  const [copiedOrder, setCopiedOrder] = useState(null); // State for tracking copied order number
 
   const navItems = [
     { label: "Orders", href: routes.order },
@@ -202,7 +210,31 @@ export default function Reserves() {
 
                   return (
                     <TableRow key={order.id}>
-                      <TableCell>{order.orderNo}</TableCell>
+                      <TableCell>
+                        <div className="flex items-center justify-evenly relative">
+                          <span>{order.orderNo}</span>
+                          <Button
+                            variant="none"
+                            onClick={() => {
+                              navigator.clipboard.writeText(order.orderNo);
+                              setCopiedOrder(order.orderNo);
+                              setTimeout(() => setCopiedOrder(null), 1000);
+                            }}
+                            className="transition-all active:scale-75 hover:opacity-75 duration-300 ease-in-out ml-2"
+                          >
+                            <Copy className="scale-100" />
+                          </Button>
+                          <div
+                            className={`absolute top-0 right-2 -translate-x-1/2 mt-1 px-2 py-1 bg-primary text-pure rounded shadow text-xs transition-opacity ease-in-out duration-500 ${
+                              copiedOrder === order.orderNo
+                                ? "opacity-100"
+                                : "opacity-0"
+                            }`}
+                          >
+                            Copied!
+                          </div>
+                        </div>
+                      </TableCell>
                       <TableCell className="overflow-hidden whitespace-pre-line">
                         {productNames.length > 0
                           ? productNames.join("\n")
@@ -229,9 +261,9 @@ export default function Reserves() {
                       </TableCell>
                       <TableCell className="text-center text-red-500/75">
                         <Button
-                          variant="none"
+                          variant="destructive"
                           onClick={() => setCancelOrder(order.id)}
-                          className="hover:bg-muted px-5 py-1 border-[1px] border-red-500/75"
+                          className="bg-red-500/10 hover:bg-red-500/25 text-red-500 transition-all duration-500 ease-in-out active:scale-90"
                         >
                           <CircleOff className="mr-1" />
                           Cancel

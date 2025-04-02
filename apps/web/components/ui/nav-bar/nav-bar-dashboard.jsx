@@ -178,7 +178,7 @@ const NavbarDashboard = () => {
               </Link>
             </DropdownMenuItem>
           )}
-          <DropdownMenuItem>
+          <DropdownMenuItem className="focus:bg-red-500/25">
             <button
               onClick={() => {
                 signOut({ callbackUrl: "/" });

@@ -31,11 +31,17 @@ import {
   PaginationNext,
   PaginationLink,
 } from "@/components/ui/pagination";
-import { Pencil, Search, ChevronDown, Wrench, CircleOff } from "lucide-react";
+import {
+  Pencil,
+  Search,
+  ChevronDown,
+  Wrench,
+  CircleOff,
+  Copy,
+} from "lucide-react";
 import { Skeleton } from "@/components/ui/skeleton";
 import useSWR from "swr";
 import Link from "next/link";
-
 import CancelOrderDialog from "@/components/ui/order/cancel-order-dialog";
 
 const fetcher = (url) => fetch(url).then((res) => res.json());
@@ -46,6 +52,7 @@ export default function Orders() {
   const [search, setSearch] = useState("");
   const [status, setStatus] = useState("PENDING");
   const [cancelOrder, setCancelOrder] = useState(null);
+  const [copiedOrder, setCopiedOrder] = useState(null); // Tracks which order was copied
 
   const navItems = [
     { label: "Orders", href: routes.order },
@@ -147,8 +154,8 @@ export default function Orders() {
                   "CANCELLED",
                 ].map((filterStatus) => (
                   <DropdownMenuItem
-                    className="justify-center"
                     key={filterStatus}
+                    className="justify-center"
                   >
                     <Button
                       variant="none"
@@ -172,14 +179,13 @@ export default function Orders() {
           </Link>
         </div>
       </div>
-
       <Card className="flex flex-col p-5 gap-4 min-h-[49rem]">
         <DashboardPagesNavigation items={navItems} />
         <div className="flex flex-col gap-4 justify-between min-h-[42rem]">
           <Table>
             <TableHeader>
               <TableRow>
-                <TableHead className="w-[12%]">Order Number</TableHead>
+                <TableHead className="w-[14%]">Order Number</TableHead>
                 <TableHead className="w-[50%]">Product Name</TableHead>
                 <TableHead className="w-[8%] text-center">Size</TableHead>
                 <TableHead className="w-[5%] text-center">Quantity</TableHead>
@@ -217,6 +223,7 @@ export default function Orders() {
                 ))
               ) : orders.length > 0 ? (
                 orders.map((order) => {
+                  // Prepare product details for the order
                   const maxItemsToShow = 2;
                   const items = order.OrderItems || [];
                   const limitedItems = items.slice(0, maxItemsToShow);
@@ -241,7 +248,31 @@ export default function Orders() {
 
                   return (
                     <TableRow key={order.id}>
-                      <TableCell>{order.orderNo}</TableCell>
+                      <TableCell>
+                        <div className="flex items-center justify-evenly relative">
+                          <span>{order.orderNo}</span>
+                          <Button
+                            variant="none"
+                            onClick={() => {
+                              navigator.clipboard.writeText(order.orderNo);
+                              setCopiedOrder(order.orderNo);
+                              setTimeout(() => setCopiedOrder(null), 1000);
+                            }}
+                            className="transition-all active:scale-75 hover:opacity-75 duration-300 ease-in-out ml-2"
+                          >
+                            <Copy className="scale-100" />
+                          </Button>
+                          <div
+                            className={`absolute top-0 right-2 -translate-x-1/2 mt-1 px-2 py-1 bg-primary text-pure rounded shadow text-xs transition-opacity ease-in-out duration-500 ${
+                              copiedOrder === order.orderNo
+                                ? "opacity-100"
+                                : "opacity-0"
+                            }`}
+                          >
+                            Copied!
+                          </div>
+                        </div>
+                      </TableCell>
                       <TableCell className="overflow-hidden whitespace-pre-line">
                         {productNames.length > 0
                           ? productNames.join("\n")
@@ -295,7 +326,7 @@ export default function Orders() {
                               {!["CANCELLED", "COMPLETED"].includes(
                                 order.status.toUpperCase()
                               ) && (
-                                <DropdownMenuItem className="justify-center text-red-500">
+                                <DropdownMenuItem className="justify-center text-red-500 focus:bg-red-500/25">
                                   <Button
                                     variant="none"
                                     onClick={() => setCancelOrder(order.id)}

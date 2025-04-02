@@ -1,4 +1,4 @@
-import { useState, useEffect, useRef } from "react";
+import { useState, useRef } from "react";
 import Image from "next/image";
 import { Input } from "@/components/ui/input";
 import { CardTitle, Card } from "@/components/ui/card";

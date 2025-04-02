@@ -1,20 +1,21 @@
-// pages/api/products/get-product.js
-import { getSessionShopId } from '@/utils/helpers';
-import prisma from '@/utils/helpers';
+import { getSessionShopId } from "@/utils/helpers";
+import prisma from "@/utils/helpers";
 
 export default async function handler(req, res) {
   try {
     const shopId = await getSessionShopId(req, res);
     if (!shopId) {
-      return res.status(401).json({ message: 'Unauthorized' });
+      return res.status(401).json({ message: "Unauthorized" });
     }
 
-    const { page = 1, search = '', type = '' } = req.query;
-    const pageNumber = parseInt(page, 13);
-    const ITEMS_PER_PAGE = 13;
+    const { page = 1, search = "", type = "", archived = "false" } = req.query;
+    const pageNumber = parseInt(page, 10);
+    const ITEMS_PER_PAGE = 10;
+    const isArchived = archived.toLowerCase() === "true";
 
     const baseWhere = {
       shopId,
+      isArchived: isArchived, // Filter based on the archived query parameter
       ...(type && { Type: { name: type } }),
     };
 
@@ -24,13 +25,13 @@ export default async function handler(req, res) {
             {
               name: {
                 contains: search,
-                mode: 'insensitive',
+                mode: "insensitive",
               },
             },
             {
               productNo: {
                 contains: search,
-                mode: 'insensitive',
+                mode: "insensitive",
               },
             },
           ],
@@ -46,7 +47,7 @@ export default async function handler(req, res) {
       where: combinedWhere,
       skip: (pageNumber - 1) * ITEMS_PER_PAGE,
       take: ITEMS_PER_PAGE,
-      orderBy: { created_at: 'desc' },
+      orderBy: { created_at: "desc" },
       include: {
         Type: true,
         Category: true,
@@ -77,7 +78,7 @@ export default async function handler(req, res) {
       types,
     });
   } catch (error) {
-    console.error('Error fetching products:', error);
-    return res.status(500).json({ message: 'Internal Server Error' });
+    console.error("Error fetching products:", error);
+    return res.status(500).json({ message: "Internal Server Error" });
   }
 }

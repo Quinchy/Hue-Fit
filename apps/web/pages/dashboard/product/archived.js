@@ -6,6 +6,7 @@ import DashboardLayoutWrapper from "@/components/ui/dashboard-layout";
 import { Card, CardTitle } from "@/components/ui/card";
 import Link from "next/link";
 import Image from "next/image";
+import { Alert, AlertTitle, AlertDescription } from "@/components/ui/alert";
 import {
   X,
   Plus,
@@ -45,7 +46,6 @@ import {
   DropdownMenuItem,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
-import { Alert, AlertTitle, AlertDescription } from "@/components/ui/alert";
 import { Skeleton } from "@/components/ui/skeleton";
 import useSWR from "swr";
 import {
@@ -58,6 +58,7 @@ import {
   DialogClose,
 } from "@/components/ui/dialog";
 import DashboardPagesNavigation from "@/components/ui/dashboard-pages-navigation";
+import { useRouter as useNextRouter } from "next/router";
 
 const fetcher = (url) => fetch(url).then((res) => res.json());
 
@@ -91,19 +92,18 @@ function CopyableText({ text, displayText }) {
   );
 }
 
-export default function ProductsPage() {
+export default function ArchivedProductsPage() {
   const [currentPage, setCurrentPage] = useState(1);
   const [searchTerm, setSearchTerm] = useState("");
   const [selectedType, setSelectedType] = useState("ALL");
-  const router = useRouter();
-  const [showAlert, setShowAlert] = useState(false);
-  // State for Archive dialog
+  const router = useNextRouter();
+  // State for Unarchive dialog
   const [archiveDialogOpen, setArchiveDialogOpen] = useState(false);
   const [archiveProductNo, setArchiveProductNo] = useState(null);
   const [archiving, setArchiving] = useState(false);
   const [archiveAlert, setArchiveAlert] = useState(false);
 
-  // Get SWR data and mutate function
+  // Use get-product API and pass archived=true to fetch only archived products
   const {
     data: productsData,
     error,
@@ -112,7 +112,7 @@ export default function ProductsPage() {
   } = useSWR(
     `/api/products/get-product?page=${currentPage}&search=${searchTerm}&type=${
       selectedType !== "ALL" ? selectedType : ""
-    }`,
+    }&archived=true`,
     fetcher,
     { refreshInterval: 5000 }
   );
@@ -139,31 +139,29 @@ export default function ProductsPage() {
     router.push(routes.productStock.replace("[productNo]", productNo));
   };
 
-  // Open archive dialog and store productNo
+  // Open unarchive dialog and store productNo
   const openArchiveDialog = (productNo) => {
     setArchiveProductNo(productNo);
     setArchiveDialogOpen(true);
   };
 
-  // Archive handler: disable buttons while archiving, show spinner on Yes.
+  // Unarchive handler: disable buttons while unarchiving, show spinner on Yes.
   const confirmArchive = async () => {
     setArchiving(true);
     try {
       const res = await fetch(
-        `/api/products/archive-product?productNo=${archiveProductNo}`,
+        `/api/products/unarchive-product?productNo=${archiveProductNo}`,
         { method: "POST" }
       );
       if (res.ok) {
-        // Revalidate the products list using SWR mutate.
         mutate();
-        // Show archive success alert.
         setArchiveAlert(true);
         setTimeout(() => setArchiveAlert(false), 5000);
       } else {
-        console.error("Archive failed");
+        console.error("Unarchive failed");
       }
     } catch (error) {
-      console.error("Error archiving product:", error);
+      console.error("Error unarchiving product:", error);
     }
     setArchiving(false);
     setArchiveDialogOpen(false);
@@ -175,46 +173,17 @@ export default function ProductsPage() {
     setCurrentPage(1);
   };
 
-  if (router.query.success === "true" && !showAlert) {
-    setShowAlert(true);
-    setTimeout(() => {
-      setShowAlert(false);
-    }, 5000);
-    router.replace("/dashboard/product", undefined, { shallow: true });
-  }
-
   return (
     <DashboardLayoutWrapper>
-      {showAlert && (
-        <Alert className="fixed z-50 w-[30rem] right-12 bottom-10 flex items-center shadow-lg rounded-lg">
-          <CheckCircle2 className="h-10 w-10 stroke-green-500" />
-          <div className="ml-7">
-            <AlertTitle className="text-green-400 text-base font-semibold">
-              Product Added
-            </AlertTitle>
-            <AlertDescription className="text-green-300">
-              The product has been added successfully.
-            </AlertDescription>
-          </div>
-          <Button
-            variant="ghost"
-            className="ml-auto mr-4"
-            onClick={() => setShowAlert(false)}
-          >
-            <X className="-translate-x-[0.85rem]" />
-          </Button>
-        </Alert>
-      )}
-
       {archiveAlert && (
         <Alert className="fixed z-50 w-[30rem] right-12 bottom-10 flex items-center shadow-lg rounded-lg">
           <CheckCircle2 className="h-10 w-10 stroke-green-500" />
           <div className="ml-7">
             <AlertTitle className="text-green-400 text-base font-semibold">
-              Product Archive
+              Product Unarchived
             </AlertTitle>
             <AlertDescription className="text-green-300">
-              The product has been archived successfully.
+              The product has been unarchived successfully.
             </AlertDescription>
           </div>
           <Button
@@ -227,12 +196,11 @@ export default function ProductsPage() {
         </Alert>
       )}
 
-      {/* Archive Dialog outside DropdownMenu */}
       <Dialog open={archiveDialogOpen} onOpenChange={setArchiveDialogOpen}>
         <DialogContent>
-          <DialogTitle>Confirm Archive</DialogTitle>
+          <DialogTitle>Confirm Unarchive</DialogTitle>
           <DialogDescription>
-            Are you sure you want to archive this product?
+            Are you sure you want to unarchive this product?
           </DialogDescription>
           <DialogFooter>
             <Button
@@ -251,9 +219,8 @@ export default function ProductsPage() {
         </DialogContent>
       </Dialog>
 
-      {/* Dashboard Navigation inside the Card */}
       <div className="flex flex-row justify-between">
-        <CardTitle className="text-4xl">Products</CardTitle>
+        <CardTitle className="text-4xl">Archived</CardTitle>
         <div className="flex flex-row items-center gap-2">
           <Input
             type="text"
@@ -300,7 +267,7 @@ export default function ProductsPage() {
           </Link>
         </div>
       </div>
-      <Card className="flex flex-col p-5 gap-5 min-h-[49rem]">
+      <Card className="flex flex-col p-5 gap-5 min-h-[49.1rem]">
         <DashboardPagesNavigation
           items={[
             { label: "Products", href: routes.product },
@@ -347,9 +314,9 @@ export default function ProductsPage() {
                 <TableRow>
                   <TableCell
                     colSpan={6}
-                    className="text-center align-middle h-[43rem] text-primary/50 text-lg font-thin tracking-wide"
+                    className="text-center align-middle h-[39.5rem] text-primary/50 text-lg font-thin tracking-wide"
                   >
-                    No products found for{" "}
+                    No archived products found for{" "}
                     {selectedType !== "ALL"
                       ? `"${selectedType}"`
                       : "the selected criteria"}
@@ -458,16 +425,16 @@ export default function ProductsPage() {
                                   Stock
                                 </Button>
                               </DropdownMenuItem>
-                              <DropdownMenuItem className="justify-center focus:bg-red-500/25">
+                              <DropdownMenuItem className="justify-center focus:bg-orange-500/25">
                                 <Button
                                   variant="none"
                                   onClick={() =>
                                     openArchiveDialog(product.productNo)
                                   }
-                                  className="text-red-500"
+                                  className="text-orange-500"
                                 >
                                   <Archive className="scale-125" />
-                                  Archive
+                                  Unarchive
                                 </Button>
                               </DropdownMenuItem>
                             </DropdownMenuGroup>

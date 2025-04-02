@@ -25,7 +25,7 @@ import {
   CommandItem,
 } from "@/components/ui/command";
 
-const ProductVariantPictures = dynamic(
+const EditProductVariantPictures = dynamic(
   () => import("./product-variant-pictures"),
   { ssr: false }
 );
@@ -112,7 +112,7 @@ function ColorCombobox({
   );
 }
 
-export default function ProductVariantCard({
+export default function EditProductVariantCard({
   variant,
   productType,
   onRemove,
@@ -202,9 +202,9 @@ export default function ProductVariantCard({
         </CardTitle>
         {variantIndex > 0 && (
           <Button
-            variant="ghost"
+            variant="destructive"
             type="button"
-            className="text-red-500 p-5 hover:bg-red-500 min-w-[3rem] min-h-[3rem] transition-all duration-500 ease-in-out active:scale-90"
+            className="bg-red-500/10 text-red-500 p-5 hover:bg-red-500/25 min-w-[3rem] min-h-[3rem] transition-all duration-500 ease-in-out active:scale-90"
             onClick={onRemove}
           >
             <Trash2 className="scale-110 stroke-[2px]" />
@@ -266,7 +266,7 @@ export default function ProductVariantCard({
           )}
         </div>
         <div className="flex flex-col gap-1">
-          <ProductVariantPictures variantIndex={variantIndex} />
+          <EditProductVariantPictures variantIndex={variantIndex} />
           <InputErrorMessage
             error={imagesError}
             touched={imagesTouched}

@@ -55,7 +55,7 @@ export default function ProductVariantPictures({ variantIndex }) {
               <button
                 type="button"
                 onClick={() => handleRemoveImage(image.id)}
-                className="absolute top-2 right-2 bg-red-500 text-white p-2 rounded shadow-accent shadow-sm hover:bg-red-700"
+                className="absolute top-2 right-2 bg-red-500/10 text-red-500 p-2 hover:bg-red-500/25 rounded shadow-accent shadow-sm active:scale-90 transition-all duration-500 ease-in-out"
                 aria-label="Remove Image"
               >
                 <Trash2 className="w-5 h-5" />

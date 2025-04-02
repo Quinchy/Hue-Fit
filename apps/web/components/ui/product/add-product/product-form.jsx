@@ -2,13 +2,13 @@ import { useState, useEffect } from "react";
 import { useFormik, FormikProvider } from "formik";
 import useSWR from "swr";
 import { useRouter } from "next/router";
+import { productSchema } from "@/utils/validation-schema";
 import DashboardLayoutWrapper from "@/components/ui/dashboard-layout";
 import { Button } from "@/components/ui/button";
 import { LoadingMessage } from "@/components/ui/loading-message";
-import GeneralInformation from "./general-information/form";
-import MeasurementInformation from "./measurement-information/form";
-import { productSchema } from "@/utils/validation-schema";
-import Variations from "./variations/form";
+import GeneralInformation from "../add-product/general-information/form";
+import MeasurementInformation from "../add-product/measurement-information/form";
+import Variations from "../add-product/variations/form";
 
 // SWR fetcher function
 const fetcher = (url) => fetch(url).then((res) => res.json());

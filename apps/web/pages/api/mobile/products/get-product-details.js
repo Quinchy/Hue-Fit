@@ -65,7 +65,10 @@ const getProductDetails = async (req, res) => {
     }
 
     const allVariants = await prisma.productVariant.findMany({
-      where: { productId },
+      where: {
+        productId,
+        isArchived: false,
+      },
       include: {
         Color: { select: { name: true, hexcode: true } },
         ProductVariantImage: { select: { imageURL: true } },
@@ -82,7 +85,7 @@ const getProductDetails = async (req, res) => {
           },
         },
       },
-      orderBy: { id: 'asc' },
+      orderBy: { id: "asc" },
     });
 
     const measurements = await prisma.productMeasurement.findMany({

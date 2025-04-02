@@ -27,6 +27,7 @@ const routes = {
   inquiry: '/dashboard/inquiry',
   inquiryView: '/dashboard/inquiry/view/[inquiryNo]',
   product: '/dashboard/product',
+  archivedProduct: '/dashboard/product/archived',
   productAdd: '/dashboard/product/add',
   productEdit: '/dashboard/product/edit/[productNo]',
   productStock: '/dashboard/product/stock/[productNo]',

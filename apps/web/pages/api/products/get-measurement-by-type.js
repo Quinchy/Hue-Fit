@@ -26,7 +26,6 @@ export default async function handler(req, res) {
                 },
                 select: { id: true }
             });
-            console.log('Product type fetched:', type);
 
             if (!type) {
                 return res.status(404).json({ error: 'Product type not found for this shop.' });
@@ -44,8 +43,6 @@ export default async function handler(req, res) {
             });
 
             const count = measurements.length;
-            console.log('Measurements fetched for product type:', measurements);
-            console.log('Total measurement count:', count);
 
             return res.status(200).json({ measurements, count });
         } 

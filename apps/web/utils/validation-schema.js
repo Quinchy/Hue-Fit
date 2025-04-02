@@ -107,7 +107,7 @@ Yup.addMethod(Yup.array, 'unique', function (field, message) {
 const measurementValueSchema = Yup.object().shape({
   size: Yup.string().required(),
   value: Yup.number()
-    .transform((val, origVal) => origVal.trim() === '' ? undefined : val)
+    .transform((val, origVal) => (origVal.trim() === "" ? undefined : val))
     .typeError("Measurement value must be a number.")
     .positive("Measurement value must be greater than 0.")
     .required("Measurement value is required."),
@@ -199,6 +199,91 @@ export const productSchema = Yup.object().shape({
     .min(1, "At least one size for the product is added."),
   measurements: measurementsSchema,
   variants: variantsSchema,
+});
+
+const editVariantsSchema = Yup.array()
+  .of(
+    Yup.object().shape({
+      price: Yup.number()
+        .transform((value, originalValue) =>
+          originalValue === "" ? undefined : value
+        )
+        .typeError("Price must be a number.")
+        .positive("Price must be a positive number.")
+        .required("Price is required."),
+      images: Yup.array()
+        .of(
+          Yup.object().shape({
+            file: Yup.mixed().test(
+              "fileOrUrl",
+              "Image file is required.",
+              function (value) {
+                const { url } = this.parent;
+                if (!url && !value) {
+                  return false;
+                }
+                return true;
+              }
+            ),
+            url: Yup.string().test(
+              "urlOrFile",
+              "Image url is required.",
+              function (value) {
+                const { file } = this.parent;
+                if (!file && !value) {
+                  return false;
+                }
+                return true;
+              }
+            ),
+          })
+        )
+        .min(1, "At least one image is required."),
+      pngClothe: Yup.mixed()
+        .nullable()
+        .test(
+          "pngClothe-required",
+          "PNG clothe is required.",
+          function (value) {
+            const { path, createError, options, parent } = this;
+            const typeName = options.context?.typeName || parent.type;
+            if (["UPPERWEAR", "OUTERWEAR", "LOWERWEAR"].includes(typeName)) {
+              if (!value || typeof value !== "object" || !value.url) {
+                return createError({
+                  path,
+                  message: "PNG clothe is required.",
+                });
+              }
+            }
+            return true;
+          }
+        ),
+    })
+  )
+  .min(1, "At least one variant of the product is added.");
+
+export const editProductSchema = Yup.object().shape({
+  thumbnail: Yup.mixed()
+    .test(
+      "file-or-url",
+      "Thumbnail must be a valid image file or URL.",
+      (value) => {
+        if (typeof value === "string") {
+          return value.trim() !== "";
+        }
+        if (value && typeof value === "object") {
+          if (value.file instanceof File) return true;
+          if (typeof value.url === "string" && value.url.trim() !== "")
+            return true;
+        }
+        return false;
+      }
+    )
+    .required("Thumbnail is required."),
+  name: Yup.string().required("Name is required."),
+  description: Yup.string().nullable(),
+  measurements: measurementsSchema,
+  variants: editVariantsSchema,
 });
 
 export const addSizeSchema = Yup.object({
