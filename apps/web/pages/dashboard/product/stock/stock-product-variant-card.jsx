@@ -199,13 +199,19 @@ export default function StockProductVariantCard({
                         disabled
                         className="w-full"
                       />
-                      {currentStock <= threshold && reservedQuantity > 0 && (
-                        <p className="text-red-500 text-sm flex flex-row items-center gap-2 bg-red-400/10 px-3 py-1 rounded-md border border-red-600/25">
-                          <TriangleAlert width={20} />
-                          This product size needs at least{" "}
-                          {reservedQuantity + 5} stocks!
-                        </p>
-                      )}
+                      {currentStock <= threshold &&
+                        (reservedQuantity > 0 ? (
+                          <p className="text-red-500 text-sm flex flex-row items-center gap-2 bg-red-400/10 px-3 py-1 rounded-md border border-red-600/25">
+                            <TriangleAlert width={20} />
+                            This product size needs at least{" "}
+                            {reservedQuantity + 5} stocks!
+                          </p>
+                        ) : (
+                          <p className="text-red-500 text-sm flex flex-row items-center gap-2 bg-red-400/10 px-3 py-1 rounded-md border border-red-600/25">
+                            <TriangleAlert width={20} />
+                            This product size needs restocking!
+                          </p>
+                        ))}
                     </div>
                   </div>
                 );

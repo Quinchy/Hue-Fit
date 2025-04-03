@@ -1,3 +1,4 @@
+// File: components/NavbarDashboard.js
 import { signOut, useSession } from "next-auth/react";
 import routes from "@/routes";
 import HueFitLogo from "@/public/images/HueFitLogo";
@@ -23,10 +24,26 @@ import {
 } from "@/components/ui/dropdown-menu";
 import Image from "next/image";
 import { Skeleton } from "@/components/ui/skeleton";
+import useSWR from "swr";
+
+const fetcher = (url) => fetch(url).then((res) => res.json());
 
 const NavbarDashboard = () => {
   const { data: session, status } = useSession();
+  // Use SWR to fetch fresh user info (including profile picture) from the API.
+  // This ensures that if the database profile picture changes, the UI updates.
+  const { data: userInfo } = useSWR("/api/users/get-user-info", fetcher, {
+    revalidateOnFocus: false,
+    dedupingInterval: 60000, // Cache for 1 minute; adjust as needed.
+  });
+
+  // Use session for basic info (like role) and userInfo for up-to-date profile picture & names.
   const userRole = session?.user?.role;
+  const profilePicture =
+    userInfo?.profilePicture ||
+    "/images/profile-picture.png";
+  const firstName = userInfo?.firstName || session?.user?.firstName || "";
+  const lastName = userInfo?.lastName || session?.user?.lastName || "";
 
   const links = [
     {
@@ -83,7 +100,6 @@ const NavbarDashboard = () => {
           <ModeToggle />
         </div>
 
-        {/* Render links only when the user's role is known or if session is loaded */}
         {userRole && (
           <div className="flex flex-col w-full items-center">
             {links
@@ -107,7 +123,6 @@ const NavbarDashboard = () => {
       <DropdownMenu>
         <DropdownMenuTrigger className="w-full focus-visible:outline-none">
           <div className="flex flex-row justify-start items-center gap-3 py-7 w-full hover:bg-accent duration-300 ease-in-out">
-            {/* If session is still loading, skeleton the profile portion only */}
             {status === "loading" ? (
               <div className="flex flex-row pl-10 items-center gap-3">
                 <Skeleton className="rounded-full w-12 h-12" />
@@ -117,7 +132,6 @@ const NavbarDashboard = () => {
                 </div>
               </div>
             ) : !session ? (
-              // If session not found at all
               <div className="flex flex-row pl-5 items-center gap-2">
                 <Image
                   src="/images/profile-picture.png"
@@ -132,13 +146,9 @@ const NavbarDashboard = () => {
                 </div>
               </div>
             ) : (
-              // Session is loaded & user is present
               <div className="flex flex-row pl-5 items-center gap-2">
                 <Image
-                  src={
-                    session?.user?.profilePicture ||
-                    "/images/profile-picture.png"
-                  }
+                  src={profilePicture}
                   width={35}
                   height={35}
                   className="rounded-full select-none"
@@ -146,7 +156,7 @@ const NavbarDashboard = () => {
                 />
                 <div className="flex flex-col items-start text-[0.80rem] text-primary select-none">
                   <p className="font-semibold">
-                    {session?.user?.firstName} {session?.user?.lastName}
+                    {firstName} {lastName}
                   </p>
                   <p className="font-light">{userRole}</p>
                 </div>
@@ -167,7 +177,6 @@ const NavbarDashboard = () => {
               <User className="scale-75" /> Profile
             </Link>
           </DropdownMenuItem>
-          {/* Add Shop menu item if the user is a VENDOR */}
           {userRole === "VENDOR" && (
             <DropdownMenuItem>
               <Link

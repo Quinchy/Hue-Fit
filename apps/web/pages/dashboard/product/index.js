@@ -394,7 +394,7 @@ export default function ProductsPage() {
                           ) && (
                             <CircleAlert
                               width={15}
-                              className="text-red-500/75 inline-block ml-1 mb-[0.10rem]"
+                              className="text-red-600 inline-block ml-1 mb-[0.10rem] animate-pulse"
                             />
                           )}
                       </TableCell>

@@ -1,15 +1,11 @@
 // /api/products/add-product.js
-import prisma, {
-  getSessionShopId,
-  uploadFileToSupabase,
-  parseFormData,
-} from "@/utils/helpers";
+import prisma, { getSessionShopId } from "@/utils/helpers";
 import { v4 as uuidv4 } from "uuid";
 import { Prisma } from "@prisma/client";
 
 export const config = {
   api: {
-    bodyParser: false,
+    bodyParser: true, // Now using the default JSON body parser
   },
 };
 
@@ -21,41 +17,39 @@ export default async function handler(req, res) {
   try {
     const shopId = await getSessionShopId(req, res);
     const productNo = uuidv4();
-    const { fields, files } = await parseFormData(req);
-    console.log("fields:", fields);
-    const name = fields.name?.[0] || "";
-    const description = fields.description?.[0] || "";
-    const typeId = parseInt(fields.type?.[0] || "0", 10);
-    console.log("typeId:", typeId);
-    const categoryName = fields.category?.[0] || "";
-    const tagId = parseInt(fields.tag?.[0] || "0", 10);
-    console.log("tagId:", tagId);
+    const {
+      thumbnail,
+      name,
+      description,
+      type,
+      category,
+      tag,
+      sizes,
+      variants,
+      measurements,
+    } = req.body;
 
-    const categoryId = await getCategoryIdByName(prisma, categoryName, shopId);
+    console.log("Received product data:", req.body);
 
-    const thumbnailURL = files.thumbnail?.[0]
-      ? await uploadFileToSupabase(
-          files.thumbnail[0],
-          files.thumbnail[0]?.filepath,
-          files.thumbnail[0]?.originalFilename,
-          productNo,
-          "products/product-thumbnails"
-        )
-      : null;
+    const typeId = parseInt(type, 10);
+    const tagId = parseInt(tag, 10);
+    const categoryId = await getCategoryIdByName(prisma, category, shopId);
 
-    if (!thumbnailURL) {
+    // Ensure the thumbnail URL is provided
+    if (!thumbnail) {
       return res.status(415).json({
         error: "Thumbnail upload failed",
-        message: "Invalid mime type or unsupported file",
+        message: "Thumbnail URL is missing",
       });
     }
 
+    // Create the product record
     const product = await prisma.product.create({
       data: {
         productNo,
         name,
         description,
-        thumbnailURL,
+        thumbnailURL: thumbnail,
         totalQuantity: 0,
         shopId,
         typeId,
@@ -64,7 +58,8 @@ export default async function handler(req, res) {
       },
     });
 
-    const measurementsData = JSON.parse(fields.measurements?.[0] || "[]");
+    // Process measurements (assumed to be an array of objects)
+    const measurementsData = Array.isArray(measurements) ? measurements : [];
     const uniqueSizes = [...new Set(measurementsData.map((m) => m.size))];
     const uniqueMeasurementNames = [
       ...new Set(measurementsData.map((m) => m.measurementName)),
@@ -104,44 +99,12 @@ export default async function handler(req, res) {
       });
     }
 
-    const variantEntries = Object.keys(fields).filter((key) =>
-      key.startsWith("variants[")
-    );
-    const variants = {};
-    const variantQuantities = {};
-
-    variantEntries.forEach((key) => {
-      const quantityMatch = key.match(
-        /^variants\[(\d+)\]\[quantities\]\[(.+)\]$/
-      );
-      if (quantityMatch) {
-        const index = parseInt(quantityMatch[1], 10);
-        const sizeAbbr = quantityMatch[2];
-        if (!variantQuantities[index]) {
-          variantQuantities[index] = {};
-        }
-        variantQuantities[index][sizeAbbr] = parseInt(
-          fields[key][0] || "0",
-          10
-        );
-      } else {
-        const match = key.match(/^variants\[(\d+)\]\[(.+)\]$/);
-        if (match) {
-          const index = parseInt(match[1], 10);
-          const property = match[2];
-          if (!variants[index]) {
-            variants[index] = {};
-          }
-          variants[index][property] = fields[key][0];
-        }
-      }
-    });
-
+    // Process variants (each variant already includes URLs instead of file objects)
     let totalProductQuantity = 0;
 
-    for (const idx of Object.keys(variants)) {
-      const colorName = variants[idx].color || "";
-      const priceVal = variants[idx].price || "0";
+    for (const variant of variants) {
+      const colorName = variant.color || "";
+      const priceVal = variant.price || "0";
       const productVariantNo = uuidv4();
       const colorId = await getColorIdByName(prisma, shopId, colorName);
 
@@ -156,17 +119,15 @@ export default async function handler(req, res) {
       });
 
       let variantTotalQty = 0;
-
-      if (variantQuantities[idx]) {
-        for (const abbr of Object.keys(variantQuantities[idx])) {
-          const qty = variantQuantities[idx][abbr];
-          variantTotalQty += qty;
-          const sizeId = await getSizeIdByAbbreviation(prisma, shopId, abbr);
+      if (Array.isArray(variant.quantities)) {
+        for (const q of variant.quantities) {
+          variantTotalQty += parseInt(q.quantity, 10);
+          const sizeId = await getSizeIdByAbbreviation(prisma, shopId, q.size);
           await prisma.productVariantSize.create({
             data: {
               productVariantId: productVariant.id,
               sizeId,
-              quantity: qty,
+              quantity: parseInt(q.quantity, 10),
             },
           });
         }
@@ -179,46 +140,28 @@ export default async function handler(req, res) {
 
       totalProductQuantity += variantTotalQty;
 
-      const variantImages = files[`productVariant[${idx}][images]`];
-      if (Array.isArray(variantImages) && variantImages.length > 0) {
-        for (const fileObj of variantImages) {
-          const imageURL = await uploadFileToSupabase(
-            fileObj,
-            fileObj.filepath,
-            fileObj.originalFilename,
-            productVariantNo,
-            "products/product-variant-pictures"
-          );
-          if (imageURL) {
-            await prisma.productVariantImage.create({
-              data: {
-                productVariantId: productVariant.id,
-                imageURL,
-              },
-            });
-          }
-        }
-      }
-
-      const variantPngClothe = files[`variants[${idx}][pngClothe]`];
-      if (variantPngClothe && variantPngClothe.length > 0) {
-        const fileObj = variantPngClothe[0];
-        const pngClotheURL = await uploadFileToSupabase(
-          fileObj,
-          fileObj.filepath,
-          fileObj.originalFilename,
-          productVariantNo,
-          "products/product-virtual-fitting"
-        );
-        if (pngClotheURL) {
-          await prisma.productVariant.update({
-            where: { id: productVariant.id },
-            data: { pngClotheURL },
+      // Process variant image URLs
+      if (variant.imagesUrls && Array.isArray(variant.imagesUrls)) {
+        for (const imageURL of variant.imagesUrls) {
+          await prisma.productVariantImage.create({
+            data: {
+              productVariantId: productVariant.id,
+              imageURL,
+            },
           });
         }
       }
+
+      // Process PNG clothe URL if available
+      if (variant.pngClotheUrl) {
+        await prisma.productVariant.update({
+          where: { id: productVariant.id },
+          data: { pngClotheURL: variant.pngClotheUrl },
+        });
+      }
     }
 
+    // Update the product total quantity
     await prisma.product.update({
       where: { id: product.id },
       data: { totalQuantity: totalProductQuantity },
@@ -231,6 +174,7 @@ export default async function handler(req, res) {
   }
 }
 
+// Helper functions (same as before)
 async function getCategoryIdByName(prisma, categoryName, shopId) {
   try {
     const categoryRecord = await prisma.category.findFirst({

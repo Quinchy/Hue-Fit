@@ -1,5 +1,11 @@
-// File: pages/api/users/edit-user-info.js
-import prisma, { disconnectPrisma, parseFormData, uploadFileToSupabase } from "@/utils/helpers";
+// pages/api/users/edit-user-info.js
+import { getServerSession } from "next-auth/next";
+import { authOptions } from "@/pages/api/auth/[...nextauth]";
+import prisma, {
+  disconnectPrisma,
+  parseFormData,
+  uploadFileToSupabase,
+} from "@/utils/helpers";
 import { v4 as uuidv4 } from "uuid";
 
 export const config = {
@@ -15,17 +21,20 @@ export default async function handler(req, res) {
   }
 
   try {
+    // Retrieve the session to get the current user ID.
+    const session = await getServerSession(req, res, authOptions);
+    if (!session) {
+      return res.status(401).json({ error: "Not authenticated" });
+    }
+    const userId = session.user.id;
+    console.log("User ID from session:", userId);
+
     console.log("Parsing form data...");
     const { fields, files } = await parseFormData(req);
     console.log("Fields received:", JSON.stringify(fields, null, 2));
     console.log("Files received:", JSON.stringify(files, null, 2));
 
-    const userId = fields.userId?.[0] || fields.userId;
-    console.log("Extracted userId:", userId);
-    if (!userId || userId === "undefined") {
-      console.error("User ID not provided. Fields:", fields);
-      return res.status(400).json({ error: "User ID not provided" });
-    }
+    // No longer extract userId from fields.
     const username = fields.username?.[0] || fields.username || "";
     const email = fields.email?.[0] || fields.email || "";
     const firstName = fields.firstName?.[0] || fields.firstName || "";
@@ -56,7 +65,12 @@ export default async function handler(req, res) {
     console.log("Querying user with id:", userId);
     const user = await prisma.user.findUnique({
       where: { id: Number(userId) },
-      include: { Role: true, AdminProfile: true, VendorProfile: true, CustomerProfile: true },
+      include: {
+        Role: true,
+        AdminProfile: true,
+        VendorProfile: true,
+        CustomerProfile: true,
+      },
     });
     console.log("User fetched:", JSON.stringify(user, null, 2));
 
@@ -75,7 +89,8 @@ export default async function handler(req, res) {
           ? "vendor"
           : "customer";
       const bucketPath = `profile-pictures/${roleName}`;
-      const originalFilename = files.profilePicture[0].originalFilename || "profile.jpg";
+      const originalFilename =
+        files.profilePicture[0].originalFilename || "profile.jpg";
       const uniqueId = user.userNo || uuidv4();
 
       console.log("Uploading profile picture with uniqueId:", uniqueId);
@@ -89,6 +104,7 @@ export default async function handler(req, res) {
       console.log("Uploaded profile picture URL:", newProfilePic);
     }
 
+    // Update profile based on the user's role.
     if (user.Role.name === "ADMIN") {
       console.log("Updating admin profile...");
       await prisma.adminProfile.update({
@@ -96,7 +112,8 @@ export default async function handler(req, res) {
         data: {
           firstName,
           lastName,
-          profilePicture: newProfilePic || user.AdminProfile?.profilePicture || null,
+          profilePicture:
+            newProfilePic || user.AdminProfile?.profilePicture || null,
         },
       });
       await prisma.user.update({
@@ -113,7 +130,8 @@ export default async function handler(req, res) {
           contactNo,
           email,
           position: fields.position?.[0] || fields.position || "",
-          profilePicture: newProfilePic || user.VendorProfile?.profilePicture || null,
+          profilePicture:
+            newProfilePic || user.VendorProfile?.profilePicture || null,
           shopId: fields.shop?.[0] || fields.shop || null,
         },
       });
@@ -129,7 +147,8 @@ export default async function handler(req, res) {
           firstName,
           lastName,
           email,
-          profilePicture: newProfilePic || user.CustomerProfile?.profilePicture || null,
+          profilePicture:
+            newProfilePic || user.CustomerProfile?.profilePicture || null,
         },
       });
       if (address) {

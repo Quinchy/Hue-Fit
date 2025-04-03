@@ -9,6 +9,12 @@ import { LoadingMessage } from "@/components/ui/loading-message";
 import GeneralInformation from "../add-product/general-information/form";
 import MeasurementInformation from "../add-product/measurement-information/form";
 import Variations from "../add-product/variations/form";
+import { createClient } from "@supabase/supabase-js";
+
+// Initialize the Supabase client
+const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL;
+const supabaseAnonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY;
+const supabase = createClient(supabaseUrl, supabaseAnonKey);
 
 // SWR fetcher function
 const fetcher = (url) => fetch(url).then((res) => res.json());
@@ -45,6 +51,19 @@ function touchAllFields(errors) {
     newTouched[key] = touchAllFields(errors[key]);
   }
   return newTouched;
+}
+
+// Client-side function to upload a file to Supabase and return its public URL.
+async function uploadFile(file, folderPath, uniqueId) {
+  const fileExt = file.name.split(".").pop();
+  const fileName = `${uniqueId}-${Date.now()}.${fileExt}`;
+  const { data, error } = await supabase.storage
+    .from(folderPath)
+    .upload(fileName, file);
+  if (error) {
+    throw error;
+  }
+  return `${supabaseUrl}/storage/v1/object/public/${folderPath}/${fileName}`;
 }
 
 export default function ProductForm() {
@@ -87,92 +106,97 @@ export default function ProductForm() {
     onSubmit: async (values, { setTouched, setErrors, setFieldError }) => {
       setSubmitting(true);
       try {
+        // Validate the form values
         await productSchema.validate(values, {
           context: { typeName: values.type },
           abortEarly: false,
         });
-        const formData = new FormData();
+
+        // Upload the thumbnail file if it exists and assign its URL
         if (values.thumbnail?.file) {
-          formData.append("thumbnail", values.thumbnail.file);
-        }
-        formData.append("name", values.name);
-        formData.append("description", values.description);
-        const typeObj = productData?.types?.find((t) => t.name === values.type);
-        formData.append("type", typeObj ? typeObj.id : values.type);
-        formData.append("category", values.category);
-        const tagObj = productData?.tags?.find((tg) => tg.name === values.tags);
-        if (values.tags) {
-          formData.append("tag", tagObj ? tagObj.id : values.tags);
-        }
-        if (values.sizes.length > 0) {
-          formData.append("sizes", values.sizes.join(","));
-        }
-        await Promise.race([
-          new Promise((resolve) => {
-            values.variants.forEach((variant, variantIndex) => {
-              formData.append(
-                `variants[${variantIndex}][price]`,
-                variant.price
-              );
-              formData.append(
-                `variants[${variantIndex}][color]`,
-                variant.color
-              );
-              if (Array.isArray(variant.quantities)) {
-                const quantities = {};
-                variant.quantities.forEach((q) => {
-                  quantities[q.size] = q.quantity;
-                });
-                Object.entries(quantities).forEach(([sz, quantity]) => {
-                  formData.append(
-                    `variants[${variantIndex}][quantities][${sz}]`,
-                    quantity
-                  );
-                });
-              }
-              if (Array.isArray(variant.images)) {
-                variant.images.forEach((imageObj) => {
-                  formData.append(
-                    `variants[${variantIndex}][images]`,
-                    imageObj.file
-                  );
-                });
-              }
-              if (variant.pngClothe?.file) {
-                formData.append(
-                  `variants[${variantIndex}][pngClothe]`,
-                  variant.pngClothe.file
-                );
-              }
-            });
-            resolve();
-          }),
-          new Promise((_, reject) =>
-            setTimeout(
-              () => reject(new Error("Image appending timeout exceeded")),
-              5000
-            )
-          ),
-        ]);
-        if (Array.isArray(values.measurements)) {
-          const transformedMeasurements = [];
-          values.measurements.forEach((measurement) => {
-            measurement.values.forEach((val) => {
-              transformedMeasurements.push({
-                size: val.size,
-                measurementName: measurement.measurementName,
-                value: val.value,
-              });
-            });
-          });
-          formData.append(
-            "measurements",
-            JSON.stringify(transformedMeasurements)
+          values.thumbnail.url = await uploadFile(
+            values.thumbnail.file,
+            "products/product-thumbnails",
+            "thumbnail"
           );
         }
+
+        // For each variant, upload images and the PNG clothe file immediately.
+        for (let i = 0; i < values.variants.length; i++) {
+          const variant = values.variants[i];
+
+          // Upload variant images and store their URLs
+          if (Array.isArray(variant.images) && variant.images.length > 0) {
+            const uploadedImages = await Promise.all(
+              variant.images.map(async (imageObj, idx) => {
+                if (imageObj.file) {
+                  return await uploadFile(
+                    imageObj.file,
+                    "products/product-variant-pictures",
+                    `variant-${i}-image-${idx}`
+                  );
+                }
+                return null;
+              })
+            );
+            // Save only valid URLs
+            values.variants[i].imagesUrls = uploadedImages.filter((url) => url);
+          }
+
+          // Upload the PNG clothe file if provided
+          if (variant.pngClothe?.file) {
+            values.variants[i].pngClotheUrl = await uploadFile(
+              variant.pngClothe.file,
+              "products/product-virtual-fitting",
+              `variant-${i}-pngClothe`
+            );
+          }
+        }
+
+        // Process measurements: flatten the measurement values (if needed)
+        const transformedMeasurements = [];
+        values.measurements.forEach((measurement) => {
+          measurement.values.forEach((val) => {
+            transformedMeasurements.push({
+              size: val.size,
+              measurementName: measurement.measurementName,
+              value: val.value,
+            });
+          });
+        });
+
+        // Build the JSON payload following your step-by-step process
+        const payload = {
+          thumbnail: values.thumbnail?.url,
+          name: values.name,
+          description: values.description,
+          // Use the type ID from productData if available or use the provided value
+          type: (() => {
+            const typeObj = productData?.types?.find(
+              (t) => t.name === values.type
+            );
+            return typeObj ? typeObj.id : values.type;
+          })(),
+          category: values.category,
+          // Use the tag ID from productData if available or use the provided value
+          tag: (() => {
+            const tagObj = productData?.tags?.find(
+              (tg) => tg.name === values.tags
+            );
+            return tagObj ? tagObj.id : values.tags;
+          })(),
+          sizes: values.sizes.join(","), // e.g. "S,M,L"
+          variants: values.variants, // Contains price, color, quantities, imagesUrls, pngClotheUrl, etc.
+          measurements: transformedMeasurements,
+        };
+
+        // Submit the JSON payload using a standard POST request.
         const response = await fetch("/api/products/add-product", {
           method: "POST",
-          body: formData,
+          headers: {
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify(payload),
         });
         const result = await response.json();
         if (response.ok) {
@@ -188,6 +212,7 @@ export default function ProductForm() {
             return acc;
           }, {});
         }
+        // Example of an extra check for PNG clothe requirement
         if (
           ["UPPERWEAR", "OUTERWEAR", "LOWERWEAR"].includes(values.type) &&
           (!values.variants[0].pngClothe ||
@@ -203,6 +228,7 @@ export default function ProductForm() {
         setSubmitting(false);
       }
     },
+
     validateOnMount: true,
     validateOnBlur: true,
     validateOnChange: true,

@@ -28,8 +28,14 @@ export default async function getProducts(req, res) {
     };
   }
 
-  // Only get products that are not archived.
+  // Only get products that are not archived
   whereCondition.isArchived = false;
+
+  // Also, ensure the product belongs to a shop that is not inactive.
+  // This uses the relation field "Shop" defined on Product.
+  whereCondition.Shop = {
+    status: { not: "INACTIVE" },
+  };
 
   try {
     const productsData = await prisma.product.findMany({

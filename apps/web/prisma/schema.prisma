@@ -8,19 +8,19 @@ datasource db {
 }
 
 model Role {
-  id          Int      @id @default(autoincrement())
-  name        String   @unique // ADMIN, CUSTOMER, VENDOR
-  created_at  DateTime @default(now())
-  updated_at  DateTime @updatedAt
+  id         Int      @id @default(autoincrement())
+  name       String   @unique // ADMIN, CUSTOMER, VENDOR
+  created_at DateTime @default(now())
+  updated_at DateTime @updatedAt
 
-  User        User[]
+  User User[]
 }
 
 model User {
   id         Int      @id @default(autoincrement())
   userNo     String   @unique
   roleId     Int
-  username   String   
+  username   String
   password   String
   status     String
   created_at DateTime @default(now())
@@ -30,15 +30,15 @@ model User {
   AdminProfile    AdminProfile?
   CustomerProfile CustomerProfile?
   VendorProfile   VendorProfile?
-  OwnedShop       Shop?           @relation("ShopOwner")
-  
-  Order               Order[]
-  Cart                Cart[]
-  PartnershipRequest  PartnershipRequest[]
-  CustomerAddress     CustomerAddress[]
-  CustomerFeature     CustomerFeature[]
-  Notifications       Notification[]
-  GeneratedOutfits    GeneratedOutfit[]
+  OwnedShop       Shop?            @relation("ShopOwner")
+
+  Order              Order[]
+  Cart               Cart[]
+  PartnershipRequest PartnershipRequest[]
+  CustomerAddress    CustomerAddress[]
+  CustomerFeature    CustomerFeature[]
+  Notifications      Notification[]
+  GeneratedOutfits   GeneratedOutfit[]
 
   @@unique([username, roleId])
 }
@@ -58,14 +58,14 @@ model AdminProfile {
 }
 
 model CustomerProfile {
-  id                 Int      @id @default(autoincrement())
-  userId             Int      @unique
-  profilePicture     String?
-  email              String?  
-  firstName          String
-  lastName           String
-  created_at         DateTime @default(now())
-  updated_at         DateTime @updatedAt
+  id             Int      @id @default(autoincrement())
+  userId         Int      @unique
+  profilePicture String?
+  email          String?
+  firstName      String
+  lastName       String
+  created_at     DateTime @default(now())
+  updated_at     DateTime @updatedAt
 
   User User @relation(fields: [userId], references: [id])
 }
@@ -102,7 +102,7 @@ model CustomerAddress {
 model VendorProfile {
   id             Int      @id @default(autoincrement())
   userId         Int      @unique
-  shopId         Int?   
+  shopId         Int?
   profilePicture String?
   firstName      String
   lastName       String
@@ -113,14 +113,14 @@ model VendorProfile {
   updated_at     DateTime @updatedAt
 
   User User  @relation(fields: [userId], references: [id])
-  Shop Shop? @relation("ShopEmployees", fields: [shopId], references: [id])
+  Shop Shop? @relation("ShopEmployees", fields: [shopId], references: [id], onDelete: Cascade)
 }
 
 model PartnershipRequest {
   id         Int      @id @default(autoincrement())
   requestNo  String   @unique
-  userId     Int   
-  shopId     Int     
+  userId     Int
+  shopId     Int
   status     String   @default("PENDING")
   message    String?
   isSeen     Boolean  @default(false)
@@ -128,7 +128,7 @@ model PartnershipRequest {
   updated_at DateTime @updatedAt
 
   User User @relation(fields: [userId], references: [id])
-  Shop Shop @relation(fields: [shopId], references: [id])
+  Shop Shop @relation(fields: [shopId], references: [id], onDelete: Cascade)
 }
 
 model Shop {
@@ -147,23 +147,23 @@ model Shop {
   created_at  DateTime @default(now())
   updated_at  DateTime @updatedAt
 
-  Owner               User                   @relation("ShopOwner", fields: [ownerUserId], references: [id])
-  ShopAddress         ShopAddress            @relation("ShopAddress", fields: [addressId], references: [id])
-  Employee            VendorProfile[]        @relation("ShopEmployees")
-  PartnershipRequest  PartnershipRequest[]
-  BusinessLicense     ShopBusinessLicense[]
-  Product             Product[]
-  Tag                 Tag[]
-  Type                Type[]
-  Category            Category[]
-  Color               Color[]
-  Size                Size[]
-  Measurement         Measurement[]
-  Order               Order[]
-  CartItem            CartItem[]
-  Notification        Notification[]
-  DeliveryFee         DeliveryFee[]
-  Payment             Payment[]
+  Owner              User                  @relation("ShopOwner", fields: [ownerUserId], references: [id])
+  ShopAddress        ShopAddress           @relation("ShopAddress", fields: [addressId], references: [id])
+  Employee           VendorProfile[]       @relation("ShopEmployees")
+  PartnershipRequest PartnershipRequest[]
+  BusinessLicense    ShopBusinessLicense[]
+  Product            Product[]
+  Tag                Tag[]
+  Type               Type[]
+  Category           Category[]
+  Color              Color[]
+  Size               Size[]
+  Measurement        Measurement[]
+  Order              Order[]
+  CartItem           CartItem[]
+  Notification       Notification[]
+  DeliveryFee        DeliveryFee[]
+  Payment            Payment[]
 }
 
 model ShopAddress {
@@ -200,7 +200,7 @@ model ShopBusinessLicense {
   created_at DateTime @default(now())
   updated_at DateTime @updatedAt
 
-  Shop Shop @relation(fields: [shopId], references: [id])
+  Shop Shop @relation(fields: [shopId], references: [id], onDelete: Cascade)
 }
 
 model Product {
@@ -218,65 +218,68 @@ model Product {
   created_at    DateTime @default(now())
   updated_at    DateTime @updatedAt
 
-  Shop                Shop              @relation(fields: [shopId], references: [id])
-  Type                Type              @relation(fields: [typeId], references: [id])
-  Category            Category          @relation(fields: [categoryId], references: [id])
-  Tag                 Tag               @relation(fields: [tagId], references: [id])
-  OrderItem           OrderItem[]
-  CartItem            CartItem[]
-  ProductVariant      ProductVariant[]
-  ProductMeasurement  ProductMeasurement[]
+  // No change here. The 'onDelete: Cascade' goes on the child references
+  Shop     Shop     @relation(fields: [shopId], references: [id])
+  Type     Type     @relation(fields: [typeId], references: [id])
+  Category Category @relation(fields: [categoryId], references: [id])
+  Tag      Tag      @relation(fields: [tagId], references: [id])
+
+  // These children will now have 'onDelete: Cascade' on their side
+  ProductVariant     ProductVariant[]
+  ProductMeasurement ProductMeasurement[]
+  OrderItem          OrderItem[]
+  CartItem           CartItem[]
 }
 
 model ProductMeasurement {
-  id               Int      @id @default(autoincrement())
-  productId        Int
-  sizeId           Int
-  measurementId    Int
-  value            Float
-  unit             String
-  created_at       DateTime @default(now())
-  updated_at       DateTime @updatedAt
+  id            Int      @id @default(autoincrement())
+  productId     Int
+  sizeId        Int
+  measurementId Int
+  value         Float
+  unit          String
+  created_at    DateTime @default(now())
+  updated_at    DateTime @updatedAt
 
-  Product        Product        @relation(fields: [productId], references: [id])
-  Measurement    Measurement    @relation(fields: [measurementId], references: [id])
-  Size           Size           @relation(fields: [sizeId], references: [id])
+  Product     Product     @relation(fields: [productId], references: [id], onDelete: Cascade)
+  Measurement Measurement @relation(fields: [measurementId], references: [id])
+  Size        Size        @relation(fields: [sizeId], references: [id])
 }
 
 model Type {
-  id          Int      @id @default(autoincrement())
-  shopId      Int
-  name        String   
-  created_at  DateTime @default(now())
-  updated_at  DateTime @updatedAt
+  id         Int      @id @default(autoincrement())
+  shopId     Int
+  name       String
+  created_at DateTime @default(now())
+  updated_at DateTime @updatedAt
 
-  Shop             Shop             @relation(fields: [shopId], references: [id])
-  Products         Product[]
-  Tags             Tag[]
-  Measurements     Measurement[]
+  Shop         Shop          @relation(fields: [shopId], references: [id], onDelete: Cascade)
+  Products     Product[]
+  Tags         Tag[]
+  Measurements Measurement[]
 }
 
 model Category {
-  id          Int      @id @default(autoincrement())
-  shopId      Int
-  name        String   
-  created_at  DateTime @default(now())
-  updated_at  DateTime @updatedAt
+  id         Int      @id @default(autoincrement())
+  shopId     Int
+  name       String
+  created_at DateTime @default(now())
+  updated_at DateTime @updatedAt
 
-  Shop     Shop        @relation(fields: [shopId], references: [id])
+  Shop     Shop      @relation(fields: [shopId], references: [id], onDelete: Cascade)
   Products Product[]
 }
 
 model Tag {
-  id          Int      @id @default(autoincrement())
-  shopId      Int
-  typeId      Int
-  name        String   
-  created_at  DateTime @default(now())
-  updated_at  DateTime @updatedAt
+  id         Int      @id @default(autoincrement())
+  shopId     Int
+  typeId     Int
+  name       String
+  created_at DateTime @default(now())
+  updated_at DateTime @updatedAt
 
-  Shop     Shop       @relation(fields: [shopId], references: [id])
-  Type     Type       @relation(fields: [typeId], references: [id])
+  Shop     Shop      @relation(fields: [shopId], references: [id], onDelete: Cascade)
+  Type     Type      @relation(fields: [typeId], references: [id])
   Products Product[]
 }
 
@@ -292,27 +295,27 @@ model ProductVariant {
   created_at       DateTime @default(now())
   updated_at       DateTime @updatedAt
 
-  Product                    Product                      @relation(fields: [productId], references: [id])
-  Color                      Color                        @relation(fields: [colorId], references: [id])
-  ProductVariantImage        ProductVariantImage[]
-  OrderItem                  OrderItem[]
-  CartItem                   CartItem[]
-  ProductVariantSize         ProductVariantSize[]
-  GeneratedOutfitItems       GeneratedOutfitItem[]
+  Product             Product               @relation(fields: [productId], references: [id], onDelete: Cascade)
+  Color               Color                 @relation(fields: [colorId], references: [id])
+  ProductVariantImage ProductVariantImage[]
+  ProductVariantSize  ProductVariantSize[]
+  OrderItem           OrderItem[]
+  CartItem            CartItem[]
+  GeneratedOutfitItem GeneratedOutfitItem[]
 }
 
 model ProductVariantSize {
-  id                    Int      @id @default(autoincrement())
-  productVariantId      Int      
-  sizeId                Int        
-  quantity              Int
-  created_at            DateTime @default(now())
-  updated_at            DateTime @updatedAt
+  id               Int      @id @default(autoincrement())
+  productVariantId Int
+  sizeId           Int
+  quantity         Int
+  created_at       DateTime @default(now())
+  updated_at       DateTime @updatedAt
 
-  ProductVariant             ProductVariant              @relation(fields: [productVariantId], references: [id])
-  Size                       Size                        @relation(fields: [sizeId], references: [id])
-  CartItem                   CartItem[]
-  OrderItem                  OrderItem[]
+  ProductVariant ProductVariant @relation(fields: [productVariantId], references: [id], onDelete: Cascade)
+  Size           Size           @relation(fields: [sizeId], references: [id])
+  OrderItem      OrderItem[]
+  CartItem       CartItem[]
 }
 
 model ProductVariantImage {
@@ -322,34 +325,33 @@ model ProductVariantImage {
   created_at       DateTime @default(now())
   updated_at       DateTime @updatedAt
 
-  ProductVariant ProductVariant @relation(fields: [productVariantId], references: [id])
+  ProductVariant ProductVariant @relation(fields: [productVariantId], references: [id], onDelete: Cascade)
 }
 
 model Color {
   id         Int      @id @default(autoincrement())
   shopId     Int
-  name       String   
-  hexcode    String   
+  name       String
+  hexcode    String
   created_at DateTime @default(now())
   updated_at DateTime @updatedAt
 
-  Shop            Shop              @relation(fields: [shopId], references: [id])
-  ProductVariant  ProductVariant[]
+  Shop           Shop             @relation(fields: [shopId], references: [id], onDelete: Cascade)
+  ProductVariant ProductVariant[]
 }
 
 model Size {
   id           Int      @id @default(autoincrement())
   shopId       Int
-  name         String  
+  name         String
   abbreviation String
-  nextId       Int?     
+  nextId       Int?
   created_at   DateTime @default(now())
   updated_at   DateTime @updatedAt
 
-  Shop                Shop                  @relation(fields: [shopId], references: [id])
-  ProductVariantSize  ProductVariantSize[]
-  ProductMeasurement  ProductMeasurement[]
-
+  Shop               Shop                 @relation(fields: [shopId], references: [id], onDelete: Cascade)
+  ProductVariantSize ProductVariantSize[]
+  ProductMeasurement ProductMeasurement[]
 }
 
 model Measurement {
@@ -360,40 +362,39 @@ model Measurement {
   created_at DateTime @default(now())
   updated_at DateTime @updatedAt
 
-  Shop                Shop                   @relation(fields: [shopId], references: [id])
-  Type                Type                   @relation(fields: [typeId], references: [id])
-  
+  Shop                Shop                 @relation(fields: [shopId], references: [id], onDelete: Cascade)
+  Type                Type                 @relation(fields: [typeId], references: [id])
   ProductMeasurements ProductMeasurement[]
 }
 
 model Order {
-  id              Int       @id @default(autoincrement())
-  orderNo         String    @unique(map: "Unique_OrderNo")
-  shopId          Int      
+  id              Int      @id @default(autoincrement())
+  orderNo         String   @unique(map: "Unique_OrderNo")
+  shopId          Int
   userId          Int
-  paymentMethod   String    
-  status          String    @default("PENDING") // e.g. 'PENDING', 'PROCESSING', 'DELIVERING', 'COMPLETED', 'CANCELLED'
-  askingForCancel Boolean   @default(false)
+  paymentMethod   String
+  status          String   @default("PENDING")
+  askingForCancel Boolean  @default(false)
   cancelReason    String?
-  created_at      DateTime  @default(now())
-  updated_at      DateTime  @updatedAt
+  created_at      DateTime @default(now())
+  updated_at      DateTime @updatedAt
 
-  User  User @relation(fields: [userId], references: [id])
-  Shop  Shop @relation(fields: [shopId], references: [id])
+  User User @relation(fields: [userId], references: [id])
+  Shop Shop @relation(fields: [shopId], references: [id], onDelete: Cascade)
 
   OrderItems OrderItem[]
-  Payment Payment[]
+  Payment    Payment[]
 }
 
 model OrderItem {
-  id                   Int       @id @default(autoincrement())
+  id                   Int      @id @default(autoincrement())
   orderId              Int
   productId            Int
   productVariantId     Int
   productVariantSizeId Int
   quantity             Int
-  created_at           DateTime  @default(now())
-  updated_at           DateTime  @updatedAt
+  created_at           DateTime @default(now())
+  updated_at           DateTime @updatedAt
 
   Order              Order              @relation(fields: [orderId], references: [id])
   Product            Product            @relation(fields: [productId], references: [id])
@@ -403,102 +404,102 @@ model OrderItem {
 
 model Cart {
   id         Int      @id @default(autoincrement())
-  userId     Int      
+  userId     Int
   created_at DateTime @default(now())
   updated_at DateTime @updatedAt
 
-  User       User     @relation(fields: [userId], references: [id])
-  CartItems  CartItem[]
+  User      User       @relation(fields: [userId], references: [id])
+  CartItems CartItem[]
 }
 
 model CartItem {
-  id                     Int      @id @default(autoincrement())
-  cartId                 Int      
-  shopId                 Int   
-  productId              Int   
-  productVariantId       Int      
-  productVariantSizeId   Int      
-  quantity               Int      @default(1)
-  created_at             DateTime @default(now())
-  updated_at             DateTime @updatedAt
+  id                   Int      @id @default(autoincrement())
+  cartId               Int
+  shopId               Int
+  productId            Int
+  productVariantId     Int
+  productVariantSizeId Int
+  quantity             Int      @default(1)
+  created_at           DateTime @default(now())
+  updated_at           DateTime @updatedAt
 
-  Cart                      Cart                  @relation(fields: [cartId], references: [id])
-  Shop                      Shop                  @relation(fields: [shopId], references: [id])
-  Product                   Product               @relation(fields: [productId], references: [id])
-  ProductVariant            ProductVariant        @relation(fields: [productVariantId], references: [id])
-  ProductVariantSize        ProductVariantSize    @relation(fields: [productVariantSizeId], references: [id])
+  Cart               Cart               @relation(fields: [cartId], references: [id])
+  Shop               Shop               @relation(fields: [shopId], references: [id], onDelete: Cascade)
+  Product            Product            @relation(fields: [productId], references: [id])
+  ProductVariant     ProductVariant     @relation(fields: [productVariantId], references: [id])
+  ProductVariantSize ProductVariantSize @relation(fields: [productVariantSizeId], references: [id])
 }
 
 model Notification {
-  id        Int      @id @default(autoincrement())
-  title     String
-  message   String
+  id      Int    @id @default(autoincrement())
+  title   String
+  message String
   // If this notification is for a particular user:
-  userId    Int?
+  userId  Int?
   // If this notification is for a particular shop:
-  shopId    Int?
+  shopId  Int?
 
-  read      Boolean  @default(false)
+  read       Boolean  @default(false)
   created_at DateTime @default(now())
   updated_at DateTime @default(now())
 
   // Relations to User or Shop are optional 
-  User      User?    @relation(fields: [userId], references: [id])
-  Shop      Shop?    @relation(fields: [shopId], references: [id])
+  User User? @relation(fields: [userId], references: [id])
+  Shop Shop? @relation(fields: [shopId], references: [id])
 }
 
 model Payment {
-  id        Int      @id @default(autoincrement())
-  shopId    Int?
-  orderId   Int
-  amount    Decimal  @db.Decimal(10, 2)
+  id         Int      @id @default(autoincrement())
+  shopId     Int?
+  orderId    Int
+  amount     Decimal  @db.Decimal(10, 2)
   created_at DateTime @default(now())
-  
-  Order     Order    @relation(fields: [orderId], references: [id])
-  Shop      Shop?    @relation(fields: [shopId], references: [id])
+
+  Order Order @relation(fields: [orderId], references: [id])
+  Shop  Shop? @relation(fields: [shopId], references: [id], onDelete: Cascade)
 }
 
 model GeneratedOutfit {
-  id         Int                     @id @default(autoincrement())
+  id         Int      @id @default(autoincrement())
   userId     Int
   name       String?
   style      String?
-  created_at DateTime                @default(now())
-  updated_at DateTime                @updatedAt
+  created_at DateTime @default(now())
+  updated_at DateTime @updatedAt
 
-  User       User                    @relation(fields: [userId], references: [id])
-  items      GeneratedOutfitItem[]
+  User  User                  @relation(fields: [userId], references: [id])
+  items GeneratedOutfitItem[]
 }
 
 model GeneratedOutfitItem {
-  id                Int              @id @default(autoincrement())
+  id                Int      @id @default(autoincrement())
   generatedOutfitId Int
   productVariantId  Int
-  created_at        DateTime         @default(now())
-  updated_at        DateTime         @updatedAt
-
-  GeneratedOutfit   GeneratedOutfit  @relation(fields: [generatedOutfitId], references: [id])
-  ProductVariant    ProductVariant   @relation(fields: [productVariantId], references: [id])
-}
-
-model InquiryMessage {
-  id                Int              @id @default(autoincrement())
-  inquiryNo         String           @unique
-  email             String
-  subject           String
-  message           String
-  read              Boolean          @default(false)
-  created_at        DateTime         @default(now())
-  updated_at        DateTime         @updatedAt
-}
-
-model DeliveryFee {
-  id                Int      @id @default(autoincrement())
-  shopId            Int      @unique
-  feeType           String   // "FIXED" or "PERCENTAGE"
-  feeAmount         Decimal  @db.Decimal(10, 2)
   created_at        DateTime @default(now())
   updated_at        DateTime @updatedAt
 
-  Shop              Shop     @relation(fields: [shopId], references: [id])
+  GeneratedOutfit GeneratedOutfit @relation(fields: [generatedOutfitId], references: [id])
+  ProductVariant  ProductVariant  @relation(fields: [productVariantId], references: [id])
+}
+
+model InquiryMessage {
+  id         Int      @id @default(autoincrement())
+  inquiryNo  String   @unique
+  email      String
+  subject    String
+  message    String
+  read       Boolean  @default(false)
+  created_at DateTime @default(now())
+  updated_at DateTime @updatedAt
+}
+
+model DeliveryFee {
+  id         Int      @id @default(autoincrement())
+  shopId     Int      @unique
+  feeType    String
+  feeAmount  Decimal  @db.Decimal(10, 2)
+  created_at DateTime @default(now())
+  updated_at DateTime @updatedAt
+
+  Shop Shop @relation(fields: [shopId], references: [id], onDelete: Cascade)
 }

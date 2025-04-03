@@ -25,7 +25,7 @@ import {
   CommandItem,
 } from "@/components/ui/command";
 
-const EditProductVariantPictures = dynamic(
+const ProductVariantPictures = dynamic(
   () => import("./product-variant-pictures"),
   { ssr: false }
 );
@@ -112,7 +112,7 @@ function ColorCombobox({
   );
 }
 
-export default function EditProductVariantCard({
+export default function ProductVariantCard({
   variant,
   productType,
   onRemove,
@@ -266,7 +266,7 @@ export default function EditProductVariantCard({
           )}
         </div>
         <div className="flex flex-col gap-1">
-          <EditProductVariantPictures variantIndex={variantIndex} />
+          <ProductVariantPictures variantIndex={variantIndex} />
           <InputErrorMessage
             error={imagesError}
             touched={imagesTouched}

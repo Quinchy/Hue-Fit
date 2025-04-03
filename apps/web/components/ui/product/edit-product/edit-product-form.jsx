@@ -9,10 +9,13 @@ import EditGeneralInformation from "../edit-product/edit-general-information/for
 import EditMeasurementInformation from "./edit-measurement-information/form";
 import EditVariations from "../edit-product/edit-variations/form";
 import { useEditProduct } from "@/providers/edit-product-provider";
-
-// Import Alert components and icons (adjust import paths as needed)
 import { Alert, AlertTitle, AlertDescription } from "@/components/ui/alert";
 import { CheckCircle2, X } from "lucide-react";
+import { createClient } from "@supabase/supabase-js";
+
+const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL;
+const supabaseAnonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY;
+const supabase = createClient(supabaseUrl, supabaseAnonKey);
 
 function orderSizes(sizes) {
   if (!Array.isArray(sizes)) return [];
@@ -46,6 +49,19 @@ function touchAllFields(errors) {
   return newTouched;
 }
 
+// Client-side helper function to upload a file to Supabase
+async function uploadFile(file, folderPath, uniqueId) {
+  const fileExt = file.name.split(".").pop();
+  const fileName = `${uniqueId}-${Date.now()}.${fileExt}`;
+  const { data, error } = await supabase.storage
+    .from(folderPath)
+    .upload(fileName, file);
+  if (error) {
+    throw error;
+  }
+  return `${supabaseUrl}/storage/v1/object/public/${folderPath}/${fileName}`;
+}
+
 export default function ProductForm() {
   const router = useRouter();
   const { productDetails } = useEditProduct();
@@ -56,7 +72,7 @@ export default function ProductForm() {
   const [measurementError, setMeasurementError] = useState(false);
   const [showAlert, setShowAlert] = useState(false);
 
-  // Group measurements by measurement name.
+  // Build initial values from productDetails
   const initialValues = productDetails
     ? {
         thumbnail: productDetails.thumbnailURL
@@ -73,7 +89,6 @@ export default function ProductForm() {
                 values: [],
               };
             }
-            // Attach productMeasurementId so deletion later can work.
             acc[measurementName].values.push({
               size: pm.Size.abbreviation,
               value: pm.value.toString(),
@@ -91,6 +106,7 @@ export default function ProductForm() {
             ? { url: variant.pngClotheURL }
             : null,
           isArchived: variant.isArchived,
+          productVariantId: variant.id, // include the variant ID
         })),
       }
     : {
@@ -146,7 +162,7 @@ export default function ProductForm() {
         });
         console.log("Validated values:", validatedValues);
 
-        // Map measurements to include productMeasurementId.
+        // Map measurements (include productMeasurementId for updates)
         const mappedMeasurements = validatedValues.measurements.map(
           (m, idx) => ({
             productMeasurementId: productDetails.ProductMeasurement[idx]?.id,
@@ -155,60 +171,85 @@ export default function ProductForm() {
           })
         );
 
-        // Process variants and files using FormData.
-        const formData = new FormData();
-        formData.append("name", validatedValues.name);
-        formData.append("description", validatedValues.description);
-        formData.append("productId", productDetails.id);
+        // --- Upload Files on Client ---
 
-        // Append the thumbnail file or URL if available
+        // Process thumbnail
+        let thumbnailUrl = "";
         if (validatedValues.thumbnail) {
           if (validatedValues.thumbnail.file) {
-            formData.append("thumbnail", validatedValues.thumbnail.file);
+            thumbnailUrl = await uploadFile(
+              validatedValues.thumbnail.file,
+              "products/product-thumbnails",
+              productDetails.id.toString()
+            );
           } else if (validatedValues.thumbnail.url) {
-            formData.append("thumbnailURL", validatedValues.thumbnail.url);
+            thumbnailUrl = validatedValues.thumbnail.url;
           }
         }
 
-        formData.append("measurements", JSON.stringify(mappedMeasurements));
-
-        validatedValues.variants.forEach((variant, idx) => {
-          formData.append(`variants[${idx}][price]`, variant.price);
-          formData.append(
-            `variants[${idx}][productVariantId]`,
-            productDetails.ProductVariant[idx]?.id || ""
-          );
-          if (variant.images && variant.images.length > 0) {
-            variant.images.forEach((img) => {
-              if (img.file) {
-                formData.append(`variants[${idx}][images]`, img.file);
-              } else {
-                formData.append(`variants[${idx}][imageURLs]`, img.url || "");
+        // Process each variant's files
+        const processedVariants = await Promise.all(
+          validatedValues.variants.map(async (variant, idx) => {
+            const variantId = variant.productVariantId;
+            // Process PNG clothe file
+            let pngClotheUrl = "";
+            if (variant.pngClothe) {
+              if (variant.pngClothe.file) {
+                pngClotheUrl = await uploadFile(
+                  variant.pngClothe.file,
+                  "products/product-virtual-fitting",
+                  variantId ? variantId.toString() : `variant-${idx}`
+                );
+              } else if (variant.pngClothe.url) {
+                pngClotheUrl = variant.pngClothe.url;
               }
-            });
-          } else {
-            formData.append(`variants[${idx}][imageURLs]`, "");
-          }
-          if (variant.pngClothe) {
-            if (variant.pngClothe.file) {
-              formData.append(
-                `variants[${idx}][pngClothe]`,
-                variant.pngClothe.file
-              );
-            } else {
-              formData.append(
-                `variants[${idx}][pngClotheURL]`,
-                variant.pngClothe.url || ""
-              );
             }
-          } else {
-            formData.append(`variants[${idx}][pngClotheURL]`, "");
-          }
-        });
+            // Process variant images: only include new files, not existing URLs
+            let imageUrls = [];
+            if (variant.images && variant.images.length > 0) {
+              imageUrls = await Promise.all(
+                variant.images.map(async (img, imageIndex) => {
+                  if (img.file) {
+                    // Upload new file and return its URL
+                    return await uploadFile(
+                      img.file,
+                      "products/product-variant-pictures",
+                      variantId
+                        ? variantId.toString()
+                        : `variant-${idx}-image-${imageIndex}`
+                    );
+                  }
+                  // If no new file was selected, return null so it isn’t included
+                  return null;
+                })
+              );
+              imageUrls = imageUrls.filter((url) => url); // Remove null values
+            }
+            return {
+              ...variant,
+              pngClotheUrl,
+              imageUrls,
+            };
+          })
+        );
 
+        // --- Build JSON Payload ---
+        const payload = {
+          productId: productDetails.id,
+          name: validatedValues.name,
+          description: validatedValues.description,
+          thumbnailUrl,
+          measurements: mappedMeasurements,
+          variants: processedVariants,
+        };
+
+        // Submit the JSON payload to the API
         const response = await fetch("/api/products/update-product", {
           method: "POST",
-          body: formData,
+          headers: {
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify(payload),
         });
         const result = await response.json();
         if (response.ok) {
