@@ -222,7 +222,7 @@ export default function EditProductVariantCard({
               showPngClotheError ? "border-red-600" : "border-border"
             } ${
               disablePngClothe || values.variants?.[variantIndex]?.pngClothe
-                ? "opacity-50 cursor-not-allowed"
+                ? ""
                 : "cursor-pointer"
             }`}
             onClick={() => {

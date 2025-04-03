@@ -117,8 +117,8 @@ export async function uploadFileToSupabase(
 export function parseFormData(req) {
   const form = formidable({
     multiples: true,
-    maxFileSize: 50 * 1024 * 1024, // 50 MB per file
-    maxFieldsSize: 50 * 1024 * 1024, // 50 MB for all fields
+    maxFileSize: Infinity,
+    maxFieldsSize: Infinity,
     allowEmptyFiles: false,
   });
 
