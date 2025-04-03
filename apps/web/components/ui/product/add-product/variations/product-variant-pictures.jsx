@@ -17,14 +17,20 @@ export default function ProductVariantPictures({ variantIndex }) {
   const fieldTouched = touched?.variants?.[variantIndex]?.images;
 
   const handleImageUpload = (event) => {
-    const file = event.target.files[0];
-    if (file) {
-      const imageUrl = URL.createObjectURL(file);
-      const uniqueId = `${file.name}-${Date.now()}`;
-      const newImage = { id: uniqueId, file, url: imageUrl };
-      const updatedImages = [...images, newImage];
+    const files = event.target.files;
+    if (files && files.length > 0) {
+      // Convert FileList to array and map each file to an image object
+      const newImages = Array.from(files).map((file) => {
+        const imageUrl = URL.createObjectURL(file);
+        const uniqueId = `${file.name}-${Date.now()}-${Math.random()}`;
+        return { id: uniqueId, file, url: imageUrl };
+      });
+      // Update the images array with all new images
+      const updatedImages = [...images, ...newImages];
       setFieldValue(`variants.${variantIndex}.images`, updatedImages);
     }
+    // Reset the file input value so same file can be re-selected later
+    event.target.value = null;
   };
 
   const handleRemoveImage = (id) => {
@@ -37,7 +43,6 @@ export default function ProductVariantPictures({ variantIndex }) {
       <Label className="font-bold flex flex-row items-center">
         Product Variant Pictures <Asterisk className="w-4" />
       </Label>
-      {/* Wrap the image container with error style */}
       <div className="overflow-x-auto">
         <div className="flex gap-3 w-max">
           {images.map((image, idx) => (
@@ -73,12 +78,14 @@ export default function ProductVariantPictures({ variantIndex }) {
             <input
               type="file"
               accept="image/*"
+              multiple
               onChange={handleImageUpload}
               className="hidden"
             />
           </label>
         </div>
       </div>
+      <InputErrorMessage error={fieldError} touched={fieldTouched} />
     </div>
   );
 }

@@ -1,4 +1,3 @@
-// components/ProductForm.js
 import { useState, useEffect } from "react";
 import { useFormik, FormikProvider } from "formik";
 import useSWR from "swr";
@@ -10,17 +9,53 @@ import { LoadingMessage } from "@/components/ui/loading-message";
 import GeneralInformation from "../add-product/general-information/form";
 import MeasurementInformation from "../add-product/measurement-information/form";
 import Variations from "../add-product/variations/form";
-import { supabase } from "@/utils/supabaseClient";
 
+// SWR fetcher function
 const fetcher = (url) => fetch(url).then((res) => res.json());
+
+// Order sizes by linked list (size.nextId)
+function orderSizes(sizes) {
+  if (!Array.isArray(sizes)) return [];
+  const sizeMap = new Map();
+  const nextIds = new Set();
+  sizes.forEach((size) => {
+    sizeMap.set(size.id, size);
+    if (size.nextId !== null) nextIds.add(size.nextId);
+  });
+  const startIds = sizes.map((s) => s.id).filter((id) => !nextIds.has(id));
+  const ordered = [];
+  startIds.forEach((startId) => {
+    let curr = sizeMap.get(startId);
+    const visited = new Set();
+    while (curr && !visited.has(curr.id)) {
+      ordered.push(curr);
+      visited.add(curr.id);
+      curr = sizeMap.get(curr.nextId);
+    }
+  });
+  return ordered;
+}
+
+// Recursively mark all fields as touched
+function touchAllFields(errors) {
+  if (typeof errors !== "object" || errors === null) return true;
+  if (Array.isArray(errors)) return errors.map((e) => touchAllFields(e));
+  const newTouched = {};
+  for (const key in errors) {
+    newTouched[key] = touchAllFields(errors[key]);
+  }
+  return newTouched;
+}
 
 export default function ProductForm() {
   const router = useRouter();
+
   const {
     data: productData,
     error: productError,
     isLoading: productLoading,
   } = useSWR("/api/products/get-product-related-info", fetcher);
+
   const [measurementData, setMeasurementData] = useState(null);
   const [measurementLoading, setMeasurementLoading] = useState(false);
   const [measurementError, setMeasurementError] = useState(false);
@@ -56,63 +91,71 @@ export default function ProductForm() {
           context: { typeName: values.type },
           abortEarly: false,
         });
-
-        let thumbnailURL = "";
+        const formData = new FormData();
         if (values.thumbnail?.file) {
-          const { data: thumbData, error: thumbError } = await supabase.storage
-            .from("products")
-            .upload(
-              `product-thumbnails/${Date.now()}_${values.thumbnail.file.name}`,
-              values.thumbnail.file
-            );
-          if (thumbError) throw new Error("Thumbnail upload failed");
-          thumbnailURL = supabase.storage
-            .from("products")
-            .getPublicUrl(thumbData.path).data.publicUrl;
+          formData.append("thumbnail", values.thumbnail.file);
         }
-
-        const variants = await Promise.all(
-          values.variants.map(async (variant) => {
-            let imagesURLs = [];
-            if (Array.isArray(variant.images)) {
-              for (const imageObj of variant.images) {
-                const { data, error } = await supabase.storage
-                  .from("products")
-                  .upload(
-                    `product-variant-pictures/${Date.now()}_${
-                      imageObj.file.name
-                    }`,
+        formData.append("name", values.name);
+        formData.append("description", values.description);
+        const typeObj = productData?.types?.find((t) => t.name === values.type);
+        formData.append("type", typeObj ? typeObj.id : values.type);
+        formData.append("category", values.category);
+        const tagObj = productData?.tags?.find((tg) => tg.name === values.tags);
+        if (values.tags) {
+          formData.append("tag", tagObj ? tagObj.id : values.tags);
+        }
+        if (values.sizes.length > 0) {
+          formData.append("sizes", values.sizes.join(","));
+        }
+        await Promise.race([
+          new Promise((resolve) => {
+            values.variants.forEach((variant, variantIndex) => {
+              formData.append(
+                `variants[${variantIndex}][price]`,
+                variant.price
+              );
+              formData.append(
+                `variants[${variantIndex}][color]`,
+                variant.color
+              );
+              if (Array.isArray(variant.quantities)) {
+                const quantities = {};
+                variant.quantities.forEach((q) => {
+                  quantities[q.size] = q.quantity;
+                });
+                Object.entries(quantities).forEach(([sz, quantity]) => {
+                  formData.append(
+                    `variants[${variantIndex}][quantities][${sz}]`,
+                    quantity
+                  );
+                });
+              }
+              if (Array.isArray(variant.images)) {
+                variant.images.forEach((imageObj) => {
+                  formData.append(
+                    `variants[${variantIndex}][images]`,
                     imageObj.file
                   );
-                if (!error) {
-                  const url = supabase.storage
-                    .from("products")
-                    .getPublicUrl(data.path).data.publicUrl;
-                  imagesURLs.push(url);
-                }
+                });
               }
-            }
-            let pngClotheURL = "";
-            if (variant.pngClothe?.file) {
-              const { data, error } = await supabase.storage
-                .from("products")
-                .upload(
-                  `product-virtual-fitting/${Date.now()}_${
-                    variant.pngClothe.file.name
-                  }`,
+              if (variant.pngClothe?.file) {
+                formData.append(
+                  `variants[${variantIndex}][pngClothe]`,
                   variant.pngClothe.file
                 );
-              if (error) throw new Error("PNG clothe upload failed");
-              pngClotheURL = supabase.storage
-                .from("products")
-                .getPublicUrl(data.path).data.publicUrl;
-            }
-            return { ...variant, imagesURLs, pngClotheURL };
-          })
-        );
-
-        const transformedMeasurements = [];
+              }
+            });
+            resolve();
+          }),
+          new Promise((_, reject) =>
+            setTimeout(
+              () => reject(new Error("Image appending timeout exceeded")),
+              5000
+            )
+          ),
+        ]);
         if (Array.isArray(values.measurements)) {
+          const transformedMeasurements = [];
           values.measurements.forEach((measurement) => {
             measurement.values.forEach((val) => {
               transformedMeasurements.push({
@@ -122,24 +165,14 @@ export default function ProductForm() {
               });
             });
           });
+          formData.append(
+            "measurements",
+            JSON.stringify(transformedMeasurements)
+          );
         }
-
-        const payload = {
-          thumbnailURL,
-          name: values.name,
-          description: values.description,
-          type: values.type,
-          category: values.category,
-          tags: values.tags,
-          sizes: values.sizes,
-          measurements: transformedMeasurements,
-          variants,
-        };
-
         const response = await fetch("/api/products/add-product", {
           method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify(payload),
+          body: formData,
         });
         const result = await response.json();
         if (response.ok) {
@@ -220,6 +253,7 @@ export default function ProductForm() {
             productLoading={productLoading}
             setFieldValue={setFieldValue}
           />
+
           <MeasurementInformation
             measurementData={measurementData}
             measurementLoading={measurementLoading}
@@ -231,6 +265,7 @@ export default function ProductForm() {
             handleChange={handleChange}
             orderedSizes={orderedSizes}
           />
+
           <Variations
             values={values}
             errors={errors}
@@ -238,6 +273,7 @@ export default function ProductForm() {
             getTypeNameById={() => values.type}
             submitCount={formik.submitCount}
           />
+
           <Button
             type="submit"
             variant="default"
@@ -254,36 +290,4 @@ export default function ProductForm() {
       </FormikProvider>
     </DashboardLayoutWrapper>
   );
-}
-
-function orderSizes(sizes) {
-  if (!Array.isArray(sizes)) return [];
-  const sizeMap = new Map();
-  const nextIds = new Set();
-  sizes.forEach((size) => {
-    sizeMap.set(size.id, size);
-    if (size.nextId !== null) nextIds.add(size.nextId);
-  });
-  const startIds = sizes.map((s) => s.id).filter((id) => !nextIds.has(id));
-  const ordered = [];
-  startIds.forEach((startId) => {
-    let curr = sizeMap.get(startId);
-    const visited = new Set();
-    while (curr && !visited.has(curr.id)) {
-      ordered.push(curr);
-      visited.add(curr.id);
-      curr = sizeMap.get(curr.nextId);
-    }
-  });
-  return ordered;
-}
-
-function touchAllFields(errors) {
-  if (typeof errors !== "object" || errors === null) return true;
-  if (Array.isArray(errors)) return errors.map((e) => touchAllFields(e));
-  const newTouched = {};
-  for (const key in errors) {
-    newTouched[key] = touchAllFields(errors[key]);
-  }
-  return newTouched;
 }
