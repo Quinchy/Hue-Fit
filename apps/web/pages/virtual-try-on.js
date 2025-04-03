@@ -216,9 +216,9 @@ export default function VirtualTryOnPage() {
       canvasContext.clearRect(0, 0, canvasWidth, canvasHeight);
 
       // Scaling factors: modify these values to scale clothes horizontally/vertically
-      const upperHScale = 2.35,
+      const upperHScale = 2.40,
         upperVScale = 1.2,
-        lowerHScale = 1.55,
+        lowerHScale = 1.60,
         lowerVScale = 1.0;
       const multiOverlayMode = upperWearPng && lowerWearPng;
       if (multiOverlayMode) {
