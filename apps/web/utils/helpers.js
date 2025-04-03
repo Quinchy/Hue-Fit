@@ -115,16 +115,17 @@ export async function uploadFileToSupabase(
 }
 
 export function parseFormData(req) {
-  const form = formidable({ multiples: true }); // Initialize formidable with support for multiple files
+  const form = formidable({
+    multiples: true,
+    maxFileSize: 50 * 1024 * 1024, // 50 MB per file
+    maxFieldsSize: 50 * 1024 * 1024, // 50 MB for all fields
+    allowEmptyFiles: false,
+  });
 
   return new Promise((resolve, reject) => {
-    const form = formidable({
-      maxFileSize: 50 * 1024 * 1024, // 50 MB
-      maxFieldsSize: 50 * 1024 * 1024, // 50 MB
-    });
     form.parse(req, (err, fields, files) => {
-      if (err) reject(err);
-      else resolve({ fields, files });
+      if (err) return reject(err);
+      resolve({ fields, files });
     });
   });
 }
