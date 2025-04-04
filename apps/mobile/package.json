@@ -38,6 +38,7 @@
     "expo-linear-gradient": "^13.0.2",
     "expo-media-library": "~16.0.5",
     "expo-navigation-bar": "~3.0.7",
+    "expo-print": "~13.0.1",
     "expo-status-bar": "~1.12.1",
     "lottie-react-native": "6.7.0",
     "lucide-react-native": "^0.456.0",
