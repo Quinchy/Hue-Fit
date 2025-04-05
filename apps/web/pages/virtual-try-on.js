@@ -7,6 +7,7 @@ import "@tensorflow/tfjs-backend-wasm";
 import "@tensorflow/tfjs-converter";
 import * as posedetection from "@tensorflow-models/pose-detection";
 import { SwitchCamera } from "lucide-react";
+import html2canvas from "html2canvas";
 
 setWasmPaths("/wasm/");
 
@@ -216,9 +217,9 @@ export default function VirtualTryOnPage() {
       canvasContext.clearRect(0, 0, canvasWidth, canvasHeight);
 
       // Scaling factors: modify these values to scale clothes horizontally/vertically
-      const upperHScale = 2.40,
+      const upperHScale = 2.4,
         upperVScale = 1.2,
-        lowerHScale = 1.60,
+        lowerHScale = 1.6,
         lowerVScale = 1.0;
       const multiOverlayMode = upperWearPng && lowerWearPng;
       if (multiOverlayMode) {
@@ -478,6 +479,24 @@ export default function VirtualTryOnPage() {
     setFacingMode((prev) => (prev === "user" ? "environment" : "user"));
   };
 
+  // Function to capture a snapshot of the entire container and send it to mobile.
+  const captureAndSendSnapshot = async () => {
+    if (!containerRef.current) return;
+    try {
+      const canvas = await html2canvas(containerRef.current);
+      const base64image = canvas.toDataURL("image/png");
+      if (window.ReactNativeWebView && window.ReactNativeWebView.postMessage) {
+        window.ReactNativeWebView.postMessage(
+          JSON.stringify({ image: base64image })
+        );
+      } else {
+        console.warn("ReactNativeWebView is not available.");
+      }
+    } catch (error) {
+      console.error("Error capturing snapshot:", error);
+    }
+  };
+
   useEffect(() => {
     const handleOrientationChange = () => {
       setIsPortrait(window.innerHeight > window.innerWidth);
@@ -506,6 +525,9 @@ export default function VirtualTryOnPage() {
         <canvas ref={canvasElementRef} style={styles.canvas} />
         <button style={styles.toggleButton} onClick={toggleCamera}>
           <SwitchCamera size={24} color="white" />
+        </button>
+        <button style={styles.snapshotButton} onClick={captureAndSendSnapshot}>
+          Snapshot
         </button>
         <div style={styles.statusMessage}>{statusMessage}</div>
       </div>
@@ -558,6 +580,18 @@ const styles = {
   toggleButton: {
     position: "absolute",
     top: "5%",
+    right: "5%",
+    backgroundColor: "rgba(0,0,0,0.7)",
+    color: "#fff",
+    border: "none",
+    padding: "10px 15px",
+    borderRadius: "25px",
+    zIndex: 4,
+    cursor: "pointer",
+  },
+  snapshotButton: {
+    position: "absolute",
+    bottom: "10%",
     right: "5%",
     backgroundColor: "rgba(0,0,0,0.7)",
     color: "#fff",

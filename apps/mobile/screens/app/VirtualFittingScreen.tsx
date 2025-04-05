@@ -1,4 +1,3 @@
-// VirtualFittingScreen.js
 import React, { useState, useEffect, useRef } from "react";
 import {
   StyleSheet,
@@ -8,6 +7,8 @@ import {
   TouchableOpacity,
   Platform,
   Alert,
+  Image,
+  ScrollView,
 } from "react-native";
 import { WebView } from "react-native-webview";
 import { Camera } from "expo-camera";
@@ -46,6 +47,7 @@ export default function VirtualFittingScreen({ route }) {
 
   const [hasPermission, setHasPermission] = useState(null);
   const [isLoading, setIsLoading] = useState(true);
+  const [snapshot, setSnapshot] = useState(null);
   const webviewRef = useRef(null);
 
   useEffect(() => {
@@ -101,8 +103,20 @@ export default function VirtualFittingScreen({ route }) {
 
   const onShouldStartLoadWithRequest = (request) => true;
 
+  // Updated onMessage to receive snapshot from web
   const onMessage = (event) => {
-    // Handle messages from WebView if needed
+    try {
+      const data = JSON.parse(event.nativeEvent.data);
+      if (data.image) {
+        setSnapshot(data.image);
+        Alert.alert(
+          "Snapshot Received",
+          "The snapshot has been received from the web view."
+        );
+      }
+    } catch (error) {
+      console.error("Error parsing message from web:", error);
+    }
   };
 
   const onError = (syntheticEvent) => {
@@ -112,46 +126,58 @@ export default function VirtualFittingScreen({ route }) {
   };
 
   return (
-    <View style={styles.container}>
-      <WebView
-        ref={webviewRef}
-        source={{ uri: webViewUrl }}
-        style={styles.webview}
-        startInLoadingState
-        injectedJavaScriptBeforeContentLoaded={injectedJS}
-        renderLoading={() => (
-          <ActivityIndicator
-            color="#009b88"
-            size="large"
-            style={styles.loading}
-          />
-        )}
-        javaScriptEnabled
-        domStorageEnabled
-        allowsInlineMediaPlayback
-        mediaPlaybackRequiresUserAction={false}
-        originWhitelist={["*"]}
-        androidLayerType="hardware"
-        androidHardwareAccelerationDisabled={false}
-        overScrollMode="never"
-        decelerationRate="normal"
-        contentMode="mobile"
-        scalesPageToFit={Platform.OS === "android"}
-        onError={onError}
-        // Grant camera permission requests automatically on Android
-        onPermissionRequest={(event) => {
-          if (Platform.OS === "android") {
-            event.nativeEvent.request.grant(event.nativeEvent.resources);
-          }
-        }}
-      />
-    </View>
+    <ScrollView contentContainerStyle={styles.flexContainer}>
+      <View style={styles.container}>
+        <WebView
+          ref={webviewRef}
+          source={{ uri: webViewUrl }}
+          style={styles.webview}
+          startInLoadingState
+          injectedJavaScriptBeforeContentLoaded={injectedJS}
+          renderLoading={() => (
+            <ActivityIndicator
+              color="#009b88"
+              size="large"
+              style={styles.loading}
+            />
+          )}
+          javaScriptEnabled
+          domStorageEnabled
+          allowsInlineMediaPlayback
+          mediaPlaybackRequiresUserAction={false}
+          originWhitelist={["*"]}
+          androidLayerType="hardware"
+          androidHardwareAccelerationDisabled={false}
+          overScrollMode="never"
+          decelerationRate="normal"
+          contentMode="mobile"
+          scalesPageToFit={Platform.OS === "android"}
+          onError={onError}
+          onMessage={onMessage}
+          // Grant camera permission requests automatically on Android
+          onPermissionRequest={(event) => {
+            if (Platform.OS === "android") {
+              event.nativeEvent.request.grant(event.nativeEvent.resources);
+            }
+          }}
+        />
+      </View>
+      {snapshot && (
+        <View style={styles.snapshotContainer}>
+          <Text style={styles.snapshotTitle}>Snapshot Received</Text>
+          <Image source={{ uri: snapshot }} style={styles.snapshotImage} />
+        </View>
+      )}
+    </ScrollView>
   );
 }
 
 const styles = StyleSheet.create({
+  flexContainer: {
+    flexGrow: 1,
+  },
   container: { flex: 1 },
-  webview: { flex: 1 },
+  webview: { flex: 1, height: 500 },
   loading: {
     position: "absolute",
     top: "50%",
@@ -189,5 +215,22 @@ const styles = StyleSheet.create({
   permissionButtonText: {
     color: "#fff",
     fontSize: 16,
+  },
+  snapshotContainer: {
+    marginTop: 20,
+    alignItems: "center",
+    paddingHorizontal: 20,
+  },
+  snapshotTitle: {
+    fontSize: 18,
+    fontWeight: "bold",
+    marginBottom: 10,
+  },
+  snapshotImage: {
+    width: 300,
+    height: 400,
+    resizeMode: "contain",
+    borderWidth: 1,
+    borderColor: "#ccc",
   },
 });
