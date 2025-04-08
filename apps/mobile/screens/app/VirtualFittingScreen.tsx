@@ -8,21 +8,21 @@ import {
   TouchableOpacity,
   Platform,
   Alert,
+  ToastAndroid,
 } from "react-native";
 import { WebView } from "react-native-webview";
 import { Camera } from "expo-camera";
+import * as MediaLibrary from "expo-media-library";
+import * as FileSystem from "expo-file-system";
 
-export default function VirtualFittingScreen({ route }) {
-  // Extract parameters from route; different screens may pass either:
-  // - a single pngClotheURL OR
-  // - upperWearPng, lowerWearPng, and optionally outerWearPng.
+export default function VirtualFittingScreen({ route, navigation }) {
+  // Extract parameters passed via route.
   const { pngClotheURL, upperWearPng, lowerWearPng, outerWearPng, type, tag } =
     route.params;
 
-  // Build the WebView URL based on which parameters are provided.
+  // Build the URL for your virtual try-on web app based on provided params.
   let webViewUrl = "";
   if (upperWearPng && lowerWearPng) {
-    // Multiple PNG URLs provided.
     webViewUrl = `https://hue-fit-web.vercel.app/virtual-try-on?upperWearPng=${encodeURIComponent(
       upperWearPng
     )}&lowerWearPng=${encodeURIComponent(lowerWearPng)}`;
@@ -33,12 +33,10 @@ export default function VirtualFittingScreen({ route }) {
       tag
     )}`;
   } else if (pngClotheURL) {
-    // Fallback to single PNG URL.
     webViewUrl = `https://hue-fit-web.vercel.app/virtual-try-on?pngClotheURL=${encodeURIComponent(
       pngClotheURL
     )}&type=${encodeURIComponent(type)}&tag=${encodeURIComponent(tag)}`;
   } else {
-    // If none provided, just pass type and tag.
     webViewUrl = `https://hue-fit-web.vercel.app/virtual-try-on?type=${encodeURIComponent(
       type
     )}&tag=${encodeURIComponent(tag)}`;
@@ -48,6 +46,7 @@ export default function VirtualFittingScreen({ route }) {
   const [isLoading, setIsLoading] = useState(true);
   const webviewRef = useRef(null);
 
+  // Request camera permission on mount.
   useEffect(() => {
     (async () => {
       const { status } = await Camera.requestCameraPermissionsAsync();
@@ -56,11 +55,11 @@ export default function VirtualFittingScreen({ route }) {
     })();
   }, []);
 
+  // Inject viewport meta tag and disable scrolling in the WebView.
   const viewportMeta = `
     <meta name="viewport" content="width=device-width, initial-scale=1.0, 
     maximum-scale=1.0, user-scalable=no, shrink-to-fit=no" />
   `;
-
   const injectedJS = `
     (function() {
       ${viewportMeta}
@@ -68,6 +67,60 @@ export default function VirtualFittingScreen({ route }) {
       document.documentElement.style.overflow = 'hidden';
     })();
   `;
+
+  // onMessage handler receives messages from the WebView.
+  // Expecting the web page to post the snapshot as a data URL (base64 encoded PNG).
+  const onMessage = async (event) => {
+    const data = event.nativeEvent.data;
+    if (data && data.startsWith("data:image/png;base64,")) {
+      try {
+        // Request media library permission before saving.
+        const { status } = await MediaLibrary.requestPermissionsAsync();
+        if (status !== "granted") {
+          Alert.alert(
+            "Permission not granted",
+            "Media library permission is required to save images."
+          );
+          return;
+        }
+        // Remove header and obtain the base64 string.
+        const base64Data = data.replace("data:image/png;base64,", "");
+        const fileUri = FileSystem.cacheDirectory + "snapshot.png";
+        // Write the image file to the device cache.
+        await FileSystem.writeAsStringAsync(fileUri, base64Data, {
+          encoding: FileSystem.EncodingType.Base64,
+        });
+        // Save the file to the device's media library.
+        await MediaLibrary.createAssetAsync(fileUri);
+        // Show a toast or alert notification.
+        if (Platform.OS === "android") {
+          ToastAndroid.show(
+            "Image has been saved to your phone",
+            ToastAndroid.SHORT
+          );
+        } else {
+          Alert.alert("Success", "Image has been saved to your phone");
+        }
+        // Exit the screen.
+        navigation.goBack();
+      } catch (error) {
+        console.error("Error saving image", error);
+        Alert.alert("Error", "There was an error saving the image.");
+      }
+    }
+  };
+
+  // Allow all requests to load.
+  const onShouldStartLoadWithRequest = (request) => {
+    return true;
+  };
+
+  // Show an error alert if the WebView encounters an error.
+  const onError = (syntheticEvent) => {
+    const { nativeEvent } = syntheticEvent;
+    console.warn("WebView error: ", nativeEvent);
+    Alert.alert("WebView Error", nativeEvent.description);
+  };
 
   if (isLoading) {
     return (
@@ -99,18 +152,6 @@ export default function VirtualFittingScreen({ route }) {
     );
   }
 
-  const onShouldStartLoadWithRequest = (request) => true;
-
-  const onMessage = (event) => {
-    // Handle messages from WebView if needed
-  };
-
-  const onError = (syntheticEvent) => {
-    const { nativeEvent } = syntheticEvent;
-    console.warn("WebView error: ", nativeEvent);
-    Alert.alert("WebView Error", nativeEvent.description);
-  };
-
   return (
     <View style={styles.container}>
       <WebView
@@ -138,7 +179,9 @@ export default function VirtualFittingScreen({ route }) {
         contentMode="mobile"
         scalesPageToFit={Platform.OS === "android"}
         onError={onError}
-        // Grant camera permission requests automatically on Android
+        onMessage={onMessage}
+        onShouldStartLoadWithRequest={onShouldStartLoadWithRequest}
+        // Grant camera permission requests automatically on Android.
         onPermissionRequest={(event) => {
           if (Platform.OS === "android") {
             event.nativeEvent.request.grant(event.nativeEvent.resources);

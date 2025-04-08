@@ -65,20 +65,24 @@ export default function VirtualTryOnPage() {
   const router = useRouter();
   const { pngClotheURL, upperWearPng, lowerWearPng, outerWearPng, type, tag } =
     router.query;
+  const containerRef = useRef(null);
   const videoElementRef = useRef(null);
   const canvasElementRef = useRef(null);
-  const containerRef = useRef(null);
   const upperWearImageRef = useRef(null);
   const lowerWearImageRef = useRef(null);
   const outerWearImageRef = useRef(null);
   const clothingImageElementRef = useRef(null);
   const clothingPixelDataRef = useRef(null);
+
   const [poseDetector, setPoseDetector] = useState(null);
   const [isCameraReady, setIsCameraReady] = useState(false);
   const [statusMessage, setStatusMessage] = useState("");
   const [mounted, setMounted] = useState(false);
-  const [isPortrait, setIsPortrait] = useState(true);
   const [facingMode, setFacingMode] = useState("environment");
+
+  // Timer state: 0, 10, or 15 sec; and the countdown display.
+  const [timerOption, setTimerOption] = useState(0);
+  const [countdown, setCountdown] = useState(null);
 
   useEffect(() => {
     setMounted(true);
@@ -111,25 +115,63 @@ export default function VirtualTryOnPage() {
     }
   }, [router.isReady, pngClotheURL, upperWearPng, lowerWearPng, outerWearPng]);
 
-  const initializePoseDetector = async () => {
-    try {
-      await tf.setBackend("wasm");
-      await tf.ready();
-      const detectorInstance = await posedetection.createDetector(
-        posedetection.SupportedModels.MoveNet,
-        { modelType: posedetection.movenet.modelType.SINGLEPOSE_LIGHTNING }
-      );
-      setPoseDetector(detectorInstance);
-    } catch (error) {
-      console.error("Error initializing pose detector:", error);
-      setStatusMessage(
-        "Failed to initialize pose detector. Please refresh the page."
-      );
-    }
-  };
+  // Initialize the pose detector.
+  useEffect(() => {
+    const initializePoseDetector = async () => {
+      try {
+        await tf.setBackend("wasm");
+        await tf.ready();
+        const detectorInstance = await posedetection.createDetector(
+          posedetection.SupportedModels.MoveNet,
+          { modelType: posedetection.movenet.modelType.SINGLEPOSE_LIGHTNING }
+        );
+        setPoseDetector(detectorInstance);
+      } catch (error) {
+        console.error("Error initializing pose detector:", error);
+        setStatusMessage(
+          "Failed to initialize pose detector. Please refresh the page."
+        );
+      }
+    };
+    initializePoseDetector();
+  }, []);
 
-  // Modified computeOverlayParamsSimple:
-  // For both UPPERWEAR/OUTERWEAR and LOWERWEAR, horizontal width is computed from the shoulder-to-shoulder distance.
+  // Set up the camera stream.
+  useEffect(() => {
+    const initCameraStream = async () => {
+      setIsCameraReady(false);
+      try {
+        if (videoElementRef.current && videoElementRef.current.srcObject) {
+          videoElementRef.current.srcObject
+            .getTracks()
+            .forEach((track) => track.stop());
+        }
+        const stream = await navigator.mediaDevices.getUserMedia({
+          video: { facingMode: { ideal: facingMode } },
+          audio: false,
+        });
+        videoElementRef.current.srcObject = stream;
+        videoElementRef.current.setAttribute("playsinline", "");
+        videoElementRef.current.onloadedmetadata = () => {
+          const ratio = window.devicePixelRatio || 1;
+          canvasElementRef.current.width =
+            videoElementRef.current.videoWidth * ratio;
+          canvasElementRef.current.height =
+            videoElementRef.current.videoHeight * ratio;
+          setIsCameraReady(true);
+          setStatusMessage("Camera ready, detecting poses...");
+        };
+      } catch (error) {
+        console.error("Error accessing camera:", error);
+        setStatusMessage(
+          "Unable to access camera. Please allow camera permissions."
+        );
+      }
+    };
+    initCameraStream();
+  }, [facingMode]);
+
+  // Compute clothing overlay parameters.
   function computeOverlayParamsSimple(clothingType, scaleX, scaleY, kp, image) {
     if (!image) return null;
     if (!kp.left_shoulder || !kp.right_shoulder) return null;
@@ -146,8 +188,6 @@ export default function VirtualTryOnPage() {
       const originalOverlayHeight = hipCenterY - shoulderCenterY;
       const topOffset = originalOverlayHeight * 0.22;
       const newOverlayHeight = originalOverlayHeight + topOffset;
-      const scaleFactor = newOverlayHeight / image.naturalHeight;
-      // Force overlay width to be equal to the shoulder-to-shoulder distance.
       const overlayWidth = shoulderWidth;
       const overlayX = shoulderCenterX - overlayWidth / 2;
       const overlayY = shoulderCenterY - topOffset;
@@ -175,8 +215,6 @@ export default function VirtualTryOnPage() {
       let bottomOffset = tag === "SHORTS" ? 0 : originalHeight * 0.01;
       const overlayY = hipCenterY - topOffset;
       const overlayHeight = originalHeight + topOffset - bottomOffset;
-      const scaleFactor = overlayHeight / image.naturalHeight;
-      // Use shoulder width for lowerwear as well.
       const overlayWidth = shoulderWidth;
       const overlayX = shoulderCenterX - overlayWidth / 2;
       return { overlayX, overlayY, overlayWidth, overlayHeight };
@@ -184,6 +222,7 @@ export default function VirtualTryOnPage() {
     return null;
   }
 
+  // Render the clothing overlay (if any) on the canvas.
   const renderClothingOverlay = useCallback(
     (poses, canvasContext) => {
       if (!poses || poses.length === 0) return;
@@ -215,10 +254,9 @@ export default function VirtualTryOnPage() {
       const sY = canvasHeight / videoHeight;
       canvasContext.clearRect(0, 0, canvasWidth, canvasHeight);
 
-      // Scaling factors: modify these values to scale clothes horizontally/vertically
-      const upperHScale = 2.40,
+      const upperHScale = 2.4,
         upperVScale = 1.2,
-        lowerHScale = 1.60,
+        lowerHScale = 1.6,
         lowerVScale = 1.0;
       const multiOverlayMode = upperWearPng && lowerWearPng;
       if (multiOverlayMode) {
@@ -271,7 +309,7 @@ export default function VirtualTryOnPage() {
               );
             }
           }
-          let outerImg = outerWearImageRef.current;
+          const outerImg = outerWearImageRef.current;
           if (outerImg) {
             let outerParams = computeOverlayParamsSimple(
               "OUTERWEAR",
@@ -386,11 +424,11 @@ export default function VirtualTryOnPage() {
           setStatusMessage(`Clothing applied. Type: ${type}.`);
         }
       }
-      // Skeleton drawing removed.
     },
     [type, tag, upperWearPng, outerWearPng]
   );
 
+  // Pose detection loop running at 15 FPS.
   const performPoseDetection = useCallback(async () => {
     if (
       !videoElementRef.current ||
@@ -413,7 +451,9 @@ export default function VirtualTryOnPage() {
       );
       const detectedPoses = await poseDetector.estimatePoses(
         videoElementRef.current,
-        { flipHorizontal: false }
+        {
+          flipHorizontal: false,
+        }
       );
       if (!detectedPoses || detectedPoses.length === 0) {
         setStatusMessage("No human detected. Please step into frame.");
@@ -427,51 +467,100 @@ export default function VirtualTryOnPage() {
   }, [isCameraReady, poseDetector, renderClothingOverlay]);
 
   useEffect(() => {
-    const initCameraStream = async () => {
-      setIsCameraReady(false);
-      try {
-        if (videoElementRef.current && videoElementRef.current.srcObject) {
-          videoElementRef.current.srcObject
-            .getTracks()
-            .forEach((track) => track.stop());
-        }
-        const stream = await navigator.mediaDevices.getUserMedia({
-          video: { facingMode: { ideal: facingMode } },
-          audio: false,
-        });
-        videoElementRef.current.srcObject = stream;
-        videoElementRef.current.setAttribute("playsinline", "");
-        videoElementRef.current.onloadedmetadata = async () => {
-          await videoElementRef.current.play();
-          const ratio = window.devicePixelRatio || 1;
-          canvasElementRef.current.width =
-            videoElementRef.current.videoWidth * ratio;
-          canvasElementRef.current.height =
-            videoElementRef.current.videoHeight * ratio;
-          setIsCameraReady(true);
-          setStatusMessage("Camera ready, detecting poses...");
-        };
-      } catch (error) {
-        console.error("Error accessing camera:", error);
-        setStatusMessage(
-          "Unable to access camera. Please allow camera permissions."
-        );
-      }
-    };
-    initCameraStream();
-  }, [facingMode]);
-
-  useEffect(() => {
     let detectionInterval;
     if (isCameraReady && poseDetector) {
       detectionInterval = setInterval(() => {
         performPoseDetection();
-      }, 1000 / 30);
+      }, 1000 / 15);
     }
     return () => {
       if (detectionInterval) clearInterval(detectionInterval);
     };
   }, [isCameraReady, poseDetector, performPoseDetection]);
+
+  // Returns a data URL representing the snapshot.
+  const captureSnapshot = () => {
+    if (
+      !videoElementRef.current ||
+      !canvasElementRef.current ||
+      !containerRef.current
+    )
+      return "";
+    const cw = containerRef.current.clientWidth;
+    const ch = containerRef.current.clientHeight;
+    const offscreenCanvas = document.createElement("canvas");
+    offscreenCanvas.width = cw;
+    offscreenCanvas.height = ch;
+    const offscreenCtx = offscreenCanvas.getContext("2d");
+
+    const video = videoElementRef.current;
+    const vW = video.videoWidth;
+    const vH = video.videoHeight;
+    const scale = Math.max(cw / vW, ch / vH);
+    const drawWidth = vW * scale;
+    const drawHeight = vH * scale;
+    const offsetX = (cw - drawWidth) / 2;
+    const offsetY = (ch - drawHeight) / 2;
+
+    offscreenCtx.drawImage(
+      video,
+      0,
+      0,
+      vW,
+      vH,
+      offsetX,
+      offsetY,
+      drawWidth,
+      drawHeight
+    );
+    offscreenCtx.drawImage(canvasElementRef.current, 0, 0, cw, ch);
+
+    return offscreenCanvas.toDataURL("image/png");
+  };
+
+  // Instead of opening a new window, send the snapshot via postMessage to the mobile WebView.
+  const sendSnapshotToMobile = () => {
+    const dataURL = captureSnapshot();
+    if (
+      window.ReactNativeWebView &&
+      typeof window.ReactNativeWebView.postMessage === "function"
+    ) {
+      window.ReactNativeWebView.postMessage(dataURL);
+    } else {
+      // Fallback: open in a new window if not in a mobile WebView.
+      const newWindow = window.open();
+      newWindow.document.write(`<img src="${dataURL}" alt="Snapshot" />`);
+    }
+  };
+
+  // Chained timeout for a smoother countdown. Accepts a callback to invoke once countdown is over.
+  const startCountdown = (duration, callback) => {
+    let timeLeft = duration;
+    setCountdown(timeLeft);
+    const tick = () => {
+      timeLeft = timeLeft - 1;
+      if (timeLeft <= 0) {
+        setCountdown("Smile!");
+        setTimeout(() => {
+          callback();
+          setCountdown(null);
+        }, 1000);
+      } else {
+        setCountdown(timeLeft);
+        setTimeout(tick, 1000);
+      }
+    };
+    setTimeout(tick, 1000);
+  };
+
+  // Handles the snapshot procedure.
+  const handleSnapshot = () => {
+    if (timerOption === 0) {
+      sendSnapshotToMobile();
+    } else {
+      startCountdown(timerOption, sendSnapshotToMobile);
+    }
+  };
 
   const toggleCamera = () => {
     setIsCameraReady(false);
@@ -480,16 +569,24 @@ export default function VirtualTryOnPage() {
 
   useEffect(() => {
     const handleOrientationChange = () => {
-      setIsPortrait(window.innerHeight > window.innerWidth);
+      // Update orientation state if required.
     };
-    handleOrientationChange();
     window.addEventListener("resize", handleOrientationChange);
     return () => window.removeEventListener("resize", handleOrientationChange);
   }, []);
 
-  useEffect(() => {
-    initializePoseDetector();
-  }, []);
+  // Inject viewport meta tag to disable scrolling.
+  const viewportMeta = `
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, 
+    maximum-scale=1.0, user-scalable=no, shrink-to-fit=no" />
+  `;
+  const injectedJS = `
+    (function() {
+      ${viewportMeta}
+      document.body.style.overflow = 'hidden';
+      document.documentElement.style.overflow = 'hidden';
+    })();
+  `;
 
   if (!mounted) return null;
 
@@ -504,9 +601,53 @@ export default function VirtualTryOnPage() {
           autoPlay
         />
         <canvas ref={canvasElementRef} style={styles.canvas} />
+
+        {/* Timer Selection Panel */}
+        <div style={styles.timerContainer}>
+          <button
+            style={
+              timerOption === 0
+                ? styles.timerButtonSelected
+                : styles.timerButton
+            }
+            onClick={() => setTimerOption(0)}
+          >
+            0 sec
+          </button>
+          <button
+            style={
+              timerOption === 10
+                ? styles.timerButtonSelected
+                : styles.timerButton
+            }
+            onClick={() => setTimerOption(10)}
+          >
+            10 sec
+          </button>
+          <button
+            style={
+              timerOption === 15
+                ? styles.timerButtonSelected
+                : styles.timerButton
+            }
+            onClick={() => setTimerOption(15)}
+          >
+            15 sec
+          </button>
+        </div>
+
+        {/* Countdown Display */}
+        {countdown !== null && (
+          <div style={styles.countdownDisplay}>{countdown}</div>
+        )}
+
         <button style={styles.toggleButton} onClick={toggleCamera}>
           <SwitchCamera size={24} color="white" />
         </button>
+
+        {/* Snapshot Button Styled as a Circular Shutter */}
+        <button style={styles.snapshotButton} onClick={handleSnapshot} />
+
         <div style={styles.statusMessage}>{statusMessage}</div>
       </div>
     </div>
@@ -541,9 +682,66 @@ const styles = {
     height: "100%",
     pointerEvents: "none",
   },
-  statusMessage: {
+  // Timer selection container.
+  timerContainer: {
+    position: "absolute",
+    top: "6%",
+    left: "50%",
+    transform: "translateX(-50%)",
+    zIndex: 4,
+    fontSize: "10px",
+    display: "flex",
+    gap: "10px",
+  },
+  timerButton: {
+    backgroundColor: "rgba(0,0,0,0.7)",
+    color: "#fff",
+    border: "none",
+    padding: "8px 12px",
+    borderRadius: "20px",
+    cursor: "pointer",
+  },
+  timerButtonSelected: {
+    backgroundColor: "rgba(255,255,255,0.8)",
+    color: "#000",
+    border: "none",
+    padding: "8px 12px",
+    borderRadius: "20px",
+    cursor: "pointer",
+  },
+  countdownDisplay: {
+    position: "absolute",
+    top: "12%",
+    left: "50%",
+    transform: "translateX(-50%)",
+    zIndex: 4,
+    color: "#ffffff75",
+    fontSize: "50px",
+    padding: "4px 8px",
+    backgroundColor: "rgba(0,0,0,0.7)",
+    borderRadius: "10px",
+  },
+  // Snapshot Button styled as a circular shutter.
+  snapshotButton: {
     position: "absolute",
     bottom: "5%",
+    left: "50%",
+    transform: "translateX(-50%)",
+    backgroundColor: "#fff",
+    border: "5px solid rgba(0,0,0,0.2)",
+    width: "70px",
+    height: "70px",
+    borderRadius: "50%",
+    zIndex: 4,
+    cursor: "pointer",
+    display: "flex",
+    alignItems: "center",
+    justifyContent: "center",
+    boxShadow: "0 2px 4px rgba(0,0,0,0.5)",
+  },
+  statusMessage: {
+    position: "absolute",
+    bottom: "16%",
     left: "50%",
     transform: "translateX(-50%)",
     color: "yellow",
@@ -551,8 +749,8 @@ const styles = {
     padding: "8px 16px",
     borderRadius: "8px",
     zIndex: 3,
-    fontSize: "16px",
-    maxWidth: "90%",
+    fontSize: "12px",
+    maxWidth: "100%",
     textAlign: "center",
   },
   toggleButton: {
