@@ -205,7 +205,7 @@ export default function Register3Screen({ navigation, route }) {
 
                   <VStack width="100%">
                     <CustomSelect
-                      label="Body Shape"
+                      label="Body Type"
                       value={values.bodyShape}
                       onChange={(value) => handleChange('bodyShape')(value)}
                       required

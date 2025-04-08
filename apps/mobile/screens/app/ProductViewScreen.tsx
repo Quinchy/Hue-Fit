@@ -1,4 +1,4 @@
-import React, { useEffect, useState, useRef } from 'react';
+import React, { useEffect, useState, useRef } from "react";
 import {
   Animated,
   Easing,
@@ -8,35 +8,44 @@ import {
   Image,
   TouchableOpacity,
   Dimensions,
-  StyleSheet
-} from 'react-native';
-import { Formik } from 'formik';
-import * as Yup from 'yup';
-import AsyncStorage from '@react-native-async-storage/async-storage';
-import BackgroundProvider from '../../providers/BackgroundProvider';
-import LoadingSpinner from '../../components/Loading';
-import { ShoppingCart, ArrowLeft, Camera, Cpu, Loader2 } from 'lucide-react-native';
-import { Actionsheet, useToast } from 'native-base';
-import { EXPO_PUBLIC_API_URL } from '@env';
-import { useTheme, applyOpacity } from '../../providers/ThemeProvider';
+  StyleSheet,
+  TextInput,
+} from "react-native";
+import { Formik } from "formik";
+import * as Yup from "yup";
+import AsyncStorage from "@react-native-async-storage/async-storage";
+import BackgroundProvider from "../../providers/BackgroundProvider";
+import LoadingSpinner from "../../components/Loading";
+import {
+  ShoppingCart,
+  ArrowLeft,
+  Camera,
+  Cpu,
+  Loader,
+} from "lucide-react-native";
+import { Actionsheet, useToast } from "native-base";
+import { EXPO_PUBLIC_API_URL } from "@env";
+import { useTheme, applyOpacity } from "../../providers/ThemeProvider";
 
-const { width: screenWidth, height: screenHeight } = Dimensions.get('window');
+const { width: screenWidth, height: screenHeight } = Dimensions.get("window");
 
 const validationSchema = Yup.object().shape({
-  selectedVariant: Yup.object().required('Variant is required'),
-  selectedSize: Yup.object().required('Size is required'),
-  quantity: Yup.number().min(1, 'Minimum quantity is 1').required('Quantity is required'),
+  selectedVariant: Yup.object().required("Variant is required"),
+  selectedSize: Yup.object().required("Size is required"),
+  quantity: Yup.number()
+    .min(1, "Minimum quantity is 1")
+    .required("Quantity is required"),
 });
 
 const ProductViewScreen = ({ route, navigation }) => {
   const { theme } = useTheme();
   const styles = getStyles(theme);
-  
+
   // Log route parameters when the screen loads
   useEffect(() => {
     console.log("ProductViewScreen route params:", route.params);
   }, [route.params]);
-  
+
   const { productId, recommendedVariantId, recommendedColor } = route.params;
 
   const [loading, setLoading] = useState(false);
@@ -57,14 +66,10 @@ const ProductViewScreen = ({ route, navigation }) => {
   const [showReserveWarning, setShowReserveWarning] = useState(false);
   const [pendingCartValues, setPendingCartValues] = useState(null);
 
-  const spinValue = useRef(new Animated.Value(0)).current;
-  const spin = spinValue.interpolate({
-    inputRange: [0, 1],
-    outputRange: ['0deg', '360deg'],
-  });
+  const SpinningLoader = ({ size, color, style }) => {
+    const spinValue = useRef(new Animated.Value(0)).current;
 
-  useEffect(() => {
-    if (addingToCart) {
+    useEffect(() => {
       Animated.loop(
         Animated.timing(spinValue, {
           toValue: 1,
@@ -73,11 +78,24 @@ const ProductViewScreen = ({ route, navigation }) => {
           useNativeDriver: true,
         })
       ).start();
-    } else {
-      spinValue.stopAnimation();
-      spinValue.setValue(0);
-    }
-  }, [addingToCart, spinValue]);
+    }, [spinValue]);
+
+    const spin = spinValue.interpolate({
+      inputRange: [0, 1],
+      outputRange: ["0deg", "360deg"],
+    });
+
+    return (
+      <Animated.View style={[{ transform: [{ rotate: spin }] }, style]}>
+        <Loader size={size} color={color} />
+      </Animated.View>
+    );
+  };
+
+  useEffect(() => {
+    // Flying image animation for adding to cart remains unchanged
+    // (Loader no longer gets an extra animation wrapper)
+  }, []);
 
   const fetchProductDetails = async () => {
     setLoading(true);
@@ -85,34 +103,39 @@ const ProductViewScreen = ({ route, navigation }) => {
       const response = await fetch(
         `${EXPO_PUBLIC_API_URL}/api/mobile/products/get-product-details`,
         {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
           body: JSON.stringify({ productId }),
         }
       );
-      if (!response.ok) throw new Error('Failed to fetch product details');
+      if (!response.ok) throw new Error("Failed to fetch product details");
       const data = await response.json();
       setProductDetails(data);
       if (data.allVariants && data.allVariants.length > 0) {
         console.log("Recommended Color:", recommendedColor);
         // For each variant, check both top-level and nested color hexcode.
-        data.allVariants.forEach(variant => {
-          const variantHex = variant.hexcode || (variant.color && variant.color.hexcode);
+        data.allVariants.forEach((variant) => {
+          const variantHex =
+            variant.hexcode || (variant.color && variant.color.hexcode);
           console.log(
             `Variant ID: ${variant.id} - Hexcode: ${variantHex} - Match: ${
-              variantHex && recommendedColor && variantHex.toLowerCase() === recommendedColor.toLowerCase()
+              variantHex &&
+              recommendedColor &&
+              variantHex.toLowerCase() === recommendedColor.toLowerCase()
             }`
           );
         });
         let defaultVariant = null;
         if (recommendedColor) {
-          defaultVariant = data.allVariants.find(v => {
+          defaultVariant = data.allVariants.find((v) => {
             const hex = v.hexcode || (v.color && v.color.hexcode);
             return hex && hex.toLowerCase() === recommendedColor.toLowerCase();
           });
         }
         if (!defaultVariant && recommendedVariantId) {
-          defaultVariant = data.allVariants.find(v => v.id === Number(recommendedVariantId));
+          defaultVariant = data.allVariants.find(
+            (v) => v.id === Number(recommendedVariantId)
+          );
         }
         if (!defaultVariant) {
           defaultVariant = data.allVariants[0];
@@ -120,7 +143,7 @@ const ProductViewScreen = ({ route, navigation }) => {
         setSelectedVariant(defaultVariant);
       }
     } catch (error) {
-      console.error('Error fetching product details:', error);
+      console.error("Error fetching product details:", error);
     } finally {
       setLoading(false);
     }
@@ -138,11 +161,11 @@ const ProductViewScreen = ({ route, navigation }) => {
   const shopDetails = parentProduct.shop;
 
   const handleAddToCart = async (values) => {
-    const userId = await AsyncStorage.getItem('user').then(user =>
+    const userId = await AsyncStorage.getItem("user").then((user) =>
       user ? JSON.parse(user).id : null
     );
     if (!userId) {
-      console.error('User ID not found');
+      console.error("User ID not found");
       return;
     }
     const payload = {
@@ -153,13 +176,16 @@ const ProductViewScreen = ({ route, navigation }) => {
       shopId: values.shopId,
       userId,
     };
-    const response = await fetch(`${EXPO_PUBLIC_API_URL}/api/mobile/cart/add-to-cart`, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify(payload),
-    });
+    const response = await fetch(
+      `${EXPO_PUBLIC_API_URL}/api/mobile/cart/add-to-cart`,
+      {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(payload),
+      }
+    );
     if (!response.ok) {
-      throw new Error('Failed to add to cart');
+      throw new Error("Failed to add to cart");
     }
     const result = await response.json();
     console.log(result);
@@ -190,7 +216,7 @@ const ProductViewScreen = ({ route, navigation }) => {
         duration: 800,
         easing: Easing.in(Easing.quad),
         useNativeDriver: true,
-      })
+      }),
     ]).start(() => {
       setShowFlyingImage(false);
     });
@@ -438,11 +464,32 @@ const ProductViewScreen = ({ route, navigation }) => {
                             {errors.selectedSize}
                           </Text>
                         )}
-                        {values.selectedSize && (
-                          <Text style={styles.availableText}>
-                            {values.selectedSize.quantity} pieces available
-                          </Text>
-                        )}
+                        {values.selectedSize &&
+                          (values.selectedSize.quantity <= 5 ? (
+                            <Text
+                              style={[
+                                styles.availableText,
+                                { color: "#ff4545" },
+                              ]}
+                            >
+                              Only{" "}
+                              <Text
+                                style={{ fontWeight: "bold", color: "#ff4545" }}
+                              >
+                                {values.selectedSize.quantity}
+                              </Text>{" "}
+                              pieces remaining!
+                            </Text>
+                          ) : (
+                            <Text
+                              style={[styles.availableText, { color: "#fff" }]}
+                            >
+                              <Text style={{ fontWeight: "bold" }}>
+                                {values.selectedSize.quantity}
+                              </Text>{" "}
+                              pieces available
+                            </Text>
+                          ))}
                       </View>
                     )}
                     <View style={styles.quantitySection}>
@@ -452,35 +499,48 @@ const ProductViewScreen = ({ route, navigation }) => {
                           style={styles.quantityButton}
                           onPress={() => {
                             if (quantity > 1) {
-                              setQuantity(quantity - 1);
-                              setFieldValue("quantity", quantity - 1);
+                              const newQuantity = quantity - 1;
+                              setQuantity(newQuantity);
+                              setFieldValue("quantity", newQuantity);
                             }
                           }}
                         >
                           <Text style={styles.quantityButtonText}>-</Text>
                         </TouchableOpacity>
-                        <Text style={styles.quantityText}>
-                          {values.quantity}
-                        </Text>
+                        <TextInput
+                          style={styles.quantityText}
+                          keyboardType="numeric"
+                          value={values.quantity.toString()}
+                          onChangeText={(text) => {
+                            const numericValue =
+                              parseInt(text.replace(/[^0-9]/g, "")) || 1;
+                            setQuantity(numericValue);
+                            setFieldValue("quantity", numericValue);
+                          }}
+                          onBlur={() => {
+                            if (values.quantity < 1) {
+                              setQuantity(1);
+                              setFieldValue("quantity", 1);
+                            }
+                          }}
+                        />
                         <TouchableOpacity
                           style={styles.quantityButton}
                           onPress={() => {
-                            // If a size is selected and available stock is greater than 5,
-                            // restrict maximum order to (available pieces - 5)
                             if (
                               values.selectedSize &&
                               values.selectedSize.quantity > 5
                             ) {
                               const maxOrder = values.selectedSize.quantity - 5;
                               if (quantity < maxOrder) {
-                                setQuantity(quantity + 1);
-                                setFieldValue("quantity", quantity + 1);
+                                const newQuantity = quantity + 1;
+                                setQuantity(newQuantity);
+                                setFieldValue("quantity", newQuantity);
                               }
                             } else {
-                              // Reserve mode: available pieces are already 5 (or less),
-                              // so no limit applies to ordering.
-                              setQuantity(quantity + 1);
-                              setFieldValue("quantity", quantity + 1);
+                              const newQuantity = quantity + 1;
+                              setQuantity(newQuantity);
+                              setFieldValue("quantity", newQuantity);
                             }
                           }}
                         >
@@ -555,13 +615,11 @@ const ProductViewScreen = ({ route, navigation }) => {
               >
                 {addingToCart ? (
                   <View style={{ flexDirection: "row", alignItems: "center" }}>
-                    <Animated.View style={{ transform: [{ rotate: spin }] }}>
-                      <Loader2
-                        size={24}
-                        color={theme.colors.dark}
-                        style={{ marginRight: 8 }}
-                      />
-                    </Animated.View>
+                    <SpinningLoader
+                      size={24}
+                      color={theme.colors.dark}
+                      style={{ marginRight: 8 }}
+                    />
                     <Text style={styles.buttonText}>Adding to Cart...</Text>
                   </View>
                 ) : (
@@ -599,8 +657,8 @@ const ProductViewScreen = ({ route, navigation }) => {
                           duration: 3000,
                           placement: "top",
                         });
-                      } catch (err) {
-                        console.error(err);
+                      } catch (error) {
+                        console.error(error);
                       } finally {
                         setAddingToCart(false);
                       }
@@ -626,131 +684,181 @@ const ProductViewScreen = ({ route, navigation }) => {
   );
 };
 
-const getStyles = (theme) => StyleSheet.create({
-  container: { flex: 1, backgroundColor: theme.colors.dark },
-  overlayButtonsContainer: {
-    position: 'absolute',
-    top: 40,
-    left: 0,
-    right: 0,
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    paddingHorizontal: 15,
-    zIndex: 100,
-  },
-  backButton: {
-    backgroundColor: applyOpacity(theme.colors.black, 0.5),
-    padding: 10,
-    borderRadius: 25,
-  },
-  topRightButtons: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 10,
-  },
-  cartButton: {
-    backgroundColor: applyOpacity(theme.colors.black, 0.5),
-    padding: 10,
-    borderRadius: 25,
-  },
-  floatingButtonContainer: {
-    position: 'absolute',
-    bottom: 50,
-    left: 20,
-    right: 20,
-    alignItems: 'center',
-    zIndex: 10,
-  },
-  addToCartButton: {
-    backgroundColor: theme.colors.white,
-    padding: 15,
-    borderRadius: 5,
-    alignItems: 'center',
-    width: '100%',
-  },
-  buttonText: { color: theme.colors.dark, fontSize: 16, fontWeight: '400' },
-  priceContainer: { flexDirection: 'row', padding: 10 },
-  priceLabel: { fontSize: 24, color: theme.colors.white, fontWeight: '300' },
-  priceValue: { fontSize: 24, color: theme.colors.white, fontWeight: '600' },
-  productInfo: { paddingHorizontal: 10, gap: 20 },
-  productTitleContainer: { flexDirection: 'column', gap: 10 },
-  productTitle: { fontSize: 16, color: theme.colors.white, fontWeight: '600' },
-  productDescription: { fontSize: 16, color: applyOpacity(theme.colors.white, 0.8), fontWeight: '300' },
-  variantContainer: { flexDirection: 'column', gap: 10 },
-  sectionTitle: { fontSize: 16, fontWeight: '600', color: theme.colors.white },
-  variantButton: { padding: 10, borderRadius: 5, marginRight: 10 },
-  errorText: { color: 'red', marginTop: 5 },
-  availableText: { fontSize: 14, color: applyOpacity(theme.colors.white, 0.8), marginTop: 10 },
-  sizeContainer: { flexDirection: 'column', gap: 10 },
-  sizeBox: {
-    padding: 10,
-    borderRadius: 5,
-    marginRight: 10,
-    width: 50,
-    height: 50,
-    justifyContent: 'center',
-    alignItems: 'center',
-  },
-  quantitySection: { flexDirection: 'column', gap: 10 },
-  quantityContainer: { flexDirection: 'row', alignItems: 'center' },
-  quantityButton: {
-    backgroundColor: theme.colors.grey,
-    borderRadius: 5,
-    width: 30,
-    height: 30,
-    justifyContent: 'center',
-    alignItems: 'center',
-  },
-  quantityButtonText: { color: theme.colors.white, fontSize: 18 },
-  quantityText: { marginHorizontal: 20, fontSize: 16, color: theme.colors.white },
-  sizeChartSection: { flexDirection: 'column', gap: 10 },
-  sizeChartContainer: {
-    borderWidth: 1,
-    borderColor: theme.colors.grey,
-    borderRadius: 5,
-    overflow: 'hidden',
-  },
-  chartHeaderRow: {
-    flexDirection: 'row',
-    backgroundColor: theme.colors.darkGrey,
-    padding: 10,
-  },
-  chartHeaderText: {
-    flex: 1,
-    color: theme.colors.white,
-    textAlign: 'center',
-    fontWeight: 'bold',
-  },
-  chartRow: {
-    flexDirection: 'row',
-    borderBottomWidth: 1,
-    borderBottomColor: theme.colors.grey,
-    padding: 10,
-  },
-  chartRowText: { flex: 1, color: theme.colors.white, textAlign: 'center' },
-  chartRowValue: { flex: 1, color: applyOpacity(theme.colors.white, 0.8), textAlign: 'center' },
-  shopInfoSection: { flexDirection: 'column', gap: 10, marginBottom: 200 },
-  shopContainer: { flexDirection: 'row', alignItems: 'center' },
-  shopLogo: {
-    width: 50,
-    height: 50,
-    borderRadius: 25,
-    marginRight: 10,
-    backgroundColor: theme.colors.greyWhite,
-  },
-  shopName: { fontSize: 18, color: theme.colors.white },
-  flyingImage: {
-    position: 'absolute',
-    width: 50,
-    height: 50,
-    zIndex: 200,
-  },
-  actionsheetContent: { backgroundColor: theme.colors.dark, width: '100%' },
-  actionsheetText: { color: theme.colors.white, fontSize: 18, marginBottom: 10, textAlign: 'center' },
-  proceedButton: { backgroundColor: theme.colors.white, marginTop: 5, width: '100%' },
-  proceedButtonText: { color: theme.colors.dark, fontSize: 16, fontWeight: '400', textAlign: 'center' },
-  cancelButton: { backgroundColor: theme.colors.grey, marginTop: 5, width: '100%' },
-  cancelButtonText: { color: theme.colors.white, fontSize: 16, fontWeight: '400', textAlign: 'center' },
-});
+const getStyles = (theme) =>
+  StyleSheet.create({
+    container: { flex: 1, backgroundColor: theme.colors.dark },
+    overlayButtonsContainer: {
+      position: "absolute",
+      top: 40,
+      left: 0,
+      right: 0,
+      flexDirection: "row",
+      justifyContent: "space-between",
+      paddingHorizontal: 15,
+      zIndex: 100,
+    },
+    backButton: {
+      backgroundColor: applyOpacity(theme.colors.black, 0.5),
+      padding: 10,
+      borderRadius: 25,
+    },
+    topRightButtons: {
+      flexDirection: "row",
+      alignItems: "center",
+      gap: 10,
+    },
+    cartButton: {
+      backgroundColor: applyOpacity(theme.colors.black, 0.5),
+      padding: 10,
+      borderRadius: 25,
+    },
+    floatingButtonContainer: {
+      position: "absolute",
+      bottom: 50,
+      left: 20,
+      right: 20,
+      alignItems: "center",
+      zIndex: 10,
+    },
+    addToCartButton: {
+      backgroundColor: theme.colors.white,
+      padding: 15,
+      borderRadius: 5,
+      alignItems: "center",
+      width: "100%",
+    },
+    buttonText: { color: theme.colors.dark, fontSize: 16, fontWeight: "400" },
+    priceContainer: { flexDirection: "row", padding: 10 },
+    priceLabel: { fontSize: 24, color: theme.colors.white, fontWeight: "300" },
+    priceValue: { fontSize: 24, color: theme.colors.white, fontWeight: "600" },
+    productInfo: { paddingHorizontal: 10, gap: 20 },
+    productTitleContainer: { flexDirection: "column", gap: 10 },
+    productTitle: {
+      fontSize: 16,
+      color: theme.colors.white,
+      fontWeight: "600",
+    },
+    productDescription: {
+      fontSize: 16,
+      color: applyOpacity(theme.colors.white, 0.8),
+      fontWeight: "300",
+    },
+    variantContainer: { flexDirection: "column", gap: 10 },
+    sectionTitle: {
+      fontSize: 16,
+      fontWeight: "600",
+      color: theme.colors.white,
+    },
+    variantButton: { padding: 10, borderRadius: 5, marginRight: 10 },
+    errorText: { color: "red", marginTop: 5 },
+    availableText: {
+      fontSize: 14,
+      color: applyOpacity(theme.colors.white, 0.8),
+      marginTop: 2,
+    },
+    sizeContainer: { flexDirection: "column", gap: 10 },
+    sizeBox: {
+      padding: 10,
+      borderRadius: 5,
+      marginRight: 10,
+      width: 50,
+      height: 50,
+      justifyContent: "center",
+      alignItems: "center",
+    },
+    quantitySection: { flexDirection: "column", gap: 10 },
+    quantityContainer: { flexDirection: "row", alignItems: "center" },
+    quantityButton: {
+      backgroundColor: theme.colors.grey,
+      borderRadius: 5,
+      width: 30,
+      height: 30,
+      justifyContent: "center",
+      alignItems: "center",
+    },
+    quantityButtonText: { color: theme.colors.white, fontSize: 18 },
+    quantityText: {
+      marginHorizontal: 20,
+      fontSize: 16,
+      color: theme.colors.white,
+      textAlign: "center",
+      minWidth: 40,
+    },
+    sizeChartSection: { flexDirection: "column", gap: 10 },
+    sizeChartContainer: {
+      borderWidth: 1,
+      borderColor: theme.colors.grey,
+      borderRadius: 5,
+      overflow: "hidden",
+    },
+    chartHeaderRow: {
+      flexDirection: "row",
+      backgroundColor: theme.colors.darkGrey,
+      padding: 10,
+    },
+    chartHeaderText: {
+      flex: 1,
+      color: theme.colors.white,
+      textAlign: "center",
+      fontWeight: "bold",
+    },
+    chartRow: {
+      flexDirection: "row",
+      borderBottomWidth: 1,
+      borderBottomColor: theme.colors.grey,
+      padding: 10,
+    },
+    chartRowText: { flex: 1, color: theme.colors.white, textAlign: "center" },
+    chartRowValue: {
+      flex: 1,
+      color: applyOpacity(theme.colors.white, 0.8),
+      textAlign: "center",
+    },
+    shopInfoSection: { flexDirection: "column", gap: 10, marginBottom: 200 },
+    shopContainer: { flexDirection: "row", alignItems: "center" },
+    shopLogo: {
+      width: 50,
+      height: 50,
+      borderRadius: 25,
+      marginRight: 10,
+      backgroundColor: theme.colors.greyWhite,
+    },
+    shopName: { fontSize: 18, color: theme.colors.white },
+    flyingImage: {
+      position: "absolute",
+      width: 50,
+      height: 50,
+      zIndex: 200,
+    },
+    actionsheetContent: { backgroundColor: theme.colors.dark, width: "100%" },
+    actionsheetText: {
+      color: theme.colors.white,
+      fontSize: 18,
+      marginBottom: 10,
+      textAlign: "center",
+    },
+    proceedButton: {
+      backgroundColor: theme.colors.white,
+      marginTop: 5,
+      width: "100%",
+    },
+    proceedButtonText: {
+      color: theme.colors.dark,
+      fontSize: 16,
+      fontWeight: "400",
+      textAlign: "center",
+    },
+    cancelButton: {
+      backgroundColor: theme.colors.grey,
+      marginTop: 5,
+      width: "100%",
+    },
+    cancelButtonText: {
+      color: theme.colors.white,
+      fontSize: 16,
+      fontWeight: "400",
+      textAlign: "center",
+    },
+  });
 
 export default ProductViewScreen;

@@ -14,6 +14,7 @@ import { WebView } from "react-native-webview";
 import { Camera } from "expo-camera";
 import * as MediaLibrary from "expo-media-library";
 import * as FileSystem from "expo-file-system";
+import { ArrowLeft } from "lucide-react-native";
 
 export default function VirtualFittingScreen({ route, navigation }) {
   // Extract parameters passed via route.
@@ -154,6 +155,14 @@ export default function VirtualFittingScreen({ route, navigation }) {
 
   return (
     <View style={styles.container}>
+      {/* Back Button using Lucide Icon */}
+      <TouchableOpacity
+        style={styles.backButton}
+        onPress={() => navigation.goBack()}
+      >
+        <ArrowLeft size={24} color="#fff" />
+      </TouchableOpacity>
+
       <WebView
         ref={webviewRef}
         source={{ uri: webViewUrl }}
@@ -232,5 +241,17 @@ const styles = StyleSheet.create({
   permissionButtonText: {
     color: "#fff",
     fontSize: 16,
+  },
+  // Back Button styling using Lucide Icon
+  backButton: {
+    position: "absolute",
+    top: 40,
+    left: 20,
+    zIndex: 10,
+    backgroundColor: "rgba(0, 0, 0, 0.7)",
+    padding: 10,
+    borderRadius: 20,
+    alignItems: "center",
+    justifyContent: "center",
   },
 });

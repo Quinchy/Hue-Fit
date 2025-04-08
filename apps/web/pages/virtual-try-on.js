@@ -749,7 +749,7 @@ const styles = {
     padding: "8px 16px",
     borderRadius: "8px",
     zIndex: 3,
-    fontSize: "12px",
+    fontSize: "16px",
     maxWidth: "100%",
     textAlign: "center",
   },
