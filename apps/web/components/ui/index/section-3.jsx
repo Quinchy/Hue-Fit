@@ -70,7 +70,7 @@ export default function Section3() {
                   src="/images/gradient-bg.png"
                   width={1000}
                   height={12000}
-                  className="w-full"
+                  className="w-full filter saturate-[500%] dark:saturate-100"
                 />
               </motion.div>
             </div>
@@ -81,7 +81,7 @@ export default function Section3() {
             src="/images/logo-text.svg"
             width={1000}
             height={1000}
-            className="relative z-10 mx-auto w-1/2 lg:w-auto drop-shadow-2xl"
+            className="relative z-10 mx-auto w-1/2 lg:w-auto drop-shadow-2xl invert dark:invert-0"
           />
         </motion.div>
 

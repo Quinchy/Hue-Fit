@@ -312,7 +312,7 @@ export default function ProductsPage() {
             <TableHeader>
               <TableRow>
                 <TableHead className="w-[5%]"></TableHead>
-                <TableHead className="w-[11%]">Product Number</TableHead>
+                <TableHead className="w-[11%] text-start">Product Number</TableHead>
                 <TableHead className="w-[60%]">Name</TableHead>
                 <TableHead className="w-[10%] text-center">Quantity</TableHead>
                 <TableHead className="w-[10%] text-center">Type</TableHead>
@@ -375,7 +375,7 @@ export default function ProductsPage() {
                           />
                         </div>
                       </TableCell>
-                      <TableCell>
+                      <TableCell className="text-center">
                         <CopyableText
                           text={product.productNo}
                           displayText={shortProductNo}
@@ -402,20 +402,20 @@ export default function ProductsPage() {
                         <p
                           className={`py-1 w-full rounded text-center font-bold ${
                             product.Type.name === "UPPERWEAR"
-                              ? "bg-blue-500"
+                              ? "bg-blue-500 text-blue-950"
                               : product.Type.name === "LOWERWEAR"
-                              ? "bg-teal-500"
+                              ? "bg-teal-500 text-teal-950"
                               : product.Type.name === "FOOTWEAR"
-                              ? "bg-purple-500"
+                              ? "bg-purple-500 text-purple-950"
                               : product.Type.name === "OUTERWEAR"
-                              ? "bg-cyan-500"
-                              : "bg-gray-300"
+                              ? "bg-cyan-500 text-cyan-950"
+                              : "bg-gray-300 text-gray-900"
                           } uppercase`}
                         >
                           {product.Type.name}
                         </p>
                       </TableCell>
-                      <TableCell>
+                      <TableCell className="text-center">
                         <DropdownMenu>
                           <DropdownMenuTrigger asChild>
                             <Button variant="outline" className="font-normal">

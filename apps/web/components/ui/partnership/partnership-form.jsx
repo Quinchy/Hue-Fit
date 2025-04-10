@@ -357,7 +357,7 @@ export default function PartnershipForm() {
                           formik.touched.position
                         )}`}
                       >
-                        <SelectValue placeholder="Select your position" />
+                        <SelectValue placeholder="Please specify your position in the shop." />
                       </SelectTrigger>
                       <SelectContent>
                         <SelectItem value="Owner">Owner</SelectItem>

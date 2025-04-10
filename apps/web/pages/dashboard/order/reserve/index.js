@@ -255,7 +255,7 @@ export default function Reserves() {
                         {hasMoreItems && "\n..."}
                       </TableCell>
                       <TableCell className="text-center">
-                        <p className="py-1 w-full rounded font-bold uppercase text-white bg-rose-500">
+                        <p className="py-1 w-full rounded font-bold uppercase bg-rose-500 text-rose-950">
                           {order.status}
                         </p>
                       </TableCell>

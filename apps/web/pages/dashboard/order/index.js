@@ -60,11 +60,11 @@ export default function Orders() {
   ];
 
   const statusColors = {
-    PENDING: "bg-blue-400",
-    PROCESSING: "bg-amber-500",
-    DELIVERING: "bg-purple-400",
-    COMPLETED: "bg-green-400",
-    CANCELLED: "bg-red-500",
+    PENDING: "bg-blue-400 text-blue-950",
+    PROCESSING: "bg-amber-500 text-amber-950",
+    DELIVERING: "bg-purple-400 text-purple-950",
+    COMPLETED: "bg-green-400 text-green-950",
+    CANCELLED: "bg-red-500 text-red-950",
   };
 
   const { data, isLoading } = useSWR(

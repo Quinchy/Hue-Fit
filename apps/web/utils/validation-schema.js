@@ -22,10 +22,10 @@ export const contactInfoSchema = Yup.object({
   firstName: Yup.string().required("The First name field is required."),
   lastName: Yup.string().required("The Last name field is required."),
   position: Yup.string().required("The Position field is required."),
-  contactNo: Yup.string().required("The Contact Number field is required.")
-  .matches( /^(\+?\d{1,4})?\d{7,12}$/, "The phone number format is invalid." )
-  .test( "valid-length", "The phone number format is invalid.",
-    (value) => {
+  contactNo: Yup.string()
+    .required("The Contact Number field is required.")
+    .matches(/^(\+?\d{1,4})?\d{7,12}$/, "The phone number format is invalid.")
+    .test("valid-length", "The phone number format is invalid.", (value) => {
       if (!value) return true;
       const digits = value.replace(/\D/g, "");
       if (value.startsWith("09")) {
@@ -34,14 +34,28 @@ export const contactInfoSchema = Yup.object({
       if (value.startsWith("+")) {
         return digits.length >= 10 && digits.length <= 12;
       }
-      return false; 
-    }
-  ).test("starts-with", "The phone number format is invalid.", (value) => !value || value.startsWith("09") || value.startsWith("+") ),
-  email: Yup.string().email("The email format is invalid.").required("The Email field is required."),
+      return false;
+    })
+    .test(
+      "starts-with",
+      "The phone number format is invalid.",
+      (value) => !value || value.startsWith("09") || value.startsWith("+")
+    ),
+  email: Yup.string()
+    .email("The email format is invalid.")
+    .required("The Email field is required."),
   username: Yup.string().required("The Username field is required."),
   password: Yup.string()
     .required("The Password field is required.")
-    .min(8, "Password must be at least 8 characters long."),
+    .min(8, "Password must be at least 8 characters long.")
+    .max(128, "Password must be less than 128 characters.")
+    .matches(/[a-z]/, "Password must contain at least one lowercase letter.")
+    .matches(/[A-Z]/, "Password must contain at least one uppercase letter.")
+    .matches(/\d/, "Password must contain at least one number.")
+    .matches(
+      /[@$!%*?&#^()_+\-=[\]{};':"\\|,.<>/?]+/,
+      "Password must contain at least one special character."
+    ),
   confirmPassword: Yup.string()
     .required("The Confirm Password field is required.")
     .oneOf([Yup.ref("password"), null], "Passwords must match."),

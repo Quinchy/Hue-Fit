@@ -132,7 +132,11 @@ export default async function handler(req, res) {
       // Reset the partnership request status to "PENDING".
       await prisma.partnershipRequest.update({
         where: { id: existingRequest.id },
-        data: { status: "PENDING" },
+        data: {
+          status: "PENDING",
+          message:
+            "Your shop request is now send to the Admin again, for manual verification and inspection of your data.",
+        },
       });
 
       // Delete all previous business licenses for this shop before uploading new ones.
@@ -154,7 +158,8 @@ export default async function handler(req, res) {
         status: "PENDING",
         shop: updatedShop,
       });
-    } else {
+    } 
+    else {
       // Create a new Google Map location.
       const newGoogleMapLocation = await prisma.googleMapLocation.create({
         data: { name: googleMapPlaceName, latitude, longitude },
@@ -220,7 +225,8 @@ export default async function handler(req, res) {
         shop: newShop,
       });
     }
-  } catch (error) {
+  }
+  catch (error) {
     console.error("Error processing shop request:", error);
     if (error.code === "P2002") {
       const field = error.meta?.target?.[0];

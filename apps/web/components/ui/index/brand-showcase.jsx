@@ -19,7 +19,7 @@ const brandLogos = [
 
 export default function BrandShowcase() {
   return (
-    <div className="relative w-full overflow-hidden bg-black py-8 cursor-pointer">
+    <div className="relative w-full overflow-hidden bg-pure py-8 cursor-pointer">
       <div className="flex items-center justify-center whitespace-nowrap w-[200%] animate-marquee">
         {/* First copy of logos */}
         {brandLogos.map((brand, i) => (
@@ -33,7 +33,7 @@ export default function BrandShowcase() {
                 alt={brand}
                 width={80} // 80px on mobile
                 height={80}
-                className="object-contain"
+                className="object-contain invert dark:invert-0"
               />
             </div>
           </span>
@@ -50,7 +50,7 @@ export default function BrandShowcase() {
                 alt={brand}
                 width={80}
                 height={80}
-                className="object-contain"
+                className="object-contain invert dark:invert-0"
               />
             </div>
           </span>

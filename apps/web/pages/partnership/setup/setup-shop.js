@@ -441,29 +441,32 @@ export default function SetupShopForm() {
             </DialogTrigger>
             <DialogContent className="sm:max-w-[425px]">
               <DialogHeader>
-                <DialogTitle className="flex items-center gap-2 uppercase">
-                  <Store className="stroke-[2px] mr-2" />
+                <DialogTitle className="flex items-center gap-1">
+                  <Store className="stroke-[2px]" />
                   Partnership Request Status
                 </DialogTitle>
                 <DialogDescription>
-                  <div className="flex flex-col gap-0 mt-5 bg-muted p-5 rounded-lg">
-                    <div className="text-base text-primary/80">
+                  <div className="flex flex-col gap-0 mt-5 bg-muted p-5">
+                    <div className="flex gap-2 items-center text-base text-primary/80">
                       Status:{" "}
-                      <b className="bg-amber-600 p-1 rounded">
+                      <b className="bg-amber-500 px-2 py-1 rounded text-sm text-amber-900">
                         {partnershipRequest.status}
                       </b>
                     </div>
-                    <div className="text-base text-primary/80">
+                    <div className="flex gap-2 mt-2 text-base text-primary/80">
                       Message:{" "}
-                      <b>
+                      <p className="font-semibold">
                         {partnershipRequest.message || "No message provided"}
-                      </b>
+                      </p>
                     </div>
                   </div>
                   {partnershipRequest.status === "PENDING" && (
                     <div className="italic text-sm mt-5">
-                      Your shop is being processed. Please keep an eye on your
-                      email for updates.
+                      Your shop data is being processed by the admin. To stay
+                      updated,{" "}
+                      <u>
+                        Please keep an eye on your personal email for updates.
+                      </u>
                     </div>
                   )}
                 </DialogDescription>
