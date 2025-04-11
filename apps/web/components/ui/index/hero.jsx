@@ -9,7 +9,6 @@ import routes from "@/routes";
 import ShrinkingImage from "@/components/ui/shrinking-image";
 import { useState, useEffect, useRef } from "react";
 import { motion } from "framer-motion";
-import { useTheme } from "next-themes"; 
 
 const gloock = Gloock({
   style: ["normal"],
@@ -20,14 +19,8 @@ const gloock = Gloock({
 export default function Hero() {
   const [cursorPos, setCursorPos] = useState({ x: -1000, y: -1000 });
   const containerRef = useRef(null);
-  const { theme } = useTheme(); // returns "dark" or "light"
 
-  const gradientStyle =
-    theme === "dark"
-      ? "radial-gradient(circle 200px at var(--cursor-x) var(--cursor-y), rgba(0,0,0,0) 0%, rgba(0,0,0,0.2) 30%, rgba(0,0,0,0.4) 50%, rgba(0,0,0,0.8) 90%)"
-      : "radial-gradient(circle 200px at var(--cursor-x) var(--cursor-y), rgba(255,255,255,0) 0%, rgba(255,255,255,0.05) 30%, rgba(255,255,255,0.10) 50%, rgba(255,255,255,0.3) 90%)";
-  
-      useEffect(() => {
+  useEffect(() => {
     const handleWindowMouseMove = (e) => {
       if (containerRef.current) {
         const rect = containerRef.current.getBoundingClientRect();
@@ -77,7 +70,10 @@ export default function Hero() {
         {/* Smooth radial gradient overlay following the cursor with a smoother light spread */}
         <motion.div
           className="absolute inset-0 pointer-events-none z-10 transition-all duration-300"
-          style={{ background: gradientStyle }}
+          style={{
+            background:
+              "radial-gradient(circle 200px at var(--cursor-x) var(--cursor-y), rgba(0,0,0,0) 0%, rgba(0,0,0,0.2) 30%, rgba(0,0,0,0.4) 50%, rgba(0,0,0,0.8) 90%)",
+          }}
           animate={{
             "--cursor-x": `${cursorPos.x}px`,
             "--cursor-y": `${cursorPos.y}px`,

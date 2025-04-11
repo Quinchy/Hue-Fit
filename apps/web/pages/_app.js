@@ -43,7 +43,7 @@ export default function App({ Component, pageProps: { session, ...pageProps } })
       <FormProvider>        
         <ThemeProvider
           attribute="class"
-          defaultTheme="system"
+          defaultTheme="dark"
           enableSystem
           disableTransitionOnChange
         >
