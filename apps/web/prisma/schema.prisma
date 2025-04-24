@@ -9,9 +9,9 @@ datasource db {
 
 model Role {
   id         Int      @id @default(autoincrement())
-  name       String   @unique // ADMIN, CUSTOMER, VENDOR
-  created_at DateTime @default(now())
-  updated_at DateTime @updatedAt
+  name       String   @unique
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
 
   User User[]
 }
@@ -23,8 +23,8 @@ model User {
   username   String
   password   String
   status     String
-  created_at DateTime @default(now())
-  updated_at DateTime @updatedAt
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
 
   Role            Role             @relation(fields: [roleId], references: [id])
   AdminProfile    AdminProfile?
@@ -51,8 +51,8 @@ model AdminProfile {
   lastName       String
   email          String?
   contactNo      String?
-  created_at     DateTime @default(now())
-  updated_at     DateTime @updatedAt
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
 
   User User @relation(fields: [userId], references: [id])
 }
@@ -64,8 +64,8 @@ model CustomerProfile {
   email          String?
   firstName      String
   lastName       String
-  created_at     DateTime @default(now())
-  updated_at     DateTime @updatedAt
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
 
   User User @relation(fields: [userId], references: [id])
 }
@@ -78,8 +78,8 @@ model CustomerFeature {
   age        Int
   skintone   String
   bodyShape  String
-  created_at DateTime @default(now())
-  updated_at DateTime @updatedAt
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
 
   User User @relation(fields: [userId], references: [id])
 }
@@ -93,8 +93,8 @@ model CustomerAddress {
   municipality String
   province     String
   postalCode   String
-  created_at   DateTime @default(now())
-  updated_at   DateTime @updatedAt
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
 
   User User @relation(fields: [userId], references: [id])
 }
@@ -109,8 +109,8 @@ model VendorProfile {
   contactNo      String
   email          String
   position       String
-  created_at     DateTime @default(now())
-  updated_at     DateTime @updatedAt
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
 
   User User  @relation(fields: [userId], references: [id])
   Shop Shop? @relation("ShopEmployees", fields: [shopId], references: [id], onDelete: Cascade)
@@ -124,8 +124,8 @@ model PartnershipRequest {
   status     String   @default("PENDING")
   message    String?
   isSeen     Boolean  @default(false)
-  created_at DateTime @default(now())
-  updated_at DateTime @updatedAt
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
 
   User User @relation(fields: [userId], references: [id])
   Shop Shop @relation(fields: [shopId], references: [id], onDelete: Cascade)
@@ -144,8 +144,8 @@ model Shop {
   status      String   @default("PENDING")
   openingTime String
   closingTime String
-  created_at  DateTime @default(now())
-  updated_at  DateTime @updatedAt
+  createdAt  DateTime @default(now())
+  updatedAt  DateTime @updatedAt
 
   Owner              User                  @relation("ShopOwner", fields: [ownerUserId], references: [id])
   ShopAddress        ShopAddress           @relation("ShopAddress", fields: [addressId], references: [id])
@@ -175,8 +175,8 @@ model ShopAddress {
   province     String
   postalCode   String
   googleMapId  Int      @unique
-  created_at   DateTime @default(now())
-  updated_at   DateTime @updatedAt
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
 
   GoogleMapLocation GoogleMapLocation @relation(fields: [googleMapId], references: [id])
   Shop              Shop?             @relation("ShopAddress")
@@ -187,8 +187,8 @@ model GoogleMapLocation {
   name       String?
   latitude   Float
   longitude  Float
-  created_at DateTime @default(now())
-  updated_at DateTime @updatedAt
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
 
   ShopAddress ShopAddress?
 }
@@ -197,8 +197,8 @@ model ShopBusinessLicense {
   id         Int      @id @default(autoincrement())
   shopId     Int
   licenseUrl String
-  created_at DateTime @default(now())
-  updated_at DateTime @updatedAt
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
 
   Shop Shop @relation(fields: [shopId], references: [id], onDelete: Cascade)
 }
@@ -215,8 +215,8 @@ model Product {
   thumbnailURL  String
   totalQuantity Int      @default(0)
   isArchived    Boolean? @default(false)
-  created_at    DateTime @default(now())
-  updated_at    DateTime @updatedAt
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
 
   // No change here. The 'onDelete: Cascade' goes on the child references
   Shop     Shop     @relation(fields: [shopId], references: [id])
@@ -238,8 +238,8 @@ model ProductMeasurement {
   measurementId Int
   value         Float
   unit          String
-  created_at    DateTime @default(now())
-  updated_at    DateTime @updatedAt
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
 
   Product     Product     @relation(fields: [productId], references: [id], onDelete: Cascade)
   Measurement Measurement @relation(fields: [measurementId], references: [id])
@@ -250,8 +250,8 @@ model Type {
   id         Int      @id @default(autoincrement())
   shopId     Int
   name       String
-  created_at DateTime @default(now())
-  updated_at DateTime @updatedAt
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
 
   Shop         Shop          @relation(fields: [shopId], references: [id], onDelete: Cascade)
   Products     Product[]
@@ -263,8 +263,8 @@ model Category {
   id         Int      @id @default(autoincrement())
   shopId     Int
   name       String
-  created_at DateTime @default(now())
-  updated_at DateTime @updatedAt
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
 
   Shop     Shop      @relation(fields: [shopId], references: [id], onDelete: Cascade)
   Products Product[]
@@ -275,8 +275,8 @@ model Tag {
   shopId     Int
   typeId     Int
   name       String
-  created_at DateTime @default(now())
-  updated_at DateTime @updatedAt
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
 
   Shop     Shop      @relation(fields: [shopId], references: [id], onDelete: Cascade)
   Type     Type      @relation(fields: [typeId], references: [id])
@@ -292,8 +292,8 @@ model ProductVariant {
   totalQuantity    Int      @default(0)
   pngClotheURL     String?
   isArchived       Boolean? @default(false)
-  created_at       DateTime @default(now())
-  updated_at       DateTime @updatedAt
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
 
   Product             Product               @relation(fields: [productId], references: [id], onDelete: Cascade)
   Color               Color                 @relation(fields: [colorId], references: [id])
@@ -309,8 +309,8 @@ model ProductVariantSize {
   productVariantId Int
   sizeId           Int
   quantity         Int
-  created_at       DateTime @default(now())
-  updated_at       DateTime @updatedAt
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
 
   ProductVariant ProductVariant @relation(fields: [productVariantId], references: [id], onDelete: Cascade)
   Size           Size           @relation(fields: [sizeId], references: [id])
@@ -322,8 +322,8 @@ model ProductVariantImage {
   id               Int      @id @default(autoincrement())
   productVariantId Int
   imageURL         String
-  created_at       DateTime @default(now())
-  updated_at       DateTime @updatedAt
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
 
   ProductVariant ProductVariant @relation(fields: [productVariantId], references: [id], onDelete: Cascade)
 }
@@ -333,8 +333,8 @@ model Color {
   shopId     Int
   name       String
   hexcode    String
-  created_at DateTime @default(now())
-  updated_at DateTime @updatedAt
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
 
   Shop           Shop             @relation(fields: [shopId], references: [id], onDelete: Cascade)
   ProductVariant ProductVariant[]
@@ -346,8 +346,8 @@ model Size {
   name         String
   abbreviation String
   nextId       Int?
-  created_at   DateTime @default(now())
-  updated_at   DateTime @updatedAt
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
 
   Shop               Shop                 @relation(fields: [shopId], references: [id], onDelete: Cascade)
   ProductVariantSize ProductVariantSize[]
@@ -359,8 +359,8 @@ model Measurement {
   shopId     Int
   typeId     Int
   name       String
-  created_at DateTime @default(now())
-  updated_at DateTime @updatedAt
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
 
   Shop                Shop                 @relation(fields: [shopId], references: [id], onDelete: Cascade)
   Type                Type                 @relation(fields: [typeId], references: [id])
@@ -376,8 +376,8 @@ model Order {
   status          String   @default("PENDING")
   askingForCancel Boolean  @default(false)
   cancelReason    String?
-  created_at      DateTime @default(now())
-  updated_at      DateTime @updatedAt
+  createdAt      DateTime @default(now())
+  updatedAt      DateTime @updatedAt
 
   User User @relation(fields: [userId], references: [id])
   Shop Shop @relation(fields: [shopId], references: [id], onDelete: Cascade)
@@ -393,8 +393,8 @@ model OrderItem {
   productVariantId     Int
   productVariantSizeId Int
   quantity             Int
-  created_at           DateTime @default(now())
-  updated_at           DateTime @updatedAt
+  createdAt           DateTime @default(now())
+  updatedAt           DateTime @updatedAt
 
   Order              Order              @relation(fields: [orderId], references: [id])
   Product            Product            @relation(fields: [productId], references: [id])
@@ -405,8 +405,8 @@ model OrderItem {
 model Cart {
   id         Int      @id @default(autoincrement())
   userId     Int
-  created_at DateTime @default(now())
-  updated_at DateTime @updatedAt
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
 
   User      User       @relation(fields: [userId], references: [id])
   CartItems CartItem[]
@@ -420,8 +420,8 @@ model CartItem {
   productVariantId     Int
   productVariantSizeId Int
   quantity             Int      @default(1)
-  created_at           DateTime @default(now())
-  updated_at           DateTime @updatedAt
+  createdAt           DateTime @default(now())
+  updatedAt           DateTime @updatedAt
 
   Cart               Cart               @relation(fields: [cartId], references: [id])
   Shop               Shop               @relation(fields: [shopId], references: [id], onDelete: Cascade)
@@ -440,8 +440,8 @@ model Notification {
   shopId  Int?
 
   read       Boolean  @default(false)
-  created_at DateTime @default(now())
-  updated_at DateTime @default(now())
+  createdAt DateTime @default(now())
+  updatedAt DateTime @default(now())
 
   // Relations to User or Shop are optional 
   User User? @relation(fields: [userId], references: [id])
@@ -453,7 +453,7 @@ model Payment {
   shopId     Int?
   orderId    Int
   amount     Decimal  @db.Decimal(10, 2)
-  created_at DateTime @default(now())
+  createdAt DateTime @default(now())
 
   Order Order @relation(fields: [orderId], references: [id])
   Shop  Shop? @relation(fields: [shopId], references: [id], onDelete: Cascade)
@@ -464,8 +464,8 @@ model GeneratedOutfit {
   userId     Int
   name       String?
   style      String?
-  created_at DateTime @default(now())
-  updated_at DateTime @updatedAt
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
 
   User  User                  @relation(fields: [userId], references: [id])
   items GeneratedOutfitItem[]
@@ -473,10 +473,10 @@ model GeneratedOutfit {
 
 model GeneratedOutfitItem {
   id                Int      @id @default(autoincrement())
-  generatedOutfitId Int
+  generatedOutfitId Int      
   productVariantId  Int
-  created_at        DateTime @default(now())
-  updated_at        DateTime @updatedAt
+  createdAt        DateTime @default(now())
+  updatedAt        DateTime @updatedAt
 
   GeneratedOutfit GeneratedOutfit @relation(fields: [generatedOutfitId], references: [id])
   ProductVariant  ProductVariant  @relation(fields: [productVariantId], references: [id])
@@ -489,8 +489,8 @@ model InquiryMessage {
   subject    String
   message    String
   read       Boolean  @default(false)
-  created_at DateTime @default(now())
-  updated_at DateTime @updatedAt
+  createdAt  DateTime @default(now())
+  updatedAt  DateTime @updatedAt
 }
 
 model DeliveryFee {
@@ -498,8 +498,8 @@ model DeliveryFee {
   shopId     Int      @unique
   feeType    String
   feeAmount  Decimal  @db.Decimal(10, 2)
-  created_at DateTime @default(now())
-  updated_at DateTime @updatedAt
+  createdAt  DateTime @default(now())
+  updatedAt  DateTime @updatedAt
 
   Shop Shop @relation(fields: [shopId], references: [id], onDelete: Cascade)
 }
