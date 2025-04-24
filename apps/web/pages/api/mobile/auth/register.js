@@ -1,10 +1,18 @@
 // pages/api/mobile/auth/register.js
-import prisma from '@/utils/helpers';
-import bcrypt from 'bcrypt';
-import { v4 as uuidv4 } from 'uuid';
+import prisma from "@/utils/helpers";
+import bcrypt from "bcrypt";
+import { v4 as uuidv4 } from "uuid";
 
 export default async function handler(req, res) {
-  if (req.method !== 'POST') {
+  res.setHeader("Access-Control-Allow-Origin", "http://localhost:8100");
+  res.setHeader("Access-Control-Allow-Methods", "POST,OPTIONS");
+  res.setHeader("Access-Control-Allow-Headers", "Content-Type,Authorization");
+
+  if (req.method === "OPTIONS") {
+    return res.status(200).end();
+  }
+
+  if (req.method !== "POST") {
     return res.status(405).json({ message: "Method not allowed" });
   }
 
@@ -39,9 +47,12 @@ export default async function handler(req, res) {
 
   if (role.toUpperCase() === "CUSTOMER") {
     if (
-      height === undefined || height === '' ||
-      weight === undefined || weight === '' ||
-      age === undefined || age === '' ||
+      height === undefined ||
+      height === "" ||
+      weight === undefined ||
+      weight === "" ||
+      age === undefined ||
+      age === "" ||
       !skintone?.trim() ||
       !bodyshape?.trim() ||
       !barangay?.trim() ||
@@ -49,7 +60,11 @@ export default async function handler(req, res) {
       !province?.trim() ||
       !postalCode?.trim()
     ) {
-      return res.status(400).json({ message: "All customer feature and address fields are required." });
+      return res
+        .status(400)
+        .json({
+          message: "All customer feature and address fields are required.",
+        });
     }
   }
 
@@ -64,7 +79,7 @@ export default async function handler(req, res) {
     });
 
     const existingUser = await prisma.user.findFirst({
-      where: { 
+      where: {
         username,
         roleId: customerRole ? customerRole.id : undefined,
       },
@@ -91,7 +106,7 @@ export default async function handler(req, res) {
         username,
         password: hashedPassword,
         roleId: userRole.id,
-        status: 'ACTIVE',
+        status: "ACTIVE",
       },
     });
 
@@ -130,7 +145,7 @@ export default async function handler(req, res) {
 
     return res.status(201).json({ message: "User registered successfully." });
   } catch (error) {
-    console.error("Registration error:", error);
+    console.error(error);
     return res.status(500).json({ message: "Internal server error." });
   }
 }

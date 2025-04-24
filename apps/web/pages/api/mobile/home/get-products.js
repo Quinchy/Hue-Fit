@@ -2,6 +2,14 @@
 import prisma from "@/utils/helpers";
 
 export default async function getProducts(req, res) {
+  res.setHeader("Access-Control-Allow-Origin", "http://localhost:8100");
+  res.setHeader("Access-Control-Allow-Methods", "GET,OPTIONS");
+  res.setHeader("Access-Control-Allow-Headers", "Content-Type,Authorization");
+
+  if (req.method === "OPTIONS") {
+    return res.status(200).end();
+  }
+
   if (req.method !== "GET") {
     return res.status(405).json({ message: "Method not allowed" });
   }
@@ -10,7 +18,7 @@ export default async function getProducts(req, res) {
   const limit = parseInt(req.query.limit) || 10;
   const skip = (page - 1) * limit;
   const search = req.query.search || "";
-  const typeQuery = req.query.type || ""; // comma-separated types
+  const typeQuery = req.query.type || "";
 
   let whereCondition = {};
 
@@ -28,11 +36,7 @@ export default async function getProducts(req, res) {
     };
   }
 
-  // Only get products that are not archived
   whereCondition.isArchived = false;
-
-  // Also, ensure the product belongs to a shop that is not inactive.
-  // This uses the relation field "Shop" defined on Product.
   whereCondition.Shop = {
     status: { not: "INACTIVE" },
   };
