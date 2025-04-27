@@ -1,6 +1,5 @@
-// getProductDetails.js
-
-import prisma from '@/utils/helpers';
+// File: src/pages/api/mobile/products/get-product-details.js
+import prisma from "@/utils/helpers";
 
 function orderSizes(sizes) {
   if (!Array.isArray(sizes)) return [];
@@ -28,50 +27,43 @@ function orderSizes(sizes) {
   return orderedSizes;
 }
 
-const getProductDetails = async (req, res) => {
+export default async function handler(req, res) {
+  // 1) Always set CORS headers first
   res.setHeader("Access-Control-Allow-Origin", "http://localhost:8100");
-  res.setHeader("Access-Control-Allow-Methods", "GET,OPTIONS");
+  res.setHeader("Access-Control-Allow-Methods", "POST,OPTIONS");
   res.setHeader("Access-Control-Allow-Headers", "Content-Type,Authorization");
-  if (req.method !== 'POST') {
-    return res.status(405).json({ message: 'Method not allowed' });
+
+  // 2) Handle preflight
+  if (req.method === "OPTIONS") {
+    return res.status(204).end();
+  }
+
+  // 3) Only accept POST from here
+  if (req.method !== "POST") {
+    return res.status(405).json({ message: "Method not allowed" });
   }
 
   const { productId } = req.body;
   if (!productId) {
-    return res.status(400).json({ message: 'Product ID is required.' });
+    return res.status(400).json({ message: "Product ID is required." });
   }
 
   try {
     const parentProduct = await prisma.product.findUnique({
       where: { id: productId },
       include: {
-        Shop: {
-          select: { name: true, logo: true, id: true },
-        },
-        Type: {
-          select: {
-            id: true,
-            name: true,
-          },
-        },
-        Tag: {
-          select: {
-            id: true,
-            name: true,
-          },
-        },
+        Shop: { select: { id: true, name: true, logo: true } },
+        Type: { select: { id: true, name: true } },
+        Tag: { select: { id: true, name: true } },
       },
-    });    
+    });
 
     if (!parentProduct) {
-      return res.status(404).json({ message: 'Product not found.' });
+      return res.status(404).json({ message: "Product not found." });
     }
 
     const allVariants = await prisma.productVariant.findMany({
-      where: {
-        productId,
-        isArchived: false,
-      },
+      where: { productId, isArchived: false },
       include: {
         Color: { select: { name: true, hexcode: true } },
         ProductVariantImage: { select: { imageURL: true } },
@@ -99,26 +91,24 @@ const getProductDetails = async (req, res) => {
       },
     });
 
-    const measurementChart = measurements.reduce((acc, measurement) => {
-      if (!acc[measurement.Size.name]) {
-        acc[measurement.Size.name] = {};
-      }
-      acc[measurement.Size.name][measurement.Measurement.name] = `${measurement.value} ${measurement.unit}`;
+    const measurementChart = measurements.reduce((acc, m) => {
+      acc[m.Size.name] = acc[m.Size.name] || {};
+      acc[m.Size.name][m.Measurement.name] = `${m.value} ${m.unit}`;
       return acc;
     }, {});
 
     const sortedVariants = allVariants.map((variant) => {
-      const unsortedSizes = variant.ProductVariantSize.map((sizeRelation) => ({
-        productVariantSizeId: sizeRelation.id,
-        id: sizeRelation.Size.id,
-        name: sizeRelation.Size.name,
-        abbreviation: sizeRelation.Size.abbreviation,
-        quantity: sizeRelation.quantity,
-        nextId: sizeRelation.Size.nextId,
+      const unsorted = variant.ProductVariantSize.map((rel) => ({
+        productVariantSizeId: rel.id,
+        id: rel.Size.id,
+        name: rel.Size.name,
+        abbreviation: rel.Size.abbreviation,
+        quantity: rel.quantity,
+        nextId: rel.Size.nextId,
       }));
       return {
         ...variant,
-        sizes: orderSizes(unsortedSizes),
+        sizes: orderSizes(unsorted),
       };
     });
 
@@ -137,33 +127,31 @@ const getProductDetails = async (req, res) => {
         tagName: parentProduct.Tag?.name || null,
       },
       measurementChart,
-      allVariants: sortedVariants.map((variant) => ({
-        id: variant.id,
-        productVariantNo: variant.productVariantNo,
+      allVariants: sortedVariants.map((v) => ({
+        id: v.id,
+        productVariantNo: v.productVariantNo,
         color: {
-          name: variant.Color?.name || 'Unknown Color',
-          hexcode: variant.Color?.hexcode || '#000000',
+          name: v.Color?.name || "Unknown Color",
+          hexcode: v.Color?.hexcode || "#000000",
         },
-        price: variant.price,
-        totalQuantity: variant.totalQuantity,
-        pngClotheURL: variant.pngClotheURL,
-        sizes: variant.sizes.map(size => ({
-          productVariantSizeId: size.productVariantSizeId,
-          id: size.id,
-          name: size.name,
-          abbreviation: size.abbreviation,
-          quantity: size.quantity,
-          nextId: size.nextId,
+        price: v.price,
+        totalQuantity: v.totalQuantity,
+        pngClotheURL: v.pngClotheURL,
+        sizes: v.sizes.map((s) => ({
+          productVariantSizeId: s.productVariantSizeId,
+          id: s.id,
+          name: s.name,
+          abbreviation: s.abbreviation,
+          quantity: s.quantity,
+          nextId: s.nextId,
         })),
-        images: variant.ProductVariantImage.map((img) => img.imageURL),
+        images: v.ProductVariantImage.map((img) => img.imageURL),
       })),
     };
 
-    res.status(200).json(response);
+    return res.status(200).json(response);
   } catch (error) {
-    console.error('Error fetching product details:', error);
-    res.status(500).json({ message: 'Internal server error.' });
+    console.error("Error fetching product details:", error);
+    return res.status(500).json({ message: "Internal server error." });
   }
-};
-
-export default getProductDetails;
+}
