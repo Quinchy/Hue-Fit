@@ -1,26 +1,42 @@
-import prisma from '@/utils/helpers';
+import prisma from "@/utils/helpers";
 
 const addToCart = async (req, res) => {
+  // Allow calls from your Ionic app origin
   res.setHeader("Access-Control-Allow-Origin", "http://localhost:8100");
-  res.setHeader("Access-Control-Allow-Methods", "GET,OPTIONS");
+  // Allow POST and preflight OPTIONS
+  res.setHeader("Access-Control-Allow-Methods", "POST,OPTIONS");
   res.setHeader("Access-Control-Allow-Headers", "Content-Type,Authorization");
-  if (req.method !== 'POST') {
-    return res.status(405).json({ message: 'Method not allowed' });
+
+  // Handle CORS preflight
+  if (req.method === "OPTIONS") {
+    return res.status(200).end();
   }
 
-  const { productId, productVariantId, productVariantSizeId, quantity, shopId, userId } = req.body;
+  if (req.method !== "POST") {
+    return res.status(405).json({ message: "Method not allowed" });
+  }
+
+  const {
+    productId,
+    productVariantId,
+    productVariantSizeId,
+    quantity,
+    shopId,
+    userId,
+  } = req.body;
 
   if (!userId) {
-    return res.status(400).json({ message: 'User ID is required' });
+    return res.status(400).json({ message: "User ID is required" });
   }
 
   try {
     const sizeExists = await prisma.productVariantSize.findUnique({
       where: { id: productVariantSizeId },
     });
-
     if (!sizeExists) {
-      return res.status(400).json({ message: 'Invalid product variant size ID.' });
+      return res
+        .status(400)
+        .json({ message: "Invalid product variant size ID." });
     }
 
     let cart = await prisma.cart.findFirst({
@@ -45,13 +61,15 @@ const addToCart = async (req, res) => {
     });
 
     if (existingCartItem) {
-      const updatedCartItem = await prisma.cartItem.update({
+      const updated = await prisma.cartItem.update({
         where: { id: existingCartItem.id },
         data: { quantity: existingCartItem.quantity + quantity },
       });
-      return res.status(200).json({ message: 'Cart item updated', cartItem: updatedCartItem });
+      return res
+        .status(200)
+        .json({ message: "Cart item updated", cartItem: updated });
     } else {
-      const newCartItem = await prisma.cartItem.create({
+      const created = await prisma.cartItem.create({
         data: {
           cartId: cart.id,
           shopId,
@@ -61,11 +79,13 @@ const addToCart = async (req, res) => {
           quantity,
         },
       });
-      return res.status(200).json({ message: 'Cart item added', cartItem: newCartItem });
+      return res
+        .status(200)
+        .json({ message: "Cart item added", cartItem: created });
     }
   } catch (error) {
-    console.error('Error adding to cart:', error);
-    return res.status(500).json({ message: 'Internal server error' });
+    console.error("Error adding to cart:", error);
+    return res.status(500).json({ message: "Internal server error" });
   }
 };
 

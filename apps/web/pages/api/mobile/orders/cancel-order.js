@@ -1,9 +1,16 @@
 import prisma from "@/utils/helpers";
 
 export default async function handler(req, res) {
+  // CORS
   res.setHeader("Access-Control-Allow-Origin", "http://localhost:8100");
-  res.setHeader("Access-Control-Allow-Methods", "GET,OPTIONS");
+  res.setHeader("Access-Control-Allow-Methods", "POST,OPTIONS");
   res.setHeader("Access-Control-Allow-Headers", "Content-Type,Authorization");
+
+  // Preflight
+  if (req.method === "OPTIONS") {
+    return res.status(200).end();
+  }
+
   if (req.method !== "POST") {
     return res
       .status(405)
@@ -11,7 +18,6 @@ export default async function handler(req, res) {
   }
 
   const { orderId, askingForCancellation, cancellationMessage } = req.body;
-
   if (!orderId) {
     return res.status(400).json({ message: "orderId is required." });
   }
@@ -19,7 +25,7 @@ export default async function handler(req, res) {
   try {
     // Retrieve the order along with its OrderItems.
     const order = await prisma.order.findUnique({
-      where: { id: orderId },
+      where: { id: Number(orderId) },
       include: { OrderItems: true },
     });
 
@@ -28,83 +34,75 @@ export default async function handler(req, res) {
     }
 
     if (order.status === "PENDING") {
-      // For each OrderItem, update inventory:
-      for (const orderItem of order.OrderItems) {
+      // Restock each OrderItem
+      for (const item of order.OrderItems) {
         await prisma.productVariantSize.update({
-          where: { id: orderItem.productVariantSizeId },
-          data: {
-            quantity: { increment: orderItem.quantity },
-          },
+          where: { id: item.productVariantSizeId },
+          data: { quantity: { increment: item.quantity } },
         });
-
         await prisma.productVariant.update({
-          where: { id: orderItem.productVariantId },
-          data: {
-            totalQuantity: { increment: orderItem.quantity },
-          },
+          where: { id: item.productVariantId },
+          data: { totalQuantity: { increment: item.quantity } },
         });
-
         await prisma.product.update({
-          where: { id: orderItem.productId },
-          data: {
-            totalQuantity: { increment: orderItem.quantity },
-          },
+          where: { id: item.productId },
+          data: { totalQuantity: { increment: item.quantity } },
         });
       }
 
-      // Update the Order status to CANCELLED.
+      // Cancel the order
       await prisma.order.update({
-        where: { id: orderId },
+        where: { id: Number(orderId) },
         data: { status: "CANCELLED" },
       });
 
-      // Create notification for customer.
+      // Notify customer
       await prisma.notification.create({
         data: {
           title: "Order Cancellation",
-          message: `Your order: ${order.orderNo} has been cancelled.`,
+          message: `Your order ${order.orderNo} has been cancelled.`,
           userId: order.userId,
           shopId: order.shopId,
           read: false,
         },
       });
 
-      // Create notification for vendor.
+      // Notify vendor
       await prisma.notification.create({
         data: {
           title: "Order Cancelled",
-          message: `The order: ${order.orderNo} has been cancelled by the customer.`,
+          message: `Order ${order.orderNo} was cancelled by the customer.`,
           userId: null,
           shopId: order.shopId,
           read: false,
         },
       });
 
-      return res
-        .status(200)
-        .json({ message: "Order cancelled successfully." });
-    } else if (order.status === "PROCESSING") {
-      // For Processing orders, mark the cancellation request.
+      return res.status(200).json({ message: "Order cancelled successfully." });
+    }
+
+    if (order.status === "PROCESSING") {
+      // Mark cancellation request
       await prisma.order.update({
-        where: { id: orderId },
+        where: { id: Number(orderId) },
         data: {
           askingForCancel: true,
-          cancelReason: cancellationMessage,
+          cancelReason: cancellationMessage ?? "",
         },
       });
 
-      // Create notification for customer.
+      // Notify customer
       await prisma.notification.create({
         data: {
           title: "Order Cancellation Request",
-          message: `Your order cancellation for ${order.orderNo} has been send.`,
+          message: `Your cancellation request for ${order.orderNo} has been submitted.`,
           userId: order.userId,
           shopId: order.shopId,
           read: false,
         },
       });
 
-      // Create notification for vendor.
+      // Notify vendor
       await prisma.notification.create({
         data: {
           title: "Request for Order Cancellation",
@@ -115,12 +113,12 @@ export default async function handler(req, res) {
         },
       });
 
-      return res.status(200).json({
-        message: "Cancellation request submitted successfully.",
-      });
-    } else {
-      return res.status(400).json({ message: "Order cannot be cancelled." });
+      return res
+        .status(200)
+        .json({ message: "Cancellation request submitted successfully." });
     }
+
+    return res.status(400).json({ message: "Order cannot be cancelled." });
   } catch (error) {
     console.error("Error cancelling order:", error);
     return res.status(500).json({ message: "Internal server error." });
