@@ -49,7 +49,7 @@ export default async function handler(req, res) {
       return res.status(200).json({ shops: [] });
     }
 
-    const shopGroups: Record<string, any> = {};
+    const shopGroups = {};
     cart.CartItems.forEach((item) => {
       const shopId = item.Shop.id;
       if (!shopGroups[shopId]) {
@@ -59,15 +59,15 @@ export default async function handler(req, res) {
         id: item.id,
         product: {
           id: item.ProductVariant.Product?.id,
-          name: item.ProductVariant.Product?.name ?? "Unknown Product",
+          name: item.ProductVariant.Product?.name || "Unknown Product",
           price: item.ProductVariant.price,
-          color: item.ProductVariant.Color?.name ?? "Unknown Color",
-          colorHex: item.ProductVariant.Color?.hexcode ?? "#000000",
+          color: item.ProductVariant.Color?.name || "Unknown Color",
+          colorHex: item.ProductVariant.Color?.hexcode || "#000000",
           thumbnailURL:
-            item.ProductVariant.ProductVariantImage?.[0]?.imageURL ??
+            item.ProductVariant.ProductVariantImage?.[0]?.imageURL ||
             "https://via.placeholder.com/100",
         },
-        size: item.ProductVariantSize?.Size?.abbreviation ?? "N/A",
+        size: item.ProductVariantSize?.Size?.abbreviation || "N/A",
         quantity: item.quantity,
       });
     });
@@ -76,5 +76,7 @@ export default async function handler(req, res) {
   } catch (error) {
     console.error("Error fetching cart items:", error);
     return res.status(500).json({ message: "Failed to fetch cart items" });
+  } finally {
+    await prisma.$disconnect();
   }
 }

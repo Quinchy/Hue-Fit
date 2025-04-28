@@ -20,13 +20,13 @@ const createOrder = async (req, res) => {
     const userIdInt =
       typeof userId === "string" ? parseInt(userId, 10) : userId;
 
-    const notEnoughStock: number[] = [];
-    const createdOrders: any[] = [];
+    const notEnoughStock = [];
+    const createdOrders = [];
 
     for (const shopGroup of selectedItemsToCheckout) {
       const shopIdInt = parseInt(shopGroup.shopId, 10);
-      const orderItemsData: any[] = [];
-      const cartItemsToRemove: number[] = [];
+      const orderItemsData = [];
+      const cartItemsToRemove = [];
       const isReserveMode = paymentMethod === "RESERVED";
 
       for (const cartItemId of shopGroup.items) {
@@ -122,8 +122,8 @@ const createOrder = async (req, res) => {
           },
         });
         if (pv) {
-          const colorName = pv.Color?.name ?? "Unknown Color";
-          const productName = pv.Product?.name ?? "Unknown Product";
+          const colorName = pv.Color?.name || "Unknown Color";
+          const productName = pv.Product?.name || "Unknown Product";
           await prisma.notification.create({
             data: {
               title: isReserveMode ? "Product Reserve" : "Product Order",
