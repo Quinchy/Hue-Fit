@@ -1,9 +1,9 @@
 // src/screens/GetStartedScreen.tsx
 import React from 'react';
 import { View, Image } from 'react-native';
-import StylizedButton from '../components/StylizedButton';
 import { useNavigation } from '@react-navigation/native';
 import BackgroundProvider from '../providers/BackgroundProvider';
+import DefaultButton from "../components/Button";
 
 export default function GetStartedScreen() {
   const navigation = useNavigation();
@@ -13,15 +13,15 @@ export default function GetStartedScreen() {
       <View
         style={{
           flex: 1,
-          justifyContent: 'space-between',
-          alignItems: 'center',
+          justifyContent: "space-between",
+          alignItems: "center",
           paddingVertical: 40,
           paddingHorizontal: 30,
         }}
       >
         {/* Logo at the top */}
         <Image
-          source={require('../assets/icons/hue-fit-logo.png')}
+          source={require("../assets/icons/hue-fit-logo.png")}
           style={{
             width: 60,
             height: 60,
@@ -31,8 +31,8 @@ export default function GetStartedScreen() {
         />
 
         {/* Button at the bottom */}
-        <StylizedButton
-          title="Get Started"
+        <DefaultButton
+          title="GET STARTED"
           onPress={() => navigation.navigate('Login')}
         />
       </View>

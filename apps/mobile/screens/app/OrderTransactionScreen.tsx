@@ -28,6 +28,7 @@ const OrderList = ({ status, ordersData, refreshOrders }) => {
   const orders = ordersData[status] || [];
   const [cancelModalVisible, setCancelModalVisible] = useState(false);
   const [selectedOrder, setSelectedOrder] = useState(null);
+  
   // For PROCESSING orders cancellation reason state.
   const [cancelReason, setCancelReason] = useState("");
   const [customReason, setCustomReason] = useState("");

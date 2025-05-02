@@ -11,10 +11,16 @@ import Cropper from "react-easy-crop";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog";
 import { useFormik } from "formik";
 import * as Yup from "yup";
-import Loading from "@/components/ui/loading";
+import dynamic from "next/dynamic";
+
 
 import { Alert, AlertTitle, AlertDescription } from "@/components/ui/alert";
 import { X, CircleCheck, CircleAlert } from "lucide-react";
+
+const Loading = dynamic(
+  () => import("@/components/ui/loading"),
+  { ssr: false }
+);
 
 const getCroppedImg = async (imageSrc, crop, croppedAreaPixels) => {
   const image = new window.Image();

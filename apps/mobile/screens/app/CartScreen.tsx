@@ -6,7 +6,6 @@ import {
   Text,
   Box,
   Pressable,
-  useToast,
   Actionsheet,
   Radio,
 } from "native-base";
@@ -26,12 +25,11 @@ import { SafeAreaView } from "react-native-safe-area-context";
 import { MaterialIcons } from "@expo/vector-icons";
 import { useFocusEffect } from "@react-navigation/native";
 import LoadingSpinner from "../../components/Loading";
+import Alert, { AlertStatus } from "../../components/Alert";
 import { EXPO_PUBLIC_API_URL } from "@env";
-import { useTheme, applyOpacity } from "../../providers/ThemeProvider";
+import { colors, applyOpacity } from "../../constants/colors";
 
 const CartScreen = ({ navigation, route }) => {
-  const { theme } = useTheme();
-  const toast = useToast();
   const [shopGroups, setShopGroups] = useState([]);
   const [loading, setLoading] = useState(true);
   const [hasLoadedOnce, setHasLoadedOnce] = useState(false);
@@ -45,25 +43,26 @@ const CartScreen = ({ navigation, route }) => {
   const [itemToDelete, setItemToDelete] = useState(null);
   const [isDeleteConfirmOpen, setIsDeleteConfirmOpen] = useState(false);
 
-  const compareData = (oldData, newData) => {
-    return JSON.stringify(oldData) === JSON.stringify(newData);
-  };
+  // alert state
+  const [alert, setAlert] = useState<{
+    message: string;
+    status?: AlertStatus;
+  } | null>(null);
+
+  const compareData = (oldData, newData) =>
+    JSON.stringify(oldData) === JSON.stringify(newData);
 
   const fetchCartItems = async (isInitialLoad = false) => {
     try {
-      if (isInitialLoad) {
-        setLoading(true);
-      }
-      const userId = await AsyncStorage.getItem("user").then((user) =>
-        user ? JSON.parse(user).id : null
+      if (isInitialLoad) setLoading(true);
+      const userId = await AsyncStorage.getItem("user").then((u) =>
+        u ? JSON.parse(u).id : null
       );
       if (!userId) {
         setShopGroups([]);
-        setLoading(false);
         return;
       }
-
-      const response = await fetch(
+      const res = await fetch(
         `${EXPO_PUBLIC_API_URL}/api/mobile/cart/get-cart-items`,
         {
           method: "POST",
@@ -71,18 +70,16 @@ const CartScreen = ({ navigation, route }) => {
           body: JSON.stringify({ userId }),
         }
       );
-
-      if (response.ok) {
-        const data = await response.json();
+      if (res.ok) {
+        const data = await res.json();
         const newShops = data.shops || [];
-
         if (!compareData(shopGroups, newShops)) {
           const initialSelection = {};
           newShops.forEach((shop) => {
             initialSelection[shop.shop.id] = {
               isSelected: false,
-              items: shop.items.reduce((acc, item) => {
-                acc[item.id] = false;
+              items: shop.items.reduce((acc, it) => {
+                acc[it.id] = false;
                 return acc;
               }, {}),
             };
@@ -93,14 +90,15 @@ const CartScreen = ({ navigation, route }) => {
       } else {
         setShopGroups([]);
       }
-    } catch (error) {
+    } catch (e) {
+      console.error("Error fetching cart items:", e);
       setShopGroups([]);
-      console.error("Error fetching cart items:", error);
     } finally {
       if (isInitialLoad) {
         setLoading(false);
         setHasLoadedOnce(true);
       }
+      setRefreshing(false);
     }
   };
 
@@ -110,27 +108,22 @@ const CartScreen = ({ navigation, route }) => {
 
   useFocusEffect(
     useCallback(() => {
-      if (hasLoadedOnce) {
-        fetchCartItems(false);
-      }
+      if (hasLoadedOnce) fetchCartItems(false);
     }, [hasLoadedOnce])
   );
 
-  const handleRefresh = async () => {
+  const handleRefresh = () => {
     setRefreshing(true);
-    await fetchCartItems(false);
-    setRefreshing(false);
+    fetchCartItems(false);
   };
 
   const toggleShopSelection = (shopId) => {
     setSelectedItems((prev) => {
       const updated = { ...prev };
-      const shop = updated[shopId];
-      const isShopSelected = !shop.isSelected;
-      shop.isSelected = isShopSelected;
-      Object.keys(shop.items).forEach((itemId) => {
-        shop.items[itemId] = isShopSelected;
-      });
+      const s = updated[shopId];
+      const selectAll = !s.isSelected;
+      s.isSelected = selectAll;
+      Object.keys(s.items).forEach((id) => (s.items[id] = selectAll));
       return updated;
     });
   };
@@ -138,34 +131,40 @@ const CartScreen = ({ navigation, route }) => {
   const toggleItemSelection = (shopId, itemId) => {
     setSelectedItems((prev) => {
       const updated = { ...prev };
-      updated[shopId].items[itemId] = !updated[shopId].items[itemId];
-      const allSelected = Object.values(updated[shopId].items).every(
-        (isSelected) => isSelected
-      );
-      updated[shopId].isSelected = allSelected;
+      const s = updated[shopId];
+      s.items[itemId] = !s.items[itemId];
+      s.isSelected = Object.values(s.items).every(Boolean);
       return updated;
     });
   };
 
-  const updateQuantity = async (item, newQuantity) => {
-    try {
-      await fetch(
-        `${EXPO_PUBLIC_API_URL}/api/mobile/cart/update-cart-item-quantity`,
-        {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ cartItemId: item.id, quantity: newQuantity }),
-        }
-      );
-      fetchCartItems(false);
-    } catch (error) {
-      console.error("Error updating quantity:", error);
-      toast.show({
-        description: "Failed to update item quantity.",
-        duration: 3000,
-        placement: "top",
+  // optimistic update + debounce
+  const updateQuantity = (cartItemId, qty) => {
+    // optimistic
+    setShopGroups((groups) =>
+      groups.map((g) => ({
+        ...g,
+        items: g.items.map((it) =>
+          it.id === cartItemId ? { ...it, quantity: qty } : it
+        ),
+      }))
+    );
+    // API
+    fetch(`${EXPO_PUBLIC_API_URL}/api/mobile/cart/update-cart-item-quantity`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ cartItemId, quantity: qty }),
+    })
+      .then((r) => {
+        if (!r.ok) throw new Error();
+      })
+      .catch(() => {
+        setAlert({
+          message: "Failed to update item quantity.",
+          status: "error",
+        });
+        fetchCartItems(false);
       });
-    }
   };
 
   const deleteCartItem = async (item) => {
@@ -176,243 +175,140 @@ const CartScreen = ({ navigation, route }) => {
         body: JSON.stringify({ cartItemId: item.id }),
       });
       fetchCartItems(false);
-      toast.show({
-        description: "Item removed from cart.",
-        duration: 3000,
-        placement: "top",
-      });
-    } catch (error) {
-      console.error("Error deleting cart item:", error);
-      toast.show({
-        description: "Failed to remove item from cart.",
-        duration: 3000,
-        placement: "top",
+      setAlert({ message: "Item removed from cart.", status: "success" });
+    } catch (e) {
+      console.error(e);
+      setAlert({
+        message: "Failed to remove item from cart.",
+        status: "error",
       });
     }
   };
 
-  const CustomCheckbox = ({ isChecked, onPress, accessibilityLabel }) => (
-    <Pressable
-      onPress={onPress}
-      accessibilityLabel={accessibilityLabel}
-      style={{
-        width: 18,
-        height: 18,
-        borderRadius: 12,
-        borderWidth: 1,
-        borderColor: isChecked ? theme.colors.white : theme.colors.greyWhite,
-        backgroundColor: isChecked ? theme.colors.white : "transparent",
-        justifyContent: "center",
-        alignItems: "center",
-      }}
-      android_ripple={{ color: "rgba(255, 255, 255, 0.3)", borderless: true }}
-    >
-      {isChecked && (
-        <MaterialIcons name="check" size={13} color={theme.colors.dark} />
-      )}
-    </Pressable>
-  );
-
-  // Replace the QuantityControl component in your CartScreen.js with the following code:
-
   const QuantityControl = ({ item, onDelete }) => {
-    // Use a string state for the input so you can allow the field to be temporarily empty.
-    const [localQuantity, setLocalQuantity] = useState(
-      item.quantity.toString()
-    );
-    const updateTimerRef = useRef(null);
+    const [localQty, setLocalQty] = useState(item.quantity.toString());
+    const timer = useRef<NodeJS.Timeout | null>(null);
 
     useEffect(() => {
-      setLocalQuantity(item.quantity.toString());
+      setLocalQty(item.quantity.toString());
     }, [item.quantity]);
 
-    // Debounce the update so rapid changes don't conflict.
-    const debouncedUpdate = (newQty) => {
-      if (updateTimerRef.current) clearTimeout(updateTimerRef.current);
-      updateTimerRef.current = setTimeout(() => {
-        updateQuantity(item, newQty);
-      }, 300);
+    const debounceUpdate = (n) => {
+      if (timer.current) clearTimeout(timer.current);
+      timer.current = setTimeout(() => updateQuantity(item.id, n), 500);
     };
 
-    const handleDecrement = () => {
-      let currentQty = parseInt(localQuantity);
-      if (isNaN(currentQty)) {
-        currentQty = 0;
-      }
-      const newQty = currentQty - 1;
-      if (newQty < 1) {
-        // Only delete if user explicitly confirms by blurring an empty field,
-        // rather than during rapid interaction.
-        onDelete(item);
-      } else {
-        setLocalQuantity(newQty.toString());
-        debouncedUpdate(newQty);
+    const dec = () => {
+      let n = parseInt(localQty) || 0;
+      n = n - 1;
+      if (n < 1) onDelete(item);
+      else {
+        setLocalQty(n.toString());
+        debounceUpdate(n);
       }
     };
 
-    const handleIncrement = () => {
-      let currentQty = parseInt(localQuantity);
-      if (isNaN(currentQty)) {
-        currentQty = 0;
-      }
-      if (currentQty < 99) {
-        const newQty = currentQty + 1;
-        setLocalQuantity(newQty.toString());
-        debouncedUpdate(newQty);
+    const inc = () => {
+      let n = parseInt(localQty) || 0;
+      if (n < 99) {
+        n = n + 1;
+        setLocalQty(n.toString());
+        debounceUpdate(n);
       }
     };
 
-    const handleTextChange = (text) => {
-      // Allow the field to be empty without an immediate deletion
-      if (text === "") {
-        setLocalQuantity(text);
-        return;
-      }
-      // Remove non-numeric characters
-      const numericText = text.replace(/[^0-9]/g, "");
-      let numericValue = parseInt(numericText);
-      if (isNaN(numericValue)) {
-        numericValue = 0;
-      }
-      numericValue = Math.min(numericValue, 99);
-      setLocalQuantity(numericValue.toString());
-      debouncedUpdate(numericValue);
+    const onChange = (txt) => {
+      if (txt === "") return setLocalQty("");
+      let num = parseInt(txt.replace(/[^0-9]/g, "")) || 0;
+      num = Math.min(num, 99);
+      setLocalQty(num.toString());
+      debounceUpdate(num);
     };
 
-    const handleBlur = () => {
-      let numericValue = parseInt(localQuantity);
-      if (isNaN(numericValue) || numericValue < 1) {
-        // If the input is empty or below 1 after editing, set it back to 1
-        numericValue = 1;
-      }
-      setLocalQuantity(numericValue.toString());
-      // Ensure we update the backend on blur (this call won't be debounced)
-      updateQuantity(item, numericValue);
+    const onBlur = () => {
+      let num = parseInt(localQty) || 1;
+      if (num < 1) num = 1;
+      setLocalQty(num.toString());
+      updateQuantity(item.id, num);
     };
 
     return (
       <HStack alignItems="center" space={2}>
-        {parseInt(localQuantity) === 1 ? (
-          <Pressable
-            onPress={() => onDelete(item)}
-            style={{
-              backgroundColor: theme.colors.white,
-              borderRadius: 2,
-              padding: 5,
-            }}
-            android_ripple={{ color: "rgba(0, 0, 0, 0.5)", borderless: false }}
-          >
-            <Trash2 color={theme.colors.dark} size={14} strokeWidth={2} />
+        {parseInt(localQty) === 1 ? (
+          <Pressable onPress={() => onDelete(item)} style={styles.qtyBtn}>
+            <Trash2 color={colors.dark} size={14} strokeWidth={2} />
           </Pressable>
         ) : (
-          <Pressable
-            onPress={handleDecrement}
-            style={{
-              backgroundColor: theme.colors.white,
-              borderRadius: 2,
-              padding: 5,
-            }}
-            android_ripple={{ color: "rgba(0, 0, 0, 0.5)", borderless: false }}
-          >
-            <Minus color={theme.colors.dark} size={14} strokeWidth={2} />
+          <Pressable onPress={dec} style={styles.qtyBtn}>
+            <Minus color={colors.dark} size={14} strokeWidth={2} />
           </Pressable>
         )}
         <TextInput
-          style={{
-            color: theme.colors.white,
-            fontSize: 16,
-            textAlign: "center",
-            minWidth: 10,
-          }}
+          style={styles.qtyInput}
           keyboardType="numeric"
-          value={localQuantity}
-          onChangeText={handleTextChange}
-          onBlur={handleBlur}
+          value={localQty}
+          onChangeText={onChange}
+          onBlur={onBlur}
         />
-        <Pressable
-          onPress={handleIncrement}
-          style={{
-            backgroundColor: theme.colors.white,
-            borderRadius: 2,
-            padding: 5,
-          }}
-          android_ripple={{ color: "rgba(0, 0, 0, 0.5)", borderless: false }}
-        >
-          <Plus color={theme.colors.dark} size={14} strokeWidth={2} />
+        <Pressable onPress={inc} style={styles.qtyBtn}>
+          <Plus color={colors.dark} size={14} strokeWidth={2} />
         </Pressable>
       </HStack>
     );
   };
 
   let total = 0;
-  shopGroups.forEach((group) => {
-    group.items.forEach((item) => {
-      if (selectedItems[group.shop.id]?.items[item.id]) {
-        total += item.quantity * item.product.price;
+  shopGroups.forEach((g) =>
+    g.items.forEach((it) => {
+      if (selectedItems[g.shop.id]?.items[it.id]) {
+        total += it.quantity * it.product.price;
       }
-    });
-  });
+    })
+  );
 
-  const proceedCheckout = async (reserveMode = false) => {
+  const proceedCheckout = async (reserve = false) => {
     setCheckoutLoading(true);
     try {
-      const userId = await AsyncStorage.getItem("user").then((user) =>
-        user ? JSON.parse(user).id : null
+      const userId = await AsyncStorage.getItem("user").then((u) =>
+        u ? JSON.parse(u).id : null
       );
-
-      const selectedItemsToCheckout = Object.entries(selectedItems).reduce(
-        (acc, [shopId, shop]) => {
-          const picked = Object.entries(shop.items)
-            .filter(([, isSelected]) => isSelected)
-            .map(([itemId]) => itemId);
-          if (picked.length > 0) acc.push({ shopId, items: picked });
-          return acc;
-        },
-        []
-      );
-
-      const response = await fetch(
+      const selected = Object.entries(selectedItems)
+        .map(([sid, shop]) => ({
+          shopId: sid,
+          items: Object.entries(shop.items)
+            .filter(([, sel]) => sel)
+            .map(([iid]) => iid),
+        }))
+        .filter((x) => x.items.length);
+      const res = await fetch(
         `${EXPO_PUBLIC_API_URL}/api/mobile/orders/create-order`,
         {
           method: "POST",
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify({
             userId,
-            selectedItemsToCheckout,
-            paymentMethod: reserveMode ? "RESERVED" : paymentMethod,
+            selectedItemsToCheckout: selected,
+            paymentMethod: reserve ? "RESERVED" : paymentMethod,
           }),
         }
       );
-
-      if (!response.ok) {
-        throw new Error("Failed to create order.");
-      }
-
-      const data = await response.json();
-      console.log("Order response:", data);
-
-      if (
-        data.notEnoughStock &&
-        data.notEnoughStock.length > 0 &&
-        !reserveMode
-      ) {
+      if (!res.ok) throw new Error();
+      const data = await res.json();
+      if (data.notEnoughStock?.length && !reserve) {
         setReserveItems(data.notEnoughStock);
         setShowReserveDialog(true);
       } else {
-        toast.show({
-          description: "Order processed successfully.",
-          duration: 3000,
-          placement: "top",
+        setAlert({
+          message: "Order processed successfully.",
+          status: "success",
         });
       }
-
       fetchCartItems(false);
-    } catch (error) {
-      console.error(error);
-      toast.show({
-        description: "An error occurred while processing your order.",
-        duration: 3000,
-        placement: "top",
+    } catch (e) {
+      console.error(e);
+      setAlert({
+        message: "An error occurred while processing your order.",
+        status: "error",
       });
     } finally {
       setCheckoutLoading(false);
@@ -421,58 +317,41 @@ const CartScreen = ({ navigation, route }) => {
   };
 
   const handleCheckout = () => {
-    const selectedItemsToCheckout = Object.entries(selectedItems).reduce(
-      (acc, [shopId, shop]) => {
-        const picked = Object.entries(shop.items)
-          .filter(([, isSelected]) => isSelected)
-          .map(([itemId]) => itemId);
-        if (picked.length > 0) acc.push({ shopId, items: picked });
-        return acc;
-      },
-      []
+    const anySelected = Object.values(selectedItems).some((s) =>
+      Object.values(s.items).some(Boolean)
     );
-
-    if (selectedItemsToCheckout.length === 0) {
-      toast.show({
-        description: "You should at least select 1 item from your cart.",
-        duration: 3000,
-        placement: "top",
-      });
+    if (!anySelected) {
+      setAlert({ message: "Select at least one item.", status: "info" });
       return;
     }
-
     setIsPaymentMethodOpen(true);
   };
 
-  const confirmDeleteItem = (item) => {
-    setItemToDelete(item);
+  const confirmDeleteItem = (it) => {
+    setItemToDelete(it);
     setIsDeleteConfirmOpen(true);
   };
 
   const handleDeleteConfirmed = () => {
-    if (itemToDelete) {
-      deleteCartItem(itemToDelete);
-      setItemToDelete(null);
-    }
+    if (itemToDelete) deleteCartItem(itemToDelete);
     setIsDeleteConfirmOpen(false);
   };
-
-  const handleDeleteCancelled = () => {
-    setItemToDelete(null);
-    setIsDeleteConfirmOpen(false);
-  };
+  const handleDeleteCancelled = () => setIsDeleteConfirmOpen(false);
 
   return (
     <SafeAreaView
-      style={[styles.safeArea, { backgroundColor: theme.colors.darkGrey }]}
+      style={[styles.safeArea, { backgroundColor: colors.darkGrey }]}
     >
+      {alert && (
+        <Alert
+          message={alert.message}
+          status={alert.status}
+          onClose={() => setAlert(null)}
+        />
+      )}
       {loading && !hasLoadedOnce ? (
         <View style={styles.loadingContainerFull}>
-          <LoadingSpinner
-            size={300}
-            messages="Loading cart..."
-            visible={true}
-          />
+          <LoadingSpinner size={300} messages="Loading cart..." visible />
         </View>
       ) : (
         <ScrollView
@@ -486,21 +365,16 @@ const CartScreen = ({ navigation, route }) => {
               <Pressable
                 onPress={() => navigation.goBack()}
                 style={styles.backButton}
-                android_ripple={{
-                  color: "rgba(255, 255, 255, 0.3)",
-                  radius: 20,
-                  borderless: true,
-                }}
               >
-                <ArrowLeft color={theme.colors.white} size={24} />
+                <ArrowLeft color={colors.white} size={24} />
               </Pressable>
             )}
-            <Text style={[styles.cartTitle, { color: theme.colors.white }]}>
+            <Text style={[styles.cartTitle, { color: colors.white }]}>
               My Cart
             </Text>
           </HStack>
 
-          <VStack>
+          <VStack mb={75}>
             {shopGroups.length > 0 ? (
               shopGroups.map((group) => (
                 <VStack
@@ -515,26 +389,50 @@ const CartScreen = ({ navigation, route }) => {
                     paddingRight={2}
                   >
                     <HStack alignItems="center" space={1}>
-                      <Store
-                        size={20}
-                        strokeWidth={2}
-                        color={theme.colors.white}
-                      />
-                      <Text
-                        style={[styles.shopName, { color: theme.colors.white }]}
-                      >
+                      <Store size={20} strokeWidth={2} color={colors.white} />
+                      <Text style={[styles.shopName, { color: colors.white }]}>
                         {group.shop.name}
                       </Text>
                     </HStack>
-                    <CustomCheckbox
-                      isChecked={
-                        selectedItems[group.shop.id]?.isSelected || false
-                      }
-                      onPress={() => toggleShopSelection(group.shop.id)}
-                      accessibilityLabel={`Select all items from ${group.shop.name}`}
-                    />
-                  </HStack>
 
+                    <Pressable
+                      onPress={() => toggleShopSelection(group.shop.id)}
+                      android_ripple={{
+                        color: "rgba(255,255,255,0.3)",
+                        borderless: true,
+                        radius: 12,
+                      }}
+                    >
+                      <View
+                        style={{
+                          width: 22,
+                          height: 22,
+                          borderRadius: 14,
+                          borderWidth: 1,
+                          borderColor: colors.greyWhite, // outer outline
+                          alignItems: "center",
+                          justifyContent: "center",
+                        }}
+                      >
+                        <Box
+                          style={{
+                            width: 18,
+                            height: 18,
+                            borderRadius: 12,
+                            borderWidth: 2,
+                            borderColor: selectedItems[group.shop.id]
+                              ?.isSelected
+                              ? colors.darkGrey // inner outline when selected
+                              : "transparent",
+                            backgroundColor: selectedItems[group.shop.id]
+                              ?.isSelected
+                              ? colors.white
+                              : "transparent",
+                          }}
+                        />
+                      </View>
+                    </Pressable>
+                  </HStack>
                   {group.items.map((item) => (
                     <HStack
                       key={item.id}
@@ -556,68 +454,97 @@ const CartScreen = ({ navigation, route }) => {
                         />
                       </Pressable>
                       <VStack flex={1}>
-                        <VStack>
-                          <Text
-                            style={[
-                              styles.productName,
-                              { color: theme.colors.white },
-                            ]}
-                            numberOfLines={1}
-                          >
-                            {item.product.name}
-                          </Text>
-                          <Text
-                            style={[
-                              styles.productPrice,
-                              { color: theme.colors.white },
-                            ]}
-                          >
-                            PHP {item.product.price}
-                          </Text>
-                        </VStack>
-                        <VStack flex={1}>
-                          <Text
-                            style={[
-                              styles.productSize,
-                              { color: theme.colors.grey },
-                            ]}
-                          >{`Size: ${item.size}`}</Text>
-                          <HStack
-                            justifyContent="space-between"
-                            alignItems="center"
-                          >
-                            <HStack alignItems="center" space={1}>
-                              <View
-                                style={[
-                                  styles.colorIndicator,
-                                  { backgroundColor: item.product.colorHex },
-                                ]}
-                              />
-                              <Text
-                                style={[
-                                  styles.productColor,
-                                  { color: theme.colors.grey },
-                                ]}
-                              >
-                                {item.product.color}
-                              </Text>
-                            </HStack>
-                            <QuantityControl
-                              item={item}
-                              onDelete={confirmDeleteItem}
+                        <Text
+                          style={[styles.productName, { color: colors.white }]}
+                          numberOfLines={1}
+                        >
+                          {item.product.name}
+                        </Text>
+                        <Text
+                          style={[styles.productPrice, { color: colors.white }]}
+                        >
+                          PHP {item.product.price}
+                        </Text>
+                        <Text
+                          style={[styles.productSize, { color: colors.grey }]}
+                        >
+                          Size: {item.size}
+                        </Text>
+                        <HStack
+                          justifyContent="space-between"
+                          alignItems="center"
+                        >
+                          <HStack alignItems="center" space={1}>
+                            <View
+                              style={[
+                                styles.colorIndicator,
+                                { backgroundColor: item.product.colorHex },
+                              ]}
                             />
+                            <Text
+                              style={[
+                                styles.productColor,
+                                { color: colors.grey },
+                              ]}
+                            >
+                              {item.product.color}
+                            </Text>
                           </HStack>
-                        </VStack>
+                          <QuantityControl
+                            item={item}
+                            onDelete={confirmDeleteItem}
+                          />
+                        </HStack>
                       </VStack>
-                      <CustomCheckbox
-                        isChecked={
-                          selectedItems[group.shop.id]?.items[item.id] || false
-                        }
+                      <Pressable
                         onPress={() =>
                           toggleItemSelection(group.shop.id, item.id)
                         }
-                        accessibilityLabel={`Select ${item.product.name}`}
-                      />
+                        android_ripple={{
+                          color: "rgba(255,255,255,0.3)",
+                          borderless: false,
+                          radius: 12,
+                        }}
+                        style={{
+                          alignSelf: "flex-start", // don't stretch
+                          width: 22,
+                          height: 22,
+                          borderRadius: 14,
+                          overflow: "hidden", // clip the ripple
+                          alignItems: "center",
+                          justifyContent: "center",
+                        }}
+                      >
+                        <View
+                          style={{
+                            width: 22,
+                            height: 22,
+                            borderRadius: 14,
+                            borderWidth: 1,
+                            borderColor: colors.greyWhite,
+                            alignItems: "center",
+                            justifyContent: "center",
+                          }}
+                        >
+                          <Box
+                            style={{
+                              width: 18,
+                              height: 18,
+                              borderRadius: 12,
+                              borderWidth: 2,
+                              borderColor: selectedItems[group.shop.id]?.items[
+                                item.id
+                              ]
+                                ? colors.darkGrey
+                                : "transparent",
+                              backgroundColor: selectedItems[group.shop.id]
+                                ?.items[item.id]
+                                ? colors.white
+                                : "transparent",
+                            }}
+                          />
+                        </View>
+                      </Pressable>
                     </HStack>
                   ))}
                 </VStack>
@@ -636,7 +563,7 @@ const CartScreen = ({ navigation, route }) => {
                 <Text
                   style={[
                     styles.emptyCartTitle,
-                    { color: applyOpacity(theme.colors.greyWhite, 0.75) },
+                    { color: applyOpacity(colors.greyWhite, 0.75) },
                   ]}
                 >
                   Your cart is empty
@@ -644,7 +571,7 @@ const CartScreen = ({ navigation, route }) => {
                 <Text
                   style={[
                     styles.emptyCartSubtitle,
-                    { color: applyOpacity(theme.colors.greyWhite, 0.5) },
+                    { color: applyOpacity(colors.greyWhite, 0.5) },
                   ]}
                 >
                   Looks like you haven't added any items yet. Explore products
@@ -660,14 +587,10 @@ const CartScreen = ({ navigation, route }) => {
                   alignItems="center"
                   paddingY={4}
                 >
-                  <Text
-                    style={[styles.totalLabel, { color: theme.colors.white }]}
-                  >
+                  <Text style={[styles.totalLabel, { color: colors.white }]}>
                     Total:
                   </Text>
-                  <Text
-                    style={[styles.totalAmount, { color: theme.colors.white }]}
-                  >
+                  <Text style={[styles.totalAmount, { color: colors.white }]}>
                     PHP {total.toFixed(2)}
                   </Text>
                 </HStack>
@@ -679,14 +602,14 @@ const CartScreen = ({ navigation, route }) => {
                       styles.checkoutButton,
                       {
                         backgroundColor: checkoutLoading
-                          ? theme.colors.grey
-                          : theme.colors.white,
+                          ? colors.grey
+                          : colors.white,
                       },
                     ]}
                   >
                     {checkoutLoading ? (
                       <HStack space={2} alignItems="center">
-                        <ActivityIndicator color={theme.colors.dark} />
+                        <ActivityIndicator color={colors.dark} />
                         <Text style={styles.checkoutButtonText}>
                           Checking-out...
                         </Text>
@@ -702,6 +625,7 @@ const CartScreen = ({ navigation, route }) => {
         </ScrollView>
       )}
 
+      {/* Payment Actionsheet */}
       <Actionsheet
         isOpen={isPaymentMethodOpen}
         onClose={() => setIsPaymentMethodOpen(false)}
@@ -709,25 +633,22 @@ const CartScreen = ({ navigation, route }) => {
         <Actionsheet.Content
           style={[
             styles.actionsheetContent,
-            { backgroundColor: theme.colors.darkGrey },
+            { backgroundColor: colors.darkGrey },
           ]}
         >
-          <Text
-            style={[styles.actionsheetTitle, { color: theme.colors.white }]}
-          >
+          <Text style={[styles.actionsheetTitle, { color: colors.white }]}>
             Select a Payment Method
           </Text>
           <Radio.Group
             name="paymentMethod"
-            accessibilityLabel="Payment Method"
             value={paymentMethod}
-            onChange={(nextValue) => setPaymentMethod(nextValue)}
+            onChange={(val) => setPaymentMethod(val)}
           >
             <VStack space={2} width="100%" paddingX={5}>
               <Box
                 style={[
                   styles.paymentMethodBox,
-                  { backgroundColor: theme.colors.grey },
+                  { backgroundColor: colors.grey },
                 ]}
               >
                 <Radio value="COD" colorScheme="gray">
@@ -744,16 +665,14 @@ const CartScreen = ({ navigation, route }) => {
             style={[
               styles.checkoutButton,
               {
-                backgroundColor: checkoutLoading
-                  ? theme.colors.grey
-                  : theme.colors.white,
+                backgroundColor: checkoutLoading ? colors.grey : colors.white,
                 marginTop: 20,
               },
             ]}
           >
             {checkoutLoading ? (
               <HStack space={2} alignItems="center">
-                <ActivityIndicator color={theme.colors.dark} />
+                <ActivityIndicator color={colors.dark} />
                 <Text style={styles.checkoutButtonText}>Processing...</Text>
               </HStack>
             ) : (
@@ -763,77 +682,64 @@ const CartScreen = ({ navigation, route }) => {
         </Actionsheet.Content>
       </Actionsheet>
 
-      {showReserveDialog && (
-        <Actionsheet
-          isOpen={showReserveDialog}
-          onClose={() => setShowReserveDialog(false)}
+      {/* Reserve Dialog */}
+      <Actionsheet
+        isOpen={showReserveDialog}
+        onClose={() => setShowReserveDialog(false)}
+      >
+        <Actionsheet.Content
+          style={[
+            styles.actionsheetContent,
+            { backgroundColor: colors.darkGrey },
+          ]}
         >
-          <Actionsheet.Content
+          <Text style={[styles.actionsheetTitle, { color: colors.white }]}>
+            Would you like to reserve this order?
+          </Text>
+          <Text style={[styles.reserveDialogText, { color: colors.white }]}>
+            When you choose to reserve your order, it will be placed under a
+            "Reserved" status. Reserved items, once back in stock, will
+            automatically proceed in order.
+          </Text>
+          <TouchableOpacity
+            onPress={() => {
+              setShowReserveDialog(false);
+              setTimeout(() => proceedCheckout(true), 300);
+            }}
             style={[
-              styles.actionsheetContent,
-              { backgroundColor: theme.colors.darkGrey },
+              styles.checkoutButton,
+              { backgroundColor: colors.white, marginTop: 5 },
             ]}
           >
-            <Text
-              style={[styles.actionsheetTitle, { color: theme.colors.white }]}
-            >
-              Would you like to reserve this order?
-            </Text>
-            <Text
-              style={[styles.reserveDialogText, { color: theme.colors.white }]}
-            >
-              When you choose to reserve your order, it will be placed under a
-              "Reserved" status. Reserved items, once back in stock, will
-              automatically proceed in order.
-            </Text>
-            <TouchableOpacity
-              onPress={() => {
-                setShowReserveDialog(false);
-                setTimeout(() => {
-                  proceedCheckout(true);
-                }, 300);
-              }}
-              style={[
-                styles.checkoutButton,
-                { backgroundColor: theme.colors.white, marginTop: 5 },
-              ]}
-            >
-              <Text style={styles.checkoutButtonText}>Proceed to Reserve</Text>
-            </TouchableOpacity>
-            <TouchableOpacity
-              onPress={() => {
-                setShowReserveDialog(false);
-              }}
-              style={[
-                styles.checkoutButton,
-                { backgroundColor: theme.colors.grey, marginTop: 5 },
-              ]}
-            >
-              <Text style={styles.cancelButtonText}>Cancel</Text>
-            </TouchableOpacity>
-          </Actionsheet.Content>
-        </Actionsheet>
-      )}
+            <Text style={styles.checkoutButtonText}>Proceed to Reserve</Text>
+          </TouchableOpacity>
+          <TouchableOpacity
+            onPress={() => setShowReserveDialog(false)}
+            style={[
+              styles.checkoutButton,
+              { backgroundColor: colors.grey, marginTop: 5 },
+            ]}
+          >
+            <Text style={styles.cancelButtonText}>Cancel</Text>
+          </TouchableOpacity>
+        </Actionsheet.Content>
+      </Actionsheet>
 
+      {/* Delete Confirmation */}
       <Actionsheet isOpen={isDeleteConfirmOpen} onClose={handleDeleteCancelled}>
         <Actionsheet.Content
           style={[
             styles.actionsheetContent,
-            { backgroundColor: theme.colors.darkGrey },
+            { backgroundColor: colors.darkGrey },
           ]}
         >
-          <Text
-            style={[styles.actionsheetTitle, { color: theme.colors.white }]}
-          >
+          <Text style={[styles.actionsheetTitle, { color: colors.white }]}>
             Are you sure you want to remove this item?
           </Text>
           <HStack space={4} justifyContent="center" marginTop={20}>
             <TouchableOpacity
               onPress={handleDeleteConfirmed}
-              style={[
-                styles.confirmButton,
-                { backgroundColor: theme.colors.white },
-              ]}
+              style={[styles.confirmButton, { backgroundColor: colors.white }]}
             >
               <Text style={styles.confirmButtonText}>Yes</Text>
             </TouchableOpacity>
@@ -841,7 +747,7 @@ const CartScreen = ({ navigation, route }) => {
               onPress={handleDeleteCancelled}
               style={[
                 styles.cancelButtonAction,
-                { backgroundColor: theme.colors.grey },
+                { backgroundColor: colors.grey },
               ]}
             >
               <Text style={styles.cancelButtonText}>No</Text>
@@ -854,74 +760,26 @@ const CartScreen = ({ navigation, route }) => {
 };
 
 const styles = StyleSheet.create({
-  safeArea: {
-    flex: 1,
-  },
+  safeArea: { flex: 1 },
   loadingContainerFull: {
     flex: 1,
     justifyContent: "center",
     alignItems: "center",
   },
-  scrollViewContent: {
-    paddingBottom: 50,
-    paddingHorizontal: 15,
-  },
-  backButton: {
-    marginTop: 18,
-    padding: 2,
-  },
-  cartTitle: {
-    fontSize: 28,
-    fontWeight: "bold",
-    paddingTop: 35,
-  },
-  shopGroup: {
-    flexDirection: "column",
-    gap: 5,
-    marginBottom: 2,
-  },
-  shopName: {
-    fontSize: 16,
-    fontWeight: "bold",
-  },
-  cartItem: {
-    flexDirection: "row",
-    gap: 4,
-    borderRadius: 4,
-    padding: 2,
-  },
-  productImage: {
-    width: 100,
-    height: 100,
-    borderRadius: 2,
-  },
-  productName: {
-    fontSize: 12,
-    fontWeight: "bold",
-  },
-  productPrice: {
-    fontSize: 18,
-    fontWeight: "bold",
-  },
-  productSize: {
-    fontSize: 14,
-  },
-  colorIndicator: {
-    width: 12,
-    height: 12,
-    borderRadius: 6,
-  },
-  productColor: {
-    fontSize: 14,
-  },
-  totalLabel: {
-    fontSize: 18,
-    fontWeight: "bold",
-  },
-  totalAmount: {
-    fontSize: 18,
-    fontWeight: "bold",
-  },
+  scrollViewContent: { paddingBottom: 50, paddingHorizontal: 15 },
+  backButton: { marginTop: 18, padding: 2 },
+  cartTitle: { fontSize: 28, fontWeight: "bold", paddingTop: 35 },
+  shopGroup: { flexDirection: "column", gap: 5, marginBottom: 2 },
+  shopName: { fontSize: 16, fontWeight: "bold" },
+  cartItem: { flexDirection: "row", gap: 4, borderRadius: 4, padding: 2 },
+  productImage: { width: 100, height: 100, borderRadius: 2 },
+  productName: { fontSize: 12, fontWeight: "bold" },
+  productPrice: { fontSize: 18, fontWeight: "bold" },
+  productSize: { fontSize: 14 },
+  colorIndicator: { width: 12, height: 12, borderRadius: 6 },
+  productColor: { fontSize: 14 },
+  totalLabel: { fontSize: 18, fontWeight: "bold" },
+  totalAmount: { fontSize: 18, fontWeight: "bold" },
   checkoutButton: {
     borderRadius: 5,
     padding: 15,
@@ -930,20 +788,9 @@ const styles = StyleSheet.create({
     width: "100%",
     marginVertical: 10,
   },
-  checkoutButtonText: {
-    color: "#191919",
-    fontSize: 16,
-    fontWeight: "400",
-  },
-  cancelButtonText: {
-    fontSize: 16,
-    fontWeight: "400",
-  },
-  emptyCartImage: {
-    width: 150,
-    height: 150,
-    marginBottom: 10,
-  },
+  checkoutButtonText: { color: "#191919", fontSize: 16, fontWeight: "400" },
+  cancelButtonText: { fontSize: 16, fontWeight: "400" },
+  emptyCartImage: { width: 150, height: 150, marginBottom: 10 },
   emptyCartTitle: {
     fontSize: 24,
     fontWeight: "bold",
@@ -955,22 +802,10 @@ const styles = StyleSheet.create({
     textAlign: "center",
     paddingHorizontal: 20,
   },
-  actionsheetContent: {
-    padding: 20,
-  },
-  actionsheetTitle: {
-    fontSize: 20,
-    marginBottom: 10,
-  },
-  paymentMethodBox: {
-    borderRadius: 5,
-    padding: 10,
-  },
-  paymentMethodText: {
-    marginLeft: 8,
-    fontSize: 16,
-    width: "100%",
-  },
+  actionsheetContent: { padding: 20 },
+  actionsheetTitle: { fontSize: 20, marginBottom: 10 },
+  paymentMethodBox: { borderRadius: 5, padding: 10 },
+  paymentMethodText: { marginLeft: 8, fontSize: 16, width: "100%" },
   confirmButton: {
     borderRadius: 5,
     padding: 10,
@@ -978,16 +813,20 @@ const styles = StyleSheet.create({
     justifyContent: "center",
     width: 80,
   },
-  confirmButtonText: {
-    fontSize: 16,
-    fontWeight: "400",
-  },
+  confirmButtonText: { fontSize: 16, fontWeight: "400" },
   cancelButtonAction: {
     borderRadius: 5,
     padding: 10,
     alignItems: "center",
     justifyContent: "center",
     width: 80,
+  },
+  qtyBtn: { backgroundColor: colors.white, borderRadius: 2, padding: 5 },
+  qtyInput: {
+    color: colors.white,
+    fontSize: 16,
+    textAlign: "center",
+    minWidth: 10,
   },
 });
 

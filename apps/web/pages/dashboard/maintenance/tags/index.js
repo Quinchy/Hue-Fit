@@ -37,11 +37,17 @@ import {
   PaginationNext,
   PaginationLink,
 } from "@/components/ui/pagination";
-import Loading from "@/components/ui/loading";
+import dynamic from "next/dynamic";
+
 import { Skeleton } from "@/components/ui/skeleton";
 import { useState, useEffect } from "react";
 import { Input } from "@/components/ui/input";
 import { Alert, AlertTitle, AlertDescription } from "@/components/ui/alert";
+
+const Loading = dynamic(
+  () => import("@/components/ui/loading"),
+  { ssr: false } // ← this is the key
+);
 
 const typeColorMap = {
   UPPERWEAR: "bg-blue-500",

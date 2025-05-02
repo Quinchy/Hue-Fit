@@ -19,8 +19,14 @@ import { Textarea } from "@/components/ui/textarea";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { MailCheck } from 'lucide-react';
 import { Asterisk } from 'lucide-react';
-import Loading from '@/components/ui/loading';
+import dynamic from "next/dynamic";
+
 import Image from 'next/image';
+
+const Loading = dynamic(
+  () => import("@/components/ui/loading"),
+  { ssr: false }
+);
 
 export default function ManageShopRequest() {
   const [request, setRequest] = useState(null);

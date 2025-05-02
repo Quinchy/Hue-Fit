@@ -12,7 +12,7 @@ interface LoadingSpinnerProps {
 }
 
 const LoadingSpinner: React.FC<LoadingSpinnerProps> = ({
-  size = 200,
+  size = 300,
   visible = true,
   onFinish,
   messages = 'Loading...', // Default message

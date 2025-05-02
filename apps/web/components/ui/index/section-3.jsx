@@ -12,17 +12,31 @@ const gloock = Gloock({
   subsets: ["latin"],
 });
 
-// Simplified fade-in reveal animation variants
-const revealVariants = {
-  hidden: { opacity: 0 },
-  visible: { opacity: 1, transition: { duration: 0.8 } },
+// Parent variant: staggers children
+const sectionVariants = {
+  hidden: {},
+  visible: {
+    transition: {
+      staggerChildren: 0.3,
+    },
+  },
+};
+
+// Child fade-in variant
+const fadeInUp = {
+  hidden: { opacity: 0, y: 20 },
+  visible: {
+    opacity: 1,
+    y: 0,
+    transition: { duration: 0.8, ease: "easeOut" },
+  },
 };
 
 export default function Section3() {
   const handleDownload = () => {
     const link = document.createElement("a");
     link.href = "/HueFit.apk"; // Ensure the APK is in your public folder
-    link.download = "HueFit.apk"; // Optional: specify the default filename
+    link.download = "HueFit.apk";
     document.body.appendChild(link);
     link.click();
     document.body.removeChild(link);
@@ -31,30 +45,29 @@ export default function Section3() {
   return (
     <motion.section
       className="relative w-full flex flex-col"
-      variants={revealVariants}
+      variants={sectionVariants}
       initial="hidden"
       whileInView="visible"
-      viewport={{ once: true }}
+      viewport={{ once: true, amount: 0.3 }}
     >
-      <div className="h-[20rem]"></div>
+      <div className="h-[20rem]" />
 
       {/* Content Container */}
       <motion.div
-        className="flex flex-col items-center justify-center gap-4"
-        variants={revealVariants}
+        className="flex flex-col items-center justify-center gap-8"
+        variants={fadeInUp}
       >
+        {/* Rotating Gradient + Logo */}
         <motion.div
-          variants={revealVariants}
           className="relative flex justify-center items-center"
+          variants={fadeInUp}
         >
-          {/* Outer layer for continuous rotation */}
           <motion.div
             className="absolute -top-[8rem] z-0"
             animate={{ rotate: 360 }}
             transition={{ duration: 16, ease: "linear", repeat: Infinity }}
           >
             <div className="rotate-90">
-              {/* Inner layer for scale and opacity animation */}
               <motion.div
                 animate={{
                   scale: [1.65, 1.35, 1.65],
@@ -76,21 +89,22 @@ export default function Section3() {
             </div>
           </motion.div>
 
-          {/* Logo stays on top */}
-          <Image
-            src="/images/logo-text.svg"
-            width={1000}
-            height={1000}
-            className="relative z-10 mx-auto w-1/2 lg:w-auto drop-shadow-2xl invert dark:invert-0"
-          />
+          <motion.div variants={fadeInUp}>
+            <Image
+              src="/images/logo-text.svg"
+              width={1000}
+              height={1000}
+              className="relative z-10 mx-auto w-1/2 lg:w-auto drop-shadow-2xl invert dark:invert-0"
+            />
+          </motion.div>
         </motion.div>
 
         {/* Animated Text */}
         <motion.h1
           className={`md:text-lg lg:text-4xl text-primary/90 font-black subpixel-antialiased tracking-tight text-center ${gloock.className}`}
-          variants={revealVariants}
+          variants={fadeInUp}
         >
-          <div className="flex flex-col items-center">
+          <div className="flex flex-col items-center gap-2">
             <div className="flex flex-row items-center gap-2">
               <LetterSwapPingPong label="EFFORTLESS." staggerFrom="last" />
               <LetterSwapPingPong label="PERSONALIZED" staggerFrom="last" />
@@ -101,11 +115,10 @@ export default function Section3() {
           </div>
         </motion.h1>
 
-        {/* Download HueFit Button */}
+        {/* Download Button */}
         <motion.button
           onClick={handleDownload}
           className="flex flex-row items-center justify-center drop-shadow-2xl bg-[linear-gradient(90deg,_var(--rainbow1)_0%,_var(--rainbow2)_20%,_var(--rainbow3)_40%,_var(--rainbow4)_60%,_var(--rainbow5)_80%,_var(--rainbow6)_100%)] bg-[length:200%_200%] bg-[position:0%_50%] transition-all duration-500 min-w-48 lg:min-w-64 py-3 lg:py-4 z-20 hover:bg-[position:100%_50%]"
-          variants={revealVariants}
         >
           <p className="uppercase text-pure font-medium lg:font-bold text-sm text-center">
             <LetterSwapPingPong label="Download HueFit" staggerFrom="last" />
@@ -118,7 +131,7 @@ export default function Section3() {
         </motion.button>
       </motion.div>
 
-      <div className="h-[20rem]"></div>
+      <div className="h-[20rem]" />
     </motion.section>
   );
 }

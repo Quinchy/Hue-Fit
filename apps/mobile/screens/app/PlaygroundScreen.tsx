@@ -17,7 +17,7 @@ import {
 } from "native-base";
 import { CheckCircle, Circle, Camera } from "lucide-react-native";
 import BackgroundProvider from "../../providers/BackgroundProvider";
-import DefaultButton from "../../components/Button";
+import Button from "../../components/Button";
 import OutlineButton from "../../components/OutlineButton";
 import * as NavigationBar from "expo-navigation-bar";
 import Animated, {
@@ -309,7 +309,7 @@ const PlaygroundScreen = ({ route, navigation }) => {
     };
     try {
       const response = await fetch(
-        `https://hue-fit-ai.onrender.com/generate-outfit?unique=${Date.now()}`,
+        `https://hue-fit-ai-v4mw.onrender.com/generate-outfit?unique=${Date.now()}`,
         {
           method: "POST",
           headers: {
@@ -591,6 +591,8 @@ const PlaygroundScreen = ({ route, navigation }) => {
                   </Text>
                 )}
               </VStack>
+            </VStack>
+            <VStack space={2} style={{ marginBottom: 150 }}>
               {addingToCart ? (
                 <HStack justifyContent="center" alignItems="center" space={2}>
                   <Spinner color="white" />
@@ -610,14 +612,14 @@ const PlaygroundScreen = ({ route, navigation }) => {
                   disabled={disableAll}
                 />
               )}
+              <Button
+                title={regenerating ? "Generating..." : "Re-Generate"}
+                mb={150}
+                mt={2}
+                onPress={handleRegenerate}
+                isDisabled={disableAll}
+              />
             </VStack>
-            <DefaultButton
-              title={regenerating ? "Generating..." : "Re-Generate"}
-              mb={150}
-              mt={2}
-              onPress={handleRegenerate}
-              isDisabled={disableAll}
-            />
           </VStack>
         </ScrollView>
       </BackgroundProvider>

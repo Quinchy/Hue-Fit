@@ -1,97 +1,117 @@
-import React, { useState, memo } from 'react';
-import { Input, Icon, IInputProps, Pressable, Text, VStack } from 'native-base';
-import { Ionicons } from '@expo/vector-icons';
-import { Asterisk } from 'lucide-react-native';
-import { useTheme, applyOpacity } from '../providers/ThemeProvider';
+// components/Input.tsx
+import React, { useState, memo } from "react";
+import {
+  Input as NBInput,
+  IInputProps,
+  Pressable,
+  Text,
+  VStack,
+  HStack,
+} from "native-base";
+import { Asterisk, TriangleAlert, Eye, EyeOff } from "lucide-react-native";
+import { colors, applyOpacity } from "../constants/colors";
 
-interface CustomInputProps extends IInputProps {
+interface InputProps extends IInputProps {
   isPassword?: boolean;
   label?: string;
   error?: string;
   required?: boolean;
 }
 
-const CustomInput: React.FC<CustomInputProps> = ({
+const Input: React.FC<InputProps> = ({
   isPassword = false,
   label,
   error,
   required = false,
   ...props
 }) => {
-  const { theme } = useTheme();
   const [isFocused, setIsFocused] = useState(false);
   const [showPassword, setShowPassword] = useState(false);
 
-  const computedBorderWidth = error ? 2 : (isFocused ? 2 : 1);
+  const computedBorderWidth = error ? 2 : isFocused ? 2 : 1;
   const computedBorderColor = error
-    ? "red.500"
-    : (isFocused ? theme.colors.white : theme.colors.greyWhite + "35");
+    ? colors.warning
+    : isFocused
+    ? colors.white
+    : applyOpacity(colors.greyWhite, 0.35);
 
   return (
-    <VStack space={1}>
+    <VStack space={1} width="100%">
       {label && (
         <Text
           fontSize="md"
           fontWeight="bold"
-          color={theme.colors.white}
+          color={colors.white}
           flexDir="row"
           alignItems="center"
         >
           {label}
-          {required && (
-            <Asterisk
-              size={12}
-              color={theme.colors.greyWhite}
-              style={{ marginLeft: 4, marginTop: 2 }}
-            />
-          )}
+          {required && <Asterisk size={12} color={colors.white} />}
         </Text>
       )}
-      <Input
+      <NBInput
         {...props}
         type={isPassword && !showPassword ? "password" : "text"}
-        bg={theme.colors.darkGrey}
-        color={theme.colors.white}
-        placeholderTextColor={theme.colors.greyWhite + "35"}
+        bg={colors.darkGrey}
+        color={colors.white}
+        placeholderTextColor={applyOpacity(colors.greyWhite, 0.35)}
         width="100%"
         fontSize="md"
         height={50}
-        borderRadius="md"
+        borderRadius="lg"
         borderWidth={computedBorderWidth}
         borderColor={computedBorderColor}
-        selectionColor={theme.colors.greyWhite + "35"}
+        selectionColor={applyOpacity(colors.greyWhite, 0.35)}
         _focus={{
-          bg: theme.colors.dark,
-          borderWidth: 2,
-          borderColor: error ? "red.500" : "#60A5FA",
-          selectionColor: theme.colors.greyWhite + "35",
+          bg: colors.dark,
+          borderWidth: 1,
+          focusOutlineColor: colors.greyWhite,
+          borderColor: error ? colors.warning : colors.status.PENDING,
+          selectionColor: applyOpacity(colors.greyWhite, 0.35),
         }}
         _disabled={{
-          bg: theme.colors.darkGrey,
+          bg: colors.darkGrey,
           borderWidth: 1,
-          borderColor: theme.colors.greyWhite + "35",
-          color: theme.colors.greyWhite + "35",
+          borderColor: applyOpacity(colors.greyWhite, 0.35),
+          color: applyOpacity(colors.greyWhite, 0.35),
         }}
-        focusOutlineColor={theme.colors.greyWhite + "35"}
+        focusOutlineColor="transparent"
         py={3}
         px={5}
         onFocus={() => setIsFocused(true)}
         onBlur={() => setIsFocused(false)}
         InputRightElement={
-          isPassword && (
-            <Pressable onPress={() => setShowPassword(!showPassword)}>
-              <Icon
-                as={<Ionicons name={showPassword ? "eye-off" : "eye"} />}
-                size="sm"
-                color={theme.colors.greyWhite + "95"}
-                mr={5}
-              />
+          isPassword ? (
+            <Pressable
+              onPress={() => setShowPassword(!showPassword)}
+              mr={5}
+              _pressed={{
+                opacity: 0.6,
+                transform: [{ scale: 0.95 }],
+              }}
+            >
+              {showPassword ? (
+                <Eye size={20} color={applyOpacity(colors.greyWhite, 0.95)} />
+              ) : (
+                <EyeOff
+                  size={20}
+                  color={applyOpacity(colors.greyWhite, 0.95)}
+                />
+              )}
             </Pressable>
-          )
+          ) : undefined
         }
       />
+      {error && !isFocused && (
+        <HStack space={1} alignItems="center">
+          <TriangleAlert size={16} color={colors.warning} />
+          <Text fontSize="sm" color={colors.warning}>
+            {error}
+          </Text>
+        </HStack>
+      )}
     </VStack>
   );
 };
 
-export default memo(CustomInput);
+export default memo(Input);

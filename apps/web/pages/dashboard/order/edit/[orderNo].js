@@ -22,7 +22,8 @@ import { Label } from "@/components/ui/label";
 import routes from "@/routes";
 import { Alert, AlertTitle, AlertDescription } from "@/components/ui/alert";
 import Image from "next/image";
-import Loading from "@/components/ui/loading";
+import dynamic from "next/dynamic";
+
 import { ScrollArea } from "@/components/ui/scroll-area";
 import {
   Select,
@@ -37,6 +38,11 @@ import {
   InputErrorStyle,
 } from "@/components/ui/error-message";
 import CancelOrderDialog from "@/components/ui/order/cancel-order-dialog";
+
+const Loading = dynamic(
+  () => import("@/components/ui/loading"),
+  { ssr: false }
+);
 
 const ORDER_STEPS_DATA = [
   { id: "PENDING", label: "Pending", Icon: Loader2 },

@@ -8,9 +8,15 @@ import { Label } from '@/components/ui/label';
 import { Button } from '@/components/ui/button';
 import { MoveLeft } from 'lucide-react';
 import StockProductVariantCard from './stock-product-variant-card';
-import Loading from '@/components/ui/loading';
+import dynamic from "next/dynamic";
+
 import { Alert } from "@/components/ui/alert";
 import { CircleCheck, CircleAlert, X } from 'lucide-react';
+
+const Loading = dynamic(
+  () => import("@/components/ui/loading"),
+  { ssr: false }
+);
 
 const fetcher = (url) => fetch(url).then((res) => res.json());
 

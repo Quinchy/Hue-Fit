@@ -1,35 +1,33 @@
-import React from 'react';
-import { Image, ScrollView, Pressable } from 'react-native';
-import { VStack, HStack, Text, Center } from 'native-base';
-import BackgroundProvider from '../../providers/BackgroundProvider';
-import CustomInput from '../../components/Input';
-import DefaultButton from '../../components/Button';
-import GradientCard from '../../components/GradientCard';
-import { Formik } from 'formik';
-import * as Yup from 'yup';
-import { useTheme, applyOpacity } from '../../providers/ThemeProvider';
+// screens/RegisterScreen.tsx
+import React from "react";
+import { Image, ScrollView, Pressable } from "react-native";
+import { VStack, HStack, Text, Center } from "native-base";
+import BackgroundProvider from "../../providers/BackgroundProvider";
+import Input from "../../components/Input";
+import Button from "../../components/Button";
+import GradientCard from "../../components/GradientCard";
+import { Formik, FormikProps } from "formik";
+import { colors, applyOpacity } from "../../constants/colors";
+import { useNavigation, useRoute, RouteProp } from "@react-navigation/native";
+import { NavigationProp, RootStackParamList } from "../../types/navigation";
+import { PersonalInformationValues } from "../../types/forms";
+import { RegisterSchema } from "../../utils/validation-schema";
 
-const RegisterSchema = Yup.object().shape({
-  firstName: Yup.string().required('First Name is required'),
-  lastName: Yup.string().required('Last Name is required'),
-  username: Yup.string().required('Username is required'),
-  password: Yup.string().required('Password is required'),
-  confirmPassword: Yup.string()
-    .oneOf([Yup.ref('password'), null], 'Passwords must match')
-    .required('Confirm Password is required'),
-});
+type RegisterRouteProp = RouteProp<RootStackParamList, "Register">;
+type RegisterNavProp = NavigationProp<"Register">;
 
-export default function RegisterScreen({ navigation, route }) {
-  const { theme } = useTheme();
-  const prevData = route.params?.registerData || {};
+export default function RegisterScreen() {
+  const navigation = useNavigation<RegisterNavProp>();
+  const route = useRoute<RegisterRouteProp>();
+
+  const prevData = route.params?.registerData ?? {};
 
   return (
     <BackgroundProvider>
       <ScrollView contentContainerStyle={{ flexGrow: 1 }}>
         <Center>
-          {/* Logo */}
           <Image
-            source={require('../../assets/icons/hue-fit-logo.png')}
+            source={require("../../assets/icons/hue-fit-logo.png")}
             style={{
               width: 60,
               height: 60,
@@ -38,148 +36,123 @@ export default function RegisterScreen({ navigation, route }) {
             }}
             resizeMode="contain"
           />
-
           <GradientCard>
             <Center mt={5} mb={10}>
-              <Text fontSize="3xl" color={theme.colors.white} fontWeight="bold">
+              <Text fontSize="3xl" color={colors.white} fontWeight="bold">
                 REGISTER
               </Text>
               <HStack alignItems="center" space={1}>
-                <Text fontSize="md" color={applyOpacity(theme.colors.greyWhite, 0.6)}>
+                <Text
+                  fontSize="md"
+                  color={applyOpacity(colors.greyWhite, 0.5)}
+                >
                   Already have an account?
                 </Text>
-                <Pressable onPress={() => navigation.navigate('Login')}>
+                <Pressable onPress={() => navigation.navigate("Login")}>
                   {({ pressed }) => (
                     <Text
                       fontSize="md"
                       fontWeight="bold"
-                      color={theme.colors.white}
-                      style={{ textDecorationLine: pressed ? 'underline' : 'none' }}
+                      color={colors.white}
+                      style={{
+                        textDecorationLine: pressed ? "underline" : "none",
+                      }}
                     >
-                      Login.
+                      Login
                     </Text>
                   )}
                 </Pressable>
               </HStack>
             </Center>
 
-            {/* Personal Information */}
-            <VStack alignItems="flex-start" mb={4}>
-              <Text fontSize="lg" color={theme.colors.white} fontWeight="bold">
+            <VStack alignItems="flex-start" mb={5}>
+              <Text fontSize="lg" color={colors.white} fontWeight="bold">
                 Personal Information
               </Text>
-              <Text fontSize="md" color={applyOpacity(theme.colors.greyWhite, 0.6)}>
+              <Text
+                fontSize="md"
+                color={applyOpacity(colors.greyWhite, 0.5)}
+              >
                 Please fill the form with your personal information
               </Text>
             </VStack>
 
-            <Formik
+            <Formik<PersonalInformationValues>
               initialValues={{
-                firstName: prevData.firstName || '',
-                lastName: prevData.lastName || '',
-                username: prevData.username || '',
-                password: prevData.password || '',
-                confirmPassword: prevData.confirmPassword || '',
+                firstName: prevData.firstName ?? "",
+                lastName: prevData.lastName ?? "",
+                username: prevData.username ?? "",
+                password: prevData.password ?? "",
+                confirmPassword: prevData.confirmPassword ?? "",
               }}
               validationSchema={RegisterSchema}
-              onSubmit={(values) => {
-                navigation.navigate('Register2', { registerData: { ...prevData, ...values } });
-              }}
+              onSubmit={(values) =>
+                navigation.navigate("Register2", { registerData: values })
+              }
             >
-              {({ handleChange, handleBlur, handleSubmit, values, errors, touched }) => (
-                <VStack space={4} alignItems="center">
-                  <VStack width="100%">
-                    <CustomInput
+              {({
+                handleChange,
+                handleBlur,
+                handleSubmit,
+                values,
+                errors,
+                touched,
+              }: FormikProps<PersonalInformationValues>) => (
+                <VStack space={10}>
+                  <VStack space={2} alignItems="center">
+                    <Input
                       label="First Name"
-                      placeholder="First Name"
+                      placeholder="Please enter your first name"
                       value={values.firstName}
-                      onChangeText={handleChange('firstName')}
-                      onBlur={handleBlur('firstName')}
-                      error={touched.firstName && errors.firstName ? errors.firstName : undefined}
+                      onChangeText={handleChange("firstName")}
+                      onBlur={handleBlur("firstName")}
+                      error={touched.firstName ? errors.firstName : undefined}
                       required
                     />
-                    {touched.firstName && errors.firstName && (
-                      <Text color="red.500" mt={1} fontSize="xs">
-                        {errors.firstName}
-                      </Text>
-                    )}
-                  </VStack>
-
-                  <VStack width="100%">
-                    <CustomInput
+                    <Input
                       label="Last Name"
-                      placeholder="Last Name"
+                      placeholder="Please enter your last name"
                       value={values.lastName}
-                      onChangeText={handleChange('lastName')}
-                      onBlur={handleBlur('lastName')}
-                      error={touched.lastName && errors.lastName ? errors.lastName : undefined}
+                      onChangeText={handleChange("lastName")}
+                      onBlur={handleBlur("lastName")}
+                      error={touched.lastName ? errors.lastName : undefined}
                       required
                     />
-                    {touched.lastName && errors.lastName && (
-                      <Text color="red.500" mt={1} fontSize="xs">
-                        {errors.lastName}
-                      </Text>
-                    )}
-                  </VStack>
-
-                  <VStack width="100%">
-                    <CustomInput
+                    <Input
                       label="Username"
-                      placeholder="Username"
+                      placeholder="Please enter a username"
                       value={values.username}
-                      onChangeText={handleChange('username')}
-                      onBlur={handleBlur('username')}
-                      error={touched.username && errors.username ? errors.username : undefined}
+                      onChangeText={handleChange("username")}
+                      onBlur={handleBlur("username")}
+                      error={touched.username ? errors.username : undefined}
                       required
                     />
-                    {touched.username && errors.username && (
-                      <Text color="red.500" mt={1} fontSize="xs">
-                        {errors.username}
-                      </Text>
-                    )}
-                  </VStack>
-
-                  <VStack width="100%">
-                    <CustomInput
+                    <Input
                       label="Password"
-                      placeholder="Password"
+                      placeholder="Please enter a password"
                       value={values.password}
-                      onChangeText={handleChange('password')}
-                      onBlur={handleBlur('password')}
+                      onChangeText={handleChange("password")}
+                      onBlur={handleBlur("password")}
                       isPassword
-                      error={touched.password && errors.password ? errors.password : undefined}
+                      error={touched.password ? errors.password : undefined}
                       required
                     />
-                    {touched.password && errors.password && (
-                      <Text color="red.500" mt={1} fontSize="xs">
-                        {errors.password}
-                      </Text>
-                    )}
-                  </VStack>
-
-                  <VStack width="100%">
-                    <CustomInput
+                    <Input
                       label="Confirm Password"
-                      placeholder="Confirm Password"
+                      placeholder="Please re-enter the password"
                       value={values.confirmPassword}
-                      onChangeText={handleChange('confirmPassword')}
-                      onBlur={handleBlur('confirmPassword')}
+                      onChangeText={handleChange("confirmPassword")}
+                      onBlur={handleBlur("confirmPassword")}
                       isPassword
                       error={
-                        touched.confirmPassword && errors.confirmPassword
+                        touched.confirmPassword
                           ? errors.confirmPassword
                           : undefined
                       }
                       required
                     />
-                    {touched.confirmPassword && errors.confirmPassword && (
-                      <Text color="red.500" mt={1} fontSize="xs">
-                        {errors.confirmPassword}
-                      </Text>
-                    )}
                   </VStack>
-
-                  <DefaultButton mt={10} title="NEXT" onPress={handleSubmit} />
+                  <Button title="NEXT" onPress={handleSubmit as any} />
                 </VStack>
               )}
             </Formik>

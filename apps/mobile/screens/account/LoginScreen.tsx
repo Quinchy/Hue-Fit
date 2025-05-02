@@ -1,134 +1,154 @@
-import React, { useState } from 'react';
-import { Image, ScrollView, Alert, Pressable } from 'react-native';
-import { VStack, HStack, Text, Center } from 'native-base';
-import BackgroundProvider from '../../providers/BackgroundProvider';
-import CustomInput from '../../components/Input';
-import DefaultButton from '../../components/Button';
-import GradientCard from '../../components/GradientCard';
-import AsyncStorage from '@react-native-async-storage/async-storage';
-import LoadingSpinner from '../../components/Loading';
-import { useNavigation } from '@react-navigation/native';
-import { NativeStackNavigationProp } from '@react-navigation/native-stack';
-import { EXPO_PUBLIC_API_URL } from '@env';
-import { useTheme } from '../../providers/ThemeProvider';
-
-type RootStackParamList = { Main: undefined; Register: undefined; ForgotPassword: undefined };
+// screens/LoginScreen.tsx
+import React, { useState } from "react";
+import { Image, ScrollView } from "react-native";
+import { VStack, HStack, Text, Center } from "native-base";
+import { Formik } from "formik";
+import BackgroundProvider from "../../providers/BackgroundProvider";
+import Input from "../../components/Input";
+import Button from "../../components/Button";
+import Link from "../../components/Link";
+import GradientCard from "../../components/GradientCard";
+import Alert, { AlertStatus } from "../../components/Alert";
+import { NavigationProp } from "../../types/navigation";
+import { LoginSchema } from "../../utils/validation-schema";
+import { colors, applyOpacity } from "../../constants/colors";
+import AsyncStorage from "@react-native-async-storage/async-storage";
+import { useNavigation } from "@react-navigation/native";
+import { EXPO_PUBLIC_API_URL } from "@env";
 
 export default function LoginScreen() {
-  const navigation = useNavigation<NativeStackNavigationProp<RootStackParamList>>();
-  const { theme } = useTheme();
-  const [username, setUsername] = useState('');
-  const [password, setPassword] = useState('');
-  const [loading, setLoading] = useState(false);
+  const navigation = useNavigation<NavigationProp<"Login">>();
 
-  const handleLogin = async () => {
-    if (!username.trim() || !password) {
-      Alert.alert('Validation Error', 'Please enter both username and password.');
-      return;
-    }
+  const [alertMessage, setAlertMessage] = useState<string | null>(null);
+  const [alertStatus, setAlertStatus] = useState<AlertStatus>("error");
 
-    setLoading(true);
+  const showAlert = (message: string, status: AlertStatus = "error") => {
+    setAlertMessage(message);
+    setAlertStatus(status);
+  };
+
+  const handleLogin = async (
+    values: { username: string; password: string },
+    formikHelpers: { setSubmitting: (isSubmitting: boolean) => void }
+  ) => {
+    formikHelpers.setSubmitting(true);
     try {
-      const response = await fetch(`${EXPO_PUBLIC_API_URL}/api/mobile/auth/login`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ username, password }),
+      const res = await fetch(`${EXPO_PUBLIC_API_URL}/api/mobile/auth/login`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(values),
       });
-
-      const contentType = response.headers.get('content-type');
-      if (contentType && contentType.includes('application/json')) {
-        const data = await response.json();
-        if (response.ok) {
+      const ct = res.headers.get("content-type") || "";
+      if (ct.includes("application/json")) {
+        const data = await res.json();
+        if (res.ok) {
           await AsyncStorage.setItem("user", JSON.stringify(data));
-          await AsyncStorage.setItem("userId", data.id.toString());
-          await AsyncStorage.setItem("username", data.username);
-          await AsyncStorage.setItem("firstName", data.firstName);
-          await AsyncStorage.setItem("lastName", data.lastName);
-          await AsyncStorage.setItem("profilePicture", data.profilePicture || "");
           navigation.reset({ index: 0, routes: [{ name: "Main" }] });
+          return;
         } else {
-          Alert.alert("Login Failed", data.message || "Invalid credentials");
+          showAlert(data.message || "Invalid credentials", "error");
         }
       } else {
-        Alert.alert('Login Failed', 'Unexpected response format');
+        showAlert("Unexpected response format", "error");
       }
-    } catch (error) {
-      console.error("Login error:", error);
-      Alert.alert('Login Error', 'An error occurred. Please try again.');
+    } catch (err) {
+      console.error(err);
+      showAlert("An error occurred. Please try again.", "error");
     } finally {
-      setLoading(false);
+      formikHelpers.setSubmitting(false);
     }
   };
 
-  if (loading) return <LoadingSpinner size={300} messages="Loading Hue-Fit..." visible />;
-
   return (
     <BackgroundProvider>
+      {alertMessage && (
+        <Alert
+          message={alertMessage}
+          status={alertStatus}
+          onClose={() => setAlertMessage(null)}
+        />
+      )}
       <ScrollView contentContainerStyle={{ flexGrow: 1 }}>
         <Center>
           <Image
-            source={require('../../assets/icons/hue-fit-logo.png')}
-            style={{ width: 60, height: 60, marginTop: 225, marginBottom: 30 }}
+            source={require("../../assets/icons/hue-fit-logo.png")}
+            style={{
+              width: 60,
+              height: 60,
+              marginTop: 225,
+              marginBottom: 30,
+            }}
             resizeMode="contain"
           />
+
           <GradientCard>
             <Center mt={5} mb={10}>
-              <Text fontSize="3xl" color={theme.colors.white} fontWeight="bold">
+              <Text fontSize="3xl" color={colors.white} fontWeight="bold">
                 LOGIN
               </Text>
               <HStack alignItems="center" space={1}>
-                <Text fontSize="md" color={theme.colors.greyWhite}>
+                <Text fontSize="md" color={applyOpacity(colors.greyWhite, 0.5)}>
                   Don't have an account?
                 </Text>
-                <Pressable onPress={() => navigation.navigate('Register')}>
-                  {({ pressed }) => (
-                    <Text
-                      fontSize="md"
-                      fontWeight="bold"
-                      color={theme.colors.white}
-                      style={{ textDecorationLine: pressed ? 'underline' : 'none' }}
-                    >
-                      Register.
-                    </Text>
-                  )}
-                </Pressable>
+                <Link label="Register" to="Register" />
               </HStack>
             </Center>
-            <VStack space={4} alignItems="center">
-              <CustomInput
-                label="Username"
-                placeholder="Username"
-                value={username}
-                onChangeText={setUsername}
-                required
-              />
-              <CustomInput
-                label="Password"
-                placeholder="Password"
-                value={password}
-                onChangeText={setPassword}
-                isPassword
-                required
-              />
-              <Pressable
-                style={{ alignSelf: 'flex-end' }}
-                onPress={() => navigation.navigate('ForgotPassword')}
-              >
-                {({ pressed }) => (
-                  <Text
-                    color={theme.colors.white}
-                    fontSize="sm"
-                    fontWeight="bold"
-                    mt={-2}
-                    mb={2}
-                    style={{ textDecorationLine: pressed ? 'underline' : 'none' }}
-                  >
-                    Forgot Password?
-                  </Text>
-                )}
-              </Pressable>
-              <DefaultButton title="LOGIN" onPress={handleLogin} />
-            </VStack>
+
+            <Formik
+              initialValues={{ username: "", password: "" }}
+              validationSchema={LoginSchema}
+              onSubmit={handleLogin}
+            >
+              {({
+                handleChange,
+                handleBlur,
+                handleSubmit,
+                values,
+                errors,
+                touched,
+                isSubmitting,
+              }) => (
+                <VStack space={10}>
+                  <VStack space={5} alignItems="center">
+                    <Input
+                      label="Username"
+                      placeholder="Username"
+                      value={values.username}
+                      onChangeText={handleChange("username")}
+                      onBlur={handleBlur("username")}
+                      error={touched.username ? errors.username : undefined}
+                      required
+                      isDisabled={isSubmitting}
+                    />
+                    <VStack space={2}>
+                      <Input
+                        label="Password"
+                        placeholder="Password"
+                        value={values.password}
+                        onChangeText={handleChange("password")}
+                        onBlur={handleBlur("password")}
+                        isPassword
+                        error={touched.password ? errors.password : undefined}
+                        required
+                        isDisabled={isSubmitting}
+                      />
+                      <Link
+                        label="Forgot Password?"
+                        to="ForgotPassword"
+                        style={{ alignSelf: "flex-end" }}
+                      />
+                    </VStack>
+                  </VStack>
+                  <Button
+                    title="LOGIN"
+                    loadingTitle="LOGGING IN..."
+                    onPress={handleSubmit as any}
+                    isLoading={isSubmitting}
+                    isDisabled={isSubmitting}
+                  />
+                </VStack>
+              )}
+            </Formik>
           </GradientCard>
         </Center>
       </ScrollView>

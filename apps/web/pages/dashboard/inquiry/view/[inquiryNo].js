@@ -7,7 +7,12 @@ import { Label } from "@/components/ui/label";
 import { Button } from "@/components/ui/button";
 import { MoveLeft } from "lucide-react";
 import routes from "@/routes";
-import Loading from "@/components/ui/loading";
+import dynamic from "next/dynamic";
+
+const Loading = dynamic(
+  () => import("@/components/ui/loading"),
+  { ssr: false } // ← this is the key
+);
 
 export default function ViewInquiry() {
   const router = useRouter();

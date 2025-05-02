@@ -1,61 +1,48 @@
+// screens/ForgotPasswordScreen.tsx
 import React, { useState } from "react";
-import {
-  Image,
-  ScrollView,
-  Pressable,
-  Modal,
-  ActivityIndicator,
-  StyleSheet,
-  View,
-} from "react-native";
+import { Image, ScrollView, Modal, View } from "react-native";
 import { VStack, HStack, Text, Center } from "native-base";
 import BackgroundProvider from "../../providers/BackgroundProvider";
-import CustomInput from "../../components/Input";
-import DefaultButton from "../../components/Button";
-import OutlineButton from "../../components/OutlineButton";
+import Input from "../../components/Input";
+import Button from "../../components/Button";
+import Link from "../../components/Link";
 import GradientCard from "../../components/GradientCard";
+import Alert, { AlertStatus } from "../../components/Alert";
 import { Formik } from "formik";
-import * as Yup from "yup";
 import { useNavigation } from "@react-navigation/native";
+import { NavigationProp } from "../../types/navigation";
+import {
+  ForgotPasswordSchema,
+  ResetPasswordSchema,
+} from "../../utils/validation-schema";
+import { ForgotPasswordValues, ResetPasswordValues } from "../../types/forms";
 import { EXPO_PUBLIC_API_URL } from "@env";
-import { useTheme, applyOpacity } from "../../providers/ThemeProvider";
+import { colors, applyOpacity } from "../../constants/colors";
 
-const ForgotPasswordSchema = Yup.object().shape({
-  username: Yup.string().required("Username is required"),
-  email: Yup.string().email("Invalid email").required("Email is required"),
-});
+export default function ForgotPasswordScreen() {
+  const navigation = useNavigation<NavigationProp<"ForgotPassword">>();
 
-const ResetPasswordSchema = Yup.object().shape({
-  otp: Yup.string().required("OTP is required"),
-  newPassword: Yup.string()
-    .min(6, "Password must be at least 6 characters")
-    .required("New Password is required"),
-  confirmPassword: Yup.string()
-    .oneOf([Yup.ref("newPassword"), null], "Passwords must match")
-    .required("Confirm Password is required"),
-});
-
-const ForgotPasswordScreen = () => {
-  const navigation = useNavigation();
-  const { theme } = useTheme();
+  // Alert & modal state
+  const [alertMessage, setAlertMessage] = useState<string | null>(null);
+  const [alertStatus, setAlertStatus] = useState<AlertStatus>("error");
   const [modalVisible, setModalVisible] = useState(false);
-  const [requestError, setRequestError] = useState("");
-  const [requestSuccess, setRequestSuccess] = useState("");
-  const [resetError, setResetError] = useState("");
+
+  // Loading & carry-over
   const [loading, setLoading] = useState(false);
   const [resetLoading, setResetLoading] = useState(false);
   const [usernameForReset, setUsernameForReset] = useState("");
   const [emailForReset, setEmailForReset] = useState("");
 
-  const handleForgotPassword = async (values: {
-    username: string;
-    email: string;
-  }) => {
+  const showAlert = (msg: string, status: AlertStatus = "error") => {
+    setAlertMessage(msg);
+    setAlertStatus(status);
+  };
+
+  const handleForgot = async (values: ForgotPasswordValues) => {
     setLoading(true);
-    setRequestError("");
-    setRequestSuccess("");
+    showAlert("", "error");
     try {
-      const response = await fetch(
+      const res = await fetch(
         `${EXPO_PUBLIC_API_URL}/api/forgot-password/reset-password`,
         {
           method: "POST",
@@ -63,36 +50,29 @@ const ForgotPasswordScreen = () => {
             "Content-Type": "application/json",
             "x-platform": "mobile",
           },
-          body: JSON.stringify({
-            username: values.username,
-            email: values.email,
-          }),
+          body: JSON.stringify(values),
         }
       );
-      const data = await response.json();
-      if (response.ok) {
-        setRequestSuccess(data.message || "OTP sent successfully.");
+      const data = await res.json();
+      if (res.ok) {
+        showAlert(data.message || "OTP sent successfully.", "success");
         setUsernameForReset(values.username);
         setEmailForReset(values.email);
         setModalVisible(true);
       } else {
-        setRequestError(data.error || "Failed to send OTP.");
+        showAlert(data.error || "Failed to send OTP.", "error");
       }
-    } catch (error) {
-      setRequestError("An unexpected error occurred. Please try again.");
+    } catch {
+      showAlert("An unexpected error occurred. Please try again.", "error");
     }
     setLoading(false);
   };
 
-  const handleResetPassword = async (values: {
-    otp: string;
-    newPassword: string;
-    confirmPassword: string;
-  }) => {
+  const handleReset = async (values: ResetPasswordValues) => {
     setResetLoading(true);
-    setResetError("");
+    showAlert("", "error");
     try {
-      const response = await fetch(
+      const res = await fetch(
         `${EXPO_PUBLIC_API_URL}/api/forgot-password/create-password`,
         {
           method: "POST",
@@ -109,60 +89,68 @@ const ForgotPasswordScreen = () => {
           }),
         }
       );
-      const data = await response.json();
-      if (response.ok) {
-        setModalVisible(false);
-        navigation.navigate("Login");
+      const data = await res.json();
+      if (res.ok) {
+        showAlert("Password updated! Redirecting...", "success");
+        setTimeout(() => {
+          setModalVisible(false);
+          navigation.navigate("Login");
+        }, 800);
       } else {
-        setResetError(data.error || "Failed to update password.");
+        showAlert(data.error || "Failed to update password.", "error");
       }
-    } catch (error) {
-      setResetError("An unexpected error occurred. Please try again.");
+    } catch {
+      showAlert("An unexpected error occurred. Please try again.", "error");
     }
     setResetLoading(false);
   };
 
   return (
     <BackgroundProvider>
-      <ScrollView contentContainerStyle={{ flexGrow: 1 }}>
-        <Center>
+      {alertMessage && (
+        <Alert
+          message={alertMessage}
+          status={alertStatus}
+          onClose={() => setAlertMessage(null)}
+        />
+      )}
+
+      <ScrollView
+        contentContainerStyle={{ flexGrow: 1 }}
+        showsVerticalScrollIndicator={false}
+      >
+        <Center flex={1}>
           <Image
             source={require("../../assets/icons/hue-fit-logo.png")}
-            style={{ width: 60, height: 60, marginTop: 225, marginBottom: 30 }}
+            style={{
+              width: 60,
+              height: 60,
+              marginTop: 225,
+              marginBottom: 30,
+            }}
             resizeMode="contain"
           />
+
           <GradientCard>
             <Center mt={5} mb={10}>
-              <Text fontSize="3xl" color={theme.colors.white} fontWeight="bold">
+              <Text fontSize="3xl" color={colors.white} fontWeight="bold">
                 FORGOT PASSWORD
               </Text>
               <HStack alignItems="center" space={1}>
                 <Text
                   fontSize="md"
-                  color={applyOpacity(theme.colors.greyWhite, 0.95)}
+                  color={applyOpacity(colors.greyWhite, 0.95)}
                 >
                   Remembered your password?
                 </Text>
-                <Pressable onPress={() => navigation.navigate("Login")}>
-                  {({ pressed }) => (
-                    <Text
-                      fontSize="md"
-                      fontWeight="bold"
-                      color={theme.colors.white}
-                      style={{
-                        textDecorationLine: pressed ? "underline" : "none",
-                      }}
-                    >
-                      LOGIN
-                    </Text>
-                  )}
-                </Pressable>
+                <Link label="Login" to="Login" />
               </HStack>
             </Center>
-            <Formik
+
+            <Formik<ForgotPasswordValues>
               initialValues={{ username: "", email: "" }}
               validationSchema={ForgotPasswordSchema}
-              onSubmit={handleForgotPassword}
+              onSubmit={handleForgot}
             >
               {({
                 handleChange,
@@ -172,67 +160,34 @@ const ForgotPasswordScreen = () => {
                 errors,
                 touched,
               }) => (
-                <VStack space={4} alignItems="center">
-                  <VStack width="100%">
-                    <CustomInput
+                <VStack space={10}>
+                  <VStack space={4} alignItems="center">
+                    <Input
                       label="Username"
                       placeholder="Enter your username"
                       value={values.username}
                       onChangeText={handleChange("username")}
                       onBlur={handleBlur("username")}
-                      error={
-                        touched.username && errors.username
-                          ? errors.username
-                          : undefined
-                      }
+                      error={touched.username ? errors.username : undefined}
                       required
                     />
-                    {touched.username && errors.username && (
-                      <Text color="red.500" mt={1} fontSize="xs">
-                        {errors.username}
-                      </Text>
-                    )}
-                  </VStack>
-                  <VStack width="100%">
-                    <CustomInput
+                    <Input
                       label="Email"
                       placeholder="Enter your email"
                       value={values.email}
                       onChangeText={handleChange("email")}
                       onBlur={handleBlur("email")}
-                      error={
-                        touched.email && errors.email ? errors.email : undefined
-                      }
+                      error={touched.email ? errors.email : undefined}
                       required
                     />
-                    {touched.email && errors.email && (
-                      <Text color="red.500" mt={1} fontSize="xs">
-                        {errors.email}
-                      </Text>
-                    )}
                   </VStack>
-                  {requestError ? (
-                    <Text color="red.500" mt={1} fontSize="xs">
-                      {requestError}
-                    </Text>
-                  ) : null}
-                  {requestSuccess ? (
-                    <Text color="green.500" mt={1} fontSize="xs">
-                      {requestSuccess}
-                    </Text>
-                  ) : null}
-                  {loading ? (
-                    <ActivityIndicator
-                      size="large"
-                      color={theme.colors.white}
-                    />
-                  ) : (
-                    <DefaultButton
-                      mt={10}
-                      title="SUBMIT"
-                      onPress={handleSubmit}
-                    />
-                  )}
+                  <Button
+                    title="SEND"
+                    onPress={handleSubmit as any}
+                    isLoading={loading}
+                    loadingTitle="SENDING..."
+                    isDisabled={loading}
+                  />
                 </VStack>
               )}
             </Formik>
@@ -240,24 +195,36 @@ const ForgotPasswordScreen = () => {
         </Center>
       </ScrollView>
 
-      {/* Modal for Reset Password using a plain view */}
       <Modal
         animationType="slide"
-        transparent={true}
+        transparent
         visible={modalVisible}
         onRequestClose={() => setModalVisible(false)}
       >
-        <Center flex={1} px={4}>
-          <View style={[styles.modalContainer, { backgroundColor: "#191919" }]}>
+        <Center flex={1}>
+          <View
+            style={{
+              width: "100%",
+              borderRadius: 10,
+              padding: 20,
+              backgroundColor: colors.dark,
+              shadowColor: "#000",
+              shadowOffset: { width: 0, height: 2 },
+              shadowOpacity: 0.25,
+              shadowRadius: 4,
+              elevation: 5,
+            }}
+          >
             <Center mt={5} mb={10}>
-              <Text fontSize="3xl" color={"#fff"} fontWeight="bold">
+              <Text fontSize="3xl" color={colors.white} fontWeight="bold">
                 RESET PASSWORD
               </Text>
             </Center>
-            <Formik
+
+            <Formik<ResetPasswordValues>
               initialValues={{ otp: "", newPassword: "", confirmPassword: "" }}
               validationSchema={ResetPasswordSchema}
-              onSubmit={handleResetPassword}
+              onSubmit={handleReset}
             >
               {({
                 handleChange,
@@ -268,106 +235,61 @@ const ForgotPasswordScreen = () => {
                 touched,
               }) => (
                 <VStack space={4} alignItems="center">
-                  <VStack width="100%">
-                    <CustomInput
-                      label="OTP"
-                      placeholder="Enter OTP"
-                      value={values.otp}
-                      onChangeText={handleChange("otp")}
-                      onBlur={handleBlur("otp")}
-                      error={touched.otp && errors.otp ? errors.otp : undefined}
-                      required
-                    />
-                    {touched.otp && errors.otp && (
-                      <Text color="red.500" mt={1} fontSize="xs">
-                        {errors.otp}
-                      </Text>
-                    )}
-                  </VStack>
-                  <VStack width="100%">
-                    <CustomInput
-                      label="New Password"
-                      placeholder="Enter new password"
-                      value={values.newPassword}
-                      onChangeText={handleChange("newPassword")}
-                      onBlur={handleBlur("newPassword")}
-                      isPassword
-                      error={
-                        touched.newPassword && errors.newPassword
-                          ? errors.newPassword
-                          : undefined
-                      }
-                      required
-                    />
-                    {touched.newPassword && errors.newPassword && (
-                      <Text color="red.500" mt={1} fontSize="xs">
-                        {errors.newPassword}
-                      </Text>
-                    )}
-                  </VStack>
-                  <VStack width="100%">
-                    <CustomInput
-                      label="Confirm Password"
-                      placeholder="Confirm new password"
-                      value={values.confirmPassword}
-                      onChangeText={handleChange("confirmPassword")}
-                      onBlur={handleBlur("confirmPassword")}
-                      isPassword
-                      error={
-                        touched.confirmPassword && errors.confirmPassword
-                          ? errors.confirmPassword
-                          : undefined
-                      }
-                      required
-                    />
-                    {touched.confirmPassword && errors.confirmPassword && (
-                      <Text color="red.500" mt={1} fontSize="xs">
-                        {errors.confirmPassword}
-                      </Text>
-                    )}
-                  </VStack>
-                  {resetError ? (
-                    <Text color="red.500" mt={1} fontSize="xs">
-                      {resetError}
-                    </Text>
-                  ) : null}
-                  {resetLoading ? (
-                    <ActivityIndicator size="large" color={"#000"} />
-                  ) : (
-                    <DefaultButton
-                      mt={10}
-                      title="UPDATE PASSWORD"
-                      onPress={handleSubmit}
-                    />
-                  )}
+                  <Input
+                    label="OTP"
+                    placeholder="Enter OTP"
+                    value={values.otp}
+                    onChangeText={handleChange("otp")}
+                    onBlur={handleBlur("otp")}
+                    error={touched.otp ? errors.otp : undefined}
+                    required
+                  />
+                  <Input
+                    label="New Password"
+                    placeholder="Enter new password"
+                    value={values.newPassword}
+                    onChangeText={handleChange("newPassword")}
+                    onBlur={handleBlur("newPassword")}
+                    isPassword
+                    error={touched.newPassword ? errors.newPassword : undefined}
+                    required
+                  />
+                  <Input
+                    label="Confirm Password"
+                    placeholder="Confirm new password"
+                    value={values.confirmPassword}
+                    onChangeText={handleChange("confirmPassword")}
+                    onBlur={handleBlur("confirmPassword")}
+                    isPassword
+                    error={
+                      touched.confirmPassword
+                        ? errors.confirmPassword
+                        : undefined
+                    }
+                    required
+                  />
+
+                  <Button
+                    mt={10}
+                    title="UPDATE PASSWORD"
+                    onPress={handleSubmit as any}
+                    isLoading={resetLoading}
+                    loadingTitle="UPDATING..."
+                    isDisabled={resetLoading}
+                  />
+
+                  <Button
+                    mt={4}
+                    title="CANCEL"
+                    variant="outline"
+                    onPress={() => setModalVisible(false)}
+                  />
                 </VStack>
               )}
             </Formik>
-            <OutlineButton
-              mt={4}
-              title="CANCEL"
-              onPress={() => setModalVisible(false)}
-            />
           </View>
         </Center>
       </Modal>
     </BackgroundProvider>
   );
-};
-
-const styles = StyleSheet.create({
-  modalContainer: {
-    width: "100%",
-    borderRadius: 10,
-    padding: 20,
-    // Shadow for iOS
-    shadowColor: "#000",
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.25,
-    shadowRadius: 4,
-    // Elevation for Android
-    elevation: 5,
-  },
-});
-
-export default ForgotPasswordScreen;
+}

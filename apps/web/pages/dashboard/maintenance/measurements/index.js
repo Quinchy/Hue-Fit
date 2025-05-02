@@ -39,9 +39,15 @@ import {
   PaginationLink,
 } from "@/components/ui/pagination";
 import { useState, useEffect } from "react";
-import Loading from "@/components/ui/loading";
+import dynamic from "next/dynamic";
+
 import { Input } from "@/components/ui/input";
 import { Alert, AlertTitle, AlertDescription } from "@/components/ui/alert";
+
+const Loading = dynamic(
+  () => import("@/components/ui/loading"),
+  { ssr: false }
+);
 
 export default function Measurements() {
   const router = useRouter();

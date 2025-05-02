@@ -1,170 +1,146 @@
-import React from 'react';
-import { ScrollView } from 'react-native';
-import { VStack, Text, Center, HStack, IconButton } from 'native-base';
-import { ArrowLeft } from 'lucide-react-native';
-import BackgroundProvider from '../../providers/BackgroundProvider';
-import CustomInput from '../../components/Input';
-import DefaultButton from '../../components/Button';
-import GradientCard from '../../components/GradientCard';
-import { Formik } from 'formik';
-import * as Yup from 'yup';
-import { useTheme, applyOpacity } from '../..//providers/ThemeProvider';
+// screens/Register2Screen.tsx
+import React from "react";
+import { ScrollView } from "react-native";
+import { VStack, Text, Center, HStack } from "native-base";
+import { ArrowLeft } from "lucide-react-native";
+import { useNavigation, useRoute} from "@react-navigation/native";
+import { NavigationProp, ScreenRouteProp } from "../../types/navigation";
+import BackgroundProvider from "../../providers/BackgroundProvider";
+import Input from "../../components/Input";
+import Button from "../../components/Button";
+import IconButton from "../../components/IconButton";
+import GradientCard from "../../components/GradientCard";
+import { AddressValues } from "../../types/forms";
+import { Register2Schema } from "../../utils/validation-schema";
+import { colors, applyOpacity } from "../../constants/colors";
+import { Formik, FormikProps } from "formik";
 
-const Register2Schema = Yup.object().shape({
-  buildingNo: Yup.string(),
-  street: Yup.string(),
-  barangay: Yup.string().required('Barangay is required'),
-  municipality: Yup.string().required('Municipality is required'),
-  province: Yup.string().required('Province is required'),
-  postalCode: Yup.string().required('Postal Code is required'),
-});
+// Navigation & route types
+type Register2Nav = NavigationProp<"Register2">;
+type Register2Route = ScreenRouteProp<"Register2">;
 
-export default function Register2Screen({ navigation, route }) {
-  const { theme } = useTheme();
-  const prevData = route.params?.registerData || {};
+export default function Register2Screen() {
+  const navigation = useNavigation<Register2Nav>();
+  const route = useRoute<Register2Route>();
+  const prevData = route.params.registerData;
 
   return (
     <BackgroundProvider>
       <ScrollView contentContainerStyle={{ flexGrow: 1 }}>
         <Center>
-          {/* Back Button */}
           <HStack width="100%" px={2} pt={165} mb={5}>
             <IconButton
-              icon={<ArrowLeft color={theme.colors.white} size={24} />}
+              icon={<ArrowLeft color={colors.white} size={24} />}
               onPress={() =>
-                navigation.navigate('Register', { registerData: prevData })
+                navigation.navigate("Register", { registerData: prevData })
               }
-              alignSelf="flex-start"
-              _pressed={{ bg: applyOpacity(theme.colors.darkGrey, 0.8) }}
-              borderRadius="full"
             />
           </HStack>
 
           <GradientCard>
-            <VStack alignItems="flex-start" mb={4}>
-              <Text fontSize="lg" color={theme.colors.white} fontWeight="bold">
+            <VStack alignItems="flex-start" mt={5} mb={5}>
+              <Text fontSize="lg" color={colors.white} fontWeight="bold">
                 Address Information
               </Text>
-              <Text fontSize="md" color={applyOpacity(theme.colors.greyWhite, 0.6)}>
+              <Text fontSize="md" color={applyOpacity(colors.greyWhite, 0.6)}>
                 Please fill in your address details.
               </Text>
             </VStack>
 
-            <Formik
+            <Formik<AddressValues>
               initialValues={{
-                buildingNo: prevData.buildingNo || '',
-                street: prevData.street || '',
-                barangay: prevData.barangay || '',
-                municipality: prevData.municipality || '',
-                province: prevData.province || '',
-                postalCode: prevData.postalCode || '',
+                buildingNo: prevData.buildingNo ?? "",
+                street: prevData.street ?? "",
+                barangay: prevData.barangay ?? "",
+                municipality: prevData.municipality ?? "",
+                province: prevData.province ?? "",
+                postalCode: prevData.postalCode ?? "",
               }}
               validationSchema={Register2Schema}
-              onSubmit={(values) => {
-                navigation.navigate('Register3', { registerData: { ...prevData, ...values } });
-              }}
+              onSubmit={(values) =>
+                navigation.navigate("Register3", {
+                  registerData: { ...prevData, ...values },
+                })
+              }
             >
-              {({ handleChange, handleBlur, handleSubmit, values, errors, touched }) => (
-                <VStack space={4} alignItems="center">
-                  <VStack width="100%">
-                    <CustomInput
+              {({
+                handleChange,
+                handleBlur,
+                handleSubmit,
+                values,
+                errors,
+                touched,
+              }: FormikProps<AddressValues>) => (
+                <VStack space={10}>
+                  <VStack space={4} width="100%" alignItems="center">
+                    <Input
                       label="Building No"
-                      placeholder="Building No"
+                      placeholder="Please enter your building no."
                       value={values.buildingNo}
-                      onChangeText={handleChange('buildingNo')}
-                      onBlur={handleBlur('buildingNo')}
+                      onChangeText={handleChange("buildingNo")}
+                      onBlur={handleBlur("buildingNo")}
                     />
-                    {touched.buildingNo && errors.buildingNo && (
-                      <Text color="red.500" mt={1} fontSize="xs">
-                        {errors.buildingNo}
-                      </Text>
-                    )}
-                  </VStack>
-
-                  <VStack width="100%">
-                    <CustomInput
+                    <Input
                       label="Street"
-                      placeholder="Street"
+                      placeholder="Please enter your street"
                       value={values.street}
-                      onChangeText={handleChange('street')}
-                      onBlur={handleBlur('street')}
+                      onChangeText={handleChange("street")}
+                      onBlur={handleBlur("street")}
                     />
-                    {touched.street && errors.street && (
-                      <Text color="red.500" mt={1} fontSize="xs">
-                        {errors.street}
-                      </Text>
-                    )}
-                  </VStack>
-
-                  <VStack width="100%">
-                    <CustomInput
+                    <Input
                       label="Barangay"
-                      placeholder="Barangay"
+                      placeholder="Please enter your barangay"
                       value={values.barangay}
-                      onChangeText={handleChange('barangay')}
-                      onBlur={handleBlur('barangay')}
-                      error={touched.barangay && errors.barangay ? errors.barangay : undefined}
+                      onChangeText={handleChange("barangay")}
+                      onBlur={handleBlur("barangay")}
+                      error={
+                        touched.barangay && errors.barangay
+                          ? errors.barangay
+                          : undefined
+                      }
                       required
                     />
-                    {touched.barangay && errors.barangay && (
-                      <Text color="red.500" mt={1} fontSize="xs">
-                        {errors.barangay}
-                      </Text>
-                    )}
-                  </VStack>
-
-                  <VStack width="100%">
-                    <CustomInput
+                    <Input
                       label="Municipality"
-                      placeholder="Municipality"
+                      placeholder="Please enter your municipality"
                       value={values.municipality}
-                      onChangeText={handleChange('municipality')}
-                      onBlur={handleBlur('municipality')}
-                      error={touched.municipality && errors.municipality ? errors.municipality : undefined}
+                      onChangeText={handleChange("municipality")}
+                      onBlur={handleBlur("municipality")}
+                      error={
+                        touched.municipality && errors.municipality
+                          ? errors.municipality
+                          : undefined
+                      }
                       required
                     />
-                    {touched.municipality && errors.municipality && (
-                      <Text color="red.500" mt={1} fontSize="xs">
-                        {errors.municipality}
-                      </Text>
-                    )}
-                  </VStack>
-
-                  <VStack width="100%">
-                    <CustomInput
+                    <Input
                       label="Province"
-                      placeholder="Province"
+                      placeholder="Please enter your province"
                       value={values.province}
-                      onChangeText={handleChange('province')}
-                      onBlur={handleBlur('province')}
-                      error={touched.province && errors.province ? errors.province : undefined}
+                      onChangeText={handleChange("province")}
+                      onBlur={handleBlur("province")}
+                      error={
+                        touched.province && errors.province
+                          ? errors.province
+                          : undefined
+                      }
                       required
                     />
-                    {touched.province && errors.province && (
-                      <Text color="red.500" mt={1} fontSize="xs">
-                        {errors.province}
-                      </Text>
-                    )}
-                  </VStack>
-
-                  <VStack width="100%">
-                    <CustomInput
+                    <Input
                       label="Postal Code"
-                      placeholder="Postal Code"
+                      placeholder="Please enter your postal code"
                       value={values.postalCode}
-                      onChangeText={handleChange('postalCode')}
-                      onBlur={handleBlur('postalCode')}
-                      error={touched.postalCode && errors.postalCode ? errors.postalCode : undefined}
+                      onChangeText={handleChange("postalCode")}
+                      onBlur={handleBlur("postalCode")}
+                      error={
+                        touched.postalCode && errors.postalCode
+                          ? errors.postalCode
+                          : undefined
+                      }
                       required
                     />
-                    {touched.postalCode && errors.postalCode && (
-                      <Text color="red.500" mt={1} fontSize="xs">
-                        {errors.postalCode}
-                      </Text>
-                    )}
                   </VStack>
-
-                  <DefaultButton mt={10} title="NEXT" onPress={handleSubmit} />
+                  <Button title="NEXT" onPress={handleSubmit as any} />
                 </VStack>
               )}
             </Formik>

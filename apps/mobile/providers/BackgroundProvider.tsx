@@ -8,9 +8,9 @@ interface BackgroundProviderProps {
 const BackgroundProvider = forwardRef<View, BackgroundProviderProps>(({ children }, ref) => {
   return (
     <ImageBackground
-      source={require('../assets/tile-pattern-2.png')} // Replace with your background image
+      source={require('../assets/tile-pattern-2.png')}
       style={styles.background}
-      resizeMode="repeat" // This will repeat the image as a tile pattern
+      resizeMode="repeat"
     >
       <View ref={ref} style={styles.overlay}>
         {children}
@@ -22,11 +22,11 @@ const BackgroundProvider = forwardRef<View, BackgroundProviderProps>(({ children
 const styles = StyleSheet.create({
   background: {
     flex: 1,
-    backgroundColor: '#19191990', // The solid background color behind the overlay,
+    backgroundColor: '#616161',
   },
   overlay: {
     flex: 1,
-    backgroundColor: 'rgba(25, 25, 25, 0.85)', // Adjust the alpha to control the opacity of the overlay
+    backgroundColor: 'rgba(25, 25, 25, 0.78)',
   },
 });
 

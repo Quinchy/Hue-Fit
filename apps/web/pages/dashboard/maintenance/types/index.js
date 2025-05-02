@@ -40,7 +40,12 @@ import {
 import { Skeleton } from "@/components/ui/skeleton";
 import { Input } from "@/components/ui/input";
 import { useState, useEffect } from "react";
-import Loading from "@/components/ui/loading";
+import dynamic from "next/dynamic";
+
+const Loading = dynamic(
+  () => import("@/components/ui/loading"),
+  { ssr: false } // ← this is the key
+);
 import { Alert, AlertTitle, AlertDescription } from "@/components/ui/alert";
 
 export default function Types() {

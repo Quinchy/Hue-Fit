@@ -10,7 +10,7 @@ import {
 } from "react-native";
 import { VStack, Text, View } from "native-base";
 import CustomInput from "../../components/Input";
-import DefaultButton from "../../components/Button";
+import Button from "../../components/Button";
 import LoadingSpinner from "../../components/Loading";
 import * as NavigationBar from "expo-navigation-bar";
 import AsyncStorage from "@react-native-async-storage/async-storage";
@@ -172,7 +172,7 @@ const InputScreen: React.FC<any> = ({ navigation }) => {
         bodyshape: customerFeature.bodyShape,
       };
       const response = await fetch(
-        `https://hue-fit-ai.onrender.com/generate-outfit?unique=${Date.now()}`,
+        `https://hue-fit-ai-v4mw.onrender.com/generate-outfit?unique=${Date.now()}`,
         {
           method: "POST",
           headers: {
@@ -265,7 +265,7 @@ const InputScreen: React.FC<any> = ({ navigation }) => {
           </Text>
         </View>
         <FashionRadioGroup selectedValue={preference} onValueChange={setPreference} />
-        <DefaultButton mt={10} mb={75} title="GENERATE" onPress={handleGenerate} />
+        <Button mt={10} mb={75} title="GENERATE" onPress={handleGenerate} />
       </View>
     </ScrollView>
   );

@@ -15,7 +15,8 @@ import {
   TableCell,
   TableRow,
 } from "@/components/ui/table";
-import Loading from "@/components/ui/loading";
+import dynamic from "next/dynamic";
+
 import { useState } from "react";
 
 // Import UI select components
@@ -27,6 +28,10 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
+
+const Loading = dynamic(() => import("@/components/ui/loading"), {
+  ssr: false,
+});
 
 const fetcher = (url) => fetch(url).then((res) => res.json());
 
