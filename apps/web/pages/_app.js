@@ -1,4 +1,3 @@
-// pages/_app.js
 "use client";
 
 import "@/styles/globals.css";
@@ -12,34 +11,41 @@ import NavbarMain from "@/components/ui/nav-bar/nav-bar-main";
 import NavbarAccount from "@/components/ui/nav-bar/nav-bar-account";
 import NavbarDashboard from "@/components/ui/nav-bar/nav-bar-dashboard";
 import { FormProvider } from "@/providers/form-provider";
-
 import React, { useState, useEffect } from "react";
 import dynamic from "next/dynamic";
 import hueFitLoading from "@/public/animations/hue-fit-loading.json";
 import { AnimatePresence, motion } from "framer-motion";
 
 const Lottie = dynamic(() => import("lottie-react"), { ssr: false });
+const SPLASH_DURATION_MS = 1800;
 
 export default function App({
   Component,
   pageProps: { session, ...pageProps },
 }) {
   const router = useRouter();
-  const normalizedPathname =
-    router.pathname === "/shopSetup" ? routes.shopSetup : router.pathname;
+  const [loadingSplash, setLoadingSplash] = useState(false);
 
-  // Only show splash on the index page
-  const isIndex = normalizedPathname === "/";
-  const [loadingSplash, setLoadingSplash] = useState(isIndex);
+  const triggerSplash = () => {
+    setLoadingSplash(true);
+    setTimeout(() => setLoadingSplash(false), SPLASH_DURATION_MS);
+  };
 
   useEffect(() => {
-    if (isIndex) {
-      const timer = setTimeout(() => setLoadingSplash(false), 1000);
-      return () => clearTimeout(timer);
+    if (router.pathname === "/") {
+      triggerSplash();
     }
-  }, [isIndex]);
+    const onRouteChangeComplete = (url) => {
+      if (url === "/") {
+        triggerSplash();
+      }
+    };
+    router.events.on("routeChangeComplete", onRouteChangeComplete);
+    return () => {
+      router.events.off("routeChangeComplete", onRouteChangeComplete);
+    };
+  }, [router.events, router.pathname]);
 
-  // Splash screen slide-up variants
   const splashVariants = {
     initial: { y: 0 },
     exitTop: { y: "-100%", transition: { duration: 0.8, ease: "easeInOut" } },
@@ -49,7 +55,6 @@ export default function App({
     },
   };
 
-  // Navbar / layout logic
   let title = "Hue-Fit";
   let NavBarComponent = NavbarMain;
   let divClassName = "flex flex-col justify-center items-center";
@@ -60,15 +65,15 @@ export default function App({
     routes.shopSuccess,
     "/test",
   ];
-  const isNavbarHidden = hideNavbarPaths.includes(normalizedPathname);
-  const isVirtualFittingMobile = normalizedPathname.startsWith(
+  const isNavbarHidden = hideNavbarPaths.includes(router.pathname);
+  const isVirtualFittingMobile = router.pathname.startsWith(
     routes.virtualFittingMobile
   );
 
   if (!isVirtualFittingMobile) {
-    if (normalizedPathname.startsWith(routes.account)) {
+    if (router.pathname.startsWith(routes.account)) {
       NavBarComponent = NavbarAccount;
-    } else if (normalizedPathname.startsWith(routes.dashboard)) {
+    } else if (router.pathname.startsWith(routes.dashboard)) {
       NavBarComponent = NavbarDashboard;
       divClassName = "flex flex-col items-start ml-[16.5rem]";
     }
@@ -86,11 +91,9 @@ export default function App({
           disableTransitionOnChange
         >
           <main className={GeistSans.className}>
-            {/* Splashscreen layers */}
             <AnimatePresence initial={false}>
               {loadingSplash && (
                 <>
-                  {/* Top layer: white background + Lottie */}
                   <motion.div
                     key="splash-top"
                     className="fixed inset-0 bg-pure flex items-center justify-center z-[9999]"
@@ -100,12 +103,12 @@ export default function App({
                   >
                     <Lottie
                       animationData={hueFitLoading}
-                      loop
-                      speed={1.5}
+                      loop={false}
+                      initialSegment={[0, 300]}
+                      speed={1}
                       style={{ width: 500, height: 500 }}
                     />
                   </motion.div>
-                  {/* Bottom layer: primary background */}
                   <motion.div
                     key="splash-bot"
                     className="fixed inset-0 bg-primary z-[9998]"
@@ -116,12 +119,10 @@ export default function App({
                 </>
               )}
             </AnimatePresence>
-
             <Head>
               <title>{title}</title>
             </Head>
-
-            {normalizedPathname === "/404" ? (
+            {router.pathname === "/404" ? (
               <Component {...pageProps} />
             ) : (
               <>
